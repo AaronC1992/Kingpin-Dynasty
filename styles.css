@@ -166,8 +166,31 @@ body.season-winter {
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 15px;
     padding: 20px;
-    max-width: 600px;
+    max-width: 800px; /* Increased from 600px to fit more buttons */
     margin: 0 auto;
+    max-height: calc(100vh - 200px); /* Adjust height to account for margins and padding */
+    overflow-y: auto; /* Add vertical scroll */
+    overflow-x: hidden; /* Hide horizontal scroll */
+}
+
+/* Custom scrollbar for menu */
+.menu-grid::-webkit-scrollbar {
+    width: 12px;
+}
+
+.menu-grid::-webkit-scrollbar-track {
+    background: rgba(44, 62, 80, 0.5);
+    border-radius: 6px;
+}
+
+.menu-grid::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    border-radius: 6px;
+    border: 2px solid rgba(44, 62, 80, 0.5);
+}
+
+.menu-grid::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #c0392b, #a93226);
 }
 
 button {
@@ -354,7 +377,7 @@ button:disabled {
     height: 100vh;
     background: linear-gradient(135deg, #1a1a1a 0%, #2d2d30 100%);
     color: white;
-    padding: 80px 260px 20px 290px; /* Increased left and right padding for better spacing */
+    padding: 80px 260px 40px 290px; /* Increased bottom padding to prevent cutoff */
     box-sizing: border-box;
     overflow-y: auto;
     z-index: 5;
@@ -510,6 +533,14 @@ p, ul {
 
 .main-menu-btn:hover {
     background: linear-gradient(45deg, #c0392b, #a93226) !important;
+}
+
+.save-btn {
+    background: linear-gradient(45deg, #2ecc71, #27ae60) !important;
+}
+
+.save-btn:hover {
+    background: linear-gradient(45deg, #27ae60, #229954) !important;
 }
 
 .energy-btn {
@@ -1307,22 +1338,8 @@ p, ul {
 }
 
 /* Vehicle Garage Screen Styling */
-#stolen-cars-screen {
-    position: relative;
-    margin-top: 90px;
-    margin-left: 270px; /* Account for action log */
-    margin-right: 30px; /* Minimal right margin for PC */
-    width: calc(100% - 300px); /* Much wider for PC */
-    box-sizing: border-box;
-    background: linear-gradient(135deg, rgba(44, 62, 80, 0.95) 0%, rgba(52, 73, 94, 0.95) 100%);
-    color: white;
-    padding: 30px;
-    border-radius: 15px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    border: 1px solid rgba(52, 152, 219, 0.3);
-    max-height: calc(100vh - 150px);
-    overflow-y: auto;
-}
+/* Remove custom stolen-cars-screen styling to use standard full-screen layout */
+/* #stolen-cars-screen will inherit from the main screen CSS rule above */
 
 #stolen-cars-content {
     max-height: calc(100vh - 220px);
@@ -2114,7 +2131,33 @@ html {
 }
 
 #menu {
-    margin-top: 110px;
+    margin-top: 60px; /* Reduced from 110px to give more space for buttons */
+}
+
+/* Desktop-specific menu adjustments */
+@media (min-width: 1024px) {
+    #menu {
+        margin-top: 40px; /* Even less margin on desktop */
+    }
+    
+    .menu-grid {
+        max-height: calc(100vh - 150px); /* More height available on desktop */
+        max-width: 1000px; /* Wider on desktop */
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); /* Slightly wider buttons */
+    }
+}
+
+/* For smaller desktop screens and laptops */
+@media (min-width: 768px) and (max-width: 1023px) {
+    #menu {
+        margin-top: 30px;
+        padding: 60px 200px 30px 220px; /* Adjusted padding for medium screens */
+    }
+    
+    .menu-grid {
+        max-height: calc(100vh - 120px);
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
 }
 
 /* Criminal Empire Rating System Styles */

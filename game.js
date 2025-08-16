@@ -11173,6 +11173,11 @@ function finishIntro() {
     // Update UI with the player's name and initial state
     updateUI();
     
+    // Connect to multiplayer now that the game is started and player name is set
+    if (typeof connectMultiplayerAfterGame === 'function') {
+        connectMultiplayerAfterGame();
+    }
+    
     // Log the beginning of the journey
     logAction(`🌆 ${player.name} steps into the shadows of the city. The streets whisper promises of power and wealth, but first... survival.`);
 }
@@ -14485,6 +14490,11 @@ function loadGameFromSlot(slotNumber) {
         logAction(`💾 Game loaded from slot ${slotNumber}: ${saveEntry.saveName}`);
         showBriefNotification(`✅ Loaded: ${saveEntry.saveName}`, 2000);
         
+        // Connect to multiplayer now that the game is loaded and player name is restored
+        if (typeof connectMultiplayerAfterGame === 'function') {
+            connectMultiplayerAfterGame();
+        }
+        
         return true;
     } catch (error) {
         console.error("Load failed:", error);
@@ -15933,6 +15943,7 @@ window.onload = function() {
 function startLoadingSequence() {
     const loadingText = document.getElementById('loading-text');
     const loadingProgress = document.getElementById('loading-progress');
+    const loadingPercentage = document.getElementById('loading-percentage');
     
     let progress = 0;
     const loadingSteps = [
@@ -15946,13 +15957,26 @@ function startLoadingSequence() {
     ];
     
     let currentStep = 0;
+    let loadingStartTime = Date.now();
+    
+    // Add timeout check for stuck loading
+    const maxLoadingTime = 10000; // 10 seconds max
+    setTimeout(() => {
+        if (currentStep < loadingSteps.length) {
+            console.warn('Loading appears to be stuck. Forcing completion...');
+            loadingText.textContent = "Loading took longer than expected, proceeding anyway...";
+            loadingPercentage.textContent = '100%';
+            setTimeout(completeLoading, 1000);
+        }
+    }, maxLoadingTime);
     
     function updateLoading() {
         if (currentStep < loadingSteps.length) {
             const step = loadingSteps[currentStep];
             loadingText.textContent = step.text;
-            progress = ((currentStep + 1) / loadingSteps.length) * 100;
+            progress = Math.round(((currentStep + 1) / loadingSteps.length) * 100);
             loadingProgress.style.width = progress + '%';
+            loadingPercentage.textContent = progress + '%';
             
             setTimeout(() => {
                 currentStep++;
@@ -15971,10 +15995,12 @@ function startLoadingSequence() {
 function completeLoading() {
     const loadingText = document.getElementById('loading-text');
     const loadingProgress = document.getElementById('loading-progress');
+    const loadingPercentage = document.getElementById('loading-percentage');
     
     // Final loading state
     loadingText.textContent = "Welcome to the underworld!";
     loadingProgress.style.width = '100%';
+    loadingPercentage.textContent = '100%';
     
     // Initialize game systems
     initGame();

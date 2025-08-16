@@ -55,10 +55,8 @@ let onlineWorldState = {
 function initializeOnlineWorld() {
     setupOnlineWorldUI();
     
-    // Auto-connect to online world when game loads
-    setTimeout(() => {
-        connectToOnlineWorld();
-    }, 2000);
+    // Don't auto-connect immediately - wait for game to be loaded or started
+    // The connection will be made when a game is loaded or started
     
     // Load saved player data
     if (typeof(Storage) !== "undefined") {
@@ -75,6 +73,14 @@ function initializeOnlineWorld() {
             syncPlayerState();
         }
     }, 5000); // Sync every 5 seconds
+}
+
+// Function to connect to multiplayer after game is loaded/started
+function connectMultiplayerAfterGame() {
+    console.log('Connecting to multiplayer after game is ready...');
+    if (!onlineWorldState.isConnected) {
+        connectToOnlineWorld();
+    }
 }
 
 // Connect to the online world
@@ -99,14 +105,17 @@ function connectToOnlineWorld() {
             onlineWorldState.playerId = generatePlayerId();
             
             // Don't prompt for name on connection - only when actually needed
-            // Use a default name for initial connection
-            const defaultName = player.name || 'Anonymous_' + Math.floor(Math.random() * 1000);
+            // Try to get saved name first, fallback to anonymous if none found
+            let playerName = ensurePlayerName();
+            if (!playerName) {
+                playerName = 'Anonymous_' + Math.floor(Math.random() * 1000);
+            }
             
             // Send initial player data to server
             const playerData = {
                 type: 'player_connect',
                 playerId: onlineWorldState.playerId,
-                playerName: defaultName, // Use existing name or default
+                playerName: playerName, // Use saved name or default
                 playerStats: {
                     money: player.money,
                     reputation: player.reputation,
@@ -455,8 +464,11 @@ function showSystemMessage(message, color = '#f39c12') {
 // Sync player state to server
 function syncPlayerState() {
     if (onlineWorldState.socket && onlineWorldState.socket.readyState === WebSocket.OPEN) {
-        // Use existing name or default for syncing (don't prompt)
-        const playerName = player.name || 'Anonymous_' + Math.floor(Math.random() * 1000);
+        // Ensure we have the saved player name before syncing
+        let playerName = ensurePlayerName();
+        if (!playerName) {
+            playerName = 'Anonymous_' + Math.floor(Math.random() * 1000);
+        }
         
         onlineWorldState.socket.send(JSON.stringify({
             type: 'player_update',
@@ -640,16 +652,25 @@ function ensurePlayerName() {
     if (!player.name || player.name.trim() === '') {
         // Try to get name from saved game data
         const savedData = localStorage.getItem('gameState');
+        
         if (savedData) {
             try {
                 const parsedData = JSON.parse(savedData);
-                if (parsedData.name && parsedData.name.trim() !== '') {
-                    player.name = parsedData.name.trim();
+                
+                // Check for name in player object (new format)
+                if (parsedData.player && parsedData.player.name && parsedData.player.name.trim() !== '') {
+                    player.name = parsedData.player.name.trim();
                     console.log('Retrieved player name from saved data:', player.name);
                     return player.name;
                 }
+                // Fallback to old format for backwards compatibility
+                if (parsedData.name && parsedData.name.trim() !== '') {
+                    player.name = parsedData.name.trim();
+                    console.log('Retrieved player name from saved data (legacy format):', player.name);
+                    return player.name;
+                }
             } catch (e) {
-                console.warn('Could not parse saved game data for name');
+                console.warn('Could not parse saved game data for name', e);
             }
         }
         
@@ -1828,6 +1849,7 @@ window.showGlobalChat = showGlobalChat;
 window.showOnlineWorld = showOnlineWorld;
 window.showMultiplayer = showMultiplayer;
 window.testGlobalFunctions = testGlobalFunctions; // Add debug function
+window.connectMultiplayerAfterGame = connectMultiplayerAfterGame; // Add connection function
 
 // Also make them available after a slight delay to ensure everything is loaded
 setTimeout(() => {
