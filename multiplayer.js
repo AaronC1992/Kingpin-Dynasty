@@ -3,7 +3,7 @@
 // Online world configuration
 const onlineWorld = {
     maxPlayersPerServer: 100,
-    serverUrl: 'wss://a6685efdc4b7.ngrok-free.app', // Updated ngrok tunnel for online testing
+    serverUrl: 'wss://c8da9398376a.ngrok-free.app', // Updated ngrok tunnel for online testing
     productionServerUrl: 'wss://your-server-domain.com', // Replace with your deployed server URL
     updateInterval: 3000, // 3 second update interval for world state
     reconnectInterval: 5000, // 5 seconds between reconnect attempts

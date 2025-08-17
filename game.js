@@ -11164,7 +11164,112 @@ function showIntroNarrative() {
 // Function to finish the intro and start the game proper
 function finishIntro() {
     document.getElementById("intro-narrative").style.display = "none";
-    document.getElementById("menu").style.display = "block";
+    
+    // Ask player if they want to do the tutorial
+    showTutorialPrompt();
+}
+
+// Function to show tutorial option prompt
+function showTutorialPrompt() {
+    const tutorialPromptHTML = `
+        <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); 
+                    display: flex; align-items: center; justify-content: center; z-index: 1000;">
+            <div style="max-width: 600px; width: 90%; background: linear-gradient(135deg, rgba(44, 62, 80, 0.98) 0%, rgba(52, 73, 94, 0.98) 100%); 
+                        padding: 40px; border-radius: 20px; border: 2px solid #e74c3c; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8); 
+                        text-align: center; color: white;">
+                <h2 style="color: #e74c3c; font-size: 2.5em; margin-bottom: 20px; text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);">
+                    🎓 Tutorial
+                </h2>
+                <p style="font-size: 1.3em; margin-bottom: 30px; line-height: 1.6;">
+                    Welcome to the criminal underworld, <strong style="color: #f39c12;">${player.name}</strong>!
+                </p>
+                <p style="font-size: 1.1em; margin-bottom: 30px; color: #ecf0f1;">
+                    Would you like to learn the ropes through an interactive tutorial, or are you ready to dive straight into the action?
+                </p>
+                <div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
+                    <button onclick="startTutorialFromIntro()" 
+                            style="background: #2ecc71; color: white; padding: 15px 30px; border: none; 
+                                   border-radius: 10px; font-size: 1.2em; font-weight: bold; cursor: pointer; 
+                                   transition: all 0.3s ease; min-width: 180px;">
+                        📚 Start Tutorial
+                    </button>
+                    <button onclick="skipTutorialAndStartGame()" 
+                            style="background: #e74c3c; color: white; padding: 15px 30px; border: none; 
+                                   border-radius: 10px; font-size: 1.2em; font-weight: bold; cursor: pointer; 
+                                   transition: all 0.3s ease; min-width: 180px;">
+                        🚀 Skip Tutorial
+                    </button>
+                </div>
+                <p style="font-size: 0.9em; margin-top: 20px; color: #95a5a6; font-style: italic;">
+                    Don't worry - you can always access the tutorial later from the main menu!
+                </p>
+            </div>
+        </div>
+    `;
+    
+    // Add to document
+    const tutorialPromptScreen = document.createElement('div');
+    tutorialPromptScreen.id = 'tutorial-prompt-screen';
+    tutorialPromptScreen.innerHTML = tutorialPromptHTML;
+    document.body.appendChild(tutorialPromptScreen);
+}
+
+// Function to start tutorial from intro
+function startTutorialFromIntro() {
+    // Remove tutorial prompt screen
+    const tutorialPromptScreen = document.getElementById('tutorial-prompt-screen');
+    if (tutorialPromptScreen) {
+        tutorialPromptScreen.remove();
+    }
+    
+    // Set flag that tutorial is not from menu (new game tutorial)
+    tutorialFromMenu = false;
+    
+    // Start the tutorial
+    startTutorial();
+}
+
+// Function to skip tutorial and start game
+function skipTutorialAndStartGame() {
+    // Remove tutorial prompt screen
+    const tutorialPromptScreen = document.getElementById('tutorial-prompt-screen');
+    if (tutorialPromptScreen) {
+        tutorialPromptScreen.remove();
+    }
+    
+    // Start the game directly
+    startGameAfterIntro();
+}
+
+// Function to start the game after intro (extracted from original finishIntro)
+function startGameAfterIntro() {
+    // Clean up any remaining character creation elements
+    const portraitScreen = document.getElementById('portrait-selection-screen');
+    if (portraitScreen) {
+        portraitScreen.remove();
+    }
+    
+    const tutorialPromptScreen = document.getElementById('tutorial-prompt-screen');
+    if (tutorialPromptScreen) {
+        tutorialPromptScreen.remove();
+    }
+    
+    // Clear any tutorial highlights that might affect positioning
+    clearTutorialHighlights();
+    
+    // Use the same screen cleanup as goBackToMainMenu for consistency
+    hideAllScreens();
+    
+    // Show the main menu with proper positioning
+    const menuElement = document.getElementById("menu");
+    menuElement.style.display = "block";
+    
+    // Ensure menu has correct CSS positioning (fix tutorial highlight side effects)
+    menuElement.style.position = "fixed";
+    menuElement.style.top = "0";
+    menuElement.style.left = "0";
+    menuElement.style.width = "100vw";
+    menuElement.style.height = "100vh";
     
     // Generate random prisoners for the first time
     generateJailPrisoners();
@@ -11742,7 +11847,7 @@ function clearTutorialHighlights() {
             screen.style.opacity = "1";
             screen.style.pointerEvents = "auto";
             screen.style.zIndex = "auto"; // Reset z-index
-            screen.style.position = "static"; // Reset position
+            // Don't change position for menu and other main screens - they need to stay fixed
         }
     });
 }
@@ -11890,7 +11995,14 @@ function completeTutorial() {
     document.getElementById("tutorial-screen").style.display = "none";
     clearTutorialHighlights(); // Clear any tutorial highlighting
     logAction("🎓 Tutorial completed. You're ready to make your mark on the criminal underworld. Stay sharp out there.");
-    startGame();
+    
+    // If tutorial was started from intro (new game), start the game proper
+    // If tutorial was from menu, we should return to main menu
+    if (tutorialFromMenu) {
+        completeTutorialFromMenu();
+    } else {
+        startGameAfterIntro();
+    }
 }
 
 // Function to show tutorial from main menu
