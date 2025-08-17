@@ -5960,9 +5960,11 @@ function applySkillTreeBonuses(job, successChance) {
         bonuses += player.skillTrees.stealth.surveillance * 4; // 4% per level
     }
     
-    if (jobName.includes('fight') || jobName.includes('rob') || jobName.includes('assault')) {
+    if (jobName.includes('fight') || jobName.includes('rob') || jobName.includes('assault') || 
+        jobName.includes('protection') || jobName.includes('extortion') || jobName.includes('heist')) {
         bonuses += player.skillTrees.violence.firearms * 6; // 6% per level
         bonuses += player.skillTrees.violence.melee * 4; // 4% per level
+        bonuses += player.skillTrees.violence.intimidation * 5; // 5% per level - NEW!
     }
     
     if (jobName.includes('negotiate') || jobName.includes('bribe')) {
@@ -5970,9 +5972,11 @@ function applySkillTreeBonuses(job, successChance) {
         bonuses += player.skillTrees.charisma.manipulation * 4; // 4% per level
     }
     
-    if (jobName.includes('hack') || jobName.includes('cyber')) {
+    if (jobName.includes('hack') || jobName.includes('cyber') || jobName.includes('heist') || 
+        jobName.includes('plan') || jobName.includes('intel')) {
         bonuses += player.skillTrees.intelligence.hacking * 7; // 7% per level
         bonuses += player.skillTrees.intelligence.planning * 4; // 4% per level
+        bonuses += player.skillTrees.intelligence.forensics * 3; // 3% per level - helps with clean execution
     }
     
     // Apply perk bonuses
@@ -6209,7 +6213,30 @@ function startJob(index) {
     }
 
     player.money += earnings;
-    player.wantedLevel += job.wantedLevelGain;
+    
+    // Apply intimidation to reduce wanted level gain (witnesses too scared to report)
+    let wantedLevelGain = job.wantedLevelGain;
+    let intimidationReduction = player.skillTrees.violence.intimidation * 0.1; // 10% reduction per level
+    wantedLevelGain = Math.max(1, Math.floor(wantedLevelGain * (1 - intimidationReduction)));
+    
+    player.wantedLevel += wantedLevelGain;
+    
+    // Log intimidation effect if it reduced wanted level
+    if (intimidationReduction > 0 && wantedLevelGain < job.wantedLevelGain) {
+        logAction(`😨 Your intimidating presence makes witnesses think twice about reporting the crime!`);
+    }
+    
+    // Apply forensics skill for evidence cleanup
+    if (player.skillTrees.intelligence.forensics > 0) {
+        let forensicsSuccess = Math.random() * 100;
+        let forensicsChance = player.skillTrees.intelligence.forensics * 8; // 8% chance per level
+        
+        if (forensicsSuccess < forensicsChance) {
+            let evidenceReduction = Math.min(2, Math.floor(player.skillTrees.intelligence.forensics / 3)); // 1-2 wanted level reduction
+            player.wantedLevel = Math.max(0, player.wantedLevel - evidenceReduction);
+            logAction(`🧹 Your forensics expertise helps you clean up evidence, reducing heat by ${evidenceReduction}!`);
+        }
+    }
     
     // Track statistics
     updateStatistic('jobsCompleted');
@@ -7076,10 +7103,13 @@ function showSkillTab(tabName) {
         tab.classList.remove('active-tab');
     });
     document.getElementById(`tab-${tabName}`).classList.add('active-tab');
-    
+
+    // Failsafe: always reset skill upgrade lock when showing skill tab
+    window.upgradingSkill = false;
+
     // Load tab content
     let content = '';
-    
+
     switch(tabName) {
         case 'basic':
             content = generateBasicSkillsContent();
@@ -7097,7 +7127,7 @@ function showSkillTab(tabName) {
             content = generatePerksContent();
             break;
     }
-    
+
     document.getElementById('skill-tab-content').innerHTML = content;
 }
 
@@ -7650,6 +7680,8 @@ function applyPerkEffects(perkId) {
 function upgradeSkill(skillName) {
     // Prevent rapid clicking
     if (window.upgradingSkill) {
+        // Failsafe: if stuck for more than 1 second, reset
+        setTimeout(() => { window.upgradingSkill = false; }, 1000);
         return;
     }
     
@@ -7675,6 +7707,10 @@ function upgradeSkill(skillName) {
         setTimeout(() => {
             window.upgradingSkill = false;
         }, 100);
+        // Extra failsafe: reset after 1 second in case of UI issues
+        setTimeout(() => {
+            window.upgradingSkill = false;
+        }, 1000);
     } else {
         alert(`You need ${cost} skill point${cost > 1 ? 's' : ''} to upgrade this skill!`);
     }
@@ -7944,6 +7980,7 @@ function gangWar() {
         let captureChance = 0.20;
         captureChance += player.skills.charisma * 0.02; // +2% per charisma level
         captureChance += player.skillTrees.charisma.leadership * 0.03; // +3% per leadership level
+        captureChance += player.skillTrees.violence.intimidation * 0.025; // +2.5% per intimidation level
         
         if (Math.random() < captureChance && player.mentors.length < 4) {
             const availableMentors = potentialMentors.filter(mentor => 
@@ -12749,6 +12786,15 @@ function regenerateEnergy() {
             player.energy = Math.min(player.energy + 1, player.maxEnergy);
             player.energyRegenTimer = 30; // Reset timer to 30 seconds
             logAction("💤 You catch your breath in the shadows. The adrenaline fades and your strength slowly returns. Time heals all wounds (+1 energy).");
+            
+            // Forensics skill: Advanced wanted level decay
+            if (player.wantedLevel > 0 && player.skillTrees.intelligence.forensics > 0) {
+                let forensicsDecayChance = player.skillTrees.intelligence.forensics * 3; // 3% chance per level
+                if (Math.random() * 100 < forensicsDecayChance) {
+                    player.wantedLevel = Math.max(0, player.wantedLevel - 1);
+                    logAction("🔬 Your forensics expertise helps eliminate evidence over time. Heat level decreased by 1!");
+                }
+            }
         }
         updateUI();
     }
