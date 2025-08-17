@@ -10940,9 +10940,169 @@ function checkLevelUp() {
         player.level++;
         player.experience -= requiredXP;
         player.skillPoints += 3; // Gain 3 skill points per level
-        alert(`Level Up! You are now level ${player.level}. You gained 3 skill points!`);
+        
+        // Show dramatic level up screen effects
+        showLevelUpEffects();
+        
         logAction(`🎉 The streets recognize your growing power! You've clawed your way up to level ${player.level}. Every scar tells a story, every skill hard-earned.`);
     }
+}
+
+// Function to show level up screen effects
+function showLevelUpEffects() {
+    // Create level up overlay
+    const levelUpOverlay = document.createElement('div');
+    levelUpOverlay.id = 'level-up-overlay';
+    levelUpOverlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: radial-gradient(circle, rgba(231, 76, 60, 0.9) 0%, rgba(0, 0, 0, 0.95) 70%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        animation: levelUpFadeIn 0.5s ease-out;
+    `;
+    
+    // Create level up content
+    levelUpOverlay.innerHTML = `
+        <div style="text-align: center; color: white;">
+            <div style="font-size: 6em; font-weight: bold; color: #f1c40f; text-shadow: 0 0 30px #f39c12; 
+                        animation: levelUpPulse 1s ease-in-out infinite alternate, levelUpGlow 2s ease-in-out infinite;">
+                LEVEL UP!
+            </div>
+            <div style="font-size: 3em; margin: 20px 0; color: #e74c3c; text-shadow: 0 0 20px #c0392b;">
+                Level ${player.level}
+            </div>
+            <div style="font-size: 1.5em; margin: 15px 0; color: #ecf0f1;">
+                🌟 +3 Skill Points Earned!
+            </div>
+            <div style="font-size: 1.2em; color: #95a5a6; margin-top: 30px;">
+                Your reputation in the underworld grows...
+            </div>
+            <button onclick="closeLevelUpOverlay()" 
+                    style="margin-top: 40px; padding: 15px 40px; font-size: 1.3em; 
+                           background: linear-gradient(45deg, #e74c3c, #c0392b); 
+                           color: white; border: none; border-radius: 10px; cursor: pointer;
+                           box-shadow: 0 5px 15px rgba(231, 76, 60, 0.5);
+                           transition: all 0.3s ease;">
+                Continue Your Rise 🚀
+            </button>
+        </div>
+    `;
+    
+    // Add CSS animations
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes levelUpFadeIn {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        
+        @keyframes levelUpPulse {
+            from { transform: scale(1); }
+            to { transform: scale(1.1); }
+        }
+        
+        @keyframes levelUpGlow {
+            0% { text-shadow: 0 0 30px #f39c12, 0 0 60px #f39c12; }
+            50% { text-shadow: 0 0 50px #f1c40f, 0 0 80px #f1c40f, 0 0 100px #f39c12; }
+            100% { text-shadow: 0 0 30px #f39c12, 0 0 60px #f39c12; }
+        }
+        
+        #level-up-overlay button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(231, 76, 60, 0.7);
+        }
+        
+        @keyframes screenShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        
+        .level-up-screen-shake {
+            animation: screenShake 0.5s ease-in-out 2;
+        }
+    `;
+    
+    document.head.appendChild(style);
+    document.body.appendChild(levelUpOverlay);
+    
+    // Add screen shake effect to the main content
+    const body = document.body;
+    body.classList.add('level-up-screen-shake');
+    
+    // Create floating particles effect
+    createLevelUpParticles();
+    
+    // Remove shake effect after animation
+    setTimeout(() => {
+        body.classList.remove('level-up-screen-shake');
+    }, 1000);
+}
+
+// Function to create floating particles for level up
+function createLevelUpParticles() {
+    for (let i = 0; i < 50; i++) {
+        setTimeout(() => {
+            const particle = document.createElement('div');
+            particle.style.cssText = `
+                position: fixed;
+                width: 6px;
+                height: 6px;
+                background: ${Math.random() > 0.5 ? '#f1c40f' : '#e74c3c'};
+                border-radius: 50%;
+                z-index: 9999;
+                pointer-events: none;
+                left: ${Math.random() * 100}vw;
+                top: 100vh;
+                animation: floatUp 3s ease-out forwards;
+                box-shadow: 0 0 10px currentColor;
+            `;
+            
+            // Add floating animation if not already added
+            if (!document.getElementById('particle-styles')) {
+                const particleStyle = document.createElement('style');
+                particleStyle.id = 'particle-styles';
+                particleStyle.textContent = `
+                    @keyframes floatUp {
+                        to {
+                            transform: translateY(-120vh) rotate(360deg);
+                            opacity: 0;
+                        }
+                    }
+                `;
+                document.head.appendChild(particleStyle);
+            }
+            
+            document.body.appendChild(particle);
+            
+            // Remove particle after animation
+            setTimeout(() => {
+                if (particle.parentNode) {
+                    particle.remove();
+                }
+            }, 3000);
+        }, i * 20); // Stagger particle creation
+    }
+}
+
+// Function to close level up overlay
+function closeLevelUpOverlay() {
+    const overlay = document.getElementById('level-up-overlay');
+    if (overlay) {
+        overlay.style.animation = 'levelUpFadeIn 0.3s ease-out reverse';
+        setTimeout(() => {
+            overlay.remove();
+        }, 300);
+    }
+    
+    // Show alert with level up info
+    alert(`Level Up! You are now level ${player.level}. You gained 3 skill points!`);
 }
 
 // Function to unlock achievements
