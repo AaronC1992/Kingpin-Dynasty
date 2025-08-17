@@ -6214,6 +6214,7 @@ function startJob(index) {
     // Track statistics
     updateStatistic('jobsCompleted');
     updateStatistic('totalMoneyEarned', earnings);
+    trackJobCompletion(job.name); // Track individual job completion for favorite crime
     
     // Advanced Skills System Integration
     trackJobPlaystyle(job, true);
@@ -13804,6 +13805,7 @@ function initializePlayerStatistics() {
         bestJobStreak: 0,
         currentJobStreak: 0,
         favoriteCrime: "None",
+        jobCounts: {}, // Track how many times each job/crime has been completed
         luckiestDay: "Never",
         busiestHour: 0
     };
@@ -14050,6 +14052,34 @@ function resetStatistics() {
         showStatistics(); // Refresh the display
         logAction("📊 Statistics reset successfully!");
     }
+}
+
+// Track individual job/crime completions
+function trackJobCompletion(jobName) {
+    if (!player.statistics) {
+        player.statistics = initializePlayerStatistics();
+    }
+    
+    // Initialize jobCounts if it doesn't exist (for older saves)
+    if (!player.statistics.jobCounts) {
+        player.statistics.jobCounts = {};
+    }
+    
+    // Increment the count for this specific job
+    player.statistics.jobCounts[jobName] = (player.statistics.jobCounts[jobName] || 0) + 1;
+    
+    // Update favorite crime by finding the most completed job
+    let maxCount = 0;
+    let favoriteCrime = "None";
+    
+    for (const [jobName, count] of Object.entries(player.statistics.jobCounts)) {
+        if (count > maxCount) {
+            maxCount = count;
+            favoriteCrime = jobName;
+        }
+    }
+    
+    player.statistics.favoriteCrime = favoriteCrime;
 }
 
 // Update statistics tracking functions
@@ -14910,6 +14940,11 @@ function initializeMissingData() {
     // Initialize statistics if missing
     if (!player.statistics) {
         player.statistics = initializePlayerStatistics();
+    }
+    
+    // Initialize jobCounts if missing (for older saves)
+    if (!player.statistics.jobCounts) {
+        player.statistics.jobCounts = {};
     }
     
     // Initialize empire rating if missing
