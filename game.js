@@ -11100,6 +11100,84 @@ function createLevelUpParticles() {
     }
 }
 
+// Function to show narrative overlay with callback
+function showNarrativeOverlay(title, message, buttonText = "Continue", callback = null) {
+    // Create narrative overlay
+    const narrativeOverlay = document.createElement('div');
+    narrativeOverlay.id = 'narrative-overlay';
+    narrativeOverlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: radial-gradient(circle, rgba(52, 73, 94, 0.95) 0%, rgba(0, 0, 0, 0.98) 70%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        animation: narrativeFadeIn 0.5s ease-out;
+    `;
+    
+    // Create narrative content
+    narrativeOverlay.innerHTML = `
+        <div style="text-align: center; color: white; max-width: 600px; padding: 40px;">
+            <div style="font-size: 3em; font-weight: bold; color: #f39c12; text-shadow: 0 0 20px #e67e22; margin-bottom: 30px;">
+                ${title}
+            </div>
+            <div style="font-size: 1.4em; color: #ecf0f1; line-height: 1.6; margin-bottom: 40px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
+                ${message}
+            </div>
+            <button onclick="closeNarrativeOverlay()" 
+                    style="padding: 15px 40px; font-size: 1.3em; 
+                           background: linear-gradient(45deg, #34495e, #2c3e50); 
+                           color: white; border: none; border-radius: 10px; cursor: pointer;
+                           box-shadow: 0 5px 15px rgba(52, 73, 94, 0.5);
+                           transition: all 0.3s ease;">
+                ${buttonText} ➤
+            </button>
+        </div>
+    `;
+    
+    // Add CSS animations
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes narrativeFadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        
+        #narrative-overlay button:hover {
+            background: linear-gradient(45deg, #2c3e50, #34495e);
+            transform: translateY(-2px);
+            box-shadow: 0 7px 20px rgba(52, 73, 94, 0.7);
+        }
+    `;
+    document.head.appendChild(style);
+    
+    // Store callback for later use
+    window.narrativeCallback = callback;
+    
+    document.body.appendChild(narrativeOverlay);
+}
+
+// Function to close narrative overlay
+function closeNarrativeOverlay() {
+    const overlay = document.getElementById('narrative-overlay');
+    if (overlay) {
+        overlay.style.animation = 'narrativeFadeIn 0.3s ease-out reverse';
+        setTimeout(() => {
+            overlay.remove();
+            // Execute callback if provided
+            if (window.narrativeCallback && typeof window.narrativeCallback === 'function') {
+                console.log('Executing narrative callback...');
+                window.narrativeCallback();
+                window.narrativeCallback = null;
+            }
+        }, 300);
+    }
+}
+
 // Function to close level up overlay
 function closeLevelUpOverlay() {
     const overlay = document.getElementById('level-up-overlay');
@@ -12305,12 +12383,21 @@ function resetWantedLevelCourtHouse() {
     const cost = player.wantedLevel * 500; // Cost based on wanted level
     if (player.money >= cost) {
         player.money -= cost;
-        sendToJail(player.wantedLevel); // Serve jail time based on wanted level
         player.wantedLevel = 0;
         updateUI();
-        alert("Your wanted level has been reset to 0. You need to serve jail time.");
-        logAction("⚖️ You walk into the courthouse with cash in hand. Justice may be blind, but it's not deaf to the sound of money. Time to pay your debt to society.");
-        goBackToMainMenu();
+        
+        // Show narrative message with callback to send to jail
+        showNarrativeOverlay(
+            "⚖️ Fine Paid Successfully! ⚖️",
+            "💰 You've successfully paid your fine to the court and your wanted level has been cleared.<br><br>🏛️ However, as part of your sentence, you must still serve jail time to pay your debt to society.<br><br>🚔 You'll be transferred to your cell immediately to begin serving your sentence.",
+            "Report to Jail",
+            function() {
+                // This callback executes after player clicks the button
+                console.log('Courthouse callback executing - sending to jail...');
+                sendToJail(1); // Serve a base jail time since fine was paid
+                logAction("⚖️ You walk into the courthouse with cash in hand. Justice may be blind, but it's not deaf to the sound of money. Fine paid, but time must still be served.");
+            }
+        );
     } else {
         alert("You don't have enough money to reset your wanted level.");
     }
@@ -13407,10 +13494,10 @@ document.addEventListener('keydown', function(event) {
     }
     
     // Cheat codes
-    if (event.key === '7') {
-        player.money += 50; // Reduced from 500 to fit new ultra-challenging economy
-        alert("Cheat activated: You received $50!");
-        logAction("Cheat activated: You received $50!");
+    if (event.key === '=') {
+        player.money += 100000;
+        alert("Cheat activated: You received $100,000!");
+        logAction("Cheat activated: You received $100,000!");
         updateUI();
     }
     if (event.key === '8') {
