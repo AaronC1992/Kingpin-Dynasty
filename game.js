@@ -482,7 +482,7 @@ const storyCampaigns = {
                     { type: "complete_jobs", target: 5, current: 0, text: "Complete 5 jobs" },
                     { type: "earn_money", target: 500, current: 0, text: "Earn $500" }
                 ],
-                rewards: { money: 500, experience: 100, reputation: 5 },
+                rewards: { money: 250, experience: 40, reputation: 5 },
                 nextChapter: 1
             },
             {
@@ -492,7 +492,7 @@ const storyCampaigns = {
                     { type: "recruit_members", target: 3, current: 0, text: "Recruit 3 gang members" },
                     { type: "complete_faction_mission", target: 1, current: 0, text: "Complete 1 faction mission" }
                 ],
-                rewards: { money: 2000, experience: 200, reputation: 10 },
+                rewards: { money: 900, experience: 80, reputation: 10 },
                 nextChapter: 2
             },
             {
@@ -502,7 +502,7 @@ const storyCampaigns = {
                     { type: "control_territory", target: 3, current: 0, text: "Control 3 territories" },
                     { type: "win_boss_battle", target: 1, current: 0, text: "Defeat a rival boss" }
                 ],
-                rewards: { money: 5000, experience: 500, reputation: 25 },
+                rewards: { money: 2000, experience: 180, reputation: 25 },
                 nextChapter: 3
             },
             {
@@ -512,7 +512,7 @@ const storyCampaigns = {
                     { type: "reach_reputation", target: 75, current: 0, text: "Reach 75 reputation" },
                     { type: "own_properties", target: 3, current: 0, text: "Own 3 properties" }
                 ],
-                rewards: { money: 10000, experience: 1000, reputation: 50 },
+                rewards: { money: 4000, experience: 350, reputation: 50 },
                 nextChapter: null // Final chapter
             }
         ]
@@ -4095,7 +4095,7 @@ function completeGangOperation(operationData) {
     // Update member stats
     member.experienceLevel = Math.min(10, member.experienceLevel + 0.1);
     member.loyalty = Math.min(100, member.loyalty + operation.rewards.loyalty);
-    player.experience += operation.rewards.experience;
+    player.experience += Math.floor(operation.rewards.experience * 0.7); // Reduce XP for operations
     
     // Remove from active operations
     player.gang.activeOperations = player.gang.activeOperations.filter(op => op !== operationData);
@@ -8241,8 +8241,8 @@ function breakoutPrisoner(prisonerIndex) {
     const success = Math.random() * 100 < successChance;
     
     if (success) {
-        const expReward = prisoner.difficulty * 15 + 10;
-        player.experience += expReward;
+    const expReward = prisoner.difficulty * 8 + 5;
+    player.experience += expReward;
         
         // Check for level up
         checkLevelUp();
@@ -10394,7 +10394,7 @@ function attemptJailbreak(prisonerIndex) {
     
     if (success) {
         // Successful jailbreak
-        player.experience += prisoner.expReward;
+    player.experience += Math.floor(prisoner.expReward * 0.6); // Reduce XP for jailbreaks
         player.money += prisoner.cashReward;
         player.reputation += Math.floor(prisoner.difficulty * 1.5);
         
@@ -10981,11 +10981,12 @@ function gainExperience(amount) {
 
 // Function to check for level up
 function checkLevelUp() {
-    let requiredXP = player.level * 100;
+    // More gradual XP curve: quadratic scaling
+    let requiredXP = Math.floor(player.level * 150 + Math.pow(player.level, 2) * 10);
     if (player.experience >= requiredXP) {
         player.level++;
         player.experience -= requiredXP;
-        player.skillPoints += 3; // Gain 3 skill points per level
+    player.skillPoints += 2; // Gain 2 skill points per level (slower progression)
         
         // Show dramatic level up screen effects
         showLevelUpEffects();
@@ -13539,23 +13540,20 @@ document.addEventListener('keydown', function(event) {
         return; // Don't process other keys during tutorial
     }
     
-    // Cheat codes
+    // Cheats: '=' for $100,000, '-' for 10 level ups
     if (event.key === '=') {
         player.money += 100000;
-        alert("Cheat activated: You received $100,000!");
-        logAction("Cheat activated: You received $100,000!");
+        alert("Cheat: You received $100,000!");
+        logAction("Cheat: You received $100,000!");
         updateUI();
     }
-    if (event.key === '8') {
-        player.skillPoints += 5;
-        alert("Cheat activated: You received 5 skill points!");
-        logAction("Cheat activated: You received 5 skill points!");
-        updateUI();
-    }
-    if (event.key === '9') {
-        gainExperience(1000);
-        alert("Cheat activated: You received 1000 experience!");
-        logAction("Cheat activated: You received 1000 experience!");
+    if (event.key === '-') {
+        for (let i = 0; i < 10; i++) {
+            player.experience += Math.floor(player.level * 150 + Math.pow(player.level, 2) * 10);
+            checkLevelUp();
+        }
+        alert("Cheat: You gained 10 level ups!");
+        logAction("Cheat: You gained 10 level ups!");
         updateUI();
     }
     
