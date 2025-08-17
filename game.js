@@ -838,9 +838,8 @@ const storeItems = [
     { name: "Bulletproof Vest", price: 1000, power: 40, type: "armor" },
     { name: "Tommy Gun", price: 1500, power: 100, type: "gun" },
     { name: "Luxury Automobile", price: 4000, power: 50, type: "car" },
-    { name: "Private Airplane", price: 15000, power: 200, type: "vehicle" },
-    // Business items
-    { name: "Illegal Distillery", price: 25000, power: 0, type: "business", income: 200 }
+    { name: "Private Airplane", price: 15000, power: 200, type: "vehicle" }
+    // Business items section removed - use the Business Empire system instead
 ];
 
 // Real Estate Properties
