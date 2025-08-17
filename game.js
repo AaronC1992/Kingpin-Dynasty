@@ -6829,6 +6829,10 @@ function sendToJail(wantedLevelLoss) {
     
     player.reputation = Math.max(0, player.reputation - 1); // Lose 1 reputation point, but not below 0
     player.breakoutAttempts = 3; // Reset breakout attempts
+    
+    // Update statistics
+    updateStatistic('timesArrested', 1);
+    
     generateJailPrisoners(); // Generate random prisoners in jail
     updateUI(); // Update UI
     updateJailUI(); // Ensure jail-specific UI elements are synced
@@ -6862,6 +6866,10 @@ function attemptBreakout() {
         player.inJail = false;
         player.jailTime = 0;
         player.breakoutAttempts = 3; // Reset breakout attempts
+        
+        // Update statistics
+        updateStatistic('timesEscaped', 1);
+        
         updateUI();
         alert(`${getRandomNarration('jailBreakouts')}`);
         logAction(getRandomNarration('jailBreakouts'));
@@ -14056,6 +14064,10 @@ function updateStatistic(stat, value = 1) {
         // Update derived statistics
         if (stat === 'timesArrested') {
             player.statistics.highestWantedLevel = Math.max(player.statistics.highestWantedLevel, player.wantedLevel);
+            // Update longest jail time if current jail time is longer
+            if (player.jailTime > player.statistics.longestJailTime) {
+                player.statistics.longestJailTime = player.jailTime;
+            }
         }
         
         if (stat === 'jobsCompleted') {
