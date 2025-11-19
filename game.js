@@ -5730,6 +5730,21 @@ function updateRightPanel() {
             document.getElementById("energy-timer").innerText = "Paused";
         }
     }
+
+    // Update quick buy labels for energy options
+    const energyDrink = storeItems.find(item => item.name === "Energy Drink");
+    const strongCoffee = storeItems.find(item => item.name === "Strong Coffee");
+    const steroids = storeItems.find(item => item.name === "Steroids");
+
+    if (document.getElementById('quick-buy-energydrink') && energyDrink) {
+        document.getElementById('quick-buy-energydrink').innerText = `${energyDrink.name} ($${energyDrink.price.toLocaleString()})`;
+    }
+    if (document.getElementById('quick-buy-coffee') && strongCoffee) {
+        document.getElementById('quick-buy-coffee').innerText = `${strongCoffee.name} ($${strongCoffee.price.toLocaleString()})`;
+    }
+    if (document.getElementById('quick-buy-steroids') && steroids) {
+        document.getElementById('quick-buy-steroids').innerText = `${steroids.name} ($${steroids.price.toLocaleString()})`;
+    }
     
     // Update jail status
     if (document.getElementById("jail-status")) {
@@ -5778,6 +5793,35 @@ function buyCoffee() {
         alert(`Bought Strong Coffee! Restored ${energyGained} energy.\n\nNew Energy: ${player.energy}/${player.maxEnergy}`);
         logAction("☕ Hot coffee burns your throat as you down it in one gulp. The warmth spreads through your chest, pushing back the exhaustion (+15 energy).");
         updateUI(); // This will now refresh the jobs screen if it's visible
+    } else {
+        alert("You don't have enough money!");
+    }
+}
+
+function buySteroids() {
+    const steroid = storeItems.find(item => item.name === "Steroids");
+    if (!steroid) {
+        alert("Steroids are not available right now.");
+        return;
+    }
+
+    if (player.money >= steroid.price) {
+        const energyBefore = player.energy;
+        player.money -= steroid.price;
+        player.energy = Math.min(player.maxEnergy, player.energy + (steroid.energyRestore || 60));
+        // Steroids are risky — small health cost and suspicion bump
+        player.health = Math.max(0, player.health - 5);
+        player.suspicionLevel = Math.min(100, player.suspicionLevel + 5);
+
+        const energyGained = player.energy - energyBefore;
+        alert(`Bought Steroids! Restored ${energyGained} energy but it's risky.
+\nNew Energy: ${player.energy}/${player.maxEnergy}`);
+        logAction(`Steroids used for a quick boost. ${getRandomNarration('healthLoss')}`);
+
+        if (player.health <= 0) {
+            showDeathScreen();
+        }
+        updateUI();
     } else {
         alert("You don't have enough money!");
     }
