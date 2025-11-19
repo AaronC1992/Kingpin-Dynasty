@@ -5924,10 +5924,23 @@ function showJobs() {
 }
 
 // Function to log actions
+// Remove emojis from UI strings
+function stripEmoji(str) {
+    if (!str) return str;
+    try {
+        return str
+            .replace(/\p{Extended_Pictographic}/gu, '')
+            .replace(/\uFE0F/gu, '')
+            .replace(/[\u2600-\u27BF]/g, '');
+    } catch (e) {
+        return str.replace(/[\u{1F300}-\u{1FAFF}\u{1F1E6}-\u{1F1FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{27BF}]/gu, '');
+    }
+}
+
 function logAction(message) {
     const logList = document.getElementById("log-list");
     const logItem = document.createElement("li");
-    logItem.innerText = message;
+    logItem.innerText = stripEmoji(message);
     logList.appendChild(logItem);
     logItem.scrollIntoView({ behavior: "smooth" }); // Scroll to the new log item
     

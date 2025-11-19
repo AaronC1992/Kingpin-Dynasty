@@ -34,11 +34,11 @@ class ModalSystem {
             
             const header = document.createElement('div');
             header.className = 'modal-header';
-            header.innerHTML = `<h3 class="modal-title">${title}</h3>`;
+            header.innerHTML = `<h3 class="modal-title">${this.stripEmoji(title)}</h3>`;
             
             const body = document.createElement('div');
             body.className = 'modal-body';
-            body.innerHTML = message;
+            body.innerHTML = this.stripEmoji(message);
             
             let inputElement = null;
             if (hasInput) {
@@ -116,6 +116,21 @@ class ModalSystem {
         });
     }
 
+    // Remove emoji and pictographic symbols for a cleaner, image-only UI
+    stripEmoji(str) {
+        if (!str) return str;
+        try {
+            // Remove emoji and variation selectors
+            return str
+                .replace(/\p{Extended_Pictographic}/gu, '')
+                .replace(/\uFE0F/gu, '')
+                .replace(/[\u2600-\u27BF]/g, '');
+        } catch (e) {
+            // Fallback for environments without Unicode property escapes
+            return str.replace(/[\u{1F300}-\u{1FAFF}\u{1F1E6}-\u{1F1FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{27BF}]/gu, '');
+        }
+    }
+
     close(overlay) {
         overlay.style.opacity = '0';
         setTimeout(() => {
@@ -181,14 +196,10 @@ class ModalSystem {
         const toast = document.createElement('div');
         toast.className = `toast ${type}`;
         
-        let icon = '📰';
-        if (type === 'success') icon = '🥂';
-        if (type === 'error') icon = '💀';
-        if (type === 'warning') icon = '🔫';
+        let icon = '';
         
         toast.innerHTML = `
-            <span class="toast-icon">${icon}</span>
-            <span class="toast-message">${message}</span>
+            <span class="toast-message">${this.stripEmoji(message)}</span>
         `;
         
         this.toastContainer.appendChild(toast);
