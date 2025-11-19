@@ -5709,28 +5709,7 @@ function refreshJobsList() {
 
 // Function to update the right panel
 function updateRightPanel() {
-    // Update quick stats
-    if (document.getElementById("quick-money")) {
-        document.getElementById("quick-money").innerText = `$${player.money.toLocaleString()}`;
-    }
-    if (document.getElementById("quick-dirty-money")) {
-        document.getElementById("quick-dirty-money").innerText = `$${player.dirtyMoney.toLocaleString()}`;
-    }
-    if (document.getElementById("quick-health")) {
-        document.getElementById("quick-health").innerText = player.health;
-    }
-    if (document.getElementById("quick-energy")) {
-        document.getElementById("quick-energy").innerText = player.energy;
-    }
-    if (document.getElementById("quick-level")) {
-        document.getElementById("quick-level").innerText = player.level;
-    }
-    if (document.getElementById("quick-reputation")) {
-        document.getElementById("quick-reputation").innerText = Math.floor(player.reputation);
-    }
-    if (document.getElementById("quick-suspicion")) {
-        document.getElementById("quick-suspicion").innerText = `${player.suspicionLevel}%`;
-    }
+    // Quick stats removed; guard retained for future restore
     
     // Update energy bar
     if (document.getElementById("energy-fill")) {
