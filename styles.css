@@ -370,8 +370,8 @@ button:disabled {
 .page-header {
     position: fixed;
     top: 70px;
-    left: 200px;
-    right: 180px;
+    left: 290px; /* Align with left sidebar (action log) */
+    right: 260px; /* Align with right quick actions panel */
     background: linear-gradient(to bottom, #1a1a1a 0%, #0a0a0a 100%);
     border-bottom: 3px solid #d4af37;
     padding: 15px 30px;
