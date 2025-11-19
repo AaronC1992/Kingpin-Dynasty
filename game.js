@@ -220,7 +220,7 @@ const narrationVariations = {
         "💀 The job went south, kid. You walk away with nothing but your life. The Family doesn't forgive easily.",
         "💀 A disaster. The Feds swarmed the joint. The Don will have words with you.",
         "💀 Amateur hour! You fumbled like a street punk. In this Family, you earn respect or you disappear.",
-        "💀 The plan fell apart. In this life, mistakes can be fatal. Omertà means silence, but failure means exile.",
+        "💀 The plan fell apart. In this life, mistakes can be fatal. Keep your mouth shut or face exile.",
         "💀 Luck wasn't with you. You leave empty-handed, swearing on your mother's grave to do better for the Family next time.",
         "💀 A mess from start to finish. You're lucky you're not sleeping with the fishes tonight."
     ],
@@ -239,7 +239,7 @@ const narrationVariations = {
         "🔒 Caught by the Feds. You know the drill - say nothing, admit nothing. The Family will look after you... eventually.",
         "🔒 A temporary setback. You're in the joint now, surrounded by rats and snitches. Keep your head down and your eyes open.",
         "🔒 The judge threw the book at you. Now you're just another number in the system. Don't let them break you.",
-        "🔒 Handcuffs and a cold cell. The price of doing business. Remember the Omertà - silence is golden.",
+        "🔒 Handcuffs and a cold cell. The price of doing business. Remember the code - silence is golden.",
         "🔒 The law won this round. You're behind bars, but your mind is still on the streets. Bide your time."
     ],
     
