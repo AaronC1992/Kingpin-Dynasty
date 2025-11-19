@@ -166,41 +166,41 @@ const player = {
 // Job options with risk categories, jail chances, wanted level gains, health loss, required items, and reputation requirements
 const jobs = [
     // Entry Level Job
-    { name: "Street Soldier", payout: [1000, 15000], risk: "low", jailChance: 5, wantedLevelGain: 1, healthLoss: 0, requiredItems: [], reputation: 0, energyCost: 1 },
+    { name: "Street Soldier", payout: [1000, 5000], risk: "low", jailChance: 5, wantedLevelGain: 1, healthLoss: 0, requiredItems: [], reputation: 0, energyCost: 1 },
     
     // Car Stealing Job (Special mechanic)
     { name: "Boost a Ride", payout: [0, 0], risk: "medium", jailChance: 40, wantedLevelGain: 3, healthLoss: 5, requiredItems: [], reputation: 0, special: "car_theft", energyCost: 5 },
     
     // Higher Risk Job
-    { name: "Store Heist", payout: [50000, 100000], risk: "high", jailChance: 30, wantedLevelGain: 4, healthLoss: 10, requiredItems: [], reputation: 10, energyCost: 10 },
+    { name: "Store Heist", payout: [20000, 40000], risk: "high", jailChance: 30, wantedLevelGain: 4, healthLoss: 10, requiredItems: [], reputation: 10, energyCost: 10 },
     
     // NEW LATE-GAME JOBS
     
     // Drug dealing jobs
-    { name: "Bootleg Run", payout: [200000, 400000], risk: "high", jailChance: 25, wantedLevelGain: 3, healthLoss: 5, requiredItems: ["Crate Moonshine"], reputation: 15, energyCost: 12 },
-    { name: "Speakeasy Supply", payout: [400000, 800000], risk: "very high", jailChance: 35, wantedLevelGain: 5, healthLoss: 8, requiredItems: ["Bag of Mary Jane"], reputation: 25, energyCost: 15 },
-    { name: "White Powder Distribution", payout: [800000, 1500000], risk: "extreme", jailChance: 45, wantedLevelGain: 8, healthLoss: 15, requiredItems: ["Pure Cocaine"], reputation: 40, energyCost: 20 },
+    { name: "Bootleg Run", payout: [40000, 80000], risk: "high", jailChance: 25, wantedLevelGain: 3, healthLoss: 5, requiredItems: ["Crate Moonshine"], reputation: 15, energyCost: 12 },
+    { name: "Speakeasy Supply", payout: [80000, 160000], risk: "very high", jailChance: 35, wantedLevelGain: 5, healthLoss: 8, requiredItems: ["Bag of Mary Jane"], reputation: 25, energyCost: 15 },
+    { name: "White Powder Distribution", payout: [160000, 300000], risk: "extreme", jailChance: 45, wantedLevelGain: 8, healthLoss: 15, requiredItems: ["Pure Cocaine"], reputation: 40, energyCost: 20 },
     
     // Weapon-based jobs
-    { name: "Protection Collection", payout: [100000, 250000], risk: "medium", jailChance: 20, wantedLevelGain: 3, healthLoss: 8, requiredItems: ["Brass Knuckles"], reputation: 12, energyCost: 8 },
-    { name: "Bank Job", payout: [500000, 1200000], risk: "extreme", jailChance: 50, wantedLevelGain: 10, healthLoss: 20, requiredItems: ["Tommy Gun", "Bullets"], reputation: 35, energyCost: 25 },
-    { name: "Hit on a Rival", payout: [300000, 600000], risk: "very high", jailChance: 40, wantedLevelGain: 6, healthLoss: 25, requiredItems: ["Pistol", "Bullets"], reputation: 30, energyCost: 18 },
+    { name: "Protection Collection", payout: [10000, 25000], risk: "medium", jailChance: 20, wantedLevelGain: 3, healthLoss: 8, requiredItems: ["Brass Knuckles"], reputation: 12, energyCost: 8 },
+    { name: "Bank Job", payout: [100000, 250000], risk: "extreme", jailChance: 50, wantedLevelGain: 10, healthLoss: 20, requiredItems: ["Tommy Gun", "Bullets"], reputation: 35, energyCost: 25 },
+    { name: "Hit on a Rival", payout: [60000, 120000], risk: "very high", jailChance: 40, wantedLevelGain: 6, healthLoss: 25, requiredItems: ["Pistol", "Bullets"], reputation: 30, energyCost: 18 },
     
     // High-tech/Vehicle jobs
-    { name: "Luxury Car Ring", payout: [400000, 800000], risk: "high", jailChance: 30, wantedLevelGain: 4, healthLoss: 5, requiredItems: ["Luxury Automobile"], reputation: 20, energyCost: 15 },
-    { name: "Cross-Border Smuggling", payout: [1000000, 2000000], risk: "extreme", jailChance: 35, wantedLevelGain: 7, healthLoss: 10, requiredItems: ["Private Airplane", "Gasoline"], reputation: 50, energyCost: 30 },
+    { name: "Luxury Car Ring", payout: [80000, 160000], risk: "high", jailChance: 30, wantedLevelGain: 4, healthLoss: 5, requiredItems: ["Luxury Automobile"], reputation: 20, energyCost: 15 },
+    { name: "Cross-Border Smuggling", payout: [200000, 400000], risk: "extreme", jailChance: 35, wantedLevelGain: 7, healthLoss: 10, requiredItems: ["Private Airplane", "Gasoline"], reputation: 50, energyCost: 30 },
     
     // Gang-based jobs
-    { name: "Turf War", payout: [200000, 500000], risk: "very high", jailChance: 45, wantedLevelGain: 5, healthLoss: 30, requiredItems: ["Gang Recruit"], reputation: 25, energyCost: 20 },
-    { name: "Underground Boxing", payout: [150000, 350000], risk: "high", jailChance: 25, wantedLevelGain: 2, healthLoss: 40, requiredItems: ["Brass Knuckles"], reputation: 18, energyCost: 12 },
+    { name: "Turf War", payout: [40000, 100000], risk: "very high", jailChance: 45, wantedLevelGain: 5, healthLoss: 30, requiredItems: ["Gang Recruit"], reputation: 25, energyCost: 20 },
+    { name: "Underground Boxing", payout: [30000, 70000], risk: "high", jailChance: 25, wantedLevelGain: 2, healthLoss: 40, requiredItems: ["Brass Knuckles"], reputation: 18, energyCost: 12 },
     
     // Property-based jobs
-    { name: "Illegal Gambling Den", payout: [600000, 1200000], risk: "very high", jailChance: 30, wantedLevelGain: 4, healthLoss: 5, requiredItems: ["Criminal Safehouse"], reputation: 35, energyCost: 22 },
-    { name: "Money Laundering", payout: [800000, 1500000], risk: "high", jailChance: 20, wantedLevelGain: 3, healthLoss: 0, requiredItems: ["Basement Hideout", "Luxury Automobile"], reputation: 45, energyCost: 25 },
+    { name: "Illegal Gambling Den", payout: [120000, 240000], risk: "very high", jailChance: 30, wantedLevelGain: 4, healthLoss: 5, requiredItems: ["Criminal Safehouse"], reputation: 35, energyCost: 22 },
+    { name: "Money Laundering", payout: [1600, 3000], risk: "high", jailChance: 20, wantedLevelGain: 3, healthLoss: 0, requiredItems: ["Basement Hideout", "Luxury Automobile"], reputation: 45, energyCost: 25 },
     
     // Elite endgame jobs
-    { name: "International Arms Trade", payout: [1500000, 3000000], risk: "legendary", jailChance: 60, wantedLevelGain: 12, healthLoss: 10, requiredItems: ["Private Airplane", "Tommy Gun", "Bulletproof Vest"], reputation: 60, energyCost: 35 },
-    { name: "Take Over the City", payout: [2000000, 4000000], risk: "legendary", jailChance: 70, wantedLevelGain: 15, healthLoss: 20, requiredItems: ["Gang Recruit", "Underground Bunker", "Tommy Gun", "Luxury Automobile"], reputation: 80, energyCost: 40 }
+    { name: "International Arms Trade", payout: [3000, 6000], risk: "legendary", jailChance: 60, wantedLevelGain: 12, healthLoss: 10, requiredItems: ["Private Airplane", "Tommy Gun", "Bulletproof Vest"], reputation: 60, energyCost: 35 },
+    { name: "Take Over the City", payout: [4000, 8000], risk: "legendary", jailChance: 70, wantedLevelGain: 15, healthLoss: 20, requiredItems: ["Gang Recruit", "Underground Bunker", "Tommy Gun", "Luxury Automobile"], reputation: 80, energyCost: 40 }
 ];
 
 // Stolen car types with base values and damage probabilities
@@ -217,18 +217,18 @@ const stolenCarTypes = [
 // Varied narration responses for immersion
 const narrationVariations = {
     jobFailure: [
-        "💀 The hit went south. You walk away with nothing but your life, and even that was a close call. The Family doesn't tolerate failure.",
-        "💀 A complete disaster. You barely made it out before the Feds swarmed the place. The Don won't be pleased.",
-        "💀 Amateur hour! You fumbled the job like a common street thug. You need to be smarter if you want to survive in this Family.",
-        "💀 The plan fell apart. You retreat into the shadows, learning the hard lesson that in our thing, mistakes can be fatal.",
-        "💀 Luck wasn't with you. You leave empty-handed, swearing on your mother's grave to do better next time.",
-        "💀 A mess from start to finish. You're lucky you're not sleeping with the fishes right now."
+        "💀 The job went south, kid. You walk away with nothing but your life. The Family doesn't forgive easily.",
+        "💀 A disaster. The Feds swarmed the joint. The Don will have words with you.",
+        "💀 Amateur hour! You fumbled like a street punk. In this Family, you earn respect or you disappear.",
+        "💀 The plan fell apart. In this life, mistakes can be fatal. Omertà means silence, but failure means exile.",
+        "💀 Luck wasn't with you. You leave empty-handed, swearing on your mother's grave to do better for the Family next time.",
+        "💀 A mess from start to finish. You're lucky you're not sleeping with the fishes tonight."
     ],
     
     jobSuccess: [
-        "💰 The job is done. You slip away with the cash, smooth and professional. That's how business is handled.",
-        "💰 Another score for the Family. You handled it with respect and precision. The Don will hear of this.",
-        "💰 Clean work. No witnesses, no heat. Just the way we like it. Your standing in the Family grows.",
+        "💰 The job's done. You slip away with the cash, smooth and professional. That's how a Consigliere would handle it.",
+        "💰 Another score for the Family. You showed respect and precision. The Don will hear of your loyalty.",
+        "💰 Clean work. No witnesses, no heat. The Family's respect for you grows.",
         "💰 A professional hit. You executed the plan flawlessly. This is what separates a Made Man from a nobody.",
         "💰 Perfect execution. The money is in hand, and the message has been sent. A good day for business.",
         "💰 Textbook work. You handled the situation like a true professional. Time to enjoy the spoils."
@@ -298,7 +298,7 @@ const narrationVariations = {
     ],
     
     territoryExpansionSuccess: [
-        "🏘️ Territory secured. The Family's influence grows. This neighborhood belongs to us now.",
+        "🏘️ Territory secured. The Family's shadow stretches further. This neighborhood now pays tribute to the Don. ",
         "🏘️ Expansion complete! You claim another piece of the city as your own. The neighborhood knows who's in charge now.",
         "🏘️ Turf war victory! Your gang plants its flag in new territory. Respect and revenue follow conquest.",
         "🏘️ Street domination! You extend your reach across another block. This city is slowly becoming yours.",
@@ -317,7 +317,7 @@ const narrationVariations = {
     
     recruitmentSuccess: [
         "🤝 New blood joins the crew! Fresh talent means fresh opportunities in the criminal underworld.",
-        "🤝 Welcome to the family! Another soldier joins your ranks, ready to earn their keep on the streets.",
+        "🤝 Welcome to the Family! Another soldier joins your ranks, ready to earn respect and serve the Don. ",
         "🤝 Recruitment successful! Your gang grows stronger with each new member willing to walk the criminal path.",
         "🤝 Street partnership formed! New talent brings new skills to your organization. The crew expands.",
         "🤝 Another ally secured! Your criminal network grows as ambitious newcomers join the cause.",
@@ -822,25 +822,40 @@ const missionProgress = {
 
 // Store items
 const storeItems = [
-    { name: "Brass Knuckles", price: 75, power: 10, type: "weapon" },
-    { name: "Pistol", price: 300, power: 50, type: "gun" },
-    { name: "Leather Jacket", price: 150, power: 15, type: "armor" },
-    { name: "Armored Car", price: 1200, power: 25, type: "car" },
-    { name: "Bullets", price: 25, power: 0, type: "ammo" },
-    { name: "Gasoline", price: 40, power: 0, type: "gas" },
-    { name: "Energy Drink", price: 15, power: 0, type: "energy", energyRestore: 30 },
-    { name: "Strong Coffee", price: 8, power: 0, type: "energy", energyRestore: 15 },
-    { name: "Steroids", price: 50, power: 0, type: "energy", energyRestore: 60 },
-    { name: "Crate Moonshine", price: 600, power: 0, type: "highLevelDrug", maxPayout: 1000 },
-    { name: "Bag of Mary Jane", price: 1200, power: 0, type: "highLevelDrug", maxPayout: 2000 },
-    { name: "Pure Cocaine", price: 2000, power: 0, type: "highLevelDrug", maxPayout: 3500 },
+    { name: "Brass Knuckles", price: 7500, power: 10, type: "weapon" },
+    { name: "Pistol", price: 30000, power: 50, type: "gun" },
+    { name: "Leather Jacket", price: 15000, power: 15, type: "armor" },
+    { name: "Armored Car", price: 120000, power: 25, type: "car" },
+    { name: "Bullets", price: 2500, power: 0, type: "ammo" },
+    { name: "Gasoline", price: 4000, power: 0, type: "gas" },
+    { name: "Energy Drink", price: 1500, power: 0, type: "energy", energyRestore: 30 },
+    { name: "Strong Coffee", price: 800, power: 0, type: "energy", energyRestore: 15 },
+    { name: "Steroids", price: 5000, power: 0, type: "energy", energyRestore: 60 },
+    { name: "Crate Moonshine", price: 60000, power: 0, type: "highLevelDrug", maxPayout: 100000 },
+    { name: "Bag of Mary Jane", price: 120000, power: 0, type: "highLevelDrug", maxPayout: 200000 },
+    { name: "Pure Cocaine", price: 200000, power: 0, type: "highLevelDrug", maxPayout: 350000 },
     // High-end items
-    { name: "Bulletproof Vest", price: 1000, power: 40, type: "armor" },
-    { name: "Tommy Gun", price: 1500, power: 100, type: "gun" },
-    { name: "Luxury Automobile", price: 4000, power: 50, type: "car" },
-    { name: "Private Airplane", price: 15000, power: 200, type: "vehicle" }
+    { name: "Bulletproof Vest", price: 100000, power: 40, type: "armor" },
+    { name: "Tommy Gun", price: 150000, power: 100, type: "gun" },
+    { name: "Luxury Automobile", price: 400000, power: 50, type: "car" },
+    { name: "Private Airplane", price: 1500000, power: 200, type: "vehicle" }
     // Business items section removed - use the Business Empire system instead
 ];
+
+// Utility to get item image or fallback
+function getItemImage(itemName) {
+    const item = storeItems.find(i => i.name === itemName);
+    if (item && item.image) {
+        return item.image;
+    }
+    // Car images
+    const car = typeof stolenCarTypes !== 'undefined' ? stolenCarTypes.find(c => c.name === itemName) : null;
+    if (car && car.image) {
+        return car.image;
+    }
+    // Fallback
+    return "missing-item.png";
+}
 
 // Real Estate Properties
 const realEstateProperties = [
@@ -10873,7 +10888,7 @@ function showStore() {
 }
 
 // Function to buy an item
-function buyItem(index) {
+async function buyItem(index) {
     let item = storeItems[index];
     
     // Apply charisma discount
@@ -12717,7 +12732,7 @@ function gangRecruitment() {
 }
 
 // Function to hire a random recruit from the action log
-function hireRandomRecruit(buttonId) {
+async function hireRandomRecruit(buttonId) {
     if (!activeRecruitment) {
         alert("This recruitment opportunity has expired.");
         return;
@@ -12764,6 +12779,11 @@ function hireRandomRecruit(buttonId) {
     if (buttonElement) {
         buttonElement.disabled = true;
         buttonElement.style.background = '#2ecc71';
+        let imageSrc = getItemImage(item.name);
+        let imageTag = `<img src='${imageSrc}' alt='${item.name}' style='max-width:120px;max-height:80px;border-radius:6px;margin-bottom:10px;' onerror=\"this.src='missing-item.png'\">`;
+        await ui.show("Purchase Successful", `${imageTag}<br>You bought a <b>${item.name}</b> for $${finalPrice.toLocaleString()}.`, [
+            { text: "Close", class: "modal-btn-primary" }
+        ]);
         buttonElement.style.cursor = 'not-allowed';
         buttonElement.textContent = '✓ HIRED';
     }
