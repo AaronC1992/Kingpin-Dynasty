@@ -5737,13 +5737,13 @@ function updateRightPanel() {
     const steroids = storeItems.find(item => item.name === "Steroids");
 
     if (document.getElementById('quick-buy-energydrink') && energyDrink) {
-        document.getElementById('quick-buy-energydrink').innerText = `${energyDrink.name} ($${energyDrink.price.toLocaleString()})`;
+        document.getElementById('quick-buy-energydrink').innerText = `${energyDrink.name} ($${formatShortMoney(energyDrink.price)})`;
     }
     if (document.getElementById('quick-buy-coffee') && strongCoffee) {
-        document.getElementById('quick-buy-coffee').innerText = `${strongCoffee.name} ($${strongCoffee.price.toLocaleString()})`;
+        document.getElementById('quick-buy-coffee').innerText = `${strongCoffee.name} ($${formatShortMoney(strongCoffee.price)})`;
     }
     if (document.getElementById('quick-buy-steroids') && steroids) {
-        document.getElementById('quick-buy-steroids').innerText = `${steroids.name} ($${steroids.price.toLocaleString()})`;
+        document.getElementById('quick-buy-steroids').innerText = `${steroids.name} ($${formatShortMoney(steroids.price)})`;
     }
     
     // Update jail status
@@ -5958,6 +5958,20 @@ function stripEmoji(str) {
     } catch (e) {
         return str.replace(/[\u{1F300}-\u{1FAFF}\u{1F1E6}-\u{1F1FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{27BF}]/gu, '');
     }
+}
+
+// Format money to short form (e.g., 1500 -> 1.5K, 1500000 -> 1.5M)
+function formatShortMoney(amount) {
+    if (typeof amount !== 'number' || isNaN(amount)) return amount;
+    if (amount >= 1000000) {
+        const val = Math.round((amount / 1000000) * 10) / 10;
+        return (val % 1 === 0 ? val.toFixed(0) : val.toFixed(1)) + 'M';
+    }
+    if (amount >= 1000) {
+        const val = Math.round((amount / 1000) * 10) / 10;
+        return (val % 1 === 0 ? val.toFixed(0) : val.toFixed(1)) + 'K';
+    }
+    return amount.toLocaleString();
 }
 
 function logAction(message) {
