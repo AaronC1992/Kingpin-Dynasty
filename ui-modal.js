@@ -159,17 +159,12 @@ class ModalSystem {
 
     /**
      * Replacement for prompt()
+     * Single-action flow: user types a value and clicks Continue.
      */
-    prompt(message, defaultValue = '', title = 'Speak Up') {
+    prompt(message, defaultValue = '', title = 'Enter Details') {
         return this.show(title, message, [
             {
-                text: 'Silence',
-                class: 'modal-btn-secondary',
-                callback: () => null,
-                value: null
-            },
-            {
-                text: 'Speak',
+                text: 'Continue',
                 class: 'modal-btn-primary',
                 callback: (val) => val
             }
