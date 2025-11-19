@@ -11572,10 +11572,11 @@ function startGameAfterIntro() {
     // Update UI with the player's name and initial state
     updateUI();
     
-    // Connect to multiplayer now that the game is started and player name is set
-    if (typeof connectMultiplayerAfterGame === 'function') {
-        connectMultiplayerAfterGame();
-    }
+    // Note: Multiplayer connection is now manual - player must click "Multiplayer" to connect
+    // This prevents auto-connection errors when server is not running
+    // if (typeof connectMultiplayerAfterGame === 'function') {
+    //     connectMultiplayerAfterGame();
+    // }
     
     // Log the beginning of the journey
     logAction(`🌆 ${player.name} steps into the shadows of the city. The streets whisper promises of power and wealth, but first... survival.`);
@@ -14957,10 +14958,10 @@ function loadGameFromSlot(slotNumber) {
         logAction(`💾 Game loaded from slot ${slotNumber}: ${saveEntry.saveName}`);
         showBriefNotification(`✅ Loaded: ${saveEntry.saveName}`, 2000);
         
-        // Connect to multiplayer now that the game is loaded and player name is restored
-        if (typeof connectMultiplayerAfterGame === 'function') {
-            connectMultiplayerAfterGame();
-        }
+        // Note: Multiplayer connection is now manual - player must click "Multiplayer" to connect
+        // if (typeof connectMultiplayerAfterGame === 'function') {
+        //     connectMultiplayerAfterGame();
+        // }
         
         return true;
     } catch (error) {
