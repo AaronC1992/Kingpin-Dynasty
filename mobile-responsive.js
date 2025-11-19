@@ -596,53 +596,53 @@ const MobileSystem = {
                 <button onclick="goBackToMainMenu(); MobileSystem.toggleMobileMenu();" 
                         style="width: 100%; margin: 5px 0; padding: 12px; background: linear-gradient(45deg, #8b0000, #5a0000); 
                                color: white; border: 1px solid #ff0000; border-radius: 6px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
-                    🏠 Safehouse
+                    Safehouse
                 </button>
                 
                 <button onclick="showGlobalChat(); MobileSystem.toggleMobileMenu();" 
                         style="width: 100%; margin: 5px 0; padding: 12px; background: linear-gradient(45deg, #333, #000); 
                                color: #c0a062; border: 1px solid #c0a062; border-radius: 6px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
-                    📞 The Wire
+                    The Wire
                 </button>
                 
                 <button onclick="showStore(); MobileSystem.toggleMobileMenu();" 
                         style="width: 100%; margin: 5px 0; padding: 12px; background: linear-gradient(45deg, #333, #000); 
                                color: #c0a062; border: 1px solid #c0a062; border-radius: 6px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
-                    🛒 Black Market
+                    Black Market
                 </button>
                 
                 <button onclick="showJobs(); MobileSystem.toggleMobileMenu();" 
                         style="width: 100%; margin: 5px 0; padding: 12px; background: linear-gradient(45deg, #333, #000); 
                                color: #c0a062; border: 1px solid #c0a062; border-radius: 6px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
-                    💼 Business
+                    Business
                 </button>
                 
                 <button onclick="showGang(); MobileSystem.toggleMobileMenu();" 
                         style="width: 100%; margin: 5px 0; padding: 12px; background: linear-gradient(45deg, #333, #000); 
                                color: #c0a062; border: 1px solid #c0a062; border-radius: 6px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
-                    👥 Family
+                    Family
                 </button>
                 
                 <button onclick="showSkills(); MobileSystem.toggleMobileMenu();" 
                         style="width: 100%; margin: 5px 0; padding: 12px; background: linear-gradient(45deg, #333, #000); 
                                color: #c0a062; border: 1px solid #c0a062; border-radius: 6px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
-                    ⚡ Talents
+                    Talents
                 </button>
                 
                 <button onclick="buyEnergy(); MobileSystem.toggleMobileMenu();" 
                         style="width: 100%; margin: 5px 0; padding: 12px; background: linear-gradient(45deg, #f39c12, #d35400); 
                                color: white; border: 1px solid #f39c12; border-radius: 6px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
-                    ⚡ Boost
+                    Boost
                 </button>
                 
                 <button onclick="MobileSystem.scrollToActionLog();" 
                         style="width: 100%; margin: 5px 0; padding: 12px; background: linear-gradient(45deg, #333, #000); 
                                color: #c0a062; border: 1px solid #c0a062; border-radius: 6px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
-                    📜 The Record
+                    The Record
                 </button>
                 
                 <div id="mobile-action-log" style="margin-top: 30px; border-top: 2px solid #c0a062; padding-top: 20px;">
-                    <h4 style="color: #c0a062; margin: 0 0 15px 0; text-align: center; font-size: 16px; font-family: 'Georgia', serif;">📜 Recent Activity</h4>
+                    <h4 style="color: #c0a062; margin: 0 0 15px 0; text-align: center; font-size: 16px; font-family: 'Georgia', serif;">Recent Activity</h4>
                     <div id="mobile-action-list" style="max-height: 250px; overflow-y: auto; background: rgba(0,0,0,0.4); 
                                                          padding: 15px; border-radius: 8px; font-size: 12px; border: 1px solid #555;">
                         Loading records...
@@ -726,27 +726,27 @@ const MobileSystem = {
                 <button onclick="showStore()" 
                         style="padding: 6px; background: linear-gradient(45deg, #333, #000); color: #c0a062; border: 1px solid #c0a062; border-radius: 5px; 
                                font-size: 11px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
-                    🛒<br>Market
+                    Market
                 </button>
                 <button onclick="showJobs()" 
                         style="padding: 6px; background: linear-gradient(45deg, #333, #000); color: #c0a062; border: 1px solid #c0a062; border-radius: 5px; 
                                font-size: 11px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
-                    💼<br>Biz
+                    Biz
                 </button>
                 <button onclick="showGlobalChat()" 
                         style="padding: 6px; background: linear-gradient(45deg, #333, #000); color: #c0a062; border: 1px solid #c0a062; border-radius: 5px; 
                                font-size: 11px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
-                    📞<br>Wire
+                    Wire
                 </button>
                 <button onclick="showGang()" 
                         style="padding: 6px; background: linear-gradient(45deg, #333, #000); color: #c0a062; border: 1px solid #c0a062; border-radius: 5px; 
                                font-size: 11px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
-                    👥<br>Fam
+                    Fam
                 </button>
                 <button onclick="goBackToMainMenu()" 
                         style="padding: 6px; background: linear-gradient(45deg, #8b0000, #5a0000); color: white; border: 1px solid #ff0000; border-radius: 5px; 
                                font-size: 11px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
-                    🏠<br>Safehouse
+                    Safehouse
                 </button>
             </div>
         `;
@@ -859,7 +859,7 @@ const MobileSystem = {
             `;
             
             orientationWarning.innerHTML = `
-                <h3 style="margin: 0 0 10px 0; color: #c0a062;">📱 Better Experience</h3>
+                <h3 style="margin: 0 0 10px 0; color: #c0a062;">Better Experience</h3>
                 <p style="margin: 0 0 15px 0;">For the best experience, try rotating your device to portrait mode!</p>
                 <button onclick="MobileSystem.hideOrientationSuggestion()" 
                         style="background: linear-gradient(45deg, #333, #000); color: #c0a062; border: 1px solid #c0a062; padding: 10px 20px; 
