@@ -199,8 +199,8 @@ const jobs = [
     { name: "Money Laundering", payout: [1600, 3000], risk: "high", jailChance: 20, wantedLevelGain: 3, healthLoss: 0, requiredItems: ["Basement Hideout", "Luxury Automobile"], reputation: 45, energyCost: 25 },
     
     // Elite endgame jobs
-    { name: "International Arms Trade", payout: [3000, 6000], risk: "legendary", jailChance: 60, wantedLevelGain: 12, healthLoss: 10, requiredItems: ["Private Airplane", "Tommy Gun", "Bulletproof Vest"], reputation: 60, energyCost: 35 },
-    { name: "Take Over the City", payout: [4000, 8000], risk: "legendary", jailChance: 70, wantedLevelGain: 15, healthLoss: 20, requiredItems: ["Gang Recruit", "Underground Bunker", "Tommy Gun", "Luxury Automobile"], reputation: 80, energyCost: 40 }
+    { name: "International Arms Trade", payout: [500000, 1000000], risk: "legendary", jailChance: 60, wantedLevelGain: 12, healthLoss: 10, requiredItems: ["Private Airplane", "Tommy Gun", "Bulletproof Vest"], reputation: 60, energyCost: 35 },
+    { name: "Take Over the City", payout: [2000000, 5000000], risk: "legendary", jailChance: 70, wantedLevelGain: 15, healthLoss: 20, requiredItems: ["Gang Recruit", "Underground Bunker", "Tommy Gun", "Luxury Automobile"], reputation: 80, energyCost: 40 }
 ];
 
 // Stolen car types with base values and damage probabilities
@@ -3217,6 +3217,17 @@ async function showBusinesses() {
     let businessHTML = `
         <h2>Business Empire</h2>
         <p>Manage your legitimate business fronts and expand your economic influence.</p>
+        <div style="margin: 15px 0; padding: 12px; border: 1px solid #7f8c8d; border-radius: 8px; background: rgba(0,0,0,0.25); display: flex; gap: 12px; align-items: center;">
+            <div style="flex:1; color:#ecf0f1;">
+                <strong>Bookie Service</strong><br>
+                Automatically collects business income and gang tribute. Service fee applies hourly.
+            </div>
+            <div>
+                <button onclick="toggleBookieHire()" style="background:${player.services && player.services.bookieHired ? '#e74c3c' : '#2ecc71'}; color:white; padding:10px 14px; border:none; border-radius:6px; cursor:pointer;">
+                    ${player.services && player.services.bookieHired ? 'Dismiss Bookie' : 'Hire Bookie ($5,000/day)'}
+                </button>
+            </div>
+        </div>
     `;
     
     // Show owned businesses
@@ -3399,6 +3410,7 @@ async function collectBusinessIncome(businessIndex) {
     const hourlyIncome = Math.floor(businessType.baseIncome * Math.pow(businessType.incomeMultiplier, business.level - 1) / 24);
     const totalIncome = hourlyIncome * Math.min(hoursElapsed, 48); // Cap at 48 hours
     
+    // Business income is clean money
     player.money += totalIncome;
     business.lastCollection = currentTime;
     
@@ -4094,7 +4106,12 @@ function completeGangOperation(operationData) {
     const moneyEarned = Math.floor(operation.rewards.money[0] + 
         (Math.random() * (operation.rewards.money[1] - operation.rewards.money[0])));
     
-    player.money += moneyEarned;
+    // Operation spoils: treat as dirty unless marked as clean money
+    if (operation.rewards && operation.rewards.cleanMoney) {
+        player.money += moneyEarned;
+    } else {
+        player.dirtyMoney = (player.dirtyMoney || 0) + moneyEarned;
+    }
     
     if (operation.rewards.dirtyMoney) {
         const dirtyMoney = Math.floor(operation.rewards.dirtyMoney[0] + 
@@ -4115,8 +4132,12 @@ function completeGangOperation(operationData) {
     // Remove from active operations
     player.gang.activeOperations = player.gang.activeOperations.filter(op => op !== operationData);
     
-    alert(`${member.name} successfully completed the ${operation.name}! Earned $${moneyEarned.toLocaleString()}.`);
-    logAction(`💰 ${member.name} returns from the ${operation.name} with pockets full and loyalty stronger. Your crew delivers results (+$${moneyEarned.toLocaleString()}).`);
+    const moneyTag = (operation.rewards && operation.rewards.cleanMoney) ? '' : ' (dirty)';
+    alert(`${member.name} successfully completed the ${operation.name}! Earned $${moneyEarned.toLocaleString()}${moneyTag}.`);
+    logAction(`💰 ${member.name} returns from the ${operation.name} with pockets full and loyalty stronger. Your crew delivers results (+$${moneyEarned.toLocaleString()}${moneyTag}).`);
+    if (typeof showBriefNotification === 'function') {
+        showBriefNotification(`${member.name} completed ${operation.name}: +$${moneyEarned.toLocaleString()}${moneyTag}`, 2000);
+    }
     
     updateUI();
 }
@@ -5420,11 +5441,12 @@ function processTerritoryOperations() {
     player.territories.forEach(territory => {
         if (currentTime - territory.lastIncomeCollection >= weekInMs) {
             const income = calculateTerritoryIncome(territory);
-            player.money += income;
+            // Territory tribute is dirty money that must be laundered
+            player.dirtyMoney = (player.dirtyMoney || 0) + income;
             territory.lastIncomeCollection = currentTime;
             
             if (income > 0) {
-                logAction(`💰 Territory income collected: $${income.toLocaleString()} from your controlled areas.`);
+                logAction(`💰 Territory tribute collected: $${income.toLocaleString()} (dirty) from your controlled areas.`);
             }
         }
     });
@@ -5446,7 +5468,7 @@ function processTerritoryOperations() {
     
     // Decay territory heat over time
     Object.keys(player.territoryHeat).forEach(territoryId => {
-        player.territoryHeat[territoryId] = Math.max(0, player.territoryHeat[territoryId] - 0.01);
+        player.territoryHeat[territoryId] = Math.max(0, player.territoryHeat[territoryId] - 0.05);
     });
     
     calculateTotalTerritoryIncome();
@@ -5514,7 +5536,8 @@ function updateUI() {
         }
     }
     
-    document.getElementById("money-display").innerText = `Money: $${player.money.toLocaleString()}`;
+    const dirty = (player.dirtyMoney || 0);
+    document.getElementById("money-display").innerText = `Money: $${player.money.toLocaleString()} | Dirty: $${dirty.toLocaleString()}`;
     document.getElementById("power-display").innerText = `Power: ${player.power}`;
     
     // Add territory display if player has territories
@@ -5761,12 +5784,27 @@ function updateRightPanel() {
 function buyEnergyDrink() {
     const energyDrink = storeItems.find(item => item.name === "Energy Drink");
     if (player.money >= energyDrink.price) {
+        // Enforce daily limit on energy drink usage
+        const today = new Date();
+        const dayKey = `${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()}`;
+        if (!player.dailyCounters) player.dailyCounters = {};
+        if (player.dailyCounters.energyDrinksDay !== dayKey) {
+            player.dailyCounters.energyDrinksDay = dayKey;
+            player.dailyCounters.energyDrinksUsed = 0;
+        }
+        const MAX_ENERGY_DRINKS_PER_DAY = 5;
+        if ((player.dailyCounters.energyDrinksUsed || 0) >= MAX_ENERGY_DRINKS_PER_DAY) {
+            alert(`You've reached today's limit for Energy Drinks (${MAX_ENERGY_DRINKS_PER_DAY}). Try coffee or rest up.`);
+            return;
+        }
+
         const energyBefore = player.energy;
         player.money -= energyDrink.price;
         player.energy = Math.min(player.maxEnergy, player.energy + energyDrink.energyRestore);
         player.health = Math.max(0, player.health - 1); // Health penalty
         
         const energyGained = player.energy - energyBefore;
+        player.dailyCounters.energyDrinksUsed = (player.dailyCounters.energyDrinksUsed || 0) + 1;
         
         alert(`Bought Energy Drink! Restored ${energyGained} energy but ${getRandomNarration('healthLoss')}\n\nNew Energy: ${player.energy}/${player.maxEnergy}`);
         logAction(`⚗️ ${getRandomNarration('healthLoss')} The chemical rush comes with a price, but the energy boost might be worth it.`);
@@ -6283,7 +6321,8 @@ function startJob(index) {
         return;
     }
 
-    player.money += earnings;
+    // Illegal work yields dirty money that must be laundered before use
+    player.dirtyMoney = (player.dirtyMoney || 0) + earnings;
     
     // Apply intimidation to reduce wanted level gain (witnesses too scared to report)
     let wantedLevelGain = job.wantedLevelGain;
@@ -6322,8 +6361,8 @@ function startJob(index) {
     if (player.unlockedPerks.includes('warMachine') && 
         (job.name.toLowerCase().includes('fight') || job.name.toLowerCase().includes('rob'))) {
         const bonus = Math.floor(earnings * 0.5);
-        player.money += bonus;
-        logAction(`⚔️ War Machine bonus: Your reputation for violence earns you an extra $${bonus.toLocaleString()}!`);
+        player.dirtyMoney = (player.dirtyMoney || 0) + bonus;
+        logAction(`⚔️ War Machine bonus: Your reputation for violence earns you an extra $${bonus.toLocaleString()} (dirty) !`);
     }
     
     // Update mission progress
@@ -7962,7 +8001,8 @@ function collectTribute() {
     const loyaltyMultiplier = player.gang.loyalty / 100;
     tribute = Math.floor(tribute * loyaltyMultiplier);
     
-    player.money += tribute;
+    // Tribute is dirty cash
+    player.dirtyMoney = (player.dirtyMoney || 0) + tribute;
     player.gang.lastTributeTime = currentTime;
     
     // Track statistics
@@ -7977,8 +8017,8 @@ function collectTribute() {
         bonusText += ` (${Math.floor((1 - loyaltyMultiplier) * 100)}% reduced due to low loyalty)`;
     }
     
-    alert(`Your gang collected $${tribute.toLocaleString()} in tribute!${bonusText}`);
-    logAction(`💰 Your crew comes through! Envelopes stuffed with cash find their way to you. The family business is paying dividends (+$${tribute.toLocaleString()}${bonusText}).`);
+    alert(`Your gang collected $${tribute.toLocaleString()} in tribute (dirty)!${bonusText}`);
+    logAction(`💰 Your crew comes through! Envelopes stuffed with cash find their way to you. The family business is paying dividends (+$${tribute.toLocaleString()} dirty${bonusText}).`);
     updateUI();
     showGang(); // Refresh the gang screen to show new cooldown
 }
@@ -8047,7 +8087,8 @@ function gangWar() {
     
     if (powerLevel > enemyPower) {
         let winnings = Math.floor(Math.random() * 50000) + 25000;
-        player.money += winnings;
+        // Gang war winnings are illicit funds
+        player.dirtyMoney = (player.dirtyMoney || 0) + winnings;
         player.reputation += 10;
         player.wantedLevel += 15;
         
@@ -8082,8 +8123,8 @@ function gangWar() {
             }
         }
         
-        alert(`Gang war victory! Earned $${winnings.toLocaleString()} and gained territory!`);
-        logAction(`⚔️ Victorious in gang warfare! The streets echo with your name as you claim $${winnings.toLocaleString()} and expand your domain.`);
+        alert(`Gang war victory! Earned $${winnings.toLocaleString()} (dirty) and gained territory!`);
+        logAction(`⚔️ Victorious in gang warfare! The streets echo with your name as you claim $${winnings.toLocaleString()} (dirty) and expand your domain.`);
         player.territory += 2;
         
         // Track violent playstyle
@@ -12878,9 +12919,13 @@ function regenerateEnergy() {
         player.energyRegenTimer--;
         
         if (player.energyRegenTimer <= 0) {
-            player.energy = Math.min(player.energy + 1, player.maxEnergy);
+            // Base 1 energy per tick; Recovery skill increases energy gained per tick
+            const recoveryLevel = (player.skillTrees && player.skillTrees.endurance && player.skillTrees.endurance.recovery) || 0;
+            const extraPerTick = Math.floor(recoveryLevel / 5); // +1 energy per 5 recovery levels
+            const energyGain = Math.max(1, 1 + extraPerTick);
+            player.energy = Math.min(player.energy + energyGain, player.maxEnergy);
             player.energyRegenTimer = 30; // Reset timer to 30 seconds
-            logAction("💤 You catch your breath in the shadows. The adrenaline fades and your strength slowly returns. Time heals all wounds (+1 energy).");
+            logAction(`💤 You catch your breath in the shadows. The adrenaline fades and your strength slowly returns. (+${energyGain} energy)`);
             
             // Forensics skill: Advanced wanted level decay
             if (player.wantedLevel > 0 && player.skillTrees.intelligence.forensics > 0) {
@@ -12937,7 +12982,107 @@ function startPassiveIncomeGenerator() {
     setInterval(() => {
         generatePassiveIncome();
         processTerritoryOperations(); // Process territory income and events
+        // Auto-collect helpers when Bookie is hired
+        if (!player.services) player.services = {};
+        if (player.services.bookieHired) {
+            try {
+                autoCollectBusinessesAndTribute();
+                chargeBookieFeeHourly();
+            } catch (e) { console.warn('Auto-collect error', e); }
+        }
     }, 300000); // Every 5 minutes
+}
+
+// Hire/Dismiss Bookie
+function toggleBookieHire() {
+    if (!player.services) player.services = {};
+    if (player.services.bookieHired) {
+        player.services.bookieHired = false;
+        logAction('📉 You dismiss the bookie. You will need to collect income and tribute manually.');
+        if (typeof showBriefNotification === 'function') showBriefNotification('Bookie dismissed', 1200);
+    } else {
+        player.services.bookieHired = true;
+        player.services.bookieLastPaid = Date.now();
+        logAction('📈 You hire a trusted bookie to keep the cash flowing. Income and tribute will be auto-collected.');
+        if (typeof showBriefNotification === 'function') showBriefNotification('Bookie hired', 1200);
+    }
+    // Refresh businesses screen if open
+    if (document.getElementById('business-screen')?.style.display === 'block') {
+        showBusinesses();
+    }
+}
+
+// Auto-collect business income and gang tribute if available
+function autoCollectBusinessesAndTribute() {
+    let collected = 0;
+    // Businesses: collect if at least 1 hour passed
+    if (player.businesses && player.businesses.length > 0) {
+        const now = Date.now();
+        player.businesses.forEach(biz => {
+            const businessType = businessTypes.find(bt => bt.id === biz.type);
+            if (!businessType) return;
+            const last = biz.lastCollection || now;
+            const hoursElapsed = Math.floor((now - last) / (1000 * 60 * 60));
+            if (hoursElapsed >= 1) {
+                const hourlyIncome = Math.floor(businessType.baseIncome * Math.pow(businessType.incomeMultiplier, biz.level - 1) / 24);
+                const totalIncome = hourlyIncome * Math.min(hoursElapsed, 48);
+                if (totalIncome > 0) {
+                    player.money += totalIncome; // business income is clean
+                    biz.lastCollection = now;
+                    collected += totalIncome;
+                }
+            }
+        });
+    }
+    // Tribute: collect if cooldown elapsed
+    const tributeCooldownMs = 300 * 1000;
+    if (player.gang && (player.gang.members > 0 || (player.gang.gangMembers && player.gang.gangMembers.length > 0))) {
+        const last = player.gang.lastTributeTime || 0;
+        const now = Date.now();
+        if (now - last >= tributeCooldownMs) {
+            // replicate collectTribute math without UI
+            const baseTributePerMember = 200;
+            let tribute = 0;
+            if (player.gang.gangMembers && player.gang.gangMembers.length > 0) {
+                player.gang.gangMembers.forEach(member => {
+                    tribute += Math.floor(baseTributePerMember * member.tributeMultiplier);
+                });
+            } else {
+                tribute = (player.gang.members || 0) * 250;
+            }
+            const territoryBonus = player.territory * 50;
+            tribute += territoryBonus;
+            const loyaltyMultiplier = player.gang.loyalty / 100;
+            tribute = Math.floor(tribute * loyaltyMultiplier);
+            if (tribute > 0) {
+                player.dirtyMoney = (player.dirtyMoney || 0) + tribute;
+                player.gang.lastTributeTime = now;
+                collected += tribute;
+            }
+        }
+    }
+    if (collected > 0 && typeof showBriefNotification === 'function') {
+        showBriefNotification(`Bookie collected $${collected.toLocaleString()}`, 1200);
+    }
+}
+
+// Deduct bookie fee hourly (5000/day)
+function chargeBookieFeeHourly() {
+    const HOURLY_FEE = Math.ceil(5000 / 24);
+    if (!player.services) player.services = {};
+    const now = Date.now();
+    const last = player.services.bookieLastPaid || 0;
+    if (now - last >= 60 * 60 * 1000) {
+        if (player.money >= HOURLY_FEE) {
+            player.money -= HOURLY_FEE;
+            player.services.bookieLastPaid = now;
+        } else {
+            // Can't pay fee -> dismiss
+            player.services.bookieHired = false;
+            logAction('💸 Your bookie quits – no funds to cover fees.');
+            if (typeof showBriefNotification === 'function') showBriefNotification('Bookie dismissed (unpaid)', 1500);
+        }
+    }
 }
 
 // Function to periodically check for random events
