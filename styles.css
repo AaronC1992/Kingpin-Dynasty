@@ -377,6 +377,7 @@ button:disabled {
     padding: 15px 30px;
     z-index: 100;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.8);
+    overflow: visible;
 }
 
 .page-header h1 {
@@ -403,6 +404,9 @@ button:disabled {
     margin-top: 8px;
     font-size: 0.85em;
     color: #888;
+    flex-wrap: wrap;
+    overflow: visible;
+    white-space: normal;
 }
 
 .breadcrumb a {
