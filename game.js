@@ -36,44 +36,44 @@ const player = {
     skillTrees: {
         stealth: {
             infiltration: 0, // Breaking into secured locations
-            escape: 0, // Getting out of sticky situations
-            surveillance: 0 // Gathering intel
+            escape: 0, // Evading the Feds
+            surveillance: 0 // Gathering intel on rivals
         },
         violence: {
-            firearms: 0, // Gun proficiency and accuracy
-            melee: 0, // Hand-to-hand combat
-            intimidation: 0 // Fear tactics
+            firearms: 0, // Tommy gun proficiency
+            melee: 0, // Brass knuckles and bats
+            intimidation: 0 // Making them an offer they can't refuse
         },
         charisma: {
-            negotiation: 0, // Better deals and prices
-            leadership: 0, // Gang management and loyalty
-            manipulation: 0 // Control over others
+            negotiation: 0, // Better deals with the Don
+            leadership: 0, // Commanding your soldiers
+            manipulation: 0 // Pulling the strings
         },
         intelligence: {
-            hacking: 0, // Digital skills
-            planning: 0, // Strategy and preparation
-            forensics: 0 // Evidence cleanup
+            hacking: 0, // Cracking safes and codes
+            planning: 0, // Orchestrating the perfect hit
+            forensics: 0 // Cleaning up the mess
         },
         luck: {
-            gambling: 0, // Casino and betting success
-            fortune: 0, // Random event improvements
-            serendipity: 0 // Finding unexpected opportunities
+            gambling: 0, // Winning at the tables
+            fortune: 0, // The devil's luck
+            serendipity: 0 // Finding opportunities in chaos
         },
         endurance: {
-            stamina: 0, // Longer operations without fatigue
-            recovery: 0, // Faster healing and energy regen
-            resistance: 0 // Drug and poison resistance
+            stamina: 0, // Outlasting the competition
+            recovery: 0, // Bouncing back from a beating
+            resistance: 0 // Tough as nails
         }
     },
     mentors: [], // Array of captured rivals who can teach skills
     streetReputation: {
-        torrino: 0, // Italian Family reputation
-        kozlov: 0, // Russian Bratva reputation
-        chen: 0, // Triad reputation
-        morales: 0, // Cartel reputation
+        torrino: 0, // Torrino Family reputation
+        kozlov: 0, // Kozlov Bratva reputation
+        chen: 0, // Chen Triad reputation
+        morales: 0, // Morales Cartel reputation
         police: 0, // Police corruption level
-        civilians: 0, // Public opinion
-        underground: 0 // Criminal underworld standing
+        civilians: 0, // Public respect
+        underground: 0 // Standing in the Commission
     },
     unlockedPerks: [], // Array of unlocked perks based on playstyle
     playstyleStats: {
@@ -84,20 +84,20 @@ const player = {
         gamblingWins: 0,
         mentoringSessions: 0
     },
-    territory: 0, // Controlled territory (new mechanic)
+    territory: 0, // Controlled turf
     gang: {
         members: 0,
         loyalty: 100,
         lastTributeTime: 0, // Timestamp of last tribute collection
-        gangMembers: [], // Array to store individual gang member data
-        activeOperations: [], // Array to store ongoing gang operations
-        trainingQueue: [], // Array to store gang members in training
+        gangMembers: [], // Array to store individual soldiers
+        activeOperations: [], // Array to store ongoing family business
+        trainingQueue: [], // Array to store associates in training
         betrayalHistory: [], // Track past betrayal events
-        lastBetrayalCheck: 0 // Timestamp of last betrayal check
+        lastBetrayalCheck: 0 // Timestamp of last loyalty check
     },
     realEstate: {
         ownedProperties: [], // Array to store owned properties
-        maxGangMembers: 5 // Base capacity without any properties
+        maxGangMembers: 5 // Base capacity without any safehouses
     },
     missions: {
         activeCampaign: "risingThroughRanks",
@@ -121,22 +121,22 @@ const player = {
             factionMissionsCompleted: 0
         }
     },
-    businesses: [], // Array to store owned businesses
-    activeLoans: [], // Array to store active loans
-    dirtyMoney: 0, // Money that needs to be laundered
-    suspicionLevel: 0, // 0-100, affects law enforcement attention
-    launderingSetups: [], // Array to store active laundering operations
-    businessLastCollected: {}, // Object to track last collection time for each business
+    businesses: [], // Array to store owned fronts
+    activeLoans: [], // Array to store active debts
+    dirtyMoney: 0, // Cash that needs to be cleaned
+    suspicionLevel: 0, // 0-100, affects Fed attention
+    launderingSetups: [], // Array to store active wash cycles
+    businessLastCollected: {}, // Object to track last collection time for each front
     
     // Territory Control System
-    territories: [], // Controlled territories with details
+    territories: [], // Controlled neighborhoods
     protectionRackets: [], // Active protection rackets
-    territoryIncome: 0, // Weekly income from territories
+    territoryIncome: 0, // Weekly tribute from turf
     corruptedOfficials: [], // Bribed officials with expiration
-    territoryEvents: [], // Active territory events
-    territoryHeat: {}, // Heat level per territory
-    territoryPower: 100, // Overall gang power for territory conflicts
-    territoryReputation: 0, // Reputation in territory control
+    territoryEvents: [], // Active turf wars
+    territoryHeat: {}, // Heat level per neighborhood
+    territoryPower: 100, // Overall family power
+    territoryReputation: 0, // Reputation on the streets
     
     // Long-term Goals System
     empireRating: {
@@ -149,10 +149,10 @@ const player = {
         skillPower: 0
     },
     legacy: {
-        inheritanceBonus: 0, // Bonus from previous characters
-        familyReputation: 0, // Cross-character reputation
-        generationNumber: 1, // Which generation this character is
-        previousCharacters: [] // Array of previous character data
+        inheritanceBonus: 0, // Bonus from previous Dons
+        familyReputation: 0, // Name recognition
+        generationNumber: 1, // Which generation this Don is
+        previousCharacters: [] // Array of previous Dons
     },
     retirementPlan: {
         available: false,
@@ -166,139 +166,139 @@ const player = {
 // Job options with risk categories, jail chances, wanted level gains, health loss, required items, and reputation requirements
 const jobs = [
     // Entry Level Job
-    { name: "Street Corner Lookout", payout: [1, 15], risk: "low", jailChance: 5, wantedLevelGain: 1, healthLoss: 0, requiredItems: [], reputation: 0, energyCost: 1 },
+    { name: "Street Soldier", payout: [1000, 15000], risk: "low", jailChance: 5, wantedLevelGain: 1, healthLoss: 0, requiredItems: [], reputation: 0, energyCost: 1 },
     
     // Car Stealing Job (Special mechanic)
-    { name: "Steal Car", payout: [0, 0], risk: "medium", jailChance: 40, wantedLevelGain: 3, healthLoss: 5, requiredItems: [], reputation: 0, special: "car_theft", energyCost: 5 },
+    { name: "Boost a Ride", payout: [0, 0], risk: "medium", jailChance: 40, wantedLevelGain: 3, healthLoss: 5, requiredItems: [], reputation: 0, special: "car_theft", energyCost: 5 },
     
     // Higher Risk Job
-    { name: "Armed Robbery", payout: [50, 100], risk: "high", jailChance: 30, wantedLevelGain: 4, healthLoss: 10, requiredItems: [], reputation: 10, energyCost: 10 },
+    { name: "Store Heist", payout: [50000, 100000], risk: "high", jailChance: 30, wantedLevelGain: 4, healthLoss: 10, requiredItems: [], reputation: 10, energyCost: 10 },
     
     // NEW LATE-GAME JOBS
     
     // Drug dealing jobs
-    { name: "Moonshine Distribution", payout: [200, 400], risk: "high", jailChance: 25, wantedLevelGain: 3, healthLoss: 5, requiredItems: ["Crate Moonshine"], reputation: 15, energyCost: 12 },
-    { name: "Underground Weed Operation", payout: [400, 800], risk: "very high", jailChance: 35, wantedLevelGain: 5, healthLoss: 8, requiredItems: ["Bag of Mary Jane"], reputation: 25, energyCost: 15 },
-    { name: "High-Stakes Cocaine Deal", payout: [800, 1500], risk: "extreme", jailChance: 45, wantedLevelGain: 8, healthLoss: 15, requiredItems: ["Pure Cocaine"], reputation: 40, energyCost: 20 },
+    { name: "Bootleg Run", payout: [200000, 400000], risk: "high", jailChance: 25, wantedLevelGain: 3, healthLoss: 5, requiredItems: ["Crate Moonshine"], reputation: 15, energyCost: 12 },
+    { name: "Speakeasy Supply", payout: [400000, 800000], risk: "very high", jailChance: 35, wantedLevelGain: 5, healthLoss: 8, requiredItems: ["Bag of Mary Jane"], reputation: 25, energyCost: 15 },
+    { name: "White Powder Distribution", payout: [800000, 1500000], risk: "extreme", jailChance: 45, wantedLevelGain: 8, healthLoss: 15, requiredItems: ["Pure Cocaine"], reputation: 40, energyCost: 20 },
     
     // Weapon-based jobs
-    { name: "Protection Racket", payout: [100, 250], risk: "medium", jailChance: 20, wantedLevelGain: 3, healthLoss: 8, requiredItems: ["Brass Knuckles"], reputation: 12, energyCost: 8 },
-    { name: "Bank Heist", payout: [500, 1200], risk: "extreme", jailChance: 50, wantedLevelGain: 10, healthLoss: 20, requiredItems: ["Tommy Gun", "Bullets"], reputation: 35, energyCost: 25 },
-    { name: "Rival Gang Assassination", payout: [300, 600], risk: "very high", jailChance: 40, wantedLevelGain: 6, healthLoss: 25, requiredItems: ["Pistol", "Bullets"], reputation: 30, energyCost: 18 },
+    { name: "Protection Collection", payout: [100000, 250000], risk: "medium", jailChance: 20, wantedLevelGain: 3, healthLoss: 8, requiredItems: ["Brass Knuckles"], reputation: 12, energyCost: 8 },
+    { name: "Bank Job", payout: [500000, 1200000], risk: "extreme", jailChance: 50, wantedLevelGain: 10, healthLoss: 20, requiredItems: ["Tommy Gun", "Bullets"], reputation: 35, energyCost: 25 },
+    { name: "Hit on a Rival", payout: [300000, 600000], risk: "very high", jailChance: 40, wantedLevelGain: 6, healthLoss: 25, requiredItems: ["Pistol", "Bullets"], reputation: 30, energyCost: 18 },
     
     // High-tech/Vehicle jobs
-    { name: "Luxury Car Theft Ring", payout: [400, 800], risk: "high", jailChance: 30, wantedLevelGain: 4, healthLoss: 5, requiredItems: ["Luxury Automobile"], reputation: 20, energyCost: 15 },
-    { name: "Cross-State Smuggling", payout: [1000, 2000], risk: "extreme", jailChance: 35, wantedLevelGain: 7, healthLoss: 10, requiredItems: ["Private Airplane", "Gasoline"], reputation: 50, energyCost: 30 },
+    { name: "Luxury Car Ring", payout: [400000, 800000], risk: "high", jailChance: 30, wantedLevelGain: 4, healthLoss: 5, requiredItems: ["Luxury Automobile"], reputation: 20, energyCost: 15 },
+    { name: "Cross-Border Smuggling", payout: [1000000, 2000000], risk: "extreme", jailChance: 35, wantedLevelGain: 7, healthLoss: 10, requiredItems: ["Private Airplane", "Gasoline"], reputation: 50, energyCost: 30 },
     
     // Gang-based jobs
-    { name: "Territory War", payout: [200, 500], risk: "very high", jailChance: 45, wantedLevelGain: 5, healthLoss: 30, requiredItems: ["Gang Recruit"], reputation: 25, energyCost: 20 },
-    { name: "Underground Fighting Ring", payout: [150, 350], risk: "high", jailChance: 25, wantedLevelGain: 2, healthLoss: 40, requiredItems: ["Brass Knuckles"], reputation: 18, energyCost: 12 },
+    { name: "Turf War", payout: [200000, 500000], risk: "very high", jailChance: 45, wantedLevelGain: 5, healthLoss: 30, requiredItems: ["Gang Recruit"], reputation: 25, energyCost: 20 },
+    { name: "Underground Boxing", payout: [150000, 350000], risk: "high", jailChance: 25, wantedLevelGain: 2, healthLoss: 40, requiredItems: ["Brass Knuckles"], reputation: 18, energyCost: 12 },
     
     // Property-based jobs
-    { name: "Illegal Casino Operation", payout: [600, 1200], risk: "very high", jailChance: 30, wantedLevelGain: 4, healthLoss: 5, requiredItems: ["Criminal Safehouse"], reputation: 35, energyCost: 22 },
-    { name: "Money Laundering Scheme", payout: [800, 1500], risk: "high", jailChance: 20, wantedLevelGain: 3, healthLoss: 0, requiredItems: ["Basement Hideout", "Luxury Automobile"], reputation: 45, energyCost: 25 },
+    { name: "Illegal Gambling Den", payout: [600000, 1200000], risk: "very high", jailChance: 30, wantedLevelGain: 4, healthLoss: 5, requiredItems: ["Criminal Safehouse"], reputation: 35, energyCost: 22 },
+    { name: "Money Laundering", payout: [800000, 1500000], risk: "high", jailChance: 20, wantedLevelGain: 3, healthLoss: 0, requiredItems: ["Basement Hideout", "Luxury Automobile"], reputation: 45, energyCost: 25 },
     
     // Elite endgame jobs
-    { name: "International Arms Deal", payout: [1500, 3000], risk: "legendary", jailChance: 60, wantedLevelGain: 12, healthLoss: 10, requiredItems: ["Private Airplane", "Tommy Gun", "Bulletproof Vest"], reputation: 60, energyCost: 35 },
-    { name: "Criminal Empire Takeover", payout: [2000, 4000], risk: "legendary", jailChance: 70, wantedLevelGain: 15, healthLoss: 20, requiredItems: ["Gang Recruit", "Underground Bunker", "Tommy Gun", "Luxury Automobile"], reputation: 80, energyCost: 40 }
+    { name: "International Arms Trade", payout: [1500000, 3000000], risk: "legendary", jailChance: 60, wantedLevelGain: 12, healthLoss: 10, requiredItems: ["Private Airplane", "Tommy Gun", "Bulletproof Vest"], reputation: 60, energyCost: 35 },
+    { name: "Take Over the City", payout: [2000000, 4000000], risk: "legendary", jailChance: 70, wantedLevelGain: 15, healthLoss: 20, requiredItems: ["Gang Recruit", "Underground Bunker", "Tommy Gun", "Luxury Automobile"], reputation: 80, energyCost: 40 }
 ];
 
 // Stolen car types with base values and damage probabilities
 const stolenCarTypes = [
-    { name: "Rusty Jalopy", baseValue: 50, damageChance: 60, rarity: 40 },
-    { name: "Old Sedan", baseValue: 150, damageChance: 45, rarity: 30 },
-    { name: "Old Ford", baseValue: 250, damageChance: 40, rarity: 25 },
-    { name: "Family Wagon", baseValue: 300, damageChance: 35, rarity: 20 },
-    { name: "Sports Coupe", baseValue: 600, damageChance: 25, rarity: 7 },
-    { name: "Luxury Automobile", baseValue: 1200, damageChance: 15, rarity: 2.5 },
-    { name: "High-End Roadster", baseValue: 2000, damageChance: 8, rarity: 0.5 }
+    { name: "Rusty Jalopy", baseValue: 5000, damageChance: 60, rarity: 40, image: "Rusty Jalopy.png" },
+    { name: "Old Sedan", baseValue: 15000, damageChance: 45, rarity: 30, image: "Old Sedan.png" },
+    { name: "Old Ford", baseValue: 25000, damageChance: 40, rarity: 25, image: "Old Ford.png" },
+    { name: "Family Wagon", baseValue: 30000, damageChance: 35, rarity: 20, image: "Family Wagon.png" },
+    { name: "Sports Coupe", baseValue: 60000, damageChance: 25, rarity: 7, image: "Sports Coupe.png" },
+    { name: "High-End Roadster", baseValue: 120000, damageChance: 15, rarity: 2.5, image: "High-End Roadster.png" },
+    { name: "Luxury Automobile", baseValue: 200000, damageChance: 8, rarity: 0.5, image: "Luxury Automobile.png" }
 ];
 
 // Varied narration responses for immersion
 const narrationVariations = {
     jobFailure: [
-        "💀 The job went sideways. You stumble away empty-handed, the taste of failure bitter in your mouth. The streets don't forgive amateurs.",
-        "💀 Everything that could go wrong did. You barely escape with your skin intact, but your pride took a beating along with your wallet.",
-        "💀 Amateur hour! You fumble the operation like a rookie. Back to the drawing board - maybe stick to easier targets next time.",
-        "💀 The plan crumbles faster than a house of cards. You retreat into the shadows, learning the hard lesson that crime doesn't always pay.",
-        "💀 Lady Luck wasn't on your side today. You slink away defeated, promising yourself you'll do better next time.",
-        "💀 Disaster strikes! Your carefully laid plans fall apart, leaving you with nothing but regret and wasted energy."
+        "💀 The hit went south. You walk away with nothing but your life, and even that was a close call. The Family doesn't tolerate failure.",
+        "💀 A complete disaster. You barely made it out before the Feds swarmed the place. The Don won't be pleased.",
+        "💀 Amateur hour! You fumbled the job like a common street thug. You need to be smarter if you want to survive in this Family.",
+        "💀 The plan fell apart. You retreat into the shadows, learning the hard lesson that in our thing, mistakes can be fatal.",
+        "💀 Luck wasn't with you. You leave empty-handed, swearing on your mother's grave to do better next time.",
+        "💀 A mess from start to finish. You're lucky you're not sleeping with the fishes right now."
     ],
     
     jobSuccess: [
-        "💰 Job's done! You slip into the shadows with your pockets heavier. The streets reward those with the guts to take risks.",
-        "💰 Another successful score! You pocket the cash and fade into the night like a professional. This is what separates the pros from the wannabes.",
-        "💰 Smooth as silk! The operation goes off without a hitch. Your reputation on the streets grows with each successful job.",
-        "💰 Clean work! You execute the plan flawlessly and collect your reward. The criminal underworld needs more talent like yours.",
-        "💰 Perfect execution! Everything clicks into place like a well-oiled machine. The cash feels good in your hands.",
-        "💰 Textbook criminal work! You handle the job with the skill of a seasoned professional. Time to celebrate your success."
+        "💰 The job is done. You slip away with the cash, smooth and professional. That's how business is handled.",
+        "💰 Another score for the Family. You handled it with respect and precision. The Don will hear of this.",
+        "💰 Clean work. No witnesses, no heat. Just the way we like it. Your standing in the Family grows.",
+        "💰 A professional hit. You executed the plan flawlessly. This is what separates a Made Man from a nobody.",
+        "💰 Perfect execution. The money is in hand, and the message has been sent. A good day for business.",
+        "💰 Textbook work. You handled the situation like a true professional. Time to enjoy the spoils."
     ],
     
     jailSentences: [
-        "🔒 The cell door slams shut behind you. Cold concrete walls and the smell of desperation. Welcome to your new temporary home, courtesy of the state.",
-        "🔒 Steel bars become your new horizon. The echo of your footsteps in the cell block reminds you that freedom isn't free in this business.",
-        "🔒 Orange jumpsuit, concrete bed, and plenty of time to think about your life choices. The walls close in as reality sets in.",
-        "🔒 The gavel falls and justice is served - with a side of regret. Your cell becomes a classroom where hard lessons are learned.",
-        "🔒 Handcuffs, mugshots, and a one-way ticket to the pen. Time to pay your debt to society from behind bars.",
-        "🔒 The law finally caught up with you. Cold steel and concrete become your world as you contemplate your next move."
+        "🔒 The steel bars slam shut. You kept your mouth shut, like a true man of honor. Now you do your time.",
+        "🔒 Caught by the Feds. You know the drill - say nothing, admit nothing. The Family will look after you... eventually.",
+        "🔒 A temporary setback. You're in the joint now, surrounded by rats and snitches. Keep your head down and your eyes open.",
+        "🔒 The judge threw the book at you. Now you're just another number in the system. Don't let them break you.",
+        "🔒 Handcuffs and a cold cell. The price of doing business. Remember the Omertà - silence is golden.",
+        "🔒 The law won this round. You're behind bars, but your mind is still on the streets. Bide your time."
     ],
     
     jailBreakouts: [
-        "🗝️ Freedom! You slip through the shadows and past the guards. The night air tastes sweeter when you're not supposed to be breathing it.",
-        "🗝️ Like a ghost in the night! You navigate the prison like you own the place. Guards never saw you coming or going.",
-        "🗝️ Escape artist! You turn the prison into your personal playground, finding exits where others see only walls.",
-        "🗝️ The perfect breakout! You orchestrate your escape with the precision of a master criminal. Freedom has never felt so earned.",
-        "🗝️ Houdini would be proud! You vanish from your cell like magic, leaving confused guards and empty chains behind.",
-        "🗝️ Prison? More like a temporary inconvenience. You walk out like you're checking out of a hotel - unauthorized checkout, that is."
+        "🗝️ You're out! Slipping past the guards like a ghost. The air outside tastes like freedom and opportunity.",
+        "🗝️ A clean break. You left the joint without a trace. The Feds will be scratching their heads for weeks.",
+        "🗝️ Escape artist! You navigated the walls and fences like you owned the place. Back to business.",
+        "🗝️ The perfect escape. You orchestrated it with the precision of a bank heist. Freedom is yours again.",
+        "🗝️ Vanished into thin air. You left the cage behind, leaving the guards looking like fools.",
+        "🗝️ Prison couldn't hold you. You walked out like you were checking out of a hotel. The streets are calling."
     ],
     
     carTheftSuccess: [
-        "Clean getaway! The vehicle has been added to your garage.",
-        "Perfect crime! You hotwire the ride like a pro and cruise away into the night.",
-        "Smooth operation! The car practically begged you to steal it. Welcome to your new ride!",
-        "Flawless execution! You slip into the driver's seat like it was meant to be yours.",
-        "Professional work! The car is yours before anyone even notices it's missing.",
-        "Master thief! You acquire your new wheels with the skill of a seasoned criminal."
+        "Clean getaway! The vehicle is now property of the Family.",
+        "A smooth lift. You hotwired the ride and drove off before anyone noticed. Nice wheels.",
+        "Professional work. The car practically begged to be taken. It's in the garage now.",
+        "Flawless. You slipped into the driver's seat and claimed what was yours. Welcome to your new ride.",
+        "Taken like a pro. The car is yours, and the owner is none the wiser.",
+        "Masterful. You acquired the vehicle with the skill of a veteran. It's safe in the garage."
     ],
     
     carTheftDamaged: [
-        "The theft was successful but came at a cost! You now have this vehicle in your garage.",
-        "Success with a price! You got the car but left some evidence behind in the process.",
-        "Mission accomplished, but barely! The car is yours, though it shows signs of your hasty escape.",
-        "Stolen but scarred! You managed to get the vehicle, but it bears the marks of a rough acquisition.",
-        "Victory with consequences! The car is in your garage, but the theft wasn't as clean as you'd hoped.",
-        "Hard-earned wheels! You've got the car, but it came with more drama than expected."
+        "You got the car, but it was messy. It's in the garage, but it'll need some work.",
+        "Success, but at a cost. You secured the vehicle, but left a bit of a trail. Be careful.",
+        "Mission accomplished, barely. The car is yours, but it's seen better days after that escape.",
+        "Stolen, but scarred. You got the wheels, but it wasn't the cleanest job.",
+        "Victory with complications. The car is in the garage, but the heat is on.",
+        "Hard-earned wheels. You got it, but it was a fight. It's safe now, mostly."
     ],
     
     carTheftFailure: [
-        "You searched for cars to steal but couldn't find any suitable targets.",
-        "No luck tonight! Every car you scope out has too much security or too many witnesses around.",
-        "Slim pickings! The streets are crawling with cops and all the good cars are locked up tight.",
-        "Bad timing! Every vehicle you approach has an owner nearby or an alarm that goes off.",
-        "The heat is on! Too much police presence in the area to make a clean steal tonight.",
-        "Tough break! All the cars worth stealing are either too well-protected or in the wrong place."
+        "You scouted for wheels, but found nothing worth the risk.",
+        "No luck. Every car was too hot or too guarded. Better to walk away than get pinched.",
+        "Slim pickings. The streets are crawling with cops. Not the night for a lift.",
+        "Bad timing. Every target had eyes on it. You walked away to fight another day.",
+        "Too much heat. You couldn't find an opening. Smart move to lay low.",
+        "Tough break. All the good rides were locked down tight. Maybe next time."
     ],
     
     healthLoss: [
-        "🩸 Pain shoots through your body! Blood stains your clothes as you limp away. This life ain't for the weak.",
-        "🩸 That's gonna leave a mark! You patch yourself up as best you can, but this job took more than just energy.",
-        "🩸 Ouch! The sting of injury reminds you that crime is a contact sport, and you just got hit hard.",
-        "🩸 Battle scars! You add another wound to your collection - each one a reminder of the price of this lifestyle.",
-        "🩸 Rough and tumble! You take a beating but still walk away. Tougher criminals have survived worse.",
-        "🩸 Violence begets violence! You learn the hard way that every action in this world has consequences."
+        "🩸 You took a hit. Blood on your suit, but you're still standing. Tough it out.",
+        "🩸 That hurt. You patch yourself up, reminding yourself that this life has a price.",
+        "🩸 A painful lesson. You took some damage, but you're not out of the game yet.",
+        "🩸 Battle scars. You add another one to the collection. Wear it with pride.",
+        "🩸 Rough night. You took a beating, but you're still breathing. Others weren't so lucky.",
+        "🩸 Violence is part of the job. You learned that the hard way tonight."
     ],
     
     jailBreakoutFailure: [
-        "🚫 The guards were ready for you! Your escape attempt crumbles faster than your hopes of freedom.",
-        "🚫 Busted! Security was tighter than you thought. Back to your cell with extra time added to think about it.",
-        "🚫 So close, yet so far! You almost taste freedom before the alarms start blaring and guards surround you.",
-        "🚫 Amateur move! Your breakout plan falls apart like a house of cards. Should have planned better.",
-        "🚫 The walls win this round! Your escape attempt becomes just another failed story in this concrete jungle.",
-        "🚫 Back to square one! The guards drag you back to your cell, and now you're in even deeper trouble."
+        "🚫 The guards were waiting. Your escape attempt failed. Back to the hole.",
+        "🚫 Busted. Security was too tight. You're back in your cell, with more time to think.",
+        "🚫 So close. You almost made it, but the alarms sounded. Back to square one.",
+        "🚫 Amateur mistake. Your plan fell apart. You're not going anywhere anytime soon.",
+        "🚫 The walls held. Your attempt was futile. You're stuck in here for now.",
+        "🚫 Dragged back. The guards caught you. You're in deeper trouble now."
     ],
     
     territoryExpansionSuccess: [
-        "🏘️ Territory secured! Your influence spreads like wildfire through the streets. New turf means new opportunities.",
+        "🏘️ Territory secured. The Family's influence grows. This neighborhood belongs to us now.",
         "🏘️ Expansion complete! You claim another piece of the city as your own. The neighborhood knows who's in charge now.",
         "🏘️ Turf war victory! Your gang plants its flag in new territory. Respect and revenue follow conquest.",
         "🏘️ Street domination! You extend your reach across another block. This city is slowly becoming yours.",
@@ -526,7 +526,7 @@ const factionMissions = {
             id: "torrino_0",
             name: "Message Delivery",
             description: "Deliver an important message to a family associate across town. No questions asked.",
-            payout: [200, 350],
+            payout: [200000, 350000],
             risk: "low",
             jailChance: 5,
             energyCost: 8,
@@ -540,7 +540,7 @@ const factionMissions = {
             id: "torrino_1",
             name: "Collect Overdue Debt",
             description: "A local shopkeeper hasn't paid protection money. Remind them of their obligations.",
-            payout: [300, 600],
+            payout: [300000, 600000],
             risk: "medium",
             jailChance: 20,
             energyCost: 15,
@@ -554,7 +554,7 @@ const factionMissions = {
             id: "torrino_2",
             name: "Intimidate Rival Business",
             description: "A competing restaurant is cutting into family profits. Make them reconsider their location.",
-            payout: [500, 1000],
+            payout: [500000, 1000000],
             risk: "high",
             jailChance: 30,
             energyCost: 20,
@@ -570,7 +570,7 @@ const factionMissions = {
             id: "kozlov_0",
             name: "Street Information",
             description: "Gather information about police patrol routes in the industrial district.",
-            payout: [200, 400],
+            payout: [200000, 400000],
             risk: "low",
             jailChance: 10,
             energyCost: 10,
@@ -584,7 +584,7 @@ const factionMissions = {
             id: "kozlov_1",
             name: "Weapons Smuggling Run",
             description: "Transport a shipment of illegal weapons across the city without getting caught.",
-            payout: [800, 1200],
+            payout: [800000, 1200000],
             risk: "high",
             jailChance: 35,
             energyCost: 25,
@@ -598,7 +598,7 @@ const factionMissions = {
             id: "kozlov_2",
             name: "Border Crossing Operation",
             description: "Help smuggle goods across international borders using your connections.",
-            payout: [1500, 2500],
+            payout: [1500000, 2500000],
             risk: "extreme",
             jailChance: 45,
             energyCost: 35,
@@ -614,7 +614,7 @@ const factionMissions = {
             id: "chen_0",
             name: "Digital Surveillance",
             description: "Monitor communications for suspicious activities using basic hacking tools.",
-            payout: [300, 500],
+            payout: [300000, 500000],
             risk: "low",
             jailChance: 5,
             energyCost: 8,
@@ -628,7 +628,7 @@ const factionMissions = {
             id: "chen_1",
             name: "High-Tech Heist",
             description: "Steal cutting-edge technology from a corporate facility using advanced techniques.",
-            payout: [600, 1100],
+            payout: [600000, 1100000],
             risk: "high",
             jailChance: 25,
             energyCost: 20,
@@ -644,7 +644,7 @@ const factionMissions = {
             id: "morales_0",
             name: "Neighborhood Watch",
             description: "Keep an eye on rival gang movements in cartel territory and report back.",
-            payout: [250, 450],
+            payout: [250000, 450000],
             risk: "low",
             jailChance: 15,
             energyCost: 12,
@@ -658,7 +658,7 @@ const factionMissions = {
             id: "morales_1",
             name: "Drug Lab Protection",
             description: "Guard a secret drug manufacturing facility from rival gangs and police raids.",
-            payout: [700, 1300],
+            payout: [700000, 1300000],
             risk: "very high",
             jailChance: 40,
             energyCost: 30,
@@ -682,10 +682,10 @@ const territoryMissions = [
         requiredGangMembers: 5,
         energyCost: 25,
         rewards: {
-            money: 2000,
+            money: 2000000,
             territory: 1,
             reputation: 15,
-            passive_income: 100 // Per tribute collection
+            passive_income: 100000 // Per tribute collection
         },
         risks: {
             jailChance: 35,
@@ -703,10 +703,10 @@ const territoryMissions = [
         requiredGangMembers: 8,
         energyCost: 35,
         rewards: {
-            money: 4000,
+            money: 4000000,
             territory: 2,
             reputation: 25,
-            passive_income: 200
+            passive_income: 200000
         },
         risks: {
             jailChance: 45,
@@ -724,10 +724,10 @@ const territoryMissions = [
         requiredGangMembers: 3,
         energyCost: 15,
         rewards: {
-            money: 1500,
+            money: 1500000,
             territory: 1,
             reputation: 10,
-            passive_income: 75
+            passive_income: 75000
         },
         risks: {
             jailChance: 25,
@@ -758,7 +758,7 @@ const bossBattles = [
         },
         energyCost: 50,
         rewards: {
-            money: 8000,
+            money: 8000000,
             reputation: 35,
             territory: 2,
             experience: 500,
@@ -790,7 +790,7 @@ const bossBattles = [
         },
         energyCost: 40,
         rewards: {
-            money: 6000,
+            money: 6000000,
             reputation: 30,
             wanted_level_reduction: 20, // Reduces wanted level
             experience: 400
@@ -973,7 +973,7 @@ const skillTreeDefinitions = {
     violence: {
         name: "Combat Prowess",
         icon: "⚔️",
-        color: "#e74c3c",
+        color: "#8b0000",
         branches: {
             firearms: {
                 name: "Firearms",
@@ -1001,7 +1001,7 @@ const skillTreeDefinitions = {
     charisma: {
         name: "Social Influence",
         icon: "🎭",
-        color: "#3498db",
+        color: "#c0a062",
         branches: {
             negotiation: {
                 name: "Negotiation",
@@ -1029,7 +1029,7 @@ const skillTreeDefinitions = {
     intelligence: {
         name: "Mental Acuity",
         icon: "🧩",
-        color: "#2ecc71",
+        color: "#c0a062",
         branches: {
             hacking: {
                 name: "Hacking",
@@ -1552,12 +1552,12 @@ const businessTypes = [
         id: "restaurant",
         name: "Family Restaurant",
         description: "A cozy Italian restaurant perfect for discreet meetings",
-        basePrice: 25000,
-        baseIncome: 500,
+        basePrice: 2500000,
+        baseIncome: 50000,
         maxLevel: 5,
         upgradeMultiplier: 1.5,
         incomeMultiplier: 1.3,
-        launderingCapacity: 2000,
+        launderingCapacity: 200000,
         legitimacy: 85,
         category: "food"
     },
@@ -1565,12 +1565,12 @@ const businessTypes = [
         id: "nightclub",
         name: "Underground Nightclub",
         description: "Where the city's nightlife meets business opportunities",
-        basePrice: 50000,
-        baseIncome: 1200,
+        basePrice: 5000000,
+        baseIncome: 120000,
         maxLevel: 5,
         upgradeMultiplier: 1.8,
         incomeMultiplier: 1.4,
-        launderingCapacity: 5000,
+        launderingCapacity: 500000,
         legitimacy: 60,
         category: "entertainment"
     },
@@ -1578,12 +1578,12 @@ const businessTypes = [
         id: "laundromat",
         name: "24/7 Laundromat",
         description: "Clean clothes, cleaner money - everyone wins",
-        basePrice: 15000,
-        baseIncome: 300,
+        basePrice: 1500000,
+        baseIncome: 30000,
         maxLevel: 3,
         upgradeMultiplier: 1.4,
         incomeMultiplier: 1.2,
-        launderingCapacity: 8000,
+        launderingCapacity: 800000,
         legitimacy: 95,
         category: "service"
     },
@@ -1591,12 +1591,12 @@ const businessTypes = [
         id: "carwash",
         name: "Premium Car Wash",
         description: "Making dirty cars clean since forever",
-        basePrice: 30000,
-        baseIncome: 600,
+        basePrice: 3000000,
+        baseIncome: 60000,
         maxLevel: 4,
         upgradeMultiplier: 1.6,
         incomeMultiplier: 1.3,
-        launderingCapacity: 4000,
+        launderingCapacity: 400000,
         legitimacy: 90,
         category: "automotive"
     },
@@ -1604,12 +1604,12 @@ const businessTypes = [
         id: "casino",
         name: "Private Casino",
         description: "High stakes, higher rewards, highest risks",
-        basePrice: 100000,
-        baseIncome: 2500,
+        basePrice: 10000000,
+        baseIncome: 250000,
         maxLevel: 5,
         upgradeMultiplier: 2.0,
         incomeMultiplier: 1.6,
-        launderingCapacity: 10000,
+        launderingCapacity: 1000000,
         legitimacy: 40,
         category: "gambling"
     },
@@ -1617,12 +1617,12 @@ const businessTypes = [
         id: "pawnshop",
         name: "Discount Pawn Shop",
         description: "No questions asked, fair prices given",
-        basePrice: 20000,
-        baseIncome: 400,
+        basePrice: 2000000,
+        baseIncome: 40000,
         maxLevel: 4,
         upgradeMultiplier: 1.5,
         incomeMultiplier: 1.25,
-        launderingCapacity: 3000,
+        launderingCapacity: 300000,
         legitimacy: 70,
         category: "retail"
     }
@@ -1633,7 +1633,7 @@ const loanOptions = [
     {
         id: "small_loan",
         name: "Small Loan",
-        amount: 5000,
+        amount: 500000,
         interestRate: 0.15, // 15% weekly
         duration: 7, // days
         description: "Quick cash for immediate needs",
@@ -1643,7 +1643,7 @@ const loanOptions = [
     {
         id: "medium_loan",
         name: "Business Loan",
-        amount: 25000,
+        amount: 2500000,
         interestRate: 0.20, // 20% weekly
         duration: 14, // days
         description: "Expand your operations with serious capital",
@@ -1654,7 +1654,7 @@ const loanOptions = [
     {
         id: "large_loan",
         name: "High Roller Loan",
-        amount: 100000,
+        amount: 10000000,
         interestRate: 0.25, // 25% weekly
         duration: 21, // days
         description: "Big money for big moves - don't default",
@@ -1666,7 +1666,7 @@ const loanOptions = [
     {
         id: "emergency_loan",
         name: "Emergency Cash",
-        amount: 2000,
+        amount: 200000,
         interestRate: 0.30, // 30% weekly (predatory)
         duration: 3, // days
         description: "Desperate times call for desperate measures",
@@ -1685,8 +1685,8 @@ const launderingMethods = [
         cleanRate: 0.85, // 85% of money comes out clean
         timeRequired: 2, // hours
         suspicionRisk: 15, // % chance of raising suspicion
-        minAmount: 1000,
-        maxAmount: 50000,
+        minAmount: 100000,
+        maxAmount: 5000000,
         energyCost: 10,
         businessRequired: "casino"
     },
@@ -1697,8 +1697,8 @@ const launderingMethods = [
         cleanRate: 0.90,
         timeRequired: 4,
         suspicionRisk: 10,
-        minAmount: 500,
-        maxAmount: 20000,
+        minAmount: 50000,
+        maxAmount: 2000000,
         energyCost: 15,
         businessRequired: "restaurant"
     },
@@ -1709,8 +1709,8 @@ const launderingMethods = [
         cleanRate: 0.80,
         timeRequired: 6,
         suspicionRisk: 25,
-        minAmount: 2000,
-        maxAmount: 100000,
+        minAmount: 200000,
+        maxAmount: 10000000,
         energyCost: 20,
         businessRequired: null // Any business works
     },
@@ -1721,8 +1721,8 @@ const launderingMethods = [
         cleanRate: 0.75,
         timeRequired: 24,
         suspicionRisk: 30,
-        minAmount: 10000,
-        maxAmount: 500000,
+        minAmount: 1000000,
+        maxAmount: 50000000,
         energyCost: 30,
         minReputation: 40
     },
@@ -1733,11 +1733,11 @@ const launderingMethods = [
         cleanRate: 0.95,
         timeRequired: 48,
         suspicionRisk: 5,
-        minAmount: 50000,
-        maxAmount: 1000000,
+        minAmount: 5000000,
+        maxAmount: 100000000,
         energyCost: 25,
         minReputation: 60,
-        oneTimeSetupCost: 25000
+        oneTimeSetupCost: 2500000
     }
 ];
 
@@ -1899,9 +1899,9 @@ function updateMissionAvailability() {
 }
 
 // Function to show missions screen
-function showMissions() {
+async function showMissions() {
     if (player.inJail) {
-        alert("You can't access missions while you're in jail!");
+        await ui.alert("You can't access missions while you're in jail!");
         return;
     }
     
@@ -1933,14 +1933,14 @@ function showMissions() {
 
         <div style="display: flex; gap: 15px;">
             <!-- Left Column: Story Campaign -->
-            <div style="flex: 1; background: rgba(44, 62, 80, 0.8); padding: 15px; border-radius: 10px; border: 2px solid #3498db;">
-                <h3 style="color: #3498db;">📖 Story Campaign</h3>
+            <div style="flex: 1; background: rgba(0, 0, 0, 0.8); padding: 15px; border-radius: 10px; border: 2px solid #c0a062;">
+                <h3 style="color: #c0a062; font-family: 'Georgia', serif;">📖 The Story</h3>
                 ${generateCampaignHTML()}
             </div>
             
             <!-- Right Column: Faction Missions (Larger) -->
-            <div style="flex: 2; background: rgba(44, 62, 80, 0.8); padding: 15px; border-radius: 10px; border: 2px solid #e74c3c;">
-                <h3 style="color: #e74c3c;">🏛️ Faction Operations</h3>
+            <div style="flex: 2; background: rgba(0, 0, 0, 0.8); padding: 15px; border-radius: 10px; border: 2px solid #8b0000;">
+                <h3 style="color: #8b0000; font-family: 'Georgia', serif;">🏛️ Family Business</h3>
                 <div style="max-height: 400px; overflow-y: auto; padding-right: 10px;">
                     ${generateFactionMissionsHTML()}
                 </div>
@@ -1985,7 +1985,7 @@ function generateCampaignHTML() {
         const isComplete = obj.current >= obj.target;
         return `
             <div style="margin: 5px 0; padding: 8px; background: rgba(52, 73, 94, 0.6); border-radius: 5px;">
-                <span style="color: ${isComplete ? '#2ecc71' : '#ecf0f1'};">
+                <span style="color: ${isComplete ? '#c0a062' : '#ecf0f1'}; font-family: 'Georgia', serif;">
                     ${isComplete ? '✅' : '🔲'} ${obj.text} (${obj.current}/${obj.target})
                 </span>
             </div>
@@ -2027,7 +2027,7 @@ function generateFactionMissionsHTML() {
                 <!-- Available Missions -->
                 ${unlockedMissions.map(mission => `
                     <div style="margin: 8px 0; padding: 10px; background: rgba(46, 204, 113, 0.1); border-radius: 5px; border: 1px solid rgba(46, 204, 113, 0.3);">
-                        <strong style="color: #2ecc71;">✅ ${mission.name}</strong>
+                        <strong style="color: #c0a062; font-family: 'Georgia', serif;">✅ ${mission.name}</strong>
                         <br><small style="color: #ecf0f1;">${mission.description}</small>
                         <br><small style="color: #f39c12;">💰 Payout: $${mission.payout[0]}-${mission.payout[1]} | ⚡ Risk: ${mission.risk}</small>
                         ${mission.requiredItems && mission.requiredItems.length > 0 ? 
@@ -2049,14 +2049,14 @@ function generateFactionMissionsHTML() {
                     
                     return `
                         <div style="margin: 8px 0; padding: 10px; background: rgba(231, 76, 60, 0.1); border-radius: 5px; border: 1px solid rgba(231, 76, 60, 0.3);">
-                            <strong style="color: #e74c3c;">🔒 ${mission.name}</strong>
+                            <strong style="color: #8b0000; font-family: 'Georgia', serif;">🔒 ${mission.name}</strong>
                             <br><small style="color: #bdc3c7;">${mission.description}</small>
                             <br><small style="color: #f39c12;">💰 Payout: $${mission.payout[0]}-${mission.payout[1]} | ⚡ Risk: ${mission.risk}</small>
                             <br><small style="color: #e67e22;">📋 Required Items: ${mission.requiredItems.join(', ') || 'None'}</small>
                             <br><small style="color: #95a5a6;">Energy: ${mission.energyCost} | Rep Needed: ${mission.reputation}</small>
-                            <br><strong style="color: #e74c3c;">🚫 Unlock Requirements:</strong>
-                            ${!hasReputation ? `<br><small style="color: #e74c3c;">• Need ${repNeeded} more faction reputation</small>` : ''}
-                            ${!hasItems && mission.requiredItems.length > 0 ? `<br><small style="color: #e74c3c;">• Missing items: ${missingItems.join(', ')}</small>` : ''}
+                            <br><strong style="color: #8b0000; font-family: 'Georgia', serif;">🚫 Requirements:</strong>
+                            ${!hasReputation ? `<br><small style="color: #8b0000;">• Need ${repNeeded} more Respect</small>` : ''}
+                            ${!hasItems && mission.requiredItems.length > 0 ? `<br><small style="color: #8b0000;">• Missing items: ${missingItems.join(', ')}</small>` : ''}
                             ${hasReputation && hasItems ? `<br><small style="color: #f39c12;">• Ready to unlock! Check mission availability...</small>` : ''}
                         </div>
                     `;
@@ -2079,9 +2079,9 @@ function generateTerritoryMissionsHTML() {
         <div style="margin-bottom: 15px; padding: 12px; background: rgba(52, 73, 94, 0.6); border-radius: 8px; border: 2px solid #f39c12;">
             <h6 style="color: #f39c12; margin-bottom: 8px;">👥 Gang Size Requirements Overview</h6>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px;">
-                <small style="color: #2ecc71;">📍 <strong>Suburbs</strong>: 3+ members (Easy)</small>
+                <small style="color: #c0a062; font-family: 'Georgia', serif;">📍 <strong>The Streets</strong>: 3+ soldiers (Easy)</small>
                 <small style="color: #f39c12;">📍 <strong>Docks</strong>: 5+ members (Medium)</small>
-                <small style="color: #e74c3c;">📍 <strong>Downtown</strong>: 8+ members (Hard)</small>
+                <small style="color: #8b0000; font-family: 'Georgia', serif;">📍 <strong>Downtown</strong>: 8+ soldiers (Hard)</small>
             </div>
             <div style="margin-top: 8px; padding: 8px; background: rgba(0,0,0,0.3); border-radius: 4px;">
                 <small style="color: #bdc3c7;">
@@ -2106,16 +2106,16 @@ function generateTerritoryMissionsHTML() {
         
         html += `
             <div style="margin: 10px 0; padding: 12px; background: rgba(46, 204, 113, 0.1); border-radius: 8px; border: 1px solid rgba(46, 204, 113, 0.3);">
-                <h5 style="color: #2ecc71; margin-bottom: 8px;">✅ ${mission.name}</h5>
+                <h5 style="color: #c0a062; margin-bottom: 8px; font-family: 'Georgia', serif;">✅ ${mission.name}</h5>
                 <p style="color: #ecf0f1; margin: 5px 0;"><small>${mission.description}</small></p>
                 
                 <!-- Requirements -->
                 <div style="margin: 8px 0; padding: 8px; background: rgba(52, 73, 94, 0.6); border-radius: 5px;">
                     <strong style="color: #f39c12;">📋 Requirements:</strong><br>
-                    <small style="color: ${player.gang.members >= mission.requiredGangMembers ? '#2ecc71' : '#e74c3c'};">
+                    <small style="color: ${player.gang.members >= mission.requiredGangMembers ? '#c0a062' : '#8b0000'};">
                         👥 Gang Members: ${player.gang.members}/${mission.requiredGangMembers}
                     </small><br>
-                    <small style="color: ${player.energy >= mission.energyCost ? '#2ecc71' : '#e74c3c'};">
+                    <small style="color: ${player.energy >= mission.energyCost ? '#c0a062' : '#8b0000'};">
                         ⚡ Energy Cost: ${mission.energyCost}
                     </small><br>
                     <small style="color: #95a5a6;">🏢 Territory: ${mission.territory}</small>
@@ -2123,7 +2123,7 @@ function generateTerritoryMissionsHTML() {
                 
                 <!-- Rewards -->
                 <div style="margin: 8px 0; padding: 8px; background: rgba(52, 73, 94, 0.6); border-radius: 5px;">
-                    <strong style="color: #2ecc71;">💰 Rewards:</strong><br>
+                    <strong style="color: #c0a062; font-family: 'Georgia', serif;">💰 The Take:</strong><br>
                     <small style="color: #f39c12;">💵 Money: $${mission.rewards.money.toLocaleString()}</small><br>
                     <small style="color: #3498db;">🏘️ Territory: +${mission.rewards.territory}</small><br>
                     <small style="color: #9b59b6;">⭐ Reputation: +${mission.rewards.reputation}</small><br>
@@ -2213,23 +2213,23 @@ function generateBossBattlesHTML() {
 }
 
 // Mission execution functions
-function startFactionMission(familyKey, missionId) {
+async function startFactionMission(familyKey, missionId) {
     const mission = factionMissions[familyKey].find(m => m.id === missionId);
     if (!mission) return;
     
     // Check requirements
     if (player.energy < mission.energyCost) {
-        alert(`You need ${mission.energyCost} energy for this mission!`);
+        await ui.alert(`You need ${mission.energyCost} energy for this mission!`);
         return;
     }
     
     if (!hasRequiredItems(mission.requiredItems)) {
-        alert(`You need: ${mission.requiredItems.join(', ')}`);
+        await ui.alert(`You need: ${mission.requiredItems.join(', ')}`);
         return;
     }
     
     if (player.reputation < mission.reputation) {
-        alert(`You need ${mission.reputation} reputation for this mission!`);
+        await ui.alert(`You need ${mission.reputation} reputation for this mission!`);
         return;
     }
     
@@ -2254,7 +2254,7 @@ function startFactionMission(familyKey, missionId) {
         logAction(`🎯 Mission "${mission.name}" completed for ${crimeFamilies[familyKey].name}! +$${earnings}, +${mission.factionRep} family reputation.`);
         logAction(mission.story);
         
-        alert(`Mission successful! Earned $${earnings} and increased reputation with ${crimeFamilies[familyKey].name}.`);
+        await ui.alert(`Mission successful! Earned $${earnings} and increased reputation with ${crimeFamilies[familyKey].name}.`);
     } else {
         // Mission failed
         if (Math.random() * 100 < mission.jailChance) {
@@ -2263,25 +2263,25 @@ function startFactionMission(familyKey, missionId) {
         }
         
         logAction(`💥 Mission "${mission.name}" failed! The ${crimeFamilies[familyKey].name} is not pleased with your performance.`);
-        alert("Mission failed! Try again when you're better prepared.");
+        await ui.alert("Mission failed! Try again when you're better prepared.");
     }
     
     updateUI();
     showMissions();
 }
 
-function startTerritoryMission(missionId) {
+async function startTerritoryMission(missionId) {
     const mission = territoryMissions.find(m => m.id === missionId);
     if (!mission) return;
     
     // Check requirements
     if (player.energy < mission.energyCost) {
-        alert(`You need ${mission.energyCost} energy for this operation!`);
+        await ui.alert(`You need ${mission.energyCost} energy for this operation!`);
         return;
     }
     
     if (player.gang.members < mission.requiredGangMembers) {
-        alert(`You need at least ${mission.requiredGangMembers} gang members for this operation!`);
+        await ui.alert(`You need at least ${mission.requiredGangMembers} gang members for this operation!`);
         return;
     }
     
@@ -2307,7 +2307,7 @@ function startTerritoryMission(missionId) {
         logAction(`🏘️ Territory mission "${mission.name}" successful! You now control ${mission.territory}. +$${mission.rewards.money}, +${mission.rewards.territory} territory.`);
         logAction(mission.story);
         
-        alert(`Territory secured! You now control ${mission.territory} and gain +$${mission.rewards.passive_income} per tribute collection.`);
+        await ui.alert(`Territory secured! You now control ${mission.territory} and gain +$${mission.rewards.passive_income} per tribute collection.`);
     } else {
         // Mission failed
         if (Math.random() * 100 < mission.risks.jailChance) {
@@ -2328,7 +2328,7 @@ function startTerritoryMission(missionId) {
         player.health -= healthLoss;
         
         logAction(`💥 Territory mission "${mission.name}" failed! You retreat with casualties and learn the hard lesson of overreach.`);
-        alert(`Mission failed! Lost ${healthLoss} health. ${player.gang.gangMembers.length < player.gang.members ? 'A gang member was lost in the operation.' : ''}`);
+        await ui.alert(`Mission failed! Lost ${healthLoss} health. ${player.gang.gangMembers.length < player.gang.members ? 'A gang member was lost in the operation.' : ''}`);
         
         if (player.health <= 0) {
             showDeathScreen();
@@ -2340,23 +2340,23 @@ function startTerritoryMission(missionId) {
     showMissions();
 }
 
-function startBossBattle(battleId) {
+async function startBossBattle(battleId) {
     const battle = bossBattles.find(b => b.id === battleId);
     if (!battle) return;
     
     // Check requirements
     if (player.energy < battle.energyCost) {
-        alert(`You need ${battle.energyCost} energy for this confrontation!`);
+        await ui.alert(`You need ${battle.energyCost} energy for this confrontation!`);
         return;
     }
     
     if (player.power < battle.requirements.minPower) {
-        alert(`You need at least ${battle.requirements.minPower} power to challenge ${battle.boss.name}!`);
+        await ui.alert(`You need at least ${battle.requirements.minPower} power to challenge ${battle.boss.name}!`);
         return;
     }
     
     if (player.gang.members < battle.requirements.minGangMembers) {
-        alert(`You need at least ${battle.requirements.minGangMembers} gang members for this battle!`);
+        await ui.alert(`You need at least ${battle.requirements.minGangMembers} gang members for this battle!`);
         return;
     }
     
@@ -2396,7 +2396,7 @@ function startBossBattle(battleId) {
         logAction(`⚔️ VICTORY! ${battle.boss.name} has fallen! Your reputation echoes through every corner of the criminal underworld. +$${battle.rewards.money}, +${battle.rewards.reputation} reputation.`);
         logAction(battle.story);
         
-        alert(`${battle.boss.name} defeated! You've proven your dominance and earned legendary status in the underworld.`);
+        await ui.alert(`${battle.boss.name} defeated! You've proven your dominance and earned legendary status in the underworld.`);
     } else {
         // Defeat
         if (Math.random() * 100 < battle.risks.jailChance) {
@@ -2417,7 +2417,7 @@ function startBossBattle(battleId) {
         player.health -= healthLoss;
         
         logAction(`💀 DEFEAT! ${battle.boss.name} proved too powerful. You retreat with heavy casualties, bloodied but alive to fight another day.`);
-        alert(`Boss battle failed! Lost ${healthLoss} health and ${gangLosses} gang members. Regroup and try again when you're stronger.`);
+        await ui.alert(`Boss battle failed! Lost ${healthLoss} health and ${gangLosses} gang members. Regroup and try again when you're stronger.`);
         
         if (player.health <= 0) {
             showDeathScreen();
@@ -3193,9 +3193,9 @@ const territoryEvents = [
 // ==================== ENHANCED ECONOMY FUNCTIONS ====================
 
 // Business Management Functions
-function showBusinesses() {
+async function showBusinesses() {
     if (player.inJail) {
-        alert("You can't manage your businesses while you're in jail!");
+        await ui.alert("You can't manage your businesses while you're in jail!");
         return;
     }
     
@@ -3304,12 +3304,12 @@ function showBusinesses() {
     document.getElementById("business-screen").style.display = "block";
 }
 
-function purchaseBusiness(businessTypeId) {
+async function purchaseBusiness(businessTypeId) {
     const businessType = businessTypes.find(bt => bt.id === businessTypeId);
     if (!businessType) return;
     
     if (player.money < businessType.basePrice) {
-        alert("You don't have enough money to purchase this business!");
+        await ui.alert("You don't have enough money to purchase this business!");
         return;
     }
     
@@ -3317,7 +3317,7 @@ function purchaseBusiness(businessTypeId) {
     
     // Check if already owned
     if (player.businesses.some(b => b.type === businessTypeId)) {
-        alert("You already own this type of business!");
+        await ui.alert("You already own this type of business!");
         return;
     }
     
@@ -3329,28 +3329,28 @@ function purchaseBusiness(businessTypeId) {
         lastCollection: Date.now()
     });
     
-    alert(`You've successfully purchased ${businessType.name}! It will start generating income immediately.`);
+    await ui.alert(`You've successfully purchased ${businessType.name}! It will start generating income immediately.`);
     logAction(`🏢 You sign the papers and shake hands on a new business venture. ${businessType.name} is now under your control - legitimate money incoming!`);
     
     updateUI();
     showBusinesses();
 }
 
-function upgradeBusiness(businessIndex) {
+async function upgradeBusiness(businessIndex) {
     if (!player.businesses || businessIndex >= player.businesses.length) return;
     
     const business = player.businesses[businessIndex];
     const businessType = businessTypes.find(bt => bt.id === business.type);
     
     if (business.level >= businessType.maxLevel) {
-        alert("This business is already at maximum level!");
+        await ui.alert("This business is already at maximum level!");
         return;
     }
     
     const upgradePrice = Math.floor(businessType.basePrice * Math.pow(businessType.upgradeMultiplier, business.level));
     
     if (player.money < upgradePrice) {
-        alert("You don't have enough money to upgrade this business!");
+        await ui.alert("You don't have enough money to upgrade this business!");
         return;
     }
     
@@ -3359,14 +3359,14 @@ function upgradeBusiness(businessIndex) {
     
     const newIncome = Math.floor(businessType.baseIncome * Math.pow(businessType.incomeMultiplier, business.level - 1));
     
-    alert(`${business.name} upgraded to level ${business.level}! New daily income: $${newIncome.toLocaleString()}`);
+    await ui.alert(`${business.name} upgraded to level ${business.level}! New daily income: $${newIncome.toLocaleString()}`);
     logAction(`⬆️ You invest in improvements for ${business.name}. New equipment, better staff, higher profits - the empire grows stronger (Level ${business.level}).`);
     
     updateUI();
     showBusinesses();
 }
 
-function collectBusinessIncome(businessIndex) {
+async function collectBusinessIncome(businessIndex) {
     if (!player.businesses || businessIndex >= player.businesses.length) return;
     
     const business = player.businesses[businessIndex];
@@ -3377,7 +3377,7 @@ function collectBusinessIncome(businessIndex) {
     const hoursElapsed = Math.floor((currentTime - lastCollection) / (1000 * 60 * 60));
     
     if (hoursElapsed < 1) {
-        alert("No income available yet. Businesses generate income every hour.");
+        await ui.alert("No income available yet. Businesses generate income every hour.");
         return;
     }
     
@@ -3391,14 +3391,14 @@ function collectBusinessIncome(businessIndex) {
     updateStatistic('businessIncomeCollected');
     updateStatistic('totalMoneyEarned', totalIncome);
     
-    alert(`Collected $${totalIncome.toLocaleString()} from ${business.name}! (${hoursElapsed} hours of income)`);
+    await ui.alert(`Collected $${totalIncome.toLocaleString()} from ${business.name}! (${hoursElapsed} hours of income)`);
     logAction(`💼 The books are balanced and the cash is counted. ${business.name} delivers another profitable period (+$${totalIncome.toLocaleString()}).`);
     
     updateUI();
     showBusinesses();
 }
 
-function sellBusiness(businessIndex) {
+async function sellBusiness(businessIndex) {
     if (!player.businesses || businessIndex >= player.businesses.length) return;
     
     const business = player.businesses[businessIndex];
@@ -3406,14 +3406,14 @@ function sellBusiness(businessIndex) {
     
     const salePrice = Math.floor(businessType.basePrice * 0.6 * business.level); // 60% of investment back
     
-    if (!confirm(`Are you sure you want to sell ${business.name}?\n\nYou will receive: $${salePrice.toLocaleString()}\n\nThis action cannot be undone.`)) {
+    if (!await ui.confirm(`Are you sure you want to sell ${business.name}?<br><br>You will receive: $${salePrice.toLocaleString()}<br><br>This action cannot be undone.`)) {
         return;
     }
     
     player.money += salePrice;
     player.businesses.splice(businessIndex, 1);
     
-    alert(`You sold ${business.name} for $${salePrice.toLocaleString()}!`);
+    ui.alert(`You sold ${business.name} for $${salePrice.toLocaleString()}!`);
     logAction(`📋 You sign the final papers and hand over the keys. ${business.name} is no longer yours, but the cash cushions the loss (+$${salePrice.toLocaleString()}).`);
     
     updateUI();
@@ -3421,9 +3421,9 @@ function sellBusiness(businessIndex) {
 }
 
 // Loan Shark Functions
-function showLoanShark() {
+async function showLoanShark() {
     if (player.inJail) {
-        alert("You can't visit the loan shark while you're in jail!");
+        await ui.alert("You can't visit the loan shark while you're in jail!");
         return;
     }
     
@@ -3531,12 +3531,12 @@ function checkLoanEligibility(loanOption) {
     return true;
 }
 
-function takeLoan(loanId) {
+async function takeLoan(loanId) {
     const loanOption = loanOptions.find(lo => lo.id === loanId);
     if (!loanOption) return;
     
     if (!checkLoanEligibility(loanOption)) {
-        alert("You don't meet the requirements for this loan!");
+        ui.alert("You don't meet the requirements for this loan!");
         return;
     }
     
@@ -3544,14 +3544,14 @@ function takeLoan(loanId) {
     
     // Check if already have this type of loan (for limited loans)
     if (loanOption.maxLoans && player.activeLoans.filter(l => l.id === loanId).length >= loanOption.maxLoans) {
-        alert("You already have the maximum number of this type of loan!");
+        ui.alert("You already have the maximum number of this type of loan!");
         return;
     }
     
     const totalOwed = Math.floor(loanOption.amount * (1 + loanOption.interestRate * (loanOption.duration / 7)));
     const dueDate = Date.now() + (loanOption.duration * 24 * 60 * 60 * 1000);
     
-    if (!confirm(`Confirm loan details:\n\nLoan Amount: $${loanOption.amount.toLocaleString()}\nTotal to Repay: $${totalOwed.toLocaleString()}\nDue Date: ${Math.ceil(loanOption.duration)} days from now\n\nAre you sure you want to take this loan?`)) {
+    if (!await ui.confirm(`Confirm loan details:<br><br>Loan Amount: $${loanOption.amount.toLocaleString()}<br>Total to Repay: $${totalOwed.toLocaleString()}<br>Due Date: ${Math.ceil(loanOption.duration)} days from now<br><br>Are you sure you want to take this loan?`)) {
         return;
     }
     
@@ -3565,7 +3565,7 @@ function takeLoan(loanId) {
         riskLevel: loanOption.riskLevel
     });
     
-    alert(`Loan approved! $${loanOption.amount.toLocaleString()} has been added to your funds. Remember to pay back $${totalOwed.toLocaleString()} within ${loanOption.duration} days.`);
+    ui.alert(`Loan approved! $${loanOption.amount.toLocaleString()} has been added to your funds. Remember to pay back $${totalOwed.toLocaleString()} within ${loanOption.duration} days.`);
     logAction(`💰 Tony slides the cash across the table with a knowing smile. Easy money... for now. The clock starts ticking on your ${loanOption.name} (+$${loanOption.amount.toLocaleString()}).`);
     
     updateUI();
@@ -4137,7 +4137,7 @@ function handleOperationArrest(member, operation) {
 }
 
 // Assign or change a gang member's specialist role
-function assignRole(memberIndex) {
+async function assignRole(memberIndex) {
     const member = player.gang.gangMembers[memberIndex];
     if (!member) return;
     
@@ -4145,13 +4145,13 @@ function assignRole(memberIndex) {
         `<option value="${role.id}">${role.name} - ${role.description}</option>`
     ).join('');
     
-    const selectedRole = prompt(`Assign ${member.name} to a specialist role:\n\nAvailable roles:\n${specialistRoles.map(r => `${r.name}: ${r.description}`).join('\n')}\n\nEnter role ID (muscle, thief, dealer, enforcer, driver, technician):`);
+    const selectedRole = await ui.prompt(`Assign ${member.name} to a specialist role:<br><br>Available roles:<br>${specialistRoles.map(r => `${r.name}: ${r.description}`).join('<br>')}<br><br>Enter role ID (muscle, thief, dealer, enforcer, driver, technician):`);
     
     if (selectedRole && specialistRoles.find(r => r.id === selectedRole)) {
         member.specialization = selectedRole;
         member.loyalty += 3; // Small loyalty boost for getting a specialized role
         
-        alert(`${member.name} has been assigned as a ${specialistRoles.find(r => r.id === selectedRole).name}!`);
+        ui.alert(`${member.name} has been assigned as a ${specialistRoles.find(r => r.id === selectedRole).name}!`);
         logAction(`🎭 ${member.name} takes on the role of ${specialistRoles.find(r => r.id === selectedRole).name}. Specialization brings focus and loyalty to your organization.`);
         
         updateUI();
@@ -4160,7 +4160,7 @@ function assignRole(memberIndex) {
 }
 
 // Start training for a gang member
-function startTraining(memberIndex) {
+async function startTraining(memberIndex) {
     const member = player.gang.gangMembers[memberIndex];
     if (!member || member.inTraining) return;
     
@@ -4169,22 +4169,24 @@ function startTraining(memberIndex) {
     );
     
     if (availablePrograms.length === 0) {
-        alert(`No training programs available for ${member.name}'s role.`);
+        ui.alert(`No training programs available for ${member.name}'s role.`);
         return;
     }
     
     let programList = availablePrograms.map((program, index) => 
         `${index + 1}. ${program.name} - $${program.cost} (${program.duration}h)`
-    ).join('\n');
+    ).join('<br>');
     
-    const choice = prompt(`Select training program for ${member.name}:\n\n${programList}\n\nEnter program number:`);
+    const choice = await ui.prompt(`Select training program for ${member.name}:<br><br>${programList}<br><br>Enter program number:`);
+    if (!choice) return;
+
     const programIndex = parseInt(choice) - 1;
     
     if (programIndex >= 0 && programIndex < availablePrograms.length) {
         const program = availablePrograms[programIndex];
         
         if (player.money < program.cost) {
-            alert(`Insufficient funds! Need $${program.cost} for this training program.`);
+            ui.alert(`Insufficient funds! Need $${program.cost} for this training program.`);
             return;
         }
         
@@ -4195,7 +4197,7 @@ function startTraining(memberIndex) {
             );
             
             if (!hasPrereq) {
-                alert(`${member.name} doesn't meet the prerequisites for this training program.`);
+                ui.alert(`${member.name} doesn't meet the prerequisites for this training program.`);
                 return;
             }
         }
@@ -4218,7 +4220,7 @@ function startTraining(memberIndex) {
             completeTraining(trainingData);
         }, trainingData.duration);
         
-        alert(`${member.name} has started ${program.name} training. It will complete in ${program.duration} hours.`);
+        ui.alert(`${member.name} has started ${program.name} training. It will complete in ${program.duration} hours.`);
         logAction(`🎓 ${member.name} hits the books and training grounds. Investment in your crew's skills pays dividends in the long run (-$${program.cost}).`);
         
         updateUI();
@@ -4297,28 +4299,33 @@ function enrollInTraining(programId) {
 }
 
 // Deal with disloyal gang members
-function dealWithDisloyalty(memberIndex) {
+async function dealWithDisloyalty(memberIndex) {
     const member = player.gang.gangMembers[memberIndex];
     if (!member) return;
     
-    const options = [
-        "1. Have a heart-to-heart conversation (+10 loyalty, costs $500)",
-        "2. Give them a bonus payment (+15 loyalty, costs $1000)",
-        "3. Threaten them into compliance (+5 loyalty, risk of them leaving)",
-        "4. Kick them out of the gang (remove member)"
-    ];
+    const choice = await ui.show(
+        `Handle Disloyalty: ${member.name}`,
+        `${member.name} has low loyalty (${member.loyalty}%). How do you want to handle this?`,
+        [
+            { text: 'Heart-to-heart ($500)', class: 'modal-btn-secondary', value: '1' },
+            { text: 'Bonus Payment ($1000)', class: 'modal-btn-secondary', value: '2' },
+            { text: 'Threaten', class: 'modal-btn-secondary', value: '3' },
+            { text: 'Kick Out', class: 'modal-btn-danger', value: '4' },
+            { text: 'Cancel', class: 'modal-btn-secondary', value: null }
+        ]
+    );
     
-    const choice = prompt(`${member.name} has low loyalty (${member.loyalty}%). How do you want to handle this?\n\n${options.join('\n')}\n\nEnter your choice (1-4):`);
-    
+    if (!choice) return;
+
     switch(choice) {
         case "1":
             if (player.money >= 500) {
                 player.money -= 500;
                 member.loyalty = Math.min(100, member.loyalty + 10);
-                alert(`You have a sincere conversation with ${member.name}. Their loyalty increases.`);
+                ui.alert(`You have a sincere conversation with ${member.name}. Their loyalty increases.`);
                 logAction(`💬 A heart-to-heart with ${member.name} over drinks and cigars. Sometimes the personal touch works better than intimidation (+10 loyalty, -$500).`);
             } else {
-                alert("You don't have enough money for this approach.");
+                ui.alert("You don't have enough money for this approach.");
             }
             break;
             
@@ -4326,10 +4333,10 @@ function dealWithDisloyalty(memberIndex) {
             if (player.money >= 1000) {
                 player.money -= 1000;
                 member.loyalty = Math.min(100, member.loyalty + 15);
-                alert(`You give ${member.name} a generous bonus. Their loyalty greatly increases.`);
+                ui.alert(`You give ${member.name} a generous bonus. Their loyalty greatly increases.`);
                 logAction(`💰 A generous bonus for ${member.name} shows that loyalty is rewarded in your organization. Money talks, and loyalty listens (+15 loyalty, -$1000).`);
             } else {
-                alert("You don't have enough money for this approach.");
+                ui.alert("You don't have enough money for this approach.");
             }
             break;
             
@@ -4338,21 +4345,20 @@ function dealWithDisloyalty(memberIndex) {
                 // 30% chance they leave
                 player.gang.gangMembers = player.gang.gangMembers.filter((_, index) => index !== memberIndex);
                 player.gang.members = Math.max(0, player.gang.members - 1);
-                alert(`${member.name} doesn't respond well to threats and leaves the gang!`);
+                ui.alert(`${member.name} doesn't respond well to threats and leaves the gang!`);
                 logAction(`🗡️ ${member.name} doesn't take kindly to threats and walks away from the organization. Heavy-handed tactics sometimes backfire.`);
             } else {
                 member.loyalty = Math.min(100, member.loyalty + 5);
-                alert(`${member.name} falls in line after your threats. Their loyalty increases slightly.`);
+                ui.alert(`${member.name} falls in line after your threats. Their loyalty increases slightly.`);
                 logAction(`👊 A firm word and steely gaze reminds ${member.name} who's in charge. Fear can be a motivator, but it's a double-edged sword (+5 loyalty).`);
             }
             break;
             
         case "4":
-            const confirm = prompt("Are you sure you want to kick out " + member.name + "? This action cannot be undone. (yes/no)");
-            if (confirm.toLowerCase() === "yes") {
+            if (await ui.confirm(`Are you sure you want to kick out ${member.name}? This action cannot be undone.`)) {
                 player.gang.gangMembers = player.gang.gangMembers.filter((_, index) => index !== memberIndex);
                 player.gang.members = Math.max(0, player.gang.members - 1);
-                alert(`${member.name} has been removed from the gang.`);
+                ui.alert(`${member.name} has been removed from the gang.`);
                 logAction(`🚪 ${member.name} is shown the door. Sometimes cutting loose the disloyal is necessary for the health of the organization.`);
             }
             break;
@@ -4735,23 +4741,23 @@ function showAvailableTerritories() {
 }
 
 // Acquire Territory Function
-function acquireTerritory(districtId) {
+async function acquireTerritory(districtId) {
     const district = districtTypes.find(d => d.id === districtId);
     const canAfford = player.money >= district.acquisitionCost;
     const hasEnoughPower = player.territoryPower >= (district.acquisitionCost / 100);
     
     if (!canAfford) {
-        alert(`You need $${district.acquisitionCost.toLocaleString()} to acquire ${district.name}!`);
+        ui.alert(`You need $${district.acquisitionCost.toLocaleString()} to acquire ${district.name}!`);
         return;
     }
     
     if (!hasEnoughPower) {
         const requiredPower = Math.ceil(district.acquisitionCost / 100);
-        alert(`Your gang isn't powerful enough to control ${district.name}! You need ${requiredPower} gang power but only have ${player.territoryPower}. Build up your territory power by recruiting gang members and completing territory missions.`);
+        ui.alert(`Your gang isn't powerful enough to control ${district.name}! You need ${requiredPower} gang power but only have ${player.territoryPower}. Build up your territory power by recruiting gang members and completing territory missions.`);
         return;
     }
     
-    if (confirm(`Acquire ${district.name} for $${district.acquisitionCost.toLocaleString()}?`)) {
+    if (await ui.confirm(`Acquire ${district.name} for $${district.acquisitionCost.toLocaleString()}?`)) {
         player.money -= district.acquisitionCost;
         
         const newTerritory = {
@@ -4770,7 +4776,7 @@ function acquireTerritory(districtId) {
         // Update territory income
         calculateTotalTerritoryIncome();
         
-        alert(`Successfully acquired ${district.name}! Your influence grows...`);
+        ui.alert(`Successfully acquired ${district.name}! Your influence grows...`);
         logAction(`🏛️ Territory acquired: ${district.name}. Your criminal empire expands its reach. The streets whisper your name with newfound respect.`);
         
         updateUI();
@@ -5126,16 +5132,16 @@ function getRiskColor(riskLevel) {
 }
 
 // Territory Control Action Functions
-function corruptOfficial(targetId) {
+async function corruptOfficial(targetId) {
     const target = corruptionTargets.find(t => t.id === targetId);
     if (!target) return;
     
     if (player.money < target.baseCost) {
-        alert(`You need $${target.baseCost.toLocaleString()} to bribe the ${target.name}!`);
+        ui.alert(`You need $${target.baseCost.toLocaleString()} to bribe the ${target.name}!`);
         return;
     }
     
-    if (confirm(`Bribe ${target.name} for $${target.baseCost.toLocaleString()}? Duration: ${target.benefits.duration} days`)) {
+    if (await ui.confirm(`Bribe ${target.name} for $${target.baseCost.toLocaleString()}? Duration: ${target.benefits.duration} days`)) {
         player.money -= target.baseCost;
         
         const corruption = {
@@ -5151,10 +5157,10 @@ function corruptOfficial(targetId) {
         // Risk of getting caught
         if (Math.random() < (target.riskLevel === 'extreme' ? 0.3 : target.riskLevel === 'high' ? 0.2 : 0.1)) {
             player.wantedLevel += Math.floor(Math.random() * 20) + 10;
-            alert(`The bribe was successful, but you think someone might have noticed...`);
+            ui.alert(`The bribe was successful, but you think someone might have noticed...`);
             logAction(`💼 ${target.name} has been corrupted, but you sense eyes watching your every move. The price of power is constant vigilance.`);
         } else {
-            alert(`${target.name} has been successfully corrupted!`);
+            ui.alert(`${target.name} has been successfully corrupted!`);
             logAction(`💼 ${target.name} is now in your pocket. Money talks, and corruption walks. Your influence grows in the shadows.`);
         }
         
@@ -5184,16 +5190,16 @@ function approachBusiness(businessId, territoryId) {
         player.protectionRackets.push(racket);
         player.territoryReputation += 5;
         
-        alert(`${business.name} agrees to pay $${business.basePayment.toLocaleString()} per week for "protection".`);
+        ui.alert(`${business.name} agrees to pay $${business.basePayment.toLocaleString()} per week for "protection".`);
         logAction(`🏪 ${business.name} now pays tribute. Fear is the foundation of respect, and respect is the currency of power.`);
     } else {
         // Failed approach - business calls police or refuses
         if (Math.random() < 0.3) {
             player.wantedLevel += Math.floor(Math.random() * 15) + 5;
-            alert(`${business.name} called the police! Your wanted level increased.`);
+            ui.alert(`${business.name} called the police! Your wanted level increased.`);
             logAction(`🚨 ${business.name} refused your offer and called the authorities. Sometimes the sheep bite back.`);
         } else {
-            alert(`${business.name} refused your offer. They seem too stubborn or well-protected.`);
+            ui.alert(`${business.name} refused your offer. They seem too stubborn or well-protected.`);
             logAction(`❌ ${business.name} shows no fear. Some prey require a different approach.`);
         }
     }
@@ -5262,17 +5268,17 @@ function pressureBusiness(racketId) {
     showProtectionRackets();
 }
 
-function dropProtection(racketId) {
-    if (confirm("Are you sure you want to drop this protection racket?")) {
+async function dropProtection(racketId) {
+    if (await ui.confirm("Are you sure you want to drop this protection racket?")) {
         player.protectionRackets = player.protectionRackets.filter(r => r.id !== racketId);
-        alert("Protection racket dropped.");
+        ui.alert("Protection racket dropped.");
         logAction("📤 Released a business from your protection. Sometimes mercy has its own rewards.");
         
         showProtectionRackets();
     }
 }
 
-function initiateTurfWar(districtId) {
+async function initiateTurfWar(districtId) {
     const district = districtTypes.find(d => d.id === districtId);
     if (!district) return;
     
@@ -5280,7 +5286,7 @@ function initiateTurfWar(districtId) {
     
     if (!hasEnoughPower) {
         const requiredPower = Math.ceil(district.acquisitionCost / 50);
-        alert(`Your gang isn't powerful enough for a turf war over ${district.name}! You need ${requiredPower} gang power but only have ${player.territoryPower}. Turf wars require more power than peaceful acquisitions.`);
+        ui.alert(`Your gang isn't powerful enough for a turf war over ${district.name}! You need ${requiredPower} gang power but only have ${player.territoryPower}. Turf wars require more power than peaceful acquisitions.`);
         return;
     }
     
@@ -5289,7 +5295,7 @@ function initiateTurfWar(districtId) {
         gang.preferredDistricts.includes(districtId) && Math.random() < 0.5
     ) || rivalGangs[Math.floor(Math.random() * rivalGangs.length)];
     
-    if (confirm(`Initiate turf war against ${controllingGang.name} for control of ${district.name}? This will be violent and costly.`)) {
+    if (await ui.confirm(`Initiate turf war against ${controllingGang.name} for control of ${district.name}? This will be violent and costly.`)) {
         // Turf war calculation
         const playerPower = player.territoryPower + (player.gang.gangMembers.length * 10);
         const enemyPower = controllingGang.power + Math.floor(Math.random() * 100);
@@ -5336,11 +5342,11 @@ function initiateTurfWar(districtId) {
             
             calculateTotalTerritoryIncome();
             
-            alert(`Victory! You've taken ${district.name} from ${controllingGang.name}!\nCost: $${moneyCost.toLocaleString()}, ${casualties} casualties`);
+            ui.alert(`Victory! You've taken ${district.name} from ${controllingGang.name}!<br>Cost: $${moneyCost.toLocaleString()}, ${casualties} casualties`);
             logAction(`⚔️ Turf war victory! ${district.name} now flies your colors. Victory tastes sweet, but it's seasoned with blood and gold.`);
         } else {
             // Defeat
-            alert(`Defeat! ${controllingGang.name} held ${district.name}.\nCost: $${moneyCost.toLocaleString()}, ${casualties} casualties`);
+            ui.alert(`Defeat! ${controllingGang.name} held ${district.name}.<br>Cost: $${moneyCost.toLocaleString()}, ${casualties} casualties`);
             logAction(`💀 Turf war defeat against ${controllingGang.name}. The streets remember losses longer than victories.`);
         }
         
@@ -5360,18 +5366,18 @@ function manageTerritoryDetails(territoryId) {
     alert(`${district.name} Management\n\nWeekly Income: $${income.toLocaleString()}\nHeat Level: ${heat.toFixed(2)}\nDefense Level: ${territory.defenseLevel}\n\nThis territory control management system will be expanded in future updates.`);
 }
 
-function fortifyTerritory(territoryId) {
+async function fortifyTerritory(territoryId) {
     const territory = player.territories.find(t => t.id === territoryId);
     if (!territory) return;
     
     const upgradeCost = territory.defenseLevel * 5000;
     
     if (player.money < upgradeCost) {
-        alert(`You need $${upgradeCost.toLocaleString()} to fortify this territory!`);
+        ui.alert(`You need $${upgradeCost.toLocaleString()} to fortify this territory!`);
         return;
     }
     
-    if (confirm(`Fortify territory for $${upgradeCost.toLocaleString()}? This will increase income and reduce heat.`)) {
+    if (await ui.confirm(`Fortify territory for $${upgradeCost.toLocaleString()}? This will increase income and reduce heat.`)) {
         player.money -= upgradeCost;
         territory.defenseLevel += 1;
         
@@ -5382,7 +5388,7 @@ function fortifyTerritory(territoryId) {
         
         calculateTotalTerritoryIncome();
         
-        alert("Territory fortified! Defense level increased, income improved, and heat reduced.");
+        ui.alert("Territory fortified! Defense level increased, income improved, and heat reduced.");
         logAction("🛡️ Territory fortifications improved. A strong defense makes for a profitable offense.");
         
         updateUI();
@@ -6501,13 +6507,17 @@ function showCarTheftChoiceResult(stolenCar, wasHurt = false, healthLoss = 0) {
 
 // Function to handle the player's choice for stolen car (sell or store)
 function handleStolenCarChoice(choice, carName, baseValue, currentValue, damagePercentage) {
+    // Find the car type to get the image
+    const carType = stolenCarTypes.find(c => c.name === carName);
+    
     // Create the car object
     const stolenCar = {
         name: carName,
         baseValue: baseValue,
         currentValue: currentValue,
         damagePercentage: damagePercentage,
-        usageCount: 0
+        usageCount: 0,
+        image: carType ? carType.image : `${carName}.png`
     };
     
     if (choice === 'sell') {
@@ -6698,7 +6708,7 @@ function showStolenCars() {
                                       car.damagePercentage <= 50 ? 'DAMAGED' : 'HEAVILY DAMAGED';
                     let conditionColor = car.damagePercentage <= 15 ? '#2ecc71' : 
                                        car.damagePercentage <= 50 ? '#f39c12' : '#e74c3c';
-                    const carImageSrc = `${car.name}.png`;
+                    const carImageSrc = car.image || `${car.name}.png`;
                     
                     return `
                         <div style="background: rgba(44, 62, 80, 0.8); border-radius: 15px; padding: 25px; border: 2px solid #34495e; box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5); transition: transform 0.3s ease;">
@@ -8056,16 +8066,16 @@ function gangWar() {
 }
 
 // Function to fire a gang member
-function fireGangMember(memberIndex) {
+async function fireGangMember(memberIndex) {
     if (memberIndex < 0 || memberIndex >= player.gang.gangMembers.length) {
-        alert("Invalid gang member selection.");
+        ui.alert("Invalid gang member selection.");
         return;
     }
     
     const member = player.gang.gangMembers[memberIndex];
     
     // Confirm firing
-    if (!confirm(`Are you sure you want to fire ${member.name}?\n\nYou will lose:\n• ${member.power || 5} power\n• Their tribute generation\n\nThis action cannot be undone.`)) {
+    if (!await ui.confirm(`Are you sure you want to fire ${member.name}?<br><br>You will lose:<br>• ${member.power || 5} power<br>• Their tribute generation<br><br>This action cannot be undone.`)) {
         return;
     }
     
@@ -11283,16 +11293,16 @@ function startGame() {
 }
 
 // Simplified character creation system
-function showSimpleCharacterCreation() {
+async function showSimpleCharacterCreation() {
     // Hide main menu and intro screen during character creation
     document.getElementById("menu").style.display = "none";
     document.getElementById("intro-screen").style.display = "none";
     
     // First ask for name
-    const playerName = prompt("What's your name, tough guy?");
+    const playerName = await ui.prompt("What's your name, tough guy?");
     
     if (!playerName || playerName.trim() === "") {
-        alert("You need a name to make it in this world!");
+        ui.alert("You need a name to make it in this world!");
         // Show main menu again if they cancel
         document.getElementById("menu").style.display = "block";
         return;
@@ -12264,8 +12274,8 @@ function previousTutorialStep() {
     }
 }
 
-function skipTutorial() {
-    if (confirm("Are you sure you want to skip the tutorial? You can always refer to the action log for guidance during gameplay.")) {
+async function skipTutorial() {
+    if (await ui.confirm("Are you sure you want to skip the tutorial? You can always refer to the action log for guidance during gameplay.")) {
         clearTutorialHighlights(); // Clear any tutorial highlighting
         if (tutorialFromMenu) {
             completeTutorialFromMenu();
@@ -12486,6 +12496,19 @@ function healAtHospital() {
 
 // Function to show the death screen
 function showDeathScreen() {
+    // PERMADEATH: Delete the save file
+    if (typeof SAVE_SYSTEM !== 'undefined' && SAVE_SYSTEM.currentSlot) {
+        try {
+            localStorage.removeItem(`gameSlot_${SAVE_SYSTEM.currentSlot}`);
+            console.log(`Permadeath: Save slot ${SAVE_SYSTEM.currentSlot} deleted.`);
+            
+            // Disable autosave to prevent resurrection
+            SAVE_SYSTEM.autoSaveEnabled = false;
+        } catch (e) {
+            console.error("Failed to delete save on death:", e);
+        }
+    }
+
     document.getElementById("menu").style.display = "none";
     document.getElementById("death-screen").style.display = "flex";
 }
@@ -13472,8 +13495,8 @@ function returnToIntroScreen() {
 }
 
 // Function to confirm reset game
-function confirmResetGame() {
-    if (confirm("Are you sure you want to reset the game? This will delete all progress.")) {
+async function confirmResetGame() {
+    if (await ui.confirm("Are you sure you want to reset the game? This will delete all progress.")) {
         resetGame();
     }
 }
@@ -13543,7 +13566,7 @@ document.addEventListener('keydown', function(event) {
     // Cheats: '=' for $100,000, '-' for 10 level ups
     if (event.key === '=') {
         player.money += 100000;
-        alert("Cheat: You received $100,000!");
+        ui.alert("Cheat: You received $100,000!");
         logAction("Cheat: You received $100,000!");
         updateUI();
     }
@@ -13552,7 +13575,7 @@ document.addEventListener('keydown', function(event) {
             player.experience += Math.floor(player.level * 150 + Math.pow(player.level, 2) * 10);
             checkLevelUp();
         }
-        alert("Cheat: You gained 10 level ups!");
+        ui.alert("Cheat: You gained 10 level ups!");
         logAction("Cheat: You gained 10 level ups!");
         updateUI();
     }
@@ -14177,8 +14200,8 @@ function exportStatistics() {
     logAction("📊 Statistics exported successfully!");
 }
 
-function resetStatistics() {
-    if (confirm("Are you sure you want to reset all statistics? This action cannot be undone.")) {
+async function resetStatistics() {
+    if (await ui.confirm("Are you sure you want to reset all statistics? This action cannot be undone.")) {
         player.statistics = initializePlayerStatistics();
         showStatistics(); // Refresh the display
         logAction("📊 Statistics reset successfully!");
@@ -14947,19 +14970,19 @@ function loadGameFromSlot(slotNumber) {
     }
 }
 
-function deleteGameSlot(slotNumber) {
+async function deleteGameSlot(slotNumber) {
     if (slotNumber === 0) {
-        alert("Cannot delete auto-save slot!");
+        ui.alert("Cannot delete auto-save slot!");
         return;
     }
     
     const saveEntry = getSaveEntry(slotNumber);
     if (!saveEntry) {
-        alert("No save data in this slot!");
+        ui.alert("No save data in this slot!");
         return;
     }
     
-    if (confirm(`Delete save "${saveEntry.saveName}"?\n\nThis action cannot be undone!`)) {
+    if (await ui.confirm(`Delete save "${saveEntry.saveName}"?<br><br>This action cannot be undone!`)) {
         localStorage.removeItem(`gameSlot_${slotNumber}`);
         updateSaveSlotsList();
         logAction(`🗑️ Deleted save from slot ${slotNumber}`);

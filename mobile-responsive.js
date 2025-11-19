@@ -348,37 +348,37 @@ const MobileSystem = {
             left: -280px;
             width: 280px;
             height: 100vh;
-            background: linear-gradient(180deg, rgba(44, 62, 80, 0.98) 0%, rgba(52, 73, 94, 0.98) 100%);
+            background: linear-gradient(180deg, #000 0%, #1a1a1a 100%);
             z-index: 999;
             padding: 60px 20px 20px 20px;
             box-sizing: border-box;
             transition: left 0.3s ease;
             overflow-y: auto;
-            border-right: 2px solid #3498db;
+            border-right: 2px solid #c0a062;
             backdrop-filter: blur(10px);
         `;
         
         // Add swipe hint and action log content
         actionPanel.innerHTML = `
-            <div style="color: white;">
+            <div style="color: #c0a062; font-family: 'Georgia', serif;">
                 <div style="text-align: center; margin-bottom: 20px;">
-                    <h3 style="color: #3498db; margin: 0 0 10px 0;">📜 Action Log</h3>
+                    <h3 style="color: #c0a062; margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 2px;">📜 The Record</h3>
                     <small style="color: #95a5a6; font-style: italic;">Swipe left to close →</small>
                 </div>
                 
                 <div id="mobile-action-list" style="max-height: calc(100vh - 120px); overflow-y: auto; 
                                                    background: rgba(0,0,0,0.4); padding: 15px; border-radius: 8px; 
-                                                   font-size: 12px; border: 1px solid rgba(52,152,219,0.3);">
-                    Loading actions...
+                                                   font-size: 12px; border: 1px solid #555;">
+                    Loading records...
                 </div>
                 
                 <div style="text-align: center; margin-top: 15px;">
-                    <small style="color: #95a5a6; font-style: italic;">Showing recent actions</small>
+                    <small style="color: #95a5a6; font-style: italic;">Showing recent activity</small>
                 </div>
                 
                 <div style="position: absolute; top: 20px; right: 20px;">
                     <button onclick="MobileSystem.closeActionPanel();" 
-                            style="background: rgba(231, 76, 60, 0.8); border: none; border-radius: 50%; 
+                            style="background: rgba(139, 0, 0, 0.8); border: 1px solid #ff0000; border-radius: 50%; 
                                    width: 30px; height: 30px; color: white; font-size: 16px; cursor: pointer;">
                         ×
                     </button>
@@ -518,17 +518,20 @@ const MobileSystem = {
             top: 50%;
             left: 10px;
             transform: translateY(-50%);
-            background: rgba(52, 152, 219, 0.9);
-            color: white;
+            background: rgba(192, 160, 98, 0.9);
+            color: #000;
             padding: 10px 15px;
             border-radius: 20px;
             font-size: 12px;
             z-index: 1000;
             animation: swipeHintPulse 2s infinite;
             pointer-events: none;
+            font-family: 'Georgia', serif;
+            font-weight: bold;
+            border: 1px solid #000;
         `;
         
-        swipeHint.innerHTML = 'Swipe right →<br>for action log';
+        swipeHint.innerHTML = 'Swipe right →<br>for The Record';
         
         // Add animation keyframes
         const style = document.createElement('style');
@@ -575,77 +578,77 @@ const MobileSystem = {
             left: -280px;
             width: 280px;
             height: 100vh;
-            background: linear-gradient(180deg, rgba(44, 62, 80, 0.98) 0%, rgba(52, 73, 94, 0.98) 100%);
+            background: linear-gradient(180deg, #000 0%, #1a1a1a 100%);
             z-index: 999;
             padding: 60px 20px 20px 20px;
             box-sizing: border-box;
             transition: left 0.3s ease;
             overflow-y: auto;
-            border-right: 2px solid #3498db;
+            border-right: 2px solid #c0a062;
             backdrop-filter: blur(10px);
         `;
         
         // Add quick actions and navigation
         mobileMenu.innerHTML = `
-            <div style="color: white;">
-                <h3 style="color: #3498db; margin: 0 0 20px 0; text-align: center;">Quick Actions</h3>
+            <div style="color: #c0a062; font-family: 'Georgia', serif;">
+                <h3 style="color: #c0a062; margin: 0 0 20px 0; text-align: center; text-transform: uppercase; letter-spacing: 2px;">Quick Actions</h3>
                 
                 <button onclick="goBackToMainMenu(); MobileSystem.toggleMobileMenu();" 
-                        style="width: 100%; margin: 5px 0; padding: 12px; background: linear-gradient(45deg, #e74c3c, #c0392b); 
-                               color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">
-                    🏠 Main Menu
+                        style="width: 100%; margin: 5px 0; padding: 12px; background: linear-gradient(45deg, #8b0000, #5a0000); 
+                               color: white; border: 1px solid #ff0000; border-radius: 6px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
+                    🏠 Safehouse
                 </button>
                 
                 <button onclick="showGlobalChat(); MobileSystem.toggleMobileMenu();" 
-                        style="width: 100%; margin: 5px 0; padding: 12px; background: linear-gradient(45deg, #9b59b6, #8e44ad); 
-                               color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">
-                    💬 Global Chat
+                        style="width: 100%; margin: 5px 0; padding: 12px; background: linear-gradient(45deg, #333, #000); 
+                               color: #c0a062; border: 1px solid #c0a062; border-radius: 6px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
+                    📞 The Wire
                 </button>
                 
                 <button onclick="showStore(); MobileSystem.toggleMobileMenu();" 
-                        style="width: 100%; margin: 5px 0; padding: 12px; background: linear-gradient(45deg, #3498db, #2980b9); 
-                               color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">
-                    🛒 Store
+                        style="width: 100%; margin: 5px 0; padding: 12px; background: linear-gradient(45deg, #333, #000); 
+                               color: #c0a062; border: 1px solid #c0a062; border-radius: 6px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
+                    🛒 Black Market
                 </button>
                 
                 <button onclick="showJobs(); MobileSystem.toggleMobileMenu();" 
-                        style="width: 100%; margin: 5px 0; padding: 12px; background: linear-gradient(45deg, #3498db, #2980b9); 
-                               color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">
-                    💼 Jobs
+                        style="width: 100%; margin: 5px 0; padding: 12px; background: linear-gradient(45deg, #333, #000); 
+                               color: #c0a062; border: 1px solid #c0a062; border-radius: 6px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
+                    💼 Business
                 </button>
                 
                 <button onclick="showGang(); MobileSystem.toggleMobileMenu();" 
-                        style="width: 100%; margin: 5px 0; padding: 12px; background: linear-gradient(45deg, #3498db, #2980b9); 
-                               color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">
-                    👥 Gang
+                        style="width: 100%; margin: 5px 0; padding: 12px; background: linear-gradient(45deg, #333, #000); 
+                               color: #c0a062; border: 1px solid #c0a062; border-radius: 6px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
+                    👥 Family
                 </button>
                 
                 <button onclick="showSkills(); MobileSystem.toggleMobileMenu();" 
-                        style="width: 100%; margin: 5px 0; padding: 12px; background: linear-gradient(45deg, #3498db, #2980b9); 
-                               color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">
-                    ⚡ Skills
+                        style="width: 100%; margin: 5px 0; padding: 12px; background: linear-gradient(45deg, #333, #000); 
+                               color: #c0a062; border: 1px solid #c0a062; border-radius: 6px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
+                    ⚡ Talents
                 </button>
                 
                 <button onclick="buyEnergy(); MobileSystem.toggleMobileMenu();" 
-                        style="width: 100%; margin: 5px 0; padding: 12px; background: linear-gradient(45deg, #f39c12, #e67e22); 
-                               color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">
-                    ⚡ Buy Energy
+                        style="width: 100%; margin: 5px 0; padding: 12px; background: linear-gradient(45deg, #f39c12, #d35400); 
+                               color: white; border: 1px solid #f39c12; border-radius: 6px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
+                    ⚡ Boost
                 </button>
                 
                 <button onclick="MobileSystem.scrollToActionLog();" 
-                        style="width: 100%; margin: 5px 0; padding: 12px; background: linear-gradient(45deg, #9b59b6, #8e44ad); 
-                               color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">
-                    📜 Action Log
+                        style="width: 100%; margin: 5px 0; padding: 12px; background: linear-gradient(45deg, #333, #000); 
+                               color: #c0a062; border: 1px solid #c0a062; border-radius: 6px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
+                    📜 The Record
                 </button>
                 
-                <div id="mobile-action-log" style="margin-top: 30px; border-top: 2px solid #3498db; padding-top: 20px;">
-                    <h4 style="color: #3498db; margin: 0 0 15px 0; text-align: center; font-size: 16px;">📜 Recent Actions</h4>
+                <div id="mobile-action-log" style="margin-top: 30px; border-top: 2px solid #c0a062; padding-top: 20px;">
+                    <h4 style="color: #c0a062; margin: 0 0 15px 0; text-align: center; font-size: 16px; font-family: 'Georgia', serif;">📜 Recent Activity</h4>
                     <div id="mobile-action-list" style="max-height: 250px; overflow-y: auto; background: rgba(0,0,0,0.4); 
-                                                         padding: 15px; border-radius: 8px; font-size: 12px; border: 1px solid rgba(52,152,219,0.3);">
-                        Loading actions...
+                                                         padding: 15px; border-radius: 8px; font-size: 12px; border: 1px solid #555;">
+                        Loading records...
                     </div>
                     <div style="text-align: center; margin-top: 10px;">
-                        <small style="color: #95a5a6; font-style: italic;">Showing last 10 actions</small>
+                        <small style="color: #95a5a6; font-style: italic;">Showing last 10 entries</small>
                     </div>
                 </div>
             </div>
@@ -669,15 +672,15 @@ const MobileSystem = {
                 
                 if (recentActions.length > 0) {
                     mobileActionList.innerHTML = recentActions.map(item => 
-                        `<div style="margin: 8px 0; padding: 8px; background: rgba(255,255,255,0.1); 
+                        `<div style="margin: 8px 0; padding: 8px; background: rgba(255,255,255,0.05); 
                                      border-radius: 4px; color: #ecf0f1; font-size: 13px; line-height: 1.4; 
-                                     border-left: 3px solid #3498db;">${item.textContent}</div>`
+                                     border-left: 3px solid #c0a062; font-family: 'Georgia', serif;">${item.textContent}</div>`
                     ).join('');
                 } else {
-                    mobileActionList.innerHTML = '<div style="color: #95a5a6; font-style: italic; text-align: center; padding: 20px;">No recent actions</div>';
+                    mobileActionList.innerHTML = '<div style="color: #95a5a6; font-style: italic; text-align: center; padding: 20px;">No recent activity</div>';
                 }
             } else {
-                mobileActionList.innerHTML = '<div style="color: #e74c3c; font-style: italic; text-align: center; padding: 20px;">Action log not found</div>';
+                mobileActionList.innerHTML = '<div style="color: #8b0000; font-style: italic; text-align: center; padding: 20px;">Record not found</div>';
             }
         }
     },
@@ -709,40 +712,41 @@ const MobileSystem = {
             bottom: 0;
             left: 0;
             width: 100%;
-            background: linear-gradient(90deg, rgba(44, 62, 80, 0.95) 0%, rgba(52, 73, 94, 0.95) 100%);
+            background: linear-gradient(90deg, #000 0%, #1a1a1a 100%);
             padding: 10px;
             box-sizing: border-box;
             z-index: 900;
-            border-top: 2px solid #3498db;
+            border-top: 2px solid #c0a062;
             backdrop-filter: blur(5px);
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.5);
         `;
         
         quickActionsBar.innerHTML = `
-            <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px;">
+            <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; font-family: 'Georgia', serif;">
                 <button onclick="showStore()" 
-                        style="padding: 6px; background: #3498db; color: white; border: none; border-radius: 5px; 
-                               font-size: 11px; font-weight: bold; cursor: pointer;">
-                    🛒<br>Store
+                        style="padding: 6px; background: linear-gradient(45deg, #333, #000); color: #c0a062; border: 1px solid #c0a062; border-radius: 5px; 
+                               font-size: 11px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
+                    🛒<br>Market
                 </button>
                 <button onclick="showJobs()" 
-                        style="padding: 6px; background: #3498db; color: white; border: none; border-radius: 5px; 
-                               font-size: 11px; font-weight: bold; cursor: pointer;">
-                    💼<br>Jobs
+                        style="padding: 6px; background: linear-gradient(45deg, #333, #000); color: #c0a062; border: 1px solid #c0a062; border-radius: 5px; 
+                               font-size: 11px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
+                    💼<br>Biz
                 </button>
                 <button onclick="showGlobalChat()" 
-                        style="padding: 6px; background: #9b59b6; color: white; border: none; border-radius: 5px; 
-                               font-size: 11px; font-weight: bold; cursor: pointer;">
-                    💬<br>Chat
+                        style="padding: 6px; background: linear-gradient(45deg, #333, #000); color: #c0a062; border: 1px solid #c0a062; border-radius: 5px; 
+                               font-size: 11px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
+                    📞<br>Wire
                 </button>
                 <button onclick="showGang()" 
-                        style="padding: 6px; background: #3498db; color: white; border: none; border-radius: 5px; 
-                               font-size: 11px; font-weight: bold; cursor: pointer;">
-                    👥<br>Gang
+                        style="padding: 6px; background: linear-gradient(45deg, #333, #000); color: #c0a062; border: 1px solid #c0a062; border-radius: 5px; 
+                               font-size: 11px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
+                    👥<br>Fam
                 </button>
                 <button onclick="goBackToMainMenu()" 
-                        style="padding: 6px; background: #e74c3c; color: white; border: none; border-radius: 5px; 
-                               font-size: 11px; font-weight: bold; cursor: pointer;">
-                    🏠<br>Menu
+                        style="padding: 6px; background: linear-gradient(45deg, #8b0000, #5a0000); color: white; border: 1px solid #ff0000; border-radius: 5px; 
+                               font-size: 11px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
+                    🏠<br>Safehouse
                 </button>
             </div>
         `;
@@ -843,21 +847,23 @@ const MobileSystem = {
                 top: 50%;
                 left: 50%;
                 transform: translate(-50%, -50%);
-                background: rgba(0, 0, 0, 0.9);
+                background: rgba(0, 0, 0, 0.95);
                 color: white;
                 padding: 20px;
                 border-radius: 10px;
                 text-align: center;
                 z-index: 2000;
                 max-width: 300px;
+                border: 2px solid #c0a062;
+                font-family: 'Georgia', serif;
             `;
             
             orientationWarning.innerHTML = `
-                <h3 style="margin: 0 0 10px 0; color: #f39c12;">📱 Better Experience</h3>
-                <p style="margin: 0 0 15px 0;">For the best gaming experience, try rotating your device to portrait mode!</p>
+                <h3 style="margin: 0 0 10px 0; color: #c0a062;">📱 Better Experience</h3>
+                <p style="margin: 0 0 15px 0;">For the best experience, try rotating your device to portrait mode!</p>
                 <button onclick="MobileSystem.hideOrientationSuggestion()" 
-                        style="background: #3498db; color: white; border: none; padding: 10px 20px; 
-                               border-radius: 5px; cursor: pointer; font-weight: bold;">
+                        style="background: linear-gradient(45deg, #333, #000); color: #c0a062; border: 1px solid #c0a062; padding: 10px 20px; 
+                               border-radius: 5px; cursor: pointer; font-weight: bold; font-family: 'Georgia', serif;">
                     Got it!
                 </button>
             `;

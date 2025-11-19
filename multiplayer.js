@@ -1,4 +1,4 @@
-// ==================== ONLINE WORLD SYSTEM ====================
+// ==================== THE COMMISSION SYSTEM ====================
 
 // Online world configuration
 const onlineWorld = {
@@ -30,7 +30,7 @@ let onlineWorldState = {
     playerId: null,
     serverInfo: {
         playerCount: 0,
-        serverName: 'From Dusk to Don - Main Server',
+        serverName: 'From Dusk to Don - The Commission',
         cityEvents: [],
         globalLeaderboard: []
     },
@@ -227,7 +227,7 @@ function handleServerMessage(message) {
             if (chatArea) {
                 const messageDiv = document.createElement('div');
                 messageDiv.style.cssText = 'margin: 8px 0; padding: 8px; background: rgba(52, 73, 94, 0.3); border-radius: 5px; border-left: 3px solid ' + chatMessage.color + ';';
-                messageDiv.innerHTML = `<strong style="color: ${chatMessage.color};">${chatMessage.player}:</strong> ${chatMessage.message} <small style="color: #95a5a6; float: right;">${chatMessage.time}</small>`;
+                messageDiv.innerHTML = `<strong style="color: ${chatMessage.color};">${escapeHTML(chatMessage.player)}:</strong> ${escapeHTML(chatMessage.message)} <small style="color: #95a5a6; float: right;">${chatMessage.time}</small>`;
                 chatArea.appendChild(messageDiv);
                 chatArea.scrollTop = chatArea.scrollHeight;
             }
@@ -254,7 +254,7 @@ function handleServerMessage(message) {
             addWorldEvent(jailbreakMsg);
             
             if (document.getElementById('global-chat-area')) {
-                showSystemMessage(jailbreakMsg, message.success ? '#2ecc71' : '#e74c3c');
+                showSystemMessage(jailbreakMsg, message.success ? '#c0a062' : '#8b0000');
             }
             break;
             
@@ -264,7 +264,7 @@ function handleServerMessage(message) {
             addWorldEvent(arrestMsg);
             
             if (document.getElementById('global-chat-area')) {
-                showSystemMessage(arrestMsg, '#e74c3c');
+                showSystemMessage(arrestMsg, '#8b0000');
             }
             break;
             
@@ -283,6 +283,32 @@ function handleServerMessage(message) {
             loadGlobalLeaderboard();
             break;
             
+        case 'system_message':
+            const systemMsg = {
+                player: 'System',
+                message: message.message,
+                time: new Date().toLocaleTimeString(),
+                color: message.color || '#e74c3c',
+                playerId: 'system'
+            };
+            onlineWorldState.globalChat.push(systemMsg);
+            
+            // Update chat if visible
+            const chatAreaSys = document.getElementById('global-chat-area');
+            if (chatAreaSys) {
+                const messageDiv = document.createElement('div');
+                messageDiv.style.cssText = 'margin: 8px 0; padding: 8px; background: rgba(52, 73, 94, 0.3); border-radius: 5px; border-left: 3px solid ' + systemMsg.color + ';';
+                messageDiv.innerHTML = `<strong style="color: ${systemMsg.color};">System:</strong> ${escapeHTML(systemMsg.message)} <small style="color: #95a5a6; float: right;">${systemMsg.time}</small>`;
+                chatAreaSys.appendChild(messageDiv);
+                chatAreaSys.scrollTop = chatAreaSys.scrollHeight;
+            }
+            
+            // Also show as a toast if UI system is available
+            if (typeof ui !== 'undefined' && ui.toast) {
+                ui.toast(message.message, 'warning');
+            }
+            break;
+            
         default:
             console.log('Unknown message type:', message.type);
     }
@@ -295,7 +321,7 @@ function updateJailVisibility() {
     const jailStatusContainer = document.getElementById('online-jail-status');
     if (!jailStatusContainer) return;
     
-    let jailHTML = '<h4 style="color: #e74c3c; margin: 0 0 15px 0;">🔒 Players in Jail</h4>';
+    let jailHTML = '<h4 style="color: #8b0000; margin: 0 0 15px 0; font-family: \'Georgia\', serif;">🔒 Made Men In The Can</h4>';
     
     const playersInJail = Object.values(onlineWorldState.playerStates || {}).filter(p => p.inJail);
     
@@ -305,10 +331,10 @@ function updateJailVisibility() {
         playersInJail.forEach(prisoner => {
             const timeLeft = Math.max(0, Math.ceil(prisoner.jailTime));
             jailHTML += `
-                <div style="background: rgba(231, 76, 60, 0.2); padding: 10px; margin: 8px 0; border-radius: 6px; border-left: 4px solid #e74c3c;">
+                <div style="background: rgba(139, 0, 0, 0.2); padding: 10px; margin: 8px 0; border-radius: 6px; border-left: 4px solid #8b0000;">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <div>
-                            <strong style="color: #e74c3c;">${prisoner.name}</strong>
+                            <strong style="color: #8b0000; font-family: \'Georgia\', serif;">${prisoner.name}</strong>
                             <br><small style="color: #ecf0f1;">Time Left: ${timeLeft}s</small>
                         </div>
                         <div>
@@ -336,7 +362,7 @@ function updateOnlinePlayerList() {
     const playerListContainer = document.getElementById('online-player-list');
     if (!playerListContainer) return;
     
-    let playersHTML = '<h4 style="color: #3498db; margin: 0 0 15px 0;">👥 Online Players</h4>';
+    let playersHTML = '<h4 style="color: #c0a062; margin: 0 0 15px 0; font-family: \'Georgia\', serif;">👥 Made Men on the Street</h4>';
     
     const onlinePlayers = Object.values(onlineWorldState.playerStates || {});
     
@@ -346,13 +372,13 @@ function updateOnlinePlayerList() {
         onlinePlayers.forEach(player => {
             const statusIcon = player.inJail ? '🔒' : '🟢';
             const statusText = player.inJail ? 'In Jail' : 'Free';
-            const statusColor = player.inJail ? '#e74c3c' : '#2ecc71';
+            const statusColor = player.inJail ? '#8b0000' : '#c0a062';
             
             playersHTML += `
                 <div style="background: rgba(52, 73, 94, 0.3); padding: 10px; margin: 8px 0; border-radius: 6px;">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <div>
-                            <strong style="color: ${player.playerId === onlineWorldState.playerId ? '#2ecc71' : '#ecf0f1'};">
+                            <strong style="color: ${player.playerId === onlineWorldState.playerId ? '#c0a062' : '#ecf0f1'}; font-family: 'Georgia', serif;">
                                 ${player.name} ${player.playerId === onlineWorldState.playerId ? '(You)' : ''}
                             </strong>
                             <br><small style="color: ${statusColor};">${statusIcon} ${statusText}</small>
@@ -455,7 +481,8 @@ function showSystemMessage(message, color = '#f39c12') {
     if (chatArea) {
         const messageDiv = document.createElement('div');
         messageDiv.style.cssText = `margin: 8px 0; padding: 8px; background: rgba(52, 73, 94, 0.4); border-radius: 5px; border-left: 3px solid ${color};`;
-        messageDiv.innerHTML = `<strong style="color: ${color};">System:</strong> ${message} <small style="color: #95a5a6; float: right;">${new Date().toLocaleTimeString()}</small>`;
+        // Sanitize messages from untrusted sources before injecting into the DOM
+        messageDiv.innerHTML = `<strong style="color: ${color};">System:</strong> ${escapeHTML(message)} <small style="color: #95a5a6; float: right;">${new Date().toLocaleTimeString()}</small>`;
         chatArea.appendChild(messageDiv);
         chatArea.scrollTop = chatArea.scrollHeight;
     }
@@ -547,55 +574,55 @@ function showGlobalChat() {
     
     let chatHTML = `
         <div class="game-screen" style="display: block;">
-            <h2>💬 Global Chat</h2>
-            <p>Chat with players from around the criminal underworld in real-time!</p>
+            <h2 style="color: #c0a062; font-family: 'Georgia', serif; text-shadow: 2px 2px 4px #000;">📞 The Wire</h2>
+            <p style="color: #ccc;">Communicate with other associates in the family.</p>
             
             <!-- Connection Status -->
-            <div id="chat-connection-status" style="background: rgba(44, 62, 80, 0.8); padding: 10px; border-radius: 8px; margin-bottom: 15px; text-align: center;">
+            <div id="chat-connection-status" style="background: rgba(0, 0, 0, 0.8); padding: 10px; border-radius: 8px; margin-bottom: 15px; text-align: center; border: 1px solid #c0a062;">
                 ${getConnectionStatusHTML()}
             </div>
             
             <!-- Chat Area -->
-            <div style="background: rgba(44, 62, 80, 0.9); padding: 20px; border-radius: 15px; border: 2px solid #9b59b6; margin-bottom: 20px;">
-                <div id="global-chat-area" style="height: 400px; overflow-y: auto; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #7f8c8d;">
+            <div style="background: rgba(0, 0, 0, 0.9); padding: 20px; border-radius: 15px; border: 2px solid #c0a062; margin-bottom: 20px; box-shadow: 0 0 15px rgba(192, 160, 98, 0.2);">
+                <div id="global-chat-area" style="height: 400px; overflow-y: auto; background: rgba(20, 20, 20, 0.8); padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #555;">
                     ${generateChatHTML()}
                 </div>
                 
                 <!-- Chat Input -->
                 <div style="display: flex; gap: 10px;">
-                    <input type="text" id="chat-input" placeholder="Type your message..." 
-                           style="flex: 1; padding: 12px; border: 2px solid #9b59b6; border-radius: 8px; background: rgba(52, 73, 94, 0.8); color: white; font-size: 14px;"
+                    <input type="text" id="chat-input" placeholder="Speak your mind..." 
+                           style="flex: 1; padding: 12px; border: 2px solid #c0a062; border-radius: 8px; background: rgba(0, 0, 0, 0.8); color: #c0a062; font-size: 14px; font-family: 'Georgia', serif;"
                            onkeypress="if(event.key==='Enter') sendChatMessage()">
                     <button onclick="sendChatMessage()" 
-                            style="padding: 12px 20px; background: linear-gradient(45deg, #9b59b6, #8e44ad); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">
-                        💬 Send
+                            style="padding: 12px 20px; background: linear-gradient(180deg, #c0a062 0%, #8a6e2f 100%); color: #000; border: 1px solid #ffd700; border-radius: 8px; cursor: pointer; font-weight: bold; font-family: 'Georgia', serif; text-transform: uppercase;">
+                        📞 Send
                     </button>
                 </div>
                 
                 <!-- Quick Chat Options -->
                 <div style="margin-top: 15px;">
-                    <h4 style="color: #9b59b6; margin-bottom: 10px;">⚡ Quick Chat</h4>
+                    <h4 style="color: #c0a062; margin-bottom: 10px; font-family: 'Georgia', serif;">⚡ Quick Words</h4>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px;">
-                        <button onclick="sendQuickChat('Hey there!')" style="padding: 8px; background: #27ae60; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 12px;">👋 Hey there!</button>
-                        <button onclick="sendQuickChat('Anyone up for a job?')" style="padding: 8px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 12px;">💼 Looking for work</button>
-                        <button onclick="sendQuickChat('Need backup!')" style="padding: 8px; background: #e74c3c; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 12px;">🚨 Need backup!</button>
-                        <button onclick="sendQuickChat('GG everyone!')" style="padding: 8px; background: #f39c12; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 12px;">🎯 GG everyone!</button>
-                        <button onclick="sendQuickChat('Anyone in jail need a breakout?')" style="padding: 8px; background: #9b59b6; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 12px;">🔓 Offering jailbreak</button>
-                        <button onclick="sendQuickChat('Thanks for the help!')" style="padding: 8px; background: #1abc9c; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 12px;">🙏 Thanks!</button>
+                        <button onclick="sendQuickChat('Respect.')" style="padding: 8px; background: #27ae60; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 12px;">🎩 Respect.</button>
+                        <button onclick="sendQuickChat('Looking for work.')" style="padding: 8px; background: linear-gradient(45deg, #333, #000); color: #c0a062; border: 1px solid #c0a062; border-radius: 5px; cursor: pointer; font-size: 12px; font-family: 'Georgia', serif;">💼 Looking for work</button>
+                        <button onclick="sendQuickChat('Watch your back.')" style="padding: 8px; background: #8b0000; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 12px;">🔫 Watch your back</button>
+                        <button onclick="sendQuickChat('Good business.')" style="padding: 8px; background: #f39c12; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 12px;">🤝 Good business</button>
+                        <button onclick="sendQuickChat('Anyone need a lawyer?')" style="padding: 8px; background: #9b59b6; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 12px;">⚖️ Need a lawyer?</button>
+                        <button onclick="sendQuickChat('My regards to the Don.')" style="padding: 8px; background: #1abc9c; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 12px;">🍷 Regards to the Don</button>
                     </div>
                 </div>
             </div>
             
             <!-- Online Players List -->
-            <div style="background: rgba(44, 62, 80, 0.8); padding: 15px; border-radius: 10px; margin-bottom: 20px;">
-                <h4 style="color: #3498db; margin-bottom: 10px;">👥 Players Online</h4>
+            <div style="background: rgba(0, 0, 0, 0.8); padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #c0a062;">
+                <h4 style="color: #c0a062; margin-bottom: 10px; font-family: 'Georgia', serif;">👥 Made Men Online</h4>
                 <div id="chat-player-list" style="max-height: 150px; overflow-y: auto;">
                     ${generateOnlinePlayersHTML()}
                 </div>
             </div>
             
-            <button onclick="goBackToMainMenu()" style="background: linear-gradient(45deg, #95a5a6, #7f8c8d); color: white; padding: 15px 30px; border: none; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: bold;">
-                🏠 Back to Main Menu
+            <button onclick="goBackToMainMenu()" style="background: linear-gradient(180deg, #333 0%, #000 100%); color: #c0a062; padding: 15px 30px; border: 1px solid #c0a062; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: bold; font-family: 'Georgia', serif; text-transform: uppercase;">
+                🏠 Back to Safehouse
             </button>
         </div>
     `;
@@ -614,7 +641,7 @@ function showGlobalChat() {
         if (chatContainer) {
             const mobileBackBtn = document.createElement('button');
             mobileBackBtn.innerHTML = '← Back';
-            mobileBackBtn.style.cssText = 'position: fixed; top: 10px; left: 10px; background: #e74c3c; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; z-index: 1000;';
+            mobileBackBtn.style.cssText = 'position: fixed; top: 10px; left: 10px; background: linear-gradient(45deg, #8b0000, #5a0000); color: white; padding: 10px 15px; border: 1px solid #ff0000; border-radius: 5px; cursor: pointer; z-index: 1000; font-family: "Georgia", serif;';
             mobileBackBtn.onclick = goBackToMainMenu;
             document.body.appendChild(mobileBackBtn);
             
@@ -639,10 +666,25 @@ function generateChatHTML() {
     
     return onlineWorldState.globalChat.map(msg => `
         <div style="margin: 8px 0; padding: 8px; background: rgba(52, 73, 94, 0.3); border-radius: 5px; border-left: 3px solid ${msg.color};">
-            <strong style="color: ${msg.color};">${msg.player}:</strong> ${msg.message} 
+            <strong style="color: ${msg.color};">${escapeHTML(msg.player)}:</strong> ${escapeHTML(msg.message)} 
             <small style="color: #95a5a6; float: right;">${msg.time}</small>
         </div>
     `).join('');
+}
+
+// Simple HTML escape to prevent XSS in chat messages and other user-generated content
+function escapeHTML(str) {
+    if (!str) return '';
+    return str.replace(/[&<>"']/g, function (tag) {
+        const charsToReplace = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        };
+        return charsToReplace[tag] || tag;
+    });
 }
 
 // Send chat message
@@ -730,7 +772,7 @@ function sendChatMessage() {
         }));
     } else {
         // Add locally if not connected
-        addChatMessage(playerName, message, '#3498db');
+        addChatMessage(playerName, message, '#c0a062');
     }
 }
 
@@ -752,7 +794,7 @@ function sendQuickChat(message) {
             timestamp: Date.now()
         }));
     } else {
-        addChatMessage(player.name || 'You', message, '#3498db');
+        addChatMessage(player.name || 'You', message, '#c0a062');
     }
 }
 
@@ -783,9 +825,9 @@ function addChatMessage(playerName, message, color = '#ecf0f1') {
 // Get connection status HTML for chat
 function getConnectionStatusHTML() {
     if (onlineWorldState.isConnected) {
-        return `<span style="color: #2ecc71;">🟢 Connected to Global Chat</span>`;
+        return `<span style="color: #c0a062; font-family: 'Georgia', serif;">🟢 Connected to The Wire</span>`;
     } else {
-        return `<span style="color: #e74c3c;">🔴 Connecting to Chat...</span>`;
+        return `<span style="color: #8b0000; font-family: 'Georgia', serif;">🔴 Connecting to The Wire...</span>`;
     }
 }
 
@@ -806,11 +848,11 @@ function generateOnlinePlayersHTML() {
 // Show online world hub (replaces old multiplayer menu)
 function showOnlineWorld() {
     let worldHTML = `
-        <h2>🌐 Online World</h2>
-        <p>Welcome to the persistent criminal underworld! Compete and cooperate with players worldwide.</p>
+        <h2 style="color: #c0a062; font-family: 'Georgia', serif; text-shadow: 2px 2px 4px #000;">🌐 The Commission</h2>
+        <p style="color: #ccc;">Welcome to the family. Compete and cooperate with other Dons worldwide.</p>
         
         <!-- Connection Status -->
-        <div id="world-connection-status" style="background: rgba(44, 62, 80, 0.8); padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+        <div id="world-connection-status" style="background: rgba(0, 0, 0, 0.8); padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #c0a062;">
             <!-- Status content will be updated by updateConnectionStatus() -->
         </div>
         
@@ -818,18 +860,18 @@ function showOnlineWorld() {
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0;">
             
             <!-- Online Players List -->
-            <div style="background: rgba(44, 62, 80, 0.8); padding: 20px; border-radius: 15px; border: 2px solid #3498db;">
+            <div style="background: rgba(0, 0, 0, 0.8); padding: 20px; border-radius: 15px; border: 2px solid #c0a062;">
                 <div id="online-player-list">
-                    <h4 style="color: #3498db; margin: 0 0 15px 0;">👥 Online Players</h4>
-                    <div style="color: #95a5a6; font-style: italic; text-align: center;">Loading players...</div>
+                    <h4 style="color: #c0a062; margin: 0 0 15px 0; font-family: 'Georgia', serif;">👥 Made Men Online</h4>
+                    <div style="color: #95a5a6; font-style: italic; text-align: center;">Loading associates...</div>
                 </div>
             </div>
             
             <!-- Players in Jail -->
-            <div style="background: rgba(44, 62, 80, 0.8); padding: 20px; border-radius: 15px; border: 2px solid #e74c3c;">
+            <div style="background: rgba(0, 0, 0, 0.8); padding: 20px; border-radius: 15px; border: 2px solid #8b0000;">
                 <div id="online-jail-status">
-                    <h4 style="color: #e74c3c; margin: 0 0 15px 0;">🔒 Players in Jail</h4>
-                    <div style="color: #95a5a6; font-style: italic; text-align: center;">Loading jail status...</div>
+                    <h4 style="color: #8b0000; margin: 0 0 15px 0; font-family: 'Georgia', serif;">🔒 In The Can</h4>
+                    <div style="color: #95a5a6; font-style: italic; text-align: center;">Checking prison records...</div>
                 </div>
             </div>
         </div>
@@ -838,22 +880,22 @@ function showOnlineWorld() {
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0;">
             
             <!-- City Districts -->
-            <div style="background: rgba(44, 62, 80, 0.8); padding: 20px; border-radius: 15px; border: 2px solid #f39c12;">
-                <h3 style="color: #f39c12; text-align: center; margin-bottom: 15px;">🏙️ City Districts</h3>
+            <div style="background: rgba(0, 0, 0, 0.8); padding: 20px; border-radius: 15px; border: 2px solid #f39c12;">
+                <h3 style="color: #f39c12; text-align: center; margin-bottom: 15px; font-family: 'Georgia', serif;">🏙️ Turf</h3>
                 <div id="city-districts">
                     ${Object.keys(onlineWorldState.cityDistricts).map(district => {
                         const districtData = onlineWorldState.cityDistricts[district];
                         return `
-                            <div style="background: rgba(0, 0, 0, 0.3); padding: 10px; margin: 8px 0; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+                            <div style="background: rgba(20, 20, 20, 0.8); padding: 10px; margin: 8px 0; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #555;">
                                 <div>
-                                    <strong>${district.charAt(0).toUpperCase() + district.slice(1)}</strong>
-                                    <br><small>Crime Level: ${districtData.crimeLevel}%</small>
+                                    <strong style="color: #c0a062;">${district.charAt(0).toUpperCase() + district.slice(1)}</strong>
+                                    <br><small style="color: #ccc;">Crime Level: ${districtData.crimeLevel}%</small>
                                 </div>
                                 <div style="text-align: right;">
-                                    <div style="color: ${districtData.controlledBy ? '#2ecc71' : '#95a5a6'};">
+                                    <div style="color: ${districtData.controlledBy ? '#c0a062' : '#95a5a6'}; font-family: 'Georgia', serif;">
                                         ${districtData.controlledBy || 'Unclaimed'}
                                     </div>
-                                    <button onclick="exploreDistrict('${district}')" style="background: #3498db; color: white; padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8em;">
+                                    <button onclick="exploreDistrict('${district}')" style="background: #c0a062; color: #000; padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8em; font-weight: bold;">
                                         Explore
                                     </button>
                                 </div>
@@ -864,8 +906,8 @@ function showOnlineWorld() {
             </div>
             
             <!-- Global Leaderboard -->
-            <div style="background: rgba(44, 62, 80, 0.8); padding: 20px; border-radius: 15px; border: 2px solid #2ecc71;">
-                <h3 style="color: #2ecc71; text-align: center; margin-bottom: 15px;">🏆 Global Leaderboard</h3>
+            <div style="background: rgba(0, 0, 0, 0.8); padding: 20px; border-radius: 15px; border: 2px solid #c0a062;">
+                <h3 style="color: #c0a062; text-align: center; margin-bottom: 15px; font-family: 'Georgia', serif;">🏆 The Bosses</h3>
                 <div id="global-leaderboard">
                     <div style="color: #95a5a6; text-align: center; font-style: italic;">
                         Loading rankings...
@@ -875,46 +917,46 @@ function showOnlineWorld() {
         </div>
         
         <!-- Online Activities -->
-        <div style="background: rgba(44, 62, 80, 0.8); padding: 20px; border-radius: 15px; border: 2px solid #2ecc71; margin: 20px 0;">
-            <h3 style="color: #2ecc71; text-align: center; margin-bottom: 15px;">⚡ Live Activities</h3>
+        <div style="background: rgba(0, 0, 0, 0.8); padding: 20px; border-radius: 15px; border: 2px solid #c0a062; margin: 20px 0;">
+            <h3 style="color: #c0a062; text-align: center; margin-bottom: 15px; font-family: 'Georgia', serif;">⚡ Family Business</h3>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-                <button onclick="showGlobalChat()" style="background: #3498db; color: white; padding: 15px; border: none; border-radius: 8px; cursor: pointer;">
-                    💬 Global Chat<br><small>Talk with all players</small>
+                <button onclick="showGlobalChat()" style="background: #333; color: #c0a062; padding: 15px; border: 1px solid #c0a062; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">
+                    📞 The Wire<br><small style="color: #ccc;">Talk with the family</small>
                 </button>
-                <button onclick="showActiveHeists()" style="background: #e74c3c; color: white; padding: 15px; border: none; border-radius: 8px; cursor: pointer;">
-                    💰 Active Heists<br><small>Join ongoing heists</small>
+                <button onclick="showActiveHeists()" style="background: #333; color: #8b0000; padding: 15px; border: 1px solid #8b0000; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">
+                    💰 Big Scores<br><small style="color: #ccc;">Join ongoing jobs</small>
                 </button>
-                <button onclick="showTradeMarket()" style="background: #1abc9c; color: white; padding: 15px; border: none; border-radius: 8px; cursor: pointer;">
-                    🛒 Trade Market<br><small>Buy/sell with players</small>
+                <button onclick="showTradeMarket()" style="background: #333; color: #27ae60; padding: 15px; border: 1px solid #27ae60; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">
+                    🛒 Black Market<br><small style="color: #ccc;">Buy/sell contraband</small>
                 </button>
-                <button onclick="showGangWars()" style="background: #8e44ad; color: white; padding: 15px; border: none; border-radius: 8px; cursor: pointer;">
-                    ⚔️ Gang Wars<br><small>Territory battles</small>
+                <button onclick="showGangWars()" style="background: #333; color: #8b0000; padding: 15px; border: 1px solid #8b0000; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">
+                    ⚔️ Turf Wars<br><small style="color: #ccc;">Fight for territory</small>
                 </button>
-                <button onclick="showNearbyPlayers()" style="background: #f39c12; color: white; padding: 15px; border: none; border-radius: 8px; cursor: pointer;">
-                    👥 Nearby Players<br><small>Players in your area</small>
+                <button onclick="showNearbyPlayers()" style="background: #333; color: #f39c12; padding: 15px; border: 1px solid #f39c12; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">
+                    👥 Local Crew<br><small style="color: #ccc;">Players in your area</small>
                 </button>
-                <button onclick="showCityEvents()" style="background: #9b59b6; color: white; padding: 15px; border: none; border-radius: 8px; cursor: pointer;">
-                    🎯 City Events<br><small>Special opportunities</small>
+                <button onclick="showCityEvents()" style="background: #333; color: #9b59b6; padding: 15px; border: 1px solid #9b59b6; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">
+                    📰 Street News<br><small style="color: #ccc;">Special opportunities</small>
                 </button>
             </div>
         </div>
         
         <!-- Quick Chat Access -->
-        <div style="background: rgba(52, 152, 219, 0.2); padding: 15px; border-radius: 10px; margin: 20px 0; border: 2px solid #3498db;">
-            <h4 style="color: #3498db; margin: 0 0 10px 0;">💬 Quick Chat</h4>
+        <div style="background: rgba(0, 0, 0, 0.8); padding: 15px; border-radius: 10px; margin: 20px 0; border: 2px solid #c0a062;">
+            <h4 style="color: #c0a062; margin: 0 0 10px 0; font-family: 'Georgia', serif;">💬 Quick Wire</h4>
             <div style="display: flex; gap: 10px; align-items: center;">
-                <input type="text" id="quick-chat-input" placeholder="Send a message to all players..." 
-                       style="flex: 1; padding: 8px; border-radius: 5px; border: 1px solid #bdc3c7;"
+                <input type="text" id="quick-chat-input" placeholder="Send a message to the family..." 
+                       style="flex: 1; padding: 8px; border-radius: 5px; border: 1px solid #c0a062; background: #222; color: #c0a062;"
                        onkeypress="if(event.key==='Enter') sendQuickChatMessage()" maxlength="200">
-                <button onclick="sendQuickChatMessage()" style="background: #3498db; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer;">
+                <button onclick="sendQuickChatMessage()" style="background: #c0a062; color: #000; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
                     Send
                 </button>
             </div>
-            <div style="margin-top: 10px; max-height: 120px; overflow-y: auto; background: rgba(0, 0, 0, 0.2); padding: 8px; border-radius: 5px;">
+            <div style="margin-top: 10px; max-height: 120px; overflow-y: auto; background: rgba(20, 20, 20, 0.8); padding: 8px; border-radius: 5px; border: 1px solid #555;">
                 <div id="quick-chat-messages">
                     ${onlineWorldState.globalChat.slice(-3).map(msg => `
                         <div style="margin: 4px 0; font-size: 0.9em;">
-                            <strong style="color: ${msg.color || '#3498db'};">${msg.player}:</strong> ${msg.message}
+                            <strong style="color: ${msg.color || '#c0a062'};">${escapeHTML(msg.player)}:</strong> ${escapeHTML(msg.message)}
                         </div>
                     `).join('')}
                 </div>
@@ -922,18 +964,18 @@ function showOnlineWorld() {
         </div>
         
         <!-- Recent World Activity -->
-        <div style="background: rgba(44, 62, 80, 0.6); padding: 20px; border-radius: 10px; margin-top: 20px;">
-            <h3>📊 Recent World Activity</h3>
-            <div id="world-activity-feed" style="height: 200px; overflow-y: auto; background: rgba(0, 0, 0, 0.3); padding: 10px; border-radius: 5px;">
-                <div style="color: #95a5a6; font-style: italic;">Loading world events...</div>
+        <div style="background: rgba(0, 0, 0, 0.8); padding: 20px; border-radius: 10px; margin-top: 20px; border: 1px solid #555;">
+            <h3 style="color: #ccc; font-family: 'Georgia', serif;">📊 Street Activity</h3>
+            <div id="world-activity-feed" style="height: 200px; overflow-y: auto; background: rgba(20, 20, 20, 0.8); padding: 10px; border-radius: 5px;">
+                <div style="color: #95a5a6; font-style: italic;">Loading street news...</div>
             </div>
         </div>
         
         <div style="text-align: center; margin-top: 40px;">
             <button onclick="goBackToMainMenu()" 
-                    style="background: linear-gradient(45deg, #95a5a6, #7f8c8d); color: white; padding: 18px 35px; 
-                           border: none; border-radius: 12px; font-size: 1.3em; font-weight: bold; cursor: pointer;">
-                🏠 Back to Main Menu
+                    style="background: linear-gradient(180deg, #333 0%, #000 100%); color: #c0a062; padding: 18px 35px; 
+                           border: 1px solid #c0a062; border-radius: 12px; font-size: 1.3em; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif; text-transform: uppercase;">
+                🏠 Back to Safehouse
             </button>
         </div>
     `;
@@ -979,7 +1021,7 @@ function updateConnectionStatus() {
         case 'connected':
             statusHTML = `
                 <div style="text-align: center;">
-                    <h4 style="color: #2ecc71;">✅ Connected to Online World</h4>
+                    <h4 style="color: #c0a062; font-family: 'Georgia', serif;">✅ Connected to The Commission</h4>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 10px;">
                         <div><strong>Server:</strong> ${onlineWorldState.serverInfo.serverName}</div>
                         <div><strong>Players Online:</strong> ${onlineWorldState.serverInfo.playerCount}</div>
@@ -1111,34 +1153,34 @@ function exploreDistrict(districtName) {
     }
     
     let districtHTML = `
-        <div style="background: rgba(44, 62, 80, 0.9); padding: 20px; border-radius: 15px; max-width: 600px; margin: 20px auto;">
-            <h3 style="color: #e74c3c;">🏙️ ${districtName.charAt(0).toUpperCase() + districtName.slice(1)} District</h3>
+        <div style="background: rgba(0, 0, 0, 0.9); padding: 20px; border-radius: 15px; max-width: 600px; margin: 20px auto; border: 2px solid #c0a062;">
+            <h3 style="color: #c0a062; font-family: 'Georgia', serif;">🏙️ ${districtName.charAt(0).toUpperCase() + districtName.slice(1)} District</h3>
             
-            <div style="background: rgba(0, 0, 0, 0.3); padding: 15px; border-radius: 10px; margin: 15px 0;">
+            <div style="background: rgba(20, 20, 20, 0.8); padding: 15px; border-radius: 10px; margin: 15px 0; border: 1px solid #555;">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <div><strong>Crime Level:</strong> ${district.crimeLevel}%</div>
-                    <div><strong>Controlled By:</strong> ${district.controlledBy || 'No one'}</div>
+                    <div><strong style="color: #c0a062;">Crime Level:</strong> <span style="color: #ccc;">${district.crimeLevel}%</span></div>
+                    <div><strong style="color: #c0a062;">Controlled By:</strong> <span style="color: #ccc;">${district.controlledBy || 'No one'}</span></div>
                 </div>
             </div>
             
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 20px 0;">
-                <button onclick="doDistrictJob('${districtName}')" style="background: #3498db; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer;">
-                    💼 Find Jobs
+                <button onclick="doDistrictJob('${districtName}')" style="background: #333; color: #c0a062; padding: 10px; border: 1px solid #c0a062; border-radius: 5px; cursor: pointer; font-family: 'Georgia', serif;">
+                    💼 Find Work
                 </button>
-                <button onclick="claimTerritory('${districtName}')" style="background: #e74c3c; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer;">
-                    🏛️ Claim Territory
+                <button onclick="claimTerritory('${districtName}')" style="background: #333; color: #8b0000; padding: 10px; border: 1px solid #8b0000; border-radius: 5px; cursor: pointer; font-family: 'Georgia', serif;">
+                    🏛️ Claim Turf
                 </button>
-                <button onclick="findPlayersInDistrict('${districtName}')" style="background: #f39c12; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer;">
-                    👥 Find Players
+                <button onclick="findPlayersInDistrict('${districtName}')" style="background: #333; color: #f39c12; padding: 10px; border: 1px solid #f39c12; border-radius: 5px; cursor: pointer; font-family: 'Georgia', serif;">
+                    👥 Find Crew
                 </button>
-                <button onclick="startDistrictHeist('${districtName}')" style="background: #8e44ad; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer;">
-                    💰 Start Heist
+                <button onclick="startDistrictHeist('${districtName}')" style="background: #333; color: #27ae60; padding: 10px; border: 1px solid #27ae60; border-radius: 5px; cursor: pointer; font-family: 'Georgia', serif;">
+                    💰 Plan Score
                 </button>
             </div>
             
             <div style="text-align: center; margin-top: 20px;">
-                <button onclick="showOnlineWorld()" style="background: #95a5a6; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">
-                    ← Back to World Overview
+                <button onclick="showOnlineWorld()" style="background: #333; color: #c0a062; padding: 10px 20px; border: 1px solid #c0a062; border-radius: 5px; cursor: pointer; font-family: 'Georgia', serif;">
+                    ← Back to The Commission
                 </button>
             </div>
         </div>
@@ -1256,7 +1298,8 @@ function addWorldEvent(event) {
     if (feedElement) {
         const newEvent = document.createElement('div');
         newEvent.style.cssText = 'margin: 5px 0; padding: 8px; background: rgba(46, 204, 113, 0.3); border-radius: 5px;';
-        newEvent.innerHTML = `${event} <small style="color: #95a5a6; float: right;">Just now</small>`;
+        // Escape any content added to the activity feed to prevent script injection
+        newEvent.innerHTML = `${escapeHTML(event)} <small style="color: #95a5a6; float: right;">Just now</small>`;
         feedElement.insertBefore(newEvent, feedElement.firstChild);
         
         // Keep only last 10 events
@@ -1329,7 +1372,7 @@ function updateQuickChatDisplay() {
         const recentMessages = onlineWorldState.globalChat.slice(-3);
         quickChatMessages.innerHTML = recentMessages.map(msg => `
             <div style="margin: 4px 0; font-size: 0.9em;">
-                <strong style="color: ${msg.color || '#3498db'};">${msg.player}:</strong> ${msg.message}
+                <strong style="color: ${msg.color || '#3498db'};">${escapeHTML(msg.player)}:</strong> ${escapeHTML(msg.message)}
             </div>
         `).join('');
     }
@@ -1351,7 +1394,7 @@ function simulateGlobalChatResponse() {
     if (chatArea) {
         const messageDiv = document.createElement('div');
         messageDiv.style.cssText = 'margin: 8px 0; padding: 8px; background: rgba(52, 73, 94, 0.3); border-radius: 5px;';
-        messageDiv.innerHTML = `<strong style="color: ${response.color};">${response.player}:</strong> ${response.message} <small style="color: #95a5a6; float: right;">${response.time}</small>`;
+        messageDiv.innerHTML = `<strong style="color: ${response.color};">${escapeHTML(response.player)}:</strong> ${escapeHTML(response.message)} <small style="color: #95a5a6; float: right;">${response.time}</small>`;
         chatArea.appendChild(messageDiv);
         chatArea.scrollTop = chatArea.scrollHeight;
     }
@@ -1419,20 +1462,20 @@ function findPlayersInDistrict(districtName) {
     }
     
     let playersHTML = `
-        <div style="background: rgba(44, 62, 80, 0.9); padding: 20px; border-radius: 15px;">
-            <h3>👥 Players in ${districtName.charAt(0).toUpperCase() + districtName.slice(1)}</h3>
+        <div style="background: rgba(0, 0, 0, 0.9); padding: 20px; border-radius: 15px; border: 2px solid #c0a062;">
+            <h3 style="color: #c0a062; font-family: 'Georgia', serif;">👥 Crew in ${districtName.charAt(0).toUpperCase() + districtName.slice(1)}</h3>
             <div style="margin: 20px 0;">
                 ${playersInDistrict.map(p => `
-                    <div style="background: rgba(0, 0, 0, 0.3); padding: 15px; margin: 10px 0; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+                    <div style="background: rgba(20, 20, 20, 0.8); padding: 15px; margin: 10px 0; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #555;">
                         <div>
-                            <strong>${p.name}</strong> (Level ${p.level})
-                            <br><small>Rep: ${p.reputation} | Territory: ${p.territory}</small>
+                            <strong style="color: #c0a062;">${p.name}</strong> (Level ${p.level})
+                            <br><small style="color: #ccc;">Rep: ${p.reputation} | Territory: ${p.territory}</small>
                         </div>
                         <div>
-                            <button onclick="challengePlayer('${p.name}')" style="background: #e74c3c; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; margin: 2px;">
+                            <button onclick="challengePlayer('${p.name}')" style="background: #8b0000; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; margin: 2px; font-family: 'Georgia', serif;">
                                 ⚔️ Challenge
                             </button>
-                            <button onclick="tradeWithPlayer('${p.name}')" style="background: #1abc9c; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; margin: 2px;">
+                            <button onclick="tradeWithPlayer('${p.name}')" style="background: #27ae60; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; margin: 2px; font-family: 'Georgia', serif;">
                                 🤝 Trade
                             </button>
                         </div>
@@ -1440,7 +1483,7 @@ function findPlayersInDistrict(districtName) {
                 `).join('')}
             </div>
             <div style="text-align: center;">
-                <button onclick="exploreDistrict('${districtName}')" style="background: #95a5a6; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">
+                <button onclick="exploreDistrict('${districtName}')" style="background: #333; color: #c0a062; padding: 10px 20px; border: 1px solid #c0a062; border-radius: 5px; cursor: pointer; font-family: 'Georgia', serif;">
                     ← Back to District
                 </button>
             </div>
@@ -1485,10 +1528,10 @@ function startDistrictHeist(districtName) {
 // Show active heists
 function showActiveHeists() {
     let heistsHTML = `
-        <div style="background: rgba(44, 62, 80, 0.9); padding: 20px; border-radius: 15px;">
+        <div style="background: rgba(0, 0, 0, 0.9); padding: 20px; border-radius: 15px; border: 2px solid #c0a062;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h3 style="color: #e74c3c;">💰 Active Heists</h3>
-                <button onclick="showOnlineWorld()" style="background: #95a5a6; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer;">
+                <h3 style="color: #8b0000; font-family: 'Georgia', serif;">💰 Active Scores</h3>
+                <button onclick="showOnlineWorld()" style="background: #333; color: #c0a062; padding: 8px 15px; border: 1px solid #c0a062; border-radius: 5px; cursor: pointer; font-family: 'Georgia', serif;">
                     ← Back
                 </button>
             </div>
@@ -1496,27 +1539,27 @@ function showActiveHeists() {
             <div style="margin: 20px 0;">
                 ${onlineWorldState.activeHeists.length === 0 ? `
                     <div style="text-align: center; color: #95a5a6; font-style: italic; padding: 40px;">
-                        No active heists at the moment. Start one in a district!
+                        No active scores at the moment. Plan one in a district!
                     </div>
                 ` : onlineWorldState.activeHeists.map(heist => `
-                    <div style="background: rgba(0, 0, 0, 0.3); padding: 15px; margin: 10px 0; border-radius: 8px;">
+                    <div style="background: rgba(20, 20, 20, 0.8); padding: 15px; margin: 10px 0; border-radius: 8px; border: 1px solid #555;">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <div>
-                                <h4 style="color: #e74c3c; margin: 0;">${heist.target}</h4>
-                                <p style="margin: 5px 0;">Organized by: <strong>${heist.organizer}</strong></p>
-                                <div style="display: flex; gap: 20px; font-size: 0.9em;">
+                                <h4 style="color: #c0a062; margin: 0; font-family: 'Georgia', serif;">${heist.target}</h4>
+                                <p style="margin: 5px 0; color: #ccc;">Organized by: <strong style="color: #fff;">${heist.organizer}</strong></p>
+                                <div style="display: flex; gap: 20px; font-size: 0.9em; color: #999;">
                                     <span>👥 ${heist.participants}/${heist.maxParticipants}</span>
                                     <span>🎯 ${heist.difficulty}</span>
-                                    <span>💰 $${heist.reward.toLocaleString()}</span>
+                                    <span style="color: #27ae60;">💰 $${heist.reward.toLocaleString()}</span>
                                 </div>
                             </div>
                             <div>
                                 ${heist.organizer === (player.name || 'You') ? `
-                                    <button onclick="manageHeist('${heist.id}')" style="background: #f39c12; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer;">
+                                    <button onclick="manageHeist('${heist.id}')" style="background: #f39c12; color: #000; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
                                         ⚙️ Manage
                                     </button>
                                 ` : `
-                                    <button onclick="joinHeist('${heist.id}')" style="background: #2ecc71; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer;" ${heist.participants >= heist.maxParticipants ? 'disabled' : ''}>
+                                    <button onclick="joinHeist('${heist.id}')" style="background: #27ae60; color: #fff; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;" ${heist.participants >= heist.maxParticipants ? 'disabled' : ''}>
                                         ${heist.participants >= heist.maxParticipants ? 'Full' : '🚀 Join'}
                                     </button>
                                 `}
@@ -1534,34 +1577,34 @@ function showActiveHeists() {
 // Show trade market
 function showTradeMarket() {
     let marketHTML = `
-        <div style="background: rgba(44, 62, 80, 0.9); padding: 20px; border-radius: 15px;">
+        <div style="background: rgba(0, 0, 0, 0.9); padding: 20px; border-radius: 15px; border: 2px solid #c0a062;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h3 style="color: #1abc9c;">🛒 Player Trade Market</h3>
-                <button onclick="showOnlineWorld()" style="background: #95a5a6; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer;">
+                <h3 style="color: #27ae60; font-family: 'Georgia', serif;">🛒 Black Market</h3>
+                <button onclick="showOnlineWorld()" style="background: #333; color: #c0a062; padding: 8px 15px; border: 1px solid #c0a062; border-radius: 5px; cursor: pointer; font-family: 'Georgia', serif;">
                     ← Back
                 </button>
             </div>
             
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                <div style="background: rgba(0, 0, 0, 0.3); padding: 15px; border-radius: 10px;">
-                    <h4>🛍️ Buy from Players</h4>
+                <div style="background: rgba(20, 20, 20, 0.8); padding: 15px; border-radius: 10px; border: 1px solid #555;">
+                    <h4 style="color: #c0a062; font-family: 'Georgia', serif;">🛍️ Buy Contraband</h4>
                     <div style="margin: 15px 0;">
-                        <div style="background: rgba(52, 73, 94, 0.3); padding: 10px; margin: 5px 0; border-radius: 5px; display: flex; justify-content: space-between; align-items: center;">
-                            <div><strong>Bulletproof Vest</strong><br><small>Seller: CrimeBoss42</small></div>
-                            <div><button onclick="buyFromPlayer('vest', 2500)" style="background: #2ecc71; color: white; padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer;">$2,500</button></div>
+                        <div style="background: rgba(0, 0, 0, 0.5); padding: 10px; margin: 5px 0; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #333;">
+                            <div><strong style="color: #fff;">Bulletproof Vest</strong><br><small style="color: #999;">Seller: CrimeBoss42</small></div>
+                            <div><button onclick="buyFromPlayer('vest', 2500)" style="background: #27ae60; color: white; padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer;">$2,500</button></div>
                         </div>
-                        <div style="background: rgba(52, 73, 94, 0.3); padding: 10px; margin: 5px 0; border-radius: 5px; display: flex; justify-content: space-between; align-items: center;">
-                            <div><strong>Tommy Gun</strong><br><small>Seller: ShadowDealer</small></div>
-                            <div><button onclick="buyFromPlayer('tommy', 15000)" style="background: #2ecc71; color: white; padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer;">$15,000</button></div>
+                        <div style="background: rgba(0, 0, 0, 0.5); padding: 10px; margin: 5px 0; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #333;">
+                            <div><strong style="color: #fff;">Tommy Gun</strong><br><small style="color: #999;">Seller: ShadowDealer</small></div>
+                            <div><button onclick="buyFromPlayer('tommy', 15000)" style="background: #27ae60; color: white; padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer;">$15,000</button></div>
                         </div>
                     </div>
                 </div>
                 
-                <div style="background: rgba(0, 0, 0, 0.3); padding: 15px; border-radius: 10px;">
-                    <h4>💰 Sell to Players</h4>
+                <div style="background: rgba(20, 20, 20, 0.8); padding: 15px; border-radius: 10px; border: 1px solid #555;">
+                    <h4 style="color: #c0a062; font-family: 'Georgia', serif;">💰 Sell Goods</h4>
                     <div style="margin: 15px 0;">
-                        <p>List your items for other players to buy:</p>
-                        <button onclick="listItemForSale()" style="background: #f39c12; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; width: 100%;">
+                        <p style="color: #ccc;">List your items for other players to buy:</p>
+                        <button onclick="listItemForSale()" style="background: #f39c12; color: #000; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; width: 100%; font-weight: bold;">
                             📝 List Item for Sale
                         </button>
                     </div>
@@ -1576,38 +1619,38 @@ function showTradeMarket() {
 // Show gang wars
 function showGangWars() {
     let warsHTML = `
-        <div style="background: rgba(44, 62, 80, 0.9); padding: 20px; border-radius: 15px;">
+        <div style="background: rgba(0, 0, 0, 0.9); padding: 20px; border-radius: 15px; border: 2px solid #c0a062;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h3 style="color: #8e44ad;">⚔️ Gang Wars</h3>
-                <button onclick="showOnlineWorld()" style="background: #95a5a6; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer;">
+                <h3 style="color: #8b0000; font-family: 'Georgia', serif;">⚔️ Turf Wars</h3>
+                <button onclick="showOnlineWorld()" style="background: #333; color: #c0a062; padding: 8px 15px; border: 1px solid #c0a062; border-radius: 5px; cursor: pointer; font-family: 'Georgia', serif;">
                     ← Back
                 </button>
             </div>
             
-            <div style="background: rgba(0, 0, 0, 0.3); padding: 15px; border-radius: 10px; margin: 20px 0;">
-                <h4>🏛️ Territory Battles</h4>
-                <p>Fight other players for control of city districts. Winners gain territory and reputation.</p>
+            <div style="background: rgba(20, 20, 20, 0.8); padding: 15px; border-radius: 10px; margin: 20px 0; border: 1px solid #555;">
+                <h4 style="color: #c0a062; font-family: 'Georgia', serif;">🏛️ Territory Battles</h4>
+                <p style="color: #ccc;">Fight other families for control of city districts. Winners gain territory and respect.</p>
                 
                 <div style="margin: 15px 0;">
-                    <div style="background: rgba(142, 68, 173, 0.3); padding: 10px; margin: 10px 0; border-radius: 5px;">
+                    <div style="background: rgba(139, 0, 0, 0.2); padding: 10px; margin: 10px 0; border-radius: 5px; border: 1px solid #8b0000;">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <div>
-                                <strong>Downtown District War</strong>
-                                <br><small>CrimeBoss42 vs ShadowDealer</small>
+                                <strong style="color: #c0a062;">Downtown District War</strong>
+                                <br><small style="color: #ccc;">CrimeBoss42 vs ShadowDealer</small>
                             </div>
-                            <button onclick="spectateWar('downtown')" style="background: #3498db; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer;">
-                                👁️ Spectate
+                            <button onclick="spectateWar('downtown')" style="background: #333; color: #c0a062; padding: 8px 12px; border: 1px solid #c0a062; border-radius: 4px; cursor: pointer; font-family: 'Georgia', serif;">
+                                👁️ Watch
                             </button>
                         </div>
                     </div>
                     
-                    <div style="background: rgba(142, 68, 173, 0.3); padding: 10px; margin: 10px 0; border-radius: 5px;">
+                    <div style="background: rgba(139, 0, 0, 0.2); padding: 10px; margin: 10px 0; border-radius: 5px; border: 1px solid #8b0000;">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <div>
-                                <strong>Docks District</strong>
-                                <br><small>Challenge the current owner</small>
+                                <strong style="color: #c0a062;">Docks District</strong>
+                                <br><small style="color: #ccc;">Challenge the current owner</small>
                             </div>
-                            <button onclick="challengeForTerritory('docks')" style="background: #e74c3c; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer;">
+                            <button onclick="challengeForTerritory('docks')" style="background: #8b0000; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-family: 'Georgia', serif;">
                                 ⚔️ Challenge
                             </button>
                         </div>
@@ -1623,35 +1666,35 @@ function showGangWars() {
 // Show nearby players
 function showNearbyPlayers() {
     let playersHTML = `
-        <div style="background: rgba(44, 62, 80, 0.9); padding: 20px; border-radius: 15px;">
+        <div style="background: rgba(0, 0, 0, 0.9); padding: 20px; border-radius: 15px; border: 2px solid #c0a062;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h3 style="color: #f39c12;">👥 Nearby Players</h3>
-                <button onclick="showOnlineWorld()" style="background: #95a5a6; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer;">
+                <h3 style="color: #f39c12; font-family: 'Georgia', serif;">👥 Local Crew</h3>
+                <button onclick="showOnlineWorld()" style="background: #333; color: #c0a062; padding: 8px 15px; border: 1px solid #c0a062; border-radius: 5px; cursor: pointer; font-family: 'Georgia', serif;">
                     ← Back
                 </button>
             </div>
             
             <div style="margin: 20px 0;">
                 ${onlineWorldState.nearbyPlayers.map(p => `
-                    <div style="background: rgba(0, 0, 0, 0.3); padding: 15px; margin: 10px 0; border-radius: 8px;">
+                    <div style="background: rgba(20, 20, 20, 0.8); padding: 15px; margin: 10px 0; border-radius: 8px; border: 1px solid #555;">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <div>
-                                <h4 style="color: #f39c12; margin: 0;">${p.name}</h4>
-                                <div style="display: flex; gap: 20px; font-size: 0.9em; margin: 5px 0;">
+                                <h4 style="color: #c0a062; margin: 0; font-family: 'Georgia', serif;">${p.name}</h4>
+                                <div style="display: flex; gap: 20px; font-size: 0.9em; margin: 5px 0; color: #ccc;">
                                     <span>Level ${p.level}</span>
                                     <span>Rep: ${p.reputation}</span>
                                     <span>Territory: ${p.territory}</span>
-                                    <span style="color: #2ecc71;">● Online</span>
+                                    <span style="color: #27ae60;">● Online</span>
                                 </div>
                             </div>
                             <div style="display: flex; gap: 10px;">
-                                <button onclick="challengePlayer('${p.name}')" style="background: #e74c3c; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer;">
+                                <button onclick="challengePlayer('${p.name}')" style="background: #8b0000; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-family: 'Georgia', serif;">
                                     ⚔️ Challenge
                                 </button>
-                                <button onclick="tradeWithPlayer('${p.name}')" style="background: #1abc9c; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer;">
+                                <button onclick="tradeWithPlayer('${p.name}')" style="background: #27ae60; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-family: 'Georgia', serif;">
                                     🤝 Trade
                                 </button>
-                                <button onclick="inviteToHeist('${p.name}')" style="background: #8e44ad; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer;">
+                                <button onclick="inviteToHeist('${p.name}')" style="background: #f39c12; color: #000; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-family: 'Georgia', serif;">
                                     💰 Invite
                                 </button>
                             </div>
@@ -1668,27 +1711,27 @@ function showNearbyPlayers() {
 // Show city events
 function showCityEvents() {
     let eventsHTML = `
-        <div style="background: rgba(44, 62, 80, 0.9); padding: 20px; border-radius: 15px;">
+        <div style="background: rgba(0, 0, 0, 0.9); padding: 20px; border-radius: 15px; border: 2px solid #c0a062;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h3 style="color: #9b59b6;">🎯 City Events</h3>
-                <button onclick="showOnlineWorld()" style="background: #95a5a6; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer;">
+                <h3 style="color: #9b59b6; font-family: 'Georgia', serif;">📰 Street News</h3>
+                <button onclick="showOnlineWorld()" style="background: #333; color: #c0a062; padding: 8px 15px; border: 1px solid #c0a062; border-radius: 5px; cursor: pointer; font-family: 'Georgia', serif;">
                     ← Back
                 </button>
             </div>
             
             <div style="margin: 20px 0;">
                 ${onlineWorldState.serverInfo.cityEvents.map(event => `
-                    <div style="background: rgba(0, 0, 0, 0.3); padding: 15px; margin: 10px 0; border-radius: 8px;">
+                    <div style="background: rgba(20, 20, 20, 0.8); padding: 15px; margin: 10px 0; border-radius: 8px; border: 1px solid #555;">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <div>
-                                <h4 style="color: #9b59b6; margin: 0;">${event.type.replace('_', ' ').toUpperCase()}</h4>
-                                <p style="margin: 5px 0;">${event.description}</p>
-                                <small>District: ${event.district.charAt(0).toUpperCase() + event.district.slice(1)}</small>
+                                <h4 style="color: #c0a062; margin: 0; font-family: 'Georgia', serif;">${event.type.replace('_', ' ').toUpperCase()}</h4>
+                                <p style="margin: 5px 0; color: #ccc;">${event.description}</p>
+                                <small style="color: #999;">District: ${event.district.charAt(0).toUpperCase() + event.district.slice(1)}</small>
                             </div>
                             <div style="text-align: right;">
                                 <div style="color: #f39c12; font-weight: bold;">⏰ ${event.timeLeft}</div>
-                                <button onclick="participateInEvent('${event.type}', '${event.district}')" style="background: #9b59b6; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; margin-top: 5px;">
-                                    🎯 Participate
+                                <button onclick="participateInEvent('${event.type}', '${event.district}')" style="background: #9b59b6; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; margin-top: 5px; font-family: 'Georgia', serif;">
+                                    🎯 Get Involved
                                 </button>
                             </div>
                         </div>

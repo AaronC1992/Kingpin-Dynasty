@@ -8,7 +8,20 @@ const path = require('path');
 const PORT = process.env.PORT || 3000;
 const server = http.createServer((req, res) => {
     // Handle HTTP requests to serve game files
-    let filePath = '.' + decodeURIComponent(req.url); // Decode URL to handle spaces in filenames
+    let reqPath = decodeURIComponent(req.url); // Decode URL to handle spaces
+    if (reqPath.includes('\0')) reqPath = reqPath.replace(/\0/g, '');
+    // Normalize path and restrict serving to the server's working directory
+    let filePath = path.normalize(path.join(process.cwd(), reqPath));
+    if (reqPath === '/' || reqPath === '') {
+        filePath = path.join(process.cwd(), 'index.html');
+    }
+    // Prevent path traversal attacks - ensure resolved path is under the project root
+    if (!filePath.startsWith(process.cwd())) {
+        console.log(`⚠️ Attempted path traversal: ${req.url} -> ${filePath}`);
+        res.writeHead(403, { 'Content-Type': 'text/html' });
+        res.end(`<h1>403 Forbidden</h1><p>Access denied</p>`);
+        return;
+    }
     if (filePath === './') {
         filePath = './index.html';
     }
@@ -74,6 +87,54 @@ const server = http.createServer((req, res) => {
 
 const wss = new WebSocket.Server({ server });
 
+// Heartbeat & Security Configuration
+const HEARTBEAT_INTERVAL = 30000;
+const RATE_LIMIT_WINDOW = 5000; // 5 seconds
+const MAX_MESSAGES_PER_WINDOW = 5;
+const clientMessageHistory = new Map();
+
+// Basic Profanity Filter (Expand as needed)
+const BAD_WORDS = ['admin', 'system', 'mod', 'moderator', 'fuck', 'shit', 'ass', 'bitch']; 
+
+function isProfane(text) {
+    const lowerText = text.toLowerCase();
+    return BAD_WORDS.some(word => lowerText.includes(word));
+}
+
+function checkRateLimit(clientId) {
+    const now = Date.now();
+    let history = clientMessageHistory.get(clientId) || [];
+    // Remove old timestamps
+    history = history.filter(time => now - time < RATE_LIMIT_WINDOW);
+    
+    if (history.length >= MAX_MESSAGES_PER_WINDOW) {
+        return false;
+    }
+    
+    history.push(now);
+    clientMessageHistory.set(clientId, history);
+    return true;
+}
+
+function noop() {}
+
+function heartbeat() {
+  this.isAlive = true;
+}
+
+const interval = setInterval(function ping() {
+  wss.clients.forEach(function each(ws) {
+    if (ws.isAlive === false) return ws.terminate();
+
+    ws.isAlive = false;
+    ws.ping(noop);
+  });
+}, HEARTBEAT_INTERVAL);
+
+wss.on('close', function close() {
+  clearInterval(interval);
+});
+
 // Game state
 const gameState = {
     players: new Map(),
@@ -125,6 +186,10 @@ wss.on('connection', (ws, req) => {
             console.error('❌ Error parsing message:', error);
         }
     });
+    
+    // Heartbeat setup
+    ws.isAlive = true;
+    ws.on('pong', heartbeat);
     
     // Handle client disconnect
     ws.on('close', () => {
@@ -294,9 +359,36 @@ function handlePlayerConnect(clientId, message, ws) {
 function handleGlobalChat(clientId, message) {
     const player = gameState.players.get(clientId);
     if (!player) return;
+
+    // Rate limiting check
+    if (!checkRateLimit(clientId)) {
+        const ws = clients.get(clientId);
+        if (ws) {
+            ws.send(JSON.stringify({
+                type: 'system_message',
+                message: 'You are sending messages too fast. Please slow down.',
+                color: '#e74c3c'
+            }));
+        }
+        return;
+    }
     
     // Filter and sanitize message
-    const sanitizedMessage = message.message.replace(/<[^>]*>/g, '').substring(0, 200); // Remove HTML and limit length
+    let sanitizedMessage = message.message.replace(/<[^>]*>/g, '').substring(0, 200); // Remove HTML and limit length
+
+    // Profanity filter
+    if (isProfane(sanitizedMessage)) {
+        const ws = clients.get(clientId);
+        if (ws) {
+            ws.send(JSON.stringify({
+                type: 'system_message',
+                message: 'Please keep the chat clean.',
+                color: '#e74c3c'
+            }));
+        }
+        return; // Block the message entirely
+    }
+
     
     const chatMessage = {
         playerId: clientId,
@@ -713,195 +805,62 @@ function executeHeist(heist) {
         broadcastToAll({
             type: 'heist_completed',
             heist: heist,
-            success: false,
-            reward: 0
+            success: false
         });
         
-        addGlobalChatMessage('System', `💀 Heist failed! ${heist.target} was too well protected!`, '#e74c3c');
+        addGlobalChatMessage('System', `💀 Heist failed! ${heist.target} was too well defended.`, '#e74c3c');
     }
     
-    // Remove heist from active list
+    // Remove from active heists
     gameState.activeHeists = gameState.activeHeists.filter(h => h.id !== heist.id);
 }
 
-// Utility functions
-function generateClientId() {
-    return 'client_' + Math.random().toString(36).substr(2, 9).toUpperCase();
-}
-
+// Helper to broadcast to all connected clients
 function broadcastToAll(message, excludeClientId = null) {
-    const messageStr = JSON.stringify(message);
-    
-    clients.forEach((ws, clientId) => {
-        if (clientId !== excludeClientId && ws.readyState === WebSocket.OPEN) {
-            ws.send(messageStr);
+    const data = JSON.stringify(message);
+    clients.forEach((client, clientId) => {
+        if (client.readyState === WebSocket.OPEN && clientId !== excludeClientId) {
+            client.send(data);
         }
     });
 }
 
-function addGlobalChatMessage(playerName, message, color = '#3498db') {
+// Helper to add global chat message
+function addGlobalChatMessage(sender, message, color = '#ffffff') {
     const chatMessage = {
         playerId: 'system',
-        playerName: playerName,
+        playerName: sender,
         message: message,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        color: color
     };
     
     gameState.globalChat.push(chatMessage);
-    
-    if (gameState.globalChat.length > 50) {
-        gameState.globalChat = gameState.globalChat.slice(-50);
-    }
+    if (gameState.globalChat.length > 50) gameState.globalChat.shift();
     
     broadcastToAll({
         type: 'global_chat',
-        playerId: 'system',
-        playerName: playerName,
-        message: message,
-        timestamp: chatMessage.timestamp,
-        color: color
+        ...chatMessage
     });
 }
 
+// Helper to generate leaderboard
 function generateLeaderboard() {
-    const players = Array.from(gameState.players.values())
+    return Array.from(gameState.players.values())
         .sort((a, b) => b.reputation - a.reputation)
         .slice(0, 10)
-        .map((player, index) => ({
-            rank: index + 1,
-            name: player.name,
-            money: player.money,
-            reputation: player.reputation,
-            territory: player.territory,
-            level: player.level
+        .map(p => ({
+            name: p.name,
+            reputation: p.reputation,
+            territory: p.territory
         }));
-    
-    return players;
 }
 
-function sendWorldState(clientId, ws) {
-    const worldState = {
-        type: 'world_state',
-        players: Array.from(gameState.players.values()),
-        playerStates: Object.fromEntries(gameState.playerStates),
-        cityDistricts: gameState.cityDistricts,
-        activeHeists: gameState.activeHeists,
-        cityEvents: gameState.cityEvents,
-        globalChat: gameState.globalChat.slice(-20),
-        leaderboard: generateLeaderboard(),
-        serverStats: {
-            playerCount: clients.size,
-            uptime: Date.now() - gameState.serverStats.startTime,
-            totalConnections: gameState.serverStats.totalConnections,
-            jailbreakAttempts: gameState.serverStats.jailbreakAttempts,
-            successfulJailbreaks: gameState.serverStats.successfulJailbreaks
-        }
-    };
-    
-    ws.send(JSON.stringify(worldState));
+// Helper to generate client ID
+function generateClientId() {
+    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 }
 
-// Periodic updates
-setInterval(() => {
-    // Send periodic world updates
-    broadcastToAll({
-        type: 'world_update',
-        playerCount: clients.size,
-        playerStates: Object.fromEntries(gameState.playerStates),
-        timestamp: Date.now()
-    });
-    
-    // Update jail timers for all players
-    gameState.playerStates.forEach((playerState, playerId) => {
-        if (playerState.inJail && playerState.jailTime > 0) {
-            playerState.jailTime = Math.max(0, playerState.jailTime - 30); // Decrease by 30 seconds
-            
-            if (playerState.jailTime <= 0) {
-                playerState.inJail = false;
-                
-                // Notify player of release
-                const client = clients.get(playerId);
-                if (client && client.readyState === WebSocket.OPEN) {
-                    client.send(JSON.stringify({
-                        type: 'jail_release',
-                        message: 'Your jail sentence is complete! You are now free.'
-                    }));
-                }
-                
-                addGlobalChatMessage('System', `🔓 ${playerState.name} completed their jail sentence and was released!`, '#2ecc71');
-            }
-        }
-    });
-    
-    // Randomly generate city events
-    if (Math.random() < 0.1 && gameState.cityEvents.length < 5) {
-        const newEvent = generateRandomCityEvent();
-        gameState.cityEvents.push(newEvent);
-        
-        broadcastToAll({
-            type: 'city_event',
-            event: newEvent
-        });
-        
-        addGlobalChatMessage('System', `🎯 New city event: ${newEvent.description}`, '#9b59b6');
-    }
-    
-    // Clean up old events
-    gameState.cityEvents = gameState.cityEvents.filter(event => {
-        // Remove events older than 1 hour
-        return Date.now() - event.createdAt < 3600000;
-    });
-    
-}, 30000); // Every 30 seconds
-
-function generateRandomCityEvent() {
-    const events = [
-        { type: 'police_raid', description: 'Police raid in progress', district: 'industrial' },
-        { type: 'market_fluctuation', description: 'Black market prices volatile', district: 'downtown' },
-        { type: 'gang_recruitment', description: 'Gang recruitment opportunity', district: 'docks' },
-        { type: 'heist_opportunity', description: 'High-value target spotted', district: 'redlight' },
-        { type: 'territory_dispute', description: 'Territory dispute escalating', district: 'suburbs' }
-    ];
-    
-    const event = events[Math.floor(Math.random() * events.length)];
-    return {
-        ...event,
-        timeLeft: Math.floor(Math.random() * 60) + 15 + ' min',
-        createdAt: Date.now()
-    };
-}
-
-// Server startup
 server.listen(PORT, () => {
-    console.log(`🚀 From Dusk to Don Multiplayer Server running on port ${PORT}`);
-    console.log(`🌐 WebSocket server ready for connections`);
-    console.log(`📊 Server stats:`);
-    console.log(`   - Max players per server: unlimited`);
-    console.log(`   - Districts: ${Object.keys(gameState.cityDistricts).length}`);
-    console.log(`   - City events: ${gameState.cityEvents.length}`);
-    console.log('');
-    console.log('🎮 Ready for players to connect!');
+    console.log(`Server started on port ${PORT}`);
 });
-
-// Graceful shutdown
-process.on('SIGINT', () => {
-    console.log('\n🛑 Shutting down server...');
-    
-    // Notify all connected clients
-    broadcastToAll({
-        type: 'server_shutdown',
-        message: 'Server is shutting down for maintenance. Please reconnect in a few moments.'
-    });
-    
-    // Close all connections
-    clients.forEach(ws => {
-        ws.close();
-    });
-    
-    server.close(() => {
-        console.log('✅ Server shut down gracefully');
-        process.exit(0);
-    });
-});
-
-module.exports = { gameState, clients };

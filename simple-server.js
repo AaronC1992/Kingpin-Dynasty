@@ -1,5 +1,6 @@
 const http = require('http');
 const fs = require('fs');
+const path = require('path');
 
 // Simple test server
 const PORT = 8080;
@@ -7,7 +8,13 @@ const PORT = 8080;
 const server = http.createServer((req, res) => {
     console.log('📥 Request:', req.url);
     
-    let filePath = '.' + decodeURIComponent(req.url);
+    let reqPath = decodeURIComponent(req.url);
+    if (reqPath.includes('\0')) reqPath = reqPath.replace(/\0/g, '');
+    // Prevent directory traversal and only serve files from the current directory
+    let filePath = path.normalize(path.join(process.cwd(), reqPath));
+    if (reqPath === '/' || reqPath === '') {
+        filePath = path.join(process.cwd(), 'index.html');
+    }
     if (filePath === './') {
         filePath = './index.html';
     }
