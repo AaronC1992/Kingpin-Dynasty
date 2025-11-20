@@ -897,9 +897,19 @@ function generateOnlinePlayersHTML() {
 
 // Show online world hub (replaces old multiplayer menu)
 function showOnlineWorld() {
+    // Sync multiplayer territories to player object
+    syncMultiplayerTerritoriesToPlayer();
+    
     let worldHTML = `
         <h2 style="color: #c0a062; font-family: 'Georgia', serif; text-shadow: 2px 2px 4px #000;">🌐 The Commission</h2>
         <p style="color: #ccc;">Welcome to the family. Compete and cooperate with other Dons worldwide.</p>
+        
+        <!-- Territory Income Timer -->
+        <div id="territory-income-timer" style="background: rgba(39, 174, 96, 0.1); padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 2px solid #27ae60; text-align: center;">
+            <div style="color: #27ae60; font-weight: bold; font-size: 1.1em;">💰 Next Territory Income</div>
+            <div id="income-countdown" style="color: #ccc; margin-top: 5px; font-family: monospace; font-size: 1.3em;">Calculating...</div>
+            <div style="color: #888; font-size: 0.85em; margin-top: 5px;">Controlled Territories: <span id="controlled-count" style="color: #27ae60; font-weight: bold;">0</span> | Weekly Income: <span id="weekly-income-total" style="color: #27ae60; font-weight: bold;">$0</span></div>
+        </div>
         
         <!-- Connection Status -->
         <div id="world-connection-status" style="background: rgba(0, 0, 0, 0.8); padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #c0a062;">
@@ -2897,6 +2907,32 @@ function resetPlayerTerritories(playerName) {
     });
 }
 
+// Sync multiplayer territories to player.territories for unified UI
+function syncMultiplayerTerritoriesToPlayer() {
+    if (!player.territories) player.territories = [];
+    
+    // Clear existing multiplayer territories (keep single-player ones)
+    player.territories = player.territories.filter(t => !t.isMultiplayer);
+    
+    // Add current multiplayer territories
+    Object.keys(onlineWorldState.cityDistricts).forEach(district => {
+        const data = onlineWorldState.cityDistricts[district];
+        if (data.controllerType === 'player' && data.controlledBy === player.name) {
+            player.territories.push({
+                id: `mp_${district}`,
+                districtId: district,
+                isMultiplayer: true,
+                defenseLevel: Math.floor(data.defenseRating / 50),
+                weeklyIncome: data.weeklyIncome,
+                acquisitionDate: Date.now()
+            });
+        }
+    });
+    
+    // Update territory income display
+    if (typeof updateUI === 'function') updateUI();
+}
+
 // Calculate total weekly income from player-controlled multiplayer territories
 function calculateMultiplayerTerritoryWeeklyIncome() {
     let total = 0;
@@ -2909,20 +2945,71 @@ function calculateMultiplayerTerritoryWeeklyIncome() {
     return total;
 }
 
+// Count controlled territories
+function countControlledTerritories() {
+    let count = 0;
+    Object.keys(onlineWorldState.cityDistricts).forEach(district => {
+        const data = onlineWorldState.cityDistricts[district];
+        if (data.controllerType === 'player' && data.controlledBy === player.name) {
+            count++;
+        }
+    });
+    return count;
+}
+
 // Grant income periodically (dev cadence: every 10 minutes == 1 game week)
 const MULTI_TERRITORY_WEEK_MS = 10 * 60 * 1000;
 let multiplayerTerritoryIncomeTimer = null;
+let territoryIncomeNextCollection = Date.now() + MULTI_TERRITORY_WEEK_MS;
+let territoryIncomeCountdownInterval = null;
 
 function startMultiplayerTerritoryIncomeTimer() {
     if (multiplayerTerritoryIncomeTimer) return;
+    
+    territoryIncomeNextCollection = Date.now() + MULTI_TERRITORY_WEEK_MS;
+    
     multiplayerTerritoryIncomeTimer = setInterval(() => {
         const income = calculateMultiplayerTerritoryWeeklyIncome();
         if (income > 0) {
-            player.money += income;
-            logAction(`🏛️ Territory income collected: $${income.toLocaleString()} from controlled districts.`);
+            // Add as DIRTY money (territory income is illicit)
+            player.dirtyMoney = (player.dirtyMoney || 0) + income;
+            logAction(`🏛️ Territory income collected: $${income.toLocaleString()} (dirty) from controlled districts.`);
             if (typeof updateUI === 'function') updateUI();
         }
+        territoryIncomeNextCollection = Date.now() + MULTI_TERRITORY_WEEK_MS;
     }, MULTI_TERRITORY_WEEK_MS);
+    
+    // Start countdown display updater
+    startTerritoryIncomeCountdown();
+}
+
+function startTerritoryIncomeCountdown() {
+    if (territoryIncomeCountdownInterval) return;
+    
+    territoryIncomeCountdownInterval = setInterval(() => {
+        const countdownEl = document.getElementById('income-countdown');
+        const controlledCountEl = document.getElementById('controlled-count');
+        const weeklyIncomeEl = document.getElementById('weekly-income-total');
+        
+        if (countdownEl) {
+            const remaining = territoryIncomeNextCollection - Date.now();
+            if (remaining > 0) {
+                const minutes = Math.floor(remaining / 60000);
+                const seconds = Math.floor((remaining % 60000) / 1000);
+                countdownEl.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            } else {
+                countdownEl.textContent = 'Collecting...';
+            }
+        }
+        
+        if (controlledCountEl) {
+            controlledCountEl.textContent = countControlledTerritories();
+        }
+        
+        if (weeklyIncomeEl) {
+            weeklyIncomeEl.textContent = `$${calculateMultiplayerTerritoryWeeklyIncome().toLocaleString()}`;
+        }
+    }, 1000);
 }
 
 // Start timer after DOM load if multiplayer initialized
@@ -2932,8 +3019,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Expose helper functions
 window.resetPlayerTerritories = resetPlayerTerritories;
+window.syncMultiplayerTerritoriesToPlayer = syncMultiplayerTerritoriesToPlayer;
 window.calculateMultiplayerTerritoryWeeklyIncome = calculateMultiplayerTerritoryWeeklyIncome;
+window.countControlledTerritories = countControlledTerritories;
 window.startMultiplayerTerritoryIncomeTimer = startMultiplayerTerritoryIncomeTimer;
+window.startTerritoryIncomeCountdown = startTerritoryIncomeCountdown;
 function showMultiplayer() {
     showOnlineWorld();
 }
