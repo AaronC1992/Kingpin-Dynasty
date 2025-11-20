@@ -614,7 +614,6 @@ function showPVP() {
                         <p style="color: #ffaaaa; margin: 0 0 15px 0; font-size: 0.95em;">High-risk assassination with permadeath</p>
                         <div style="background: rgba(0, 0, 0, 0.6); padding: 12px; border-radius: 8px; margin-top: 15px;">
                             <div style="color: #ccc; font-size: 0.85em; line-height: 1.6;">
-                                ✓ Narrative 5-stage combat<br>
                                 ✓ Steal 10-50% money + cars<br>
                                 ✓ Target permanently removed<br>
                                 ⚠️ Risk: 20-60% health damage
