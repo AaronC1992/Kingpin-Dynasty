@@ -583,6 +583,169 @@ function testGlobalFunctions() {
 }
 
 // Show dedicated global chat screen
+// ==================== PVP ARENA SCREEN ====================
+
+function showPVP() {
+    // Sync territories before displaying
+    syncMultiplayerTerritoriesToPlayer();
+    
+    const pvpHTML = `
+        <div style="background: rgba(0, 0, 0, 0.95); padding: 40px; border-radius: 15px; border: 3px solid #8b0000;">
+            <div style="text-align: center; margin-bottom: 30px;">
+                <h1 style="color: #8b0000; font-family: 'Georgia', serif; font-size: 2.5em; text-shadow: 2px 2px 8px #000; margin: 0;">⚔️ PVP ARENA</h1>
+                <p style="color: #ff6666; margin: 10px 0 0 0; font-size: 1.1em; font-style: italic;">Prove your worth. Crush your rivals. Take what's theirs.</p>
+            </div>
+            
+            <!-- Territory Income Timer -->
+            <div id="territory-income-timer-pvp" style="background: rgba(39, 174, 96, 0.1); padding: 12px; border-radius: 8px; margin-bottom: 20px; border: 2px solid #27ae60; text-align: center;">
+                <div style="color: #27ae60; font-weight: bold; font-size: 1.1em;">💰 Next Territory Income</div>
+                <div id="income-countdown-pvp" style="color: #ccc; margin-top: 5px; font-family: monospace; font-size: 1.3em;">Calculating...</div>
+                <div style="color: #888; font-size: 0.85em; margin-top: 5px;">Controlled Territories: <span id="controlled-count-pvp" style="color: #27ae60; font-weight: bold;">0</span> | Weekly Income: <span id="weekly-income-total-pvp" style="color: #27ae60; font-weight: bold;">$0</span></div>
+            </div>
+            
+            <!-- PVP Actions Grid -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin: 30px 0;">
+                
+                <!-- Whack Rival Don -->
+                <div style="background: linear-gradient(180deg, rgba(139, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.8) 100%); padding: 25px; border-radius: 15px; border: 2px solid #8b0000; cursor: pointer; transition: transform 0.2s;" onclick="showWhackRivalDon()" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <div style="text-align: center;">
+                        <div style="font-size: 4em; margin-bottom: 15px;">💀</div>
+                        <h3 style="color: #ff4444; margin: 0 0 10px 0; font-family: 'Georgia', serif; font-size: 1.5em;">Whack Rival Don</h3>
+                        <p style="color: #ffaaaa; margin: 0 0 15px 0; font-size: 0.95em;">High-risk assassination with permadeath</p>
+                        <div style="background: rgba(0, 0, 0, 0.6); padding: 12px; border-radius: 8px; margin-top: 15px;">
+                            <div style="color: #ccc; font-size: 0.85em; line-height: 1.6;">
+                                ✓ Narrative 5-stage combat<br>
+                                ✓ Steal 10-50% money + cars<br>
+                                ✓ Target permanently removed<br>
+                                ⚠️ Risk: 20-60% health damage
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Territory Conquest -->
+                <div style="background: linear-gradient(180deg, rgba(243, 156, 18, 0.3) 0%, rgba(0, 0, 0, 0.8) 100%); padding: 25px; border-radius: 15px; border: 2px solid #f39c12; cursor: pointer; transition: transform 0.2s;" onclick="showOnlineWorld()" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <div style="text-align: center;">
+                        <div style="font-size: 4em; margin-bottom: 15px;">🏛️</div>
+                        <h3 style="color: #f39c12; margin: 0 0 10px 0; font-family: 'Georgia', serif; font-size: 1.5em;">Territory Conquest</h3>
+                        <p style="color: #f9ca7e; margin: 0 0 15px 0; font-size: 0.95em;">Conquer districts for weekly income</p>
+                        <div style="background: rgba(0, 0, 0, 0.6); padding: 12px; border-radius: 8px; margin-top: 15px;">
+                            <div style="color: #ccc; font-size: 0.85em; line-height: 1.6;">
+                                ✓ Assign gang/cars/weapons<br>
+                                ✓ Weekly dirty money income<br>
+                                ✓ Battle NPC or player gangs<br>
+                                ⚠️ Risk: Lose assigned resources
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+            
+            <!-- PVP Stats Overview -->
+            <div style="background: rgba(0, 0, 0, 0.7); padding: 20px; border-radius: 10px; margin: 25px 0; border: 1px solid #555;">
+                <h3 style="color: #c0a062; margin: 0 0 15px 0; font-family: 'Georgia', serif; text-align: center;">📊 Your PVP Stats</h3>
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; text-align: center;">
+                    <div>
+                        <div style="color: #888; font-size: 0.85em;">Attack Power</div>
+                        <div style="color: #fff; font-weight: bold; font-size: 1.3em;">${calculateAttackPower()}</div>
+                    </div>
+                    <div>
+                        <div style="color: #888; font-size: 0.85em;">Defense Power</div>
+                        <div style="color: #fff; font-weight: bold; font-size: 1.3em;">${calculateDefensePower()}</div>
+                    </div>
+                    <div>
+                        <div style="color: #888; font-size: 0.85em;">Territories</div>
+                        <div style="color: #27ae60; font-weight: bold; font-size: 1.3em;">${countControlledTerritories()}</div>
+                    </div>
+                    <div>
+                        <div style="color: #888; font-size: 0.85em;">Gang Members</div>
+                        <div style="color: #3498db; font-weight: bold; font-size: 1.3em;">${player.gangMembers || 0}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Warning Notice -->
+            <div style="background: rgba(139, 0, 0, 0.2); padding: 20px; border-radius: 8px; border-left: 4px solid #8b0000; margin: 25px 0;">
+                <h4 style="color: #ff6666; margin: 0 0 10px 0;">⚠️ PVP WARNING</h4>
+                <p style="color: #ccc; margin: 0; font-size: 0.95em; line-height: 1.6;">
+                    PVP actions carry real consequences. Assassination attempts can result in permanent character death (permadeath). 
+                    Territory battles may result in the loss of gang members, vehicles, and weapons. Only engage if you're prepared to lose what you stake.
+                </p>
+            </div>
+            
+            <!-- Navigation -->
+            <div style="text-align: center; margin-top: 30px;">
+                <button onclick="showOnlineWorld()" 
+                        style="background: #333; color: #c0a062; padding: 15px 35px; border: 1px solid #c0a062; border-radius: 10px; cursor: pointer; font-family: 'Georgia', serif; font-weight: bold; margin-right: 10px;">
+                    🌐 The Commission
+                </button>
+                <button onclick="goBackToMainMenu()" 
+                        style="background: #333; color: #c0a062; padding: 15px 35px; border: 1px solid #c0a062; border-radius: 10px; cursor: pointer; font-family: 'Georgia', serif; font-weight: bold;">
+                    🏠 Main Menu
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById("multiplayer-content").innerHTML = pvpHTML;
+    
+    // Start countdown display
+    updatePVPCountdown();
+    if (!window.pvpCountdownInterval) {
+        window.pvpCountdownInterval = setInterval(updatePVPCountdown, 1000);
+    }
+    
+    if (typeof hideAllScreens === 'function') hideAllScreens();
+    document.getElementById("multiplayer-content").style.display = 'block';
+}
+
+// Helper to calculate attack power for display
+function calculateAttackPower() {
+    return (player.level * 10) + 
+           (player.skills.stealth * 8) + 
+           (player.skills.firearms * 12) + 
+           (player.skills.intelligence * 6) + 
+           (player.skills.power * 2);
+}
+
+// Helper to calculate defense power for display
+function calculateDefensePower() {
+    const territoryCount = countControlledTerritories();
+    return (player.level * 10) + 
+           (player.reputation * 0.5) + 
+           (player.skills.power * 2) + 
+           (territoryCount * 15);
+}
+
+// Update PVP screen countdown
+function updatePVPCountdown() {
+    const countdownEl = document.getElementById('income-countdown-pvp');
+    const controlledCountEl = document.getElementById('controlled-count-pvp');
+    const weeklyIncomeEl = document.getElementById('weekly-income-total-pvp');
+    
+    if (countdownEl) {
+        const remaining = territoryIncomeNextCollection - Date.now();
+        if (remaining > 0) {
+            const minutes = Math.floor(remaining / 60000);
+            const seconds = Math.floor((remaining % 60000) / 1000);
+            countdownEl.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        } else {
+            countdownEl.textContent = 'Collecting...';
+        }
+    }
+    
+    if (controlledCountEl) {
+        controlledCountEl.textContent = countControlledTerritories();
+    }
+    
+    if (weeklyIncomeEl) {
+        weeklyIncomeEl.textContent = `$${calculateMultiplayerTerritoryWeeklyIncome().toLocaleString()}`;
+    }
+}
+
+// ==================== GLOBAL CHAT & ONLINE WORLD ====================
+
 function showGlobalChat() {
     console.log('showGlobalChat called'); // Debug log
     
@@ -3038,6 +3201,7 @@ document.addEventListener('DOMContentLoaded', function() {
 window.showGlobalChat = showGlobalChat;
 window.showOnlineWorld = showOnlineWorld;
 window.showMultiplayer = showMultiplayer;
+window.showPVP = showPVP;
 window.testGlobalFunctions = testGlobalFunctions; // Add debug function
 window.connectMultiplayerAfterGame = connectMultiplayerAfterGame; // Add connection function
 // Territory conquest functions
@@ -3050,6 +3214,7 @@ setTimeout(() => {
     window.showGlobalChat = showGlobalChat;
     window.showOnlineWorld = showOnlineWorld;
     window.showMultiplayer = showMultiplayer;
+    window.showPVP = showPVP;
     window.testGlobalFunctions = testGlobalFunctions;
     window.viewTerritoryDetails = viewTerritoryDetails;
     window.challengeForTerritory = challengeForTerritory;
@@ -3058,6 +3223,7 @@ setTimeout(() => {
         showGlobalChat: typeof window.showGlobalChat,
         showOnlineWorld: typeof window.showOnlineWorld,
         showMultiplayer: typeof window.showMultiplayer,
+        showPVP: typeof window.showPVP,
         testGlobalFunctions: typeof window.testGlobalFunctions,
         viewTerritoryDetails: typeof window.viewTerritoryDetails,
         challengeForTerritory: typeof window.challengeForTerritory,
