@@ -412,7 +412,7 @@ function updateOnlinePlayerList() {
     const playerListContainer = document.getElementById('online-player-list');
     if (!playerListContainer) return;
     
-    let playersHTML = '<h4 style="color: #c0a062; margin: 0 0 15px 0; font-family: \'Georgia\', serif;">👥 Made Men on the Street</h4>';
+    let playersHTML = '<h4 style="color: #c0a062; margin: 0 0 15px 0; font-family: \'Georgia\', serif;">👥 Made Men Online</h4>';
     
     const onlinePlayers = Object.values(onlineWorldState.playerStates || {});
     
@@ -2104,12 +2104,161 @@ function listItemForSale() {
 }
 
 function spectateWar(district) {
-    alert(`👁️ Spectating gang war in ${district}... (Real-time battle view would show here)`);
+    if (!district) return;
+    // Create or reuse modal container
+    let modal = document.getElementById('turf-war-spectator');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'turf-war-spectator';
+        modal.style.position = 'fixed';
+        modal.style.top = '50%';
+        modal.style.left = '50%';
+        modal.style.transform = 'translate(-50%, -50%)';
+        modal.style.zIndex = '9999';
+        modal.style.width = '600px';
+        modal.style.maxWidth = '95%';
+        modal.style.background = 'rgba(0,0,0,0.92)';
+        modal.style.border = '2px solid #8b0000';
+        modal.style.borderRadius = '12px';
+        modal.style.fontFamily = 'Georgia, serif';
+        modal.style.color = '#ecf0f1';
+        modal.style.boxShadow = '0 0 25px rgba(139,0,0,0.7)';
+        document.body.appendChild(modal);
+    }
+    modal.innerHTML = '';
+
+    const attackerStrengthStart = 60 + Math.floor(Math.random()*40);
+    const defenderStrengthStart = 55 + Math.floor(Math.random()*45);
+    let attackerStrength = attackerStrengthStart;
+    let defenderStrength = defenderStrengthStart;
+    let tick = 0;
+    const maxTicks = 12 + Math.floor(Math.random()*5); // variable length
+
+    const header = document.createElement('div');
+    header.style.display = 'flex';
+    header.style.justifyContent = 'space-between';
+    header.style.alignItems = 'center';
+    header.innerHTML = `
+        <h3 style="margin:0; color:#ff4444; text-shadow:2px 2px 6px #8b0000;">👁️ Turf War: ${district}</h3>
+        <button style="background:#333; color:#c0a062; padding:6px 12px; border:1px solid #c0a062; border-radius:6px; cursor:pointer;" onclick="document.getElementById('turf-war-spectator').remove();">✖ Close</button>
+    `;
+    modal.appendChild(header);
+
+    const barsContainer = document.createElement('div');
+    barsContainer.style.margin = '15px 0 10px 0';
+    barsContainer.innerHTML = `
+        <div style="margin-bottom:10px;">
+            <div style="display:flex; justify-content:space-between; font-size:0.85em; margin-bottom:3px;">
+                <span style="color:#c0a062;">Attacker Strength</span>
+                <span id="attacker-strength-val">${attackerStrength}</span>
+            </div>
+            <div style="background:#222; height:16px; border:1px solid #444; border-radius:8px; overflow:hidden;">
+                <div id="attacker-bar" style="height:100%; width:${(attackerStrength/attackerStrengthStart)*100}%; background:linear-gradient(90deg,#8b0000,#ff4444);"></div>
+            </div>
+        </div>
+        <div>
+            <div style="display:flex; justify-content:space-between; font-size:0.85em; margin-bottom:3px;">
+                <span style="color:#c0a062;">Defender Strength</span>
+                <span id="defender-strength-val">${defenderStrength}</span>
+            </div>
+            <div style="background:#222; height:16px; border:1px solid #444; border-radius:8px; overflow:hidden;">
+                <div id="defender-bar" style="height:100%; width:${(defenderStrength/defenderStrengthStart)*100}%; background:linear-gradient(90deg,#004d40,#00a884);"></div>
+            </div>
+        </div>
+    `;
+    modal.appendChild(barsContainer);
+
+    const logArea = document.createElement('div');
+    logArea.style.height = '180px';
+    logArea.style.overflowY = 'auto';
+    logArea.style.background = 'rgba(255,255,255,0.06)';
+    logArea.style.padding = '10px';
+    logArea.style.border = '1px solid #444';
+    logArea.style.borderRadius = '6px';
+    logArea.style.fontSize = '0.85em';
+    logArea.id = 'war-event-log';
+    modal.appendChild(logArea);
+
+    const footer = document.createElement('div');
+    footer.style.marginTop = '12px';
+    footer.style.fontSize = '0.8em';
+    footer.style.color = '#95a5a6';
+    footer.innerHTML = 'Live engagement feed: dynamic swings, losses, morale shifts.';
+    modal.appendChild(footer);
+
+    function log(msg) {
+        const line = document.createElement('div');
+        line.textContent = msg;
+        logArea.appendChild(line);
+        logArea.scrollTop = logArea.scrollHeight;
+    }
+
+    log(`👁️ You begin watching the clash for ${district}...`);
+
+    const attackerBar = () => document.getElementById('attacker-bar');
+    const defenderBar = () => document.getElementById('defender-bar');
+    const attackerVal = () => document.getElementById('attacker-strength-val');
+    const defenderVal = () => document.getElementById('defender-strength-val');
+
+    const interval = setInterval(() => {
+        tick++;
+
+        // Random exchanges
+        const attackerHit = Math.random() < 0.55; // attacker slightly aggressive
+        const defenderHit = Math.random() < 0.5;
+
+        if (attackerHit) {
+            const dmg = 3 + Math.floor(Math.random()*6);
+            defenderStrength = Math.max(0, defenderStrength - dmg);
+            log(`🩸 Attacker pushes forward (-${dmg} defender strength)`);
+        }
+        if (defenderHit) {
+            const dmg = 2 + Math.floor(Math.random()*6);
+            attackerStrength = Math.max(0, attackerStrength - dmg);
+            log(`💥 Counter-fire from defenders (-${dmg} attacker strength)`);
+        }
+
+        // Momentum swings
+        if (Math.random() < 0.15) {
+            const swingTarget = Math.random() < 0.5 ? 'attacker' : 'defender';
+            const swing = 4 + Math.floor(Math.random()*5);
+            if (swingTarget === 'attacker') {
+                attackerStrength += swing;
+                log(`🔥 Sudden reinforcements bolster attackers (+${swing})`);
+            } else {
+                defenderStrength += swing;
+                log(`🛡️ Hidden reserves fortify defenders (+${swing})`);
+            }
+        }
+
+        // Update bars
+        attackerBar().style.width = `${(attackerStrength/attackerStrengthStart)*100}%`;
+        defenderBar().style.width = `${(defenderStrength/defenderStrengthStart)*100}%`;
+        attackerVal().textContent = attackerStrength;
+        defenderVal().textContent = defenderStrength;
+
+        // Check end conditions
+        if (attackerStrength <= 0 || defenderStrength <= 0 || tick >= maxTicks) {
+            clearInterval(interval);
+            let outcome;
+            if (attackerStrength === defenderStrength) {
+                outcome = 'Stalemate — both sides withdraw';
+            } else if (attackerStrength > defenderStrength) {
+                outcome = 'Attackers overwhelm defenders — territory likely to flip';
+                addWorldEvent?.(`🔥 Attackers appear victorious in ${district}!`);
+            } else {
+                outcome = 'Defenders hold firm — control remains';
+                addWorldEvent?.(`🛡️ Defenders repel assault in ${district}.`);
+            }
+            log(`🏁 Battle concludes: ${outcome}`);
+            log(`📊 Final Strength — A:${attackerStrength} D:${defenderStrength}`);
+            setTimeout(() => { footer.innerHTML = outcome; }, 500);
+            logAction?.(`👁️ Spectated turf war in ${district} (${outcome})`);
+        }
+    }, 1000);
 }
 
-function challengeForTerritory(district) {
-    alert(`⚔️ Challenging for ${district} territory... (PvP battle system would activate here)`);
-}
+// Removed placeholder challengeForTerritory(district); full implementation defined later.
 
 function participateInEvent(eventType, district) {
     alert(`🎯 Participating in ${eventType.replace('_', ' ')} event in ${district}...`);
