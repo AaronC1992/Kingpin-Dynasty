@@ -14553,7 +14553,8 @@ function checkRetirementEligibility() {
         let eligible = true;
         const reqs = outcome.requirements;
         
-        if (reqs.cleanMoney && (player.money - player.dirtyMoney) < reqs.cleanMoney) eligible = false;
+        // All funds are now clean-only in player.money; dirty is separate
+        if (reqs.cleanMoney && player.money < reqs.cleanMoney) eligible = false;
         if (reqs.money && player.money < reqs.money) eligible = false;
         if (reqs.businessEmpire && (!player.businesses || player.businesses.length < reqs.businessEmpire)) eligible = false;
         if (reqs.lowHeat && player.wantedLevel > 20) eligible = false;
