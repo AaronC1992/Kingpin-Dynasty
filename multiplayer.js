@@ -37,11 +37,61 @@ let onlineWorldState = {
     nearbyPlayers: [],
     globalChat: [],
     cityDistricts: {
-        downtown: { controlledBy: null, crimeLevel: 50 },
-        docks: { controlledBy: null, crimeLevel: 75 },
-        suburbs: { controlledBy: null, crimeLevel: 25 },
-        industrial: { controlledBy: null, crimeLevel: 60 },
-        redlight: { controlledBy: null, crimeLevel: 90 }
+        downtown: { 
+            controlledBy: null, 
+            controllerType: 'npc', // 'npc' or 'player'
+            npcGang: 'The Street Kings',
+            crimeLevel: 50,
+            defenseRating: 100,
+            weeklyIncome: 15000,
+            assignedMembers: 0,
+            assignedCars: 0,
+            assignedWeapons: 0
+        },
+        docks: { 
+            controlledBy: null, 
+            controllerType: 'npc',
+            npcGang: 'The Longshoremen',
+            crimeLevel: 75,
+            defenseRating: 150,
+            weeklyIncome: 25000,
+            assignedMembers: 0,
+            assignedCars: 0,
+            assignedWeapons: 0
+        },
+        suburbs: { 
+            controlledBy: null, 
+            controllerType: 'npc',
+            npcGang: 'The Neighborhood Watch',
+            crimeLevel: 25,
+            defenseRating: 50,
+            weeklyIncome: 8000,
+            assignedMembers: 0,
+            assignedCars: 0,
+            assignedWeapons: 0
+        },
+        industrial: { 
+            controlledBy: null, 
+            controllerType: 'npc',
+            npcGang: 'The Factory Boys',
+            crimeLevel: 60,
+            defenseRating: 120,
+            weeklyIncome: 18000,
+            assignedMembers: 0,
+            assignedCars: 0,
+            assignedWeapons: 0
+        },
+        redlight: { 
+            controlledBy: null, 
+            controllerType: 'npc',
+            npcGang: 'The Vice Lords',
+            crimeLevel: 90,
+            defenseRating: 200,
+            weeklyIncome: 35000,
+            assignedMembers: 0,
+            assignedCars: 0,
+            assignedWeapons: 0
+        }
     },
     activeHeists: [],
     tradeOffers: [],
@@ -885,19 +935,31 @@ function showOnlineWorld() {
                 <div id="city-districts">
                     ${Object.keys(onlineWorldState.cityDistricts).map(district => {
                         const districtData = onlineWorldState.cityDistricts[district];
+                        const isPlayerControlled = districtData.controllerType === 'player';
+                        const controllerName = isPlayerControlled ? districtData.controlledBy : districtData.npcGang;
+                        const borderColor = isPlayerControlled ? '#c0a062' : '#666';
+                        
                         return `
-                            <div style="background: rgba(20, 20, 20, 0.8); padding: 10px; margin: 8px 0; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #555;">
-                                <div>
-                                    <strong style="color: #c0a062;">${district.charAt(0).toUpperCase() + district.slice(1)}</strong>
-                                    <br><small style="color: #ccc;">Crime Level: ${districtData.crimeLevel}%</small>
-                                </div>
-                                <div style="text-align: right;">
-                                    <div style="color: ${districtData.controlledBy ? '#c0a062' : '#95a5a6'}; font-family: 'Georgia', serif;">
-                                        ${districtData.controlledBy || 'Unclaimed'}
+                            <div style="background: rgba(20, 20, 20, 0.8); padding: 12px; margin: 8px 0; border-radius: 8px; border: 2px solid ${borderColor};">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                    <div style="flex: 1;">
+                                        <strong style="color: #c0a062; font-size: 1.1em;">${district.charAt(0).toUpperCase() + district.slice(1)}</strong>
+                                        <div style="margin: 5px 0; font-size: 0.85em;">
+                                            <div style="color: #ccc;">Controlled by: <span style="color: ${isPlayerControlled ? '#27ae60' : '#95a5a6'};">${controllerName || 'Unknown'}</span></div>
+                                            <div style="color: #ccc;">Defense: <span style="color: #e74c3c;">${districtData.defenseRating}</span></div>
+                                            <div style="color: #ccc;">Income: <span style="color: #27ae60;">$${districtData.weeklyIncome.toLocaleString()}/week</span></div>
+                                        </div>
                                     </div>
-                                    <button onclick="exploreDistrict('${district}')" style="background: #c0a062; color: #000; padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8em; font-weight: bold;">
-                                        Explore
-                                    </button>
+                                    <div style="text-align: right;">
+                                        <button onclick="viewTerritoryDetails('${district}')" 
+                                                style="background: #f39c12; color: #000; padding: 8px 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-bottom: 5px; width: 100%;">
+                                            📊 Details
+                                        </button>
+                                        <button onclick="challengeForTerritory('${district}')" 
+                                                style="background: linear-gradient(180deg, #8b0000 0%, #5a0000 100%); color: #fff; padding: 8px 12px; border: 1px solid #ff0000; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%;">
+                                            ⚔️ Attack
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         `;
@@ -2012,15 +2074,37 @@ function executeWhackRivalDon(targetId, targetName, cost) {
         return;
     }
     
-    // Calculate success chance (30% base, modified by skills)
-    const baseChance = 30;
-    const stealthBonus = (player.skills?.stealth || 0) * 2;
-    const violenceBonus = (player.skillTrees?.violence?.firearms || 0) * 3;
-    const intelligenceBonus = (player.skills?.intelligence || 0) * 1.5;
-    const levelDiff = (player.level || 1) - (target.level || 1);
-    const levelBonus = levelDiff * 2; // +/- 2% per level difference
+    // Calculate attacker power
+    const attackerPower = (player.level || 1) * 10 
+                        + (player.skills?.stealth || 0) * 8
+                        + (player.skillTrees?.violence?.firearms || 0) * 12
+                        + (player.skills?.intelligence || 0) * 6
+                        + (player.power || 0) * 2;
     
-    const successChance = Math.max(15, Math.min(55, baseChance + stealthBonus + violenceBonus + intelligenceBonus + levelBonus));
+    // Calculate target defense power
+    const targetPower = (target.level || 1) * 10
+                      + (target.reputation || 0) * 0.5
+                      + (target.power || 0) * 2
+                      + (target.territory || 0) * 15; // More territory = better defenses
+    
+    // Calculate success chance based on power ratio
+    const powerRatio = attackerPower / (targetPower + 1); // Avoid division by zero
+    let baseChance;
+    if (powerRatio >= 2.0) {
+        baseChance = 50; // 2x stronger
+    } else if (powerRatio >= 1.5) {
+        baseChance = 40; // 1.5x stronger
+    } else if (powerRatio >= 1.2) {
+        baseChance = 30; // Slightly stronger
+    } else if (powerRatio >= 0.8) {
+        baseChance = 20; // Even match
+    } else if (powerRatio >= 0.5) {
+        baseChance = 12; // Weaker
+    } else {
+        baseChance = 5; // Much weaker
+    }
+    
+    const successChance = Math.max(5, Math.min(55, baseChance));
     const success = Math.random() * 100 < successChance;
     
     // Attacker always takes damage (20-60%, never fatal)
@@ -2299,6 +2383,498 @@ function showHitResults(success, target, attackerDamage, cost) {
     }
 }
 
+// ==================== TERRITORY CONQUEST SYSTEM ====================
+
+// View detailed territory information
+function viewTerritoryDetails(districtName) {
+    const district = onlineWorldState.cityDistricts[districtName];
+    if (!district) return;
+    
+    const isPlayerControlled = district.controllerType === 'player';
+    const controllerName = isPlayerControlled ? district.controlledBy : district.npcGang;
+    
+    const detailsHTML = `
+        <div style="background: rgba(0, 0, 0, 0.95); padding: 40px; border-radius: 15px; border: 3px solid ${isPlayerControlled ? '#c0a062' : '#666'};">
+            <div style="text-align: center; margin-bottom: 30px;">
+                <div style="font-size: 3em; margin-bottom: 15px;">🏛️</div>
+                <h2 style="color: #c0a062; font-family: 'Georgia', serif; margin: 0; font-size: 2em; text-transform: uppercase;">
+                    ${districtName}
+                </h2>
+                <div style="color: #aaa; margin-top: 10px; font-size: 1.1em;">
+                    Controlled by <span style="color: ${isPlayerControlled ? '#27ae60' : '#95a5a6'}; font-weight: bold;">${controllerName}</span>
+                </div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 25px 0;">
+                <div style="background: rgba(231, 76, 60, 0.1); padding: 20px; border-radius: 10px; border: 2px solid #e74c3c; text-align: center;">
+                    <div style="color: #e74c3c; font-size: 2.5em; font-weight: bold;">${district.defenseRating}</div>
+                    <div style="color: #ccc; margin-top: 5px;">Defense Rating</div>
+                </div>
+                <div style="background: rgba(39, 174, 96, 0.1); padding: 20px; border-radius: 10px; border: 2px solid #27ae60; text-align: center;">
+                    <div style="color: #27ae60; font-size: 2em; font-weight: bold;">$${district.weeklyIncome.toLocaleString()}</div>
+                    <div style="color: #ccc; margin-top: 5px;">Weekly Income</div>
+                </div>
+            </div>
+            
+            <div style="background: rgba(0, 0, 0, 0.7); padding: 25px; border-radius: 10px; margin: 25px 0; border: 1px solid #555;">
+                <h3 style="color: #c0a062; margin: 0 0 20px 0; font-family: 'Georgia', serif;">🛡️ Defense Forces</h3>
+                <div style="display: flex; justify-content: space-around; text-align: center;">
+                    <div>
+                        <div style="font-size: 2em; margin-bottom: 5px;">👤</div>
+                        <div style="color: #fff; font-weight: bold; font-size: 1.2em;">${district.assignedMembers}</div>
+                        <div style="color: #888; font-size: 0.85em;">Gang Members</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 2em; margin-bottom: 5px;">🚗</div>
+                        <div style="color: #fff; font-weight: bold; font-size: 1.2em;">${district.assignedCars}</div>
+                        <div style="color: #888; font-size: 0.85em;">Vehicles</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 2em; margin-bottom: 5px;">🔫</div>
+                        <div style="color: #fff; font-weight: bold; font-size: 1.2em;">${district.assignedWeapons}</div>
+                        <div style="color: #888; font-size: 0.85em;">Weapons</div>
+                    </div>
+                </div>
+            </div>
+            
+            ${!isPlayerControlled ? `
+                <div style="background: rgba(139, 0, 0, 0.2); padding: 20px; border-radius: 8px; border-left: 4px solid #8b0000; margin: 25px 0;">
+                    <h4 style="color: #ff6666; margin: 0 0 10px 0; font-family: 'Georgia', serif;">About ${district.npcGang}</h4>
+                    <p style="color: #ccc; margin: 0; font-size: 0.95em; line-height: 1.6;">
+                        ${getTerritoryLore(districtName, district.npcGang)}
+                    </p>
+                </div>
+            ` : ''}
+            
+            <div style="text-align: center; margin-top: 30px;">
+                <button onclick="challengeForTerritory('${districtName}')" 
+                        style="background: linear-gradient(180deg, #8b0000 0%, #5a0000 100%); color: #ffffff; padding: 15px 35px; border: 1px solid #ff0000; border-radius: 10px; cursor: pointer; font-family: 'Georgia', serif; font-weight: bold; margin-right: 15px; font-size: 1.1em;">
+                    ⚔️ Attack This Territory
+                </button>
+                <button onclick="showOnlineWorld()" 
+                        style="background: #333; color: #c0a062; padding: 15px 35px; border: 1px solid #c0a062; border-radius: 10px; cursor: pointer; font-family: 'Georgia', serif; font-weight: bold;">
+                    🏠 Return to Commission
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById("multiplayer-content").innerHTML = detailsHTML;
+}
+
+// Get lore text for NPC gangs
+function getTerritoryLore(district, gangName) {
+    const lore = {
+        'Street Kings': 'A crew of hardened street fighters who control the underground through fear and violence. They\'ve held these streets since the old days.',
+        'Longshoremen': 'Union workers turned gangsters. They control the shipping and know how to move anything through the docks without questions.',
+        'Neighborhood Watch': 'Don\'t let the name fool you - these are ex-military vets who protect their turf with military precision.',
+        'Factory Boys': 'Blue-collar workers who learned to fight for what\'s theirs. They control the industrial sector with iron fists.',
+        'Vice Lords': 'They run the nightlife and pleasure businesses. Cross them and you\'ll disappear into the red light district.'
+    };
+    return lore[gangName] || 'A powerful local gang that controls this territory.';
+}
+
+// Challenge for territory
+function challengeForTerritory(districtName) {
+    const district = onlineWorldState.cityDistricts[districtName];
+    if (!district) return;
+    
+    // Check if player has resources to attack
+    const playerGangSize = player.gangMembers || 0;
+    const playerCars = (player.garage && player.garage.length) || 0;
+    const playerWeapons = (player.inventory && player.inventory.filter(i => i.type === 'weapon').length) || 0;
+    
+    const baseCost = 50000; // Base cost to attack
+    const attackCost = baseCost + (district.defenseRating * 100);
+    
+    const canAfford = player.money >= attackCost;
+    
+    const challengeHTML = `
+        <div style="background: rgba(0, 0, 0, 0.95); padding: 40px; border-radius: 15px; border: 3px solid #8b0000;">
+            <div style="text-align: center; margin-bottom: 30px;">
+                <div style="font-size: 3em; margin-bottom: 15px;">⚔️</div>
+                <h2 style="color: #e74c3c; font-family: 'Georgia', serif; margin: 0; font-size: 2em;">CHALLENGE FOR TERRITORY</h2>
+                <div style="color: #aaa; margin-top: 10px; font-size: 1.1em; text-transform: uppercase;">
+                    ${districtName}
+                </div>
+            </div>
+            
+            <div style="background: rgba(0, 0, 0, 0.7); padding: 25px; border-radius: 10px; margin: 25px 0; border: 1px solid #8b0000;">
+                <h3 style="color: #c0a062; margin: 0 0 20px 0; font-family: 'Georgia', serif;">💰 Attack Cost</h3>
+                <div style="text-align: center;">
+                    <div style="font-size: 2.5em; color: ${canAfford ? '#27ae60' : '#e74c3c'}; font-weight: bold;">
+                        $${attackCost.toLocaleString()}
+                    </div>
+                    <div style="color: #888; margin-top: 5px;">
+                        ${canAfford ? '✓ You can afford this' : '✗ Not enough money'}
+                    </div>
+                </div>
+            </div>
+            
+            <div style="background: rgba(0, 0, 0, 0.7); padding: 25px; border-radius: 10px; margin: 25px 0; border: 1px solid #555;">
+                <h3 style="color: #c0a062; margin: 0 0 20px 0; font-family: 'Georgia', serif;">⚡ Assign Attack Force</h3>
+                <div style="margin-bottom: 15px;">
+                    <label style="color: #ccc; display: block; margin-bottom: 5px;">👤 Gang Members (You have: ${playerGangSize})</label>
+                    <input type="number" id="attack-members" min="0" max="${playerGangSize}" value="0" 
+                           style="width: 100%; padding: 10px; background: #1a1a1a; border: 1px solid #555; color: #fff; border-radius: 5px;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="color: #ccc; display: block; margin-bottom: 5px;">🚗 Vehicles (You have: ${playerCars})</label>
+                    <input type="number" id="attack-cars" min="0" max="${playerCars}" value="0" 
+                           style="width: 100%; padding: 10px; background: #1a1a1a; border: 1px solid #555; color: #fff; border-radius: 5px;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="color: #ccc; display: block; margin-bottom: 5px;">🔫 Weapons (You have: ${playerWeapons})</label>
+                    <input type="number" id="attack-weapons" min="0" max="${playerWeapons}" value="0" 
+                           style="width: 100%; padding: 10px; background: #1a1a1a; border: 1px solid #555; color: #fff; border-radius: 5px;">
+                </div>
+            </div>
+            
+            <div style="background: rgba(231, 76, 60, 0.1); padding: 20px; border-radius: 8px; border: 2px solid #e74c3c; margin: 25px 0;">
+                <h4 style="color: #e74c3c; margin: 0 0 10px 0;">⚠️ WARNING</h4>
+                <p style="color: #ccc; margin: 0; font-size: 0.95em;">
+                    Any gang members, cars, or weapons you assign to this attack may be lost if you fail. 
+                    The stronger your attack force, the better your chances of victory.
+                </p>
+            </div>
+            
+            <div style="text-align: center; margin-top: 30px;">
+                <button onclick="executeTerritoryBattle('${districtName}')" 
+                        ${!canAfford ? 'disabled' : ''}
+                        style="background: ${canAfford ? 'linear-gradient(180deg, #8b0000 0%, #5a0000 100%)' : '#444'}; 
+                               color: ${canAfford ? '#ffffff' : '#666'}; 
+                               padding: 15px 35px; 
+                               border: 1px solid ${canAfford ? '#ff0000' : '#555'}; 
+                               border-radius: 10px; 
+                               cursor: ${canAfford ? 'pointer' : 'not-allowed'}; 
+                               font-family: 'Georgia', serif; 
+                               font-weight: bold; 
+                               margin-right: 15px; 
+                               font-size: 1.1em;">
+                    ⚔️ Launch Attack
+                </button>
+                <button onclick="viewTerritoryDetails('${districtName}')" 
+                        style="background: #333; color: #c0a062; padding: 15px 35px; border: 1px solid #c0a062; border-radius: 10px; cursor: pointer; font-family: 'Georgia', serif; font-weight: bold;">
+                    ← Back
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById("multiplayer-content").innerHTML = challengeHTML;
+}
+
+// Execute territory battle
+function executeTerritoryBattle(districtName) {
+    const district = onlineWorldState.cityDistricts[districtName];
+    if (!district) return;
+    
+    // Get attack force from inputs
+    const attackMembers = parseInt(document.getElementById('attack-members').value) || 0;
+    const attackCars = parseInt(document.getElementById('attack-cars').value) || 0;
+    const attackWeapons = parseInt(document.getElementById('attack-weapons').value) || 0;
+    
+    // Calculate costs
+    const baseCost = 50000;
+    const attackCost = baseCost + (district.defenseRating * 100);
+    
+    // Validate resources
+    const playerGangSize = player.gangMembers || 0;
+    const playerCars = (player.garage && player.garage.length) || 0;
+    const playerWeapons = (player.inventory && player.inventory.filter(i => i.type === 'weapon').length) || 0;
+    
+    if (player.money < attackCost) {
+        alert('Not enough money to launch this attack!');
+        return;
+    }
+    
+    if (attackMembers > playerGangSize || attackCars > playerCars || attackWeapons > playerWeapons) {
+        alert('You don\'t have enough resources!');
+        return;
+    }
+    
+    // Pay attack cost
+    player.money -= attackCost;
+    
+    // Calculate attack power
+    const playerSkillPower = (player.level * 10) + 
+                            (player.skills.stealth * 8) + 
+                            (player.skills.firearms * 12) + 
+                            (player.skills.intelligence * 6) + 
+                            (player.skills.power * 2);
+    
+    const attackForce = playerSkillPower + 
+                       (attackMembers * 10) + 
+                       (attackCars * 5) + 
+                       (attackWeapons * 8);
+    
+    // Calculate defense power
+    const defenseForce = district.defenseRating + 
+                        (district.assignedMembers * 10) + 
+                        (district.assignedCars * 5) + 
+                        (district.assignedWeapons * 8);
+    
+    // Determine outcome (attack force vs defense force)
+    const powerRatio = attackForce / defenseForce;
+    let successChance = 0;
+    
+    if (powerRatio >= 2.0) successChance = 75;
+    else if (powerRatio >= 1.5) successChance = 60;
+    else if (powerRatio >= 1.2) successChance = 45;
+    else if (powerRatio >= 1.0) successChance = 35;
+    else if (powerRatio >= 0.8) successChance = 25;
+    else if (powerRatio >= 0.5) successChance = 15;
+    else successChance = 8;
+    
+    const success = Math.random() * 100 < successChance;
+    
+    // Calculate losses
+    let membersLost = 0;
+    let carsLost = 0;
+    let weaponsLost = 0;
+    
+    if (success) {
+        // Victory - light losses
+        membersLost = Math.floor(attackMembers * (Math.random() * 0.3)); // 0-30% losses
+        carsLost = Math.floor(attackCars * (Math.random() * 0.2)); // 0-20% losses
+        weaponsLost = Math.floor(attackWeapons * (Math.random() * 0.25)); // 0-25% losses
+        
+        // Take over territory
+        district.controllerType = 'player';
+        district.controlledBy = player.name;
+        district.assignedMembers = attackMembers - membersLost;
+        district.assignedCars = attackCars - carsLost;
+        district.assignedWeapons = attackWeapons - weaponsLost;
+        
+    } else {
+        // Defeat - heavy losses
+        membersLost = Math.floor(attackMembers * (0.5 + Math.random() * 0.5)); // 50-100% losses
+        carsLost = Math.floor(attackCars * (0.4 + Math.random() * 0.4)); // 40-80% losses
+        weaponsLost = Math.floor(attackWeapons * (0.5 + Math.random() * 0.5)); // 50-100% losses
+    }
+    
+    // Apply losses to player
+    if (player.gangMembers) player.gangMembers -= membersLost;
+    
+    // Remove lost cars
+    if (player.garage && carsLost > 0) {
+        for (let i = 0; i < carsLost; i++) {
+            if (player.garage.length > 0) {
+                player.garage.splice(Math.floor(Math.random() * player.garage.length), 1);
+            }
+        }
+    }
+    
+    // Remove lost weapons
+    if (player.inventory && weaponsLost > 0) {
+        const weapons = player.inventory.filter(i => i.type === 'weapon');
+        for (let i = 0; i < weaponsLost; i++) {
+            if (weapons.length > 0) {
+                const weaponToRemove = weapons[Math.floor(Math.random() * weapons.length)];
+                const index = player.inventory.indexOf(weaponToRemove);
+                if (index > -1) player.inventory.splice(index, 1);
+                weapons.splice(weapons.indexOf(weaponToRemove), 1);
+            }
+        }
+    }
+    
+    // Show narrative battle results
+    showTerritoryBattleResults(success, districtName, district, attackCost, {
+        attackForce,
+        defenseForce,
+        successChance,
+        membersLost,
+        carsLost,
+        weaponsLost,
+        attackMembers,
+        attackCars,
+        attackWeapons
+    });
+}
+
+// Show territory battle results
+function showTerritoryBattleResults(success, districtName, district, cost, battleStats) {
+    let resultHTML;
+    
+    if (success) {
+        // Victory
+        resultHTML = `
+            <div style="background: rgba(0, 0, 0, 0.95); padding: 40px; border-radius: 15px; border: 3px solid #27ae60;">
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <div style="font-size: 3em; margin-bottom: 15px;">👑</div>
+                    <h2 style="color: #27ae60; font-family: 'Georgia', serif; margin: 0; font-size: 2em;">TERRITORY CONQUERED!</h2>
+                    <div style="color: #aaa; margin-top: 10px; font-size: 1.3em; text-transform: uppercase;">
+                        ${districtName} is now yours
+                    </div>
+                </div>
+                
+                <div style="background: rgba(0, 0, 0, 0.7); padding: 25px; border-radius: 10px; margin: 25px 0; border: 1px solid #27ae60;">
+                    <h3 style="color: #c0a062; margin: 0 0 20px 0; font-family: 'Georgia', serif;">⚔️ Battle Report</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div style="text-align: center; padding: 15px; background: rgba(39, 174, 96, 0.1); border-radius: 5px;">
+                            <div style="color: #27ae60; font-size: 1.8em; font-weight: bold;">${battleStats.attackForce}</div>
+                            <div style="color: #ccc; margin-top: 5px;">Your Force</div>
+                        </div>
+                        <div style="text-align: center; padding: 15px; background: rgba(231, 76, 60, 0.1); border-radius: 5px;">
+                            <div style="color: #e74c3c; font-size: 1.8em; font-weight: bold;">${battleStats.defenseForce}</div>
+                            <div style="color: #ccc; margin-top: 5px;">Enemy Defense</div>
+                        </div>
+                    </div>
+                    <div style="text-align: center; margin-top: 15px; padding: 12px; background: rgba(192, 160, 98, 0.1); border-radius: 5px;">
+                        <div style="color: #c0a062;">Success Chance: <span style="font-weight: bold;">${battleStats.successChance}%</span></div>
+                    </div>
+                </div>
+                
+                <div style="background: rgba(0, 0, 0, 0.7); padding: 25px; border-radius: 10px; margin: 25px 0; border: 1px solid #555;">
+                    <h3 style="color: #c0a062; margin: 0 0 20px 0; font-family: 'Georgia', serif;">💀 Casualties</h3>
+                    <div style="display: flex; justify-content: space-around; text-align: center;">
+                        <div>
+                            <div style="font-size: 1.8em; color: ${battleStats.membersLost > 0 ? '#e74c3c' : '#27ae60'}; font-weight: bold;">
+                                ${battleStats.membersLost}
+                            </div>
+                            <div style="color: #888; font-size: 0.85em;">Gang Members Lost</div>
+                            <div style="color: #666; font-size: 0.75em; margin-top: 3px;">${battleStats.attackMembers - battleStats.membersLost} survived</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 1.8em; color: ${battleStats.carsLost > 0 ? '#e74c3c' : '#27ae60'}; font-weight: bold;">
+                                ${battleStats.carsLost}
+                            </div>
+                            <div style="color: #888; font-size: 0.85em;">Vehicles Lost</div>
+                            <div style="color: #666; font-size: 0.75em; margin-top: 3px;">${battleStats.attackCars - battleStats.carsLost} survived</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 1.8em; color: ${battleStats.weaponsLost > 0 ? '#e74c3c' : '#27ae60'}; font-weight: bold;">
+                                ${battleStats.weaponsLost}
+                            </div>
+                            <div style="color: #888; font-size: 0.85em;">Weapons Lost</div>
+                            <div style="color: #666; font-size: 0.75em; margin-top: 3px;">${battleStats.attackWeapons - battleStats.weaponsLost} survived</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="background: rgba(39, 174, 96, 0.2); padding: 20px; border-radius: 8px; border-left: 4px solid #27ae60; margin: 25px 0;">
+                    <h4 style="color: #27ae60; margin: 0 0 10px 0; font-family: 'Georgia', serif;">💰 Territory Rewards</h4>
+                    <p style="color: #ccc; margin: 0; font-size: 1.1em;">
+                        Weekly Income: <span style="color: #27ae60; font-weight: bold; font-size: 1.2em;">$${district.weeklyIncome.toLocaleString()}</span>
+                    </p>
+                    <p style="color: #888; margin: 5px 0 0 0; font-size: 0.9em;">
+                        This territory will generate income every week you hold it.
+                    </p>
+                </div>
+                
+                <div style="background: rgba(139, 0, 0, 0.2); padding: 20px; border-radius: 8px; border-left: 4px solid #8b0000; margin: 25px 0;">
+                    <p style="color: #ff6666; margin: 0; font-family: 'Georgia', serif; font-style: italic;">
+                        "Word on the street: ${player.name || 'The new Don'} just took ${districtName}. The old crew? Scattered like rats."
+                    </p>
+                </div>
+                
+                <div style="text-align: center; margin-top: 30px;">
+                    <button onclick="showOnlineWorld()" 
+                            style="background: linear-gradient(180deg, #27ae60 0%, #1e8449 100%); color: #ffffff; padding: 15px 35px; border: 1px solid #2ecc71; border-radius: 10px; cursor: pointer; font-family: 'Georgia', serif; font-weight: bold; font-size: 1.1em;">
+                        🏛️ View Your Empire
+                    </button>
+                </div>
+            </div>
+        `;
+    } else {
+        // Defeat
+        resultHTML = `
+            <div style="background: rgba(0, 0, 0, 0.95); padding: 40px; border-radius: 15px; border: 3px solid #8b0000;">
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <div style="font-size: 3em; margin-bottom: 15px;">💥</div>
+                    <h2 style="color: #e74c3c; font-family: 'Georgia', serif; margin: 0; font-size: 2em;">ATTACK FAILED</h2>
+                    <div style="color: #aaa; margin-top: 10px; font-size: 1.1em;">
+                        Your forces were crushed defending ${districtName}
+                    </div>
+                </div>
+                
+                <div style="background: rgba(0, 0, 0, 0.7); padding: 25px; border-radius: 10px; margin: 25px 0; border: 1px solid #8b0000;">
+                    <h3 style="color: #c0a062; margin: 0 0 20px 0; font-family: 'Georgia', serif;">⚔️ Battle Report</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div style="text-align: center; padding: 15px; background: rgba(231, 76, 60, 0.1); border-radius: 5px;">
+                            <div style="color: #e74c3c; font-size: 1.8em; font-weight: bold;">${battleStats.attackForce}</div>
+                            <div style="color: #ccc; margin-top: 5px;">Your Force</div>
+                        </div>
+                        <div style="text-align: center; padding: 15px; background: rgba(39, 174, 96, 0.1); border-radius: 5px;">
+                            <div style="color: #27ae60; font-size: 1.8em; font-weight: bold;">${battleStats.defenseForce}</div>
+                            <div style="color: #ccc; margin-top: 5px;">Enemy Defense</div>
+                        </div>
+                    </div>
+                    <div style="text-align: center; margin-top: 15px; padding: 12px; background: rgba(139, 0, 0, 0.2); border-radius: 5px;">
+                        <div style="color: #e74c3c;">Success Chance: <span style="font-weight: bold;">${battleStats.successChance}%</span></div>
+                    </div>
+                </div>
+                
+                <div style="background: rgba(0, 0, 0, 0.7); padding: 25px; border-radius: 10px; margin: 25px 0; border: 1px solid #8b0000;">
+                    <h3 style="color: #e74c3c; margin: 0 0 20px 0; font-family: 'Georgia', serif;">💀 Heavy Losses</h3>
+                    <div style="display: flex; justify-content: space-around; text-align: center;">
+                        <div>
+                            <div style="font-size: 1.8em; color: #e74c3c; font-weight: bold;">
+                                ${battleStats.membersLost}
+                            </div>
+                            <div style="color: #888; font-size: 0.85em;">Gang Members Killed</div>
+                            <div style="color: #666; font-size: 0.75em; margin-top: 3px;">of ${battleStats.attackMembers} sent</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 1.8em; color: #e74c3c; font-weight: bold;">
+                                ${battleStats.carsLost}
+                            </div>
+                            <div style="color: #888; font-size: 0.85em;">Vehicles Destroyed</div>
+                            <div style="color: #666; font-size: 0.75em; margin-top: 3px;">of ${battleStats.attackCars} sent</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 1.8em; color: #e74c3c; font-weight: bold;">
+                                ${battleStats.weaponsLost}
+                            </div>
+                            <div style="color: #888; font-size: 0.85em;">Weapons Lost</div>
+                            <div style="color: #666; font-size: 0.75em; margin-top: 3px;">of ${battleStats.attackWeapons} sent</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="background: rgba(139, 0, 0, 0.3); padding: 20px; border-radius: 8px; margin: 25px 0; border: 2px solid #8b0000;">
+                    <h4 style="color: #ff6666; margin: 0 0 10px 0; font-family: 'Georgia', serif;">💸 Total Cost</h4>
+                    <div style="text-align: center;">
+                        <div style="font-size: 2em; color: #e74c3c; font-weight: bold;">-$${cost.toLocaleString()}</div>
+                        <div style="color: #888; margin-top: 5px;">Attack cost (not refunded)</div>
+                    </div>
+                </div>
+                
+                <div style="background: rgba(139, 0, 0, 0.2); padding: 20px; border-radius: 8px; border-left: 4px solid #8b0000; margin: 25px 0;">
+                    <p style="color: #ff6666; margin: 0; font-family: 'Georgia', serif; font-style: italic;">
+                        "You got cocky. ${district.controllerType === 'npc' ? district.npcGang : district.controlledBy} was ready. Your crew paid the price."
+                    </p>
+                </div>
+                
+                <div style="text-align: center; margin-top: 30px;">
+                    <button onclick="viewTerritoryDetails('${districtName}')" 
+                            style="background: linear-gradient(180deg, #8b0000 0%, #5a0000 100%); color: #ffffff; padding: 15px 35px; border: 1px solid #ff0000; border-radius: 10px; cursor: pointer; font-family: 'Georgia', serif; font-weight: bold; margin-right: 15px;">
+                        🔄 Try Again
+                    </button>
+                    <button onclick="showOnlineWorld()" 
+                            style="background: #333; color: #c0a062; padding: 15px 35px; border: 1px solid #c0a062; border-radius: 10px; cursor: pointer; font-family: 'Georgia', serif; font-weight: bold;">
+                        🏠 Return to Commission
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+    
+    document.getElementById("multiplayer-content").innerHTML = resultHTML;
+    
+    // Update UI
+    if (typeof updateUI === 'function') updateUI();
+    
+    // Log the action
+    if (typeof logAction === 'function') {
+        if (success) {
+            logAction(`👑 Conquered ${districtName}! Lost ${battleStats.membersLost} members, ${battleStats.carsLost} cars, ${battleStats.weaponsLost} weapons. Earning $${district.weeklyIncome.toLocaleString()}/week.`);
+        } else {
+            logAction(`💥 Failed to take ${districtName}. Lost ${battleStats.membersLost} members, ${battleStats.carsLost} cars, ${battleStats.weaponsLost} weapons, and $${cost.toLocaleString()}.`);
+        }
+    }
+}
+
 // Keep compatibility with existing game integration
 function showMultiplayer() {
     showOnlineWorld();
@@ -2316,6 +2892,10 @@ window.showOnlineWorld = showOnlineWorld;
 window.showMultiplayer = showMultiplayer;
 window.testGlobalFunctions = testGlobalFunctions; // Add debug function
 window.connectMultiplayerAfterGame = connectMultiplayerAfterGame; // Add connection function
+// Territory conquest functions
+window.viewTerritoryDetails = viewTerritoryDetails;
+window.challengeForTerritory = challengeForTerritory;
+window.executeTerritoryBattle = executeTerritoryBattle;
 
 // Also make them available after a slight delay to ensure everything is loaded
 setTimeout(() => {
@@ -2323,11 +2903,17 @@ setTimeout(() => {
     window.showOnlineWorld = showOnlineWorld;
     window.showMultiplayer = showMultiplayer;
     window.testGlobalFunctions = testGlobalFunctions;
+    window.viewTerritoryDetails = viewTerritoryDetails;
+    window.challengeForTerritory = challengeForTerritory;
+    window.executeTerritoryBattle = executeTerritoryBattle;
     console.log('Global functions assigned:', {
         showGlobalChat: typeof window.showGlobalChat,
         showOnlineWorld: typeof window.showOnlineWorld,
         showMultiplayer: typeof window.showMultiplayer,
-        testGlobalFunctions: typeof window.testGlobalFunctions
+        testGlobalFunctions: typeof window.testGlobalFunctions,
+        viewTerritoryDetails: typeof window.viewTerritoryDetails,
+        challengeForTerritory: typeof window.challengeForTerritory,
+        executeTerritoryBattle: typeof window.executeTerritoryBattle
     });
 }, 100);
 
