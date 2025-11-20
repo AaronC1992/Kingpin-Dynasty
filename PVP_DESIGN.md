@@ -21,11 +21,11 @@ Enable player-vs-player combat and gang-vs-gang territory wars in From Dusk to D
    - Player state sync on connect (fetch from localStorage, validate server-side)
    - Rate limiting per player IP and session ID
 
-2. **Matchmaking Service**
-   - **Friendly Duels**: Quick 1v1 matches, no stakes
-   - **Ranked Duels**: Competitive 1v1 with clean money wagering
-   - **Territory Wars**: Scheduled gang battles for district control
-   - Queue system: match players by level/reputation ±20%
+2. **Engagement Services**
+   - **Assassination (Whack Rival Don)**: Narrative, high-risk single target elimination with permadeath and loot (money + cars)
+   - **Territory Conquest**: Player attacks NPC or player-controlled districts to seize control, assign defense resources
+   - (Duels removed) Focus shifted entirely to empire building and strategic elimination
+   - Target discovery via world state; no traditional matchmaking queues
 
 3. **Combat Resolution (Server Authority)**
    - Combat formulas run server-side to prevent client manipulation
@@ -190,17 +190,34 @@ function resolveGangWar(gang1, gang2) {
 - ✅ Leaderboards
 - **NEW**: Duel queue UI and matchmaking logic
 
-### Phase 2: Friendly Duels (Week 3-4)
-- No-stakes 1v1 combat for practice
-- Combat UI with attack/defend buttons
-- Real-time damage feedback
-- Reputation rewards only (no money)
+### Phase 2: Assassination System (Week 3-4)
+- Narrative 5-stage hit attempt (Approach, Tension, Action, Outcome, Aftermath)
+- Power-based success chance (ratio of attacker vs defender):
+   - ≥2.0 → 50%
+   - ≥1.5 → 40%
+   - ≥1.2 → 30%
+   - ≥0.8 → 20%
+   - ≥0.5 → 12%
+   - <0.5 → 5%
+- Success: 10–50% of target clean money + random cars; target permanently removed; their territories revert to NPC
+- Failure: Cost paid + attacker takes 20–60% health damage (non-lethal)
 
-### Phase 3: Ranked Duels (Week 5-6)
-- Wagering system: both players put up clean money
-- Winner takes pot (minus 5% house fee)
-- Ranked leaderboard for duel wins
-- Daily challenges: "Win 3 duels today for bonus $50k"
+### Phase 3: Territory Conquest (Week 5-6)
+- Districts have: defenseRating, weeklyIncome, assignedMembers/Cars/Weapons
+- Attack Cost: base $50k + (defenseRating × $100)
+- Attack Force Power = playerSkillPower + (members ×10) + (cars ×5) + (weapons ×8)
+- Defense Force Power = defenseRating + (defMembers ×10) + (defCars ×5) + (defWeapons ×8)
+- Success Chance (attackForce/defenseForce ratio):
+   - ≥2.0 → 75%
+   - ≥1.5 → 60%
+   - ≥1.2 → 45%
+   - ≥1.0 → 35%
+   - ≥0.8 → 25%
+   - ≥0.5 → 15%
+   - <0.5 → 8%
+- Victory Losses: 0–30% members, 0–20% cars, 0–25% weapons
+- Defeat Losses: 50–100% members, 40–80% cars, 50–100% weapons
+- Weekly income auto-collected (dev timer ~10 min = 1 week) → added as clean money
 
 ### Phase 4: Territory Wars (Week 7-8)
 - Gang creation/management UI
@@ -237,8 +254,8 @@ function resolveGangWar(gang1, gang2) {
 ### Rewards Flow
 | Activity | Payout Type | Amount |
 |----------|-------------|--------|
-| Friendly Duel | Reputation | +5 (win), +1 (loss) |
-| Ranked Duel | Clean Money | Wager × 1.9 (winner) |
+| Assassination (Whack Rival Don) | Clean + Cars | 10–50% victim clean money + random cars |
+| Territory Conquest | Clean Money | Sum of district weeklyIncome (collected per tick) |
 | Territory War | Dirty Money | District income × 10 |
 | Gang Operation | Dirty Money | $50k - $500k |
 | Jailbreak Assist | Reputation | +5 (success), -2 (caught) |
@@ -314,7 +331,8 @@ function resolveGangWar(gang1, gang2) {
 - **Matchmaking fairness**: Should we match by level, reputation, or both?
 - **War scheduling**: Fixed times (8pm Fri/Sat) or gang-initiated anytime?
 - **Gang size limits**: Max 10 members per gang? Max 3 gangs per district?
-- **Dirty money in PvP**: Should ranked duels allow dirty money wagering (higher stakes, higher risk)?
+- **Income Type**: Territory weekly income currently clean; consider dirty for balancing sinks.
+- **Cheat/Debug**: Temporary portrait click cheat grants $100k clean + $100k dirty + 100 skill points (for testing only; will be removed for production).
 - **Jailbreak cooldown**: How often can gang members attempt rescues? Once per arrest or unlimited?
 
 ---

@@ -2260,6 +2260,11 @@ function showHitResults(success, target, attackerDamage, cost) {
             lootCars = Array(carsToSteal).fill('Stolen Vehicle'); // Simplified for now
         }
         
+        // Reset target territories to NPC control (permadeath consequence)
+        if (target && target.name) {
+            resetPlayerTerritories(target.name);
+        }
+
         resultHTML = `
             <div style="background: rgba(0, 0, 0, 0.95); padding: 40px; border-radius: 15px; border: 3px solid #27ae60;">
                 <div style="text-align: center; margin-bottom: 30px;">
@@ -2876,6 +2881,59 @@ function showTerritoryBattleResults(success, districtName, district, cost, battl
 }
 
 // Keep compatibility with existing game integration
+// ==================== MULTIPLAYER TERRITORY INCOME & RESET ====================
+
+// Reset a player's controlled territories back to NPC control
+function resetPlayerTerritories(playerName) {
+    Object.keys(onlineWorldState.cityDistricts).forEach(district => {
+        const data = onlineWorldState.cityDistricts[district];
+        if (data.controllerType === 'player' && data.controlledBy === playerName) {
+            data.controllerType = 'npc';
+            data.controlledBy = '';
+            data.assignedMembers = 0;
+            data.assignedCars = 0;
+            data.assignedWeapons = 0;
+        }
+    });
+}
+
+// Calculate total weekly income from player-controlled multiplayer territories
+function calculateMultiplayerTerritoryWeeklyIncome() {
+    let total = 0;
+    Object.keys(onlineWorldState.cityDistricts).forEach(district => {
+        const data = onlineWorldState.cityDistricts[district];
+        if (data.controllerType === 'player' && data.controlledBy === player.name) {
+            total += (data.weeklyIncome || 0);
+        }
+    });
+    return total;
+}
+
+// Grant income periodically (dev cadence: every 10 minutes == 1 game week)
+const MULTI_TERRITORY_WEEK_MS = 10 * 60 * 1000;
+let multiplayerTerritoryIncomeTimer = null;
+
+function startMultiplayerTerritoryIncomeTimer() {
+    if (multiplayerTerritoryIncomeTimer) return;
+    multiplayerTerritoryIncomeTimer = setInterval(() => {
+        const income = calculateMultiplayerTerritoryWeeklyIncome();
+        if (income > 0) {
+            player.money += income;
+            logAction(`🏛️ Territory income collected: $${income.toLocaleString()} from controlled districts.`);
+            if (typeof updateUI === 'function') updateUI();
+        }
+    }, MULTI_TERRITORY_WEEK_MS);
+}
+
+// Start timer after DOM load if multiplayer initialized
+document.addEventListener('DOMContentLoaded', () => {
+    startMultiplayerTerritoryIncomeTimer();
+});
+
+// Expose helper functions
+window.resetPlayerTerritories = resetPlayerTerritories;
+window.calculateMultiplayerTerritoryWeeklyIncome = calculateMultiplayerTerritoryWeeklyIncome;
+window.startMultiplayerTerritoryIncomeTimer = startMultiplayerTerritoryIncomeTimer;
 function showMultiplayer() {
     showOnlineWorld();
 }
