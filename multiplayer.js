@@ -923,6 +923,9 @@ function showOnlineWorld() {
                 <button onclick="showGlobalChat()" style="background: #333; color: #c0a062; padding: 15px; border: 1px solid #c0a062; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">
                     📞 The Wire<br><small style="color: #ccc;">Talk with the family</small>
                 </button>
+                <button onclick="showWhackRivalDon()" style="background: linear-gradient(180deg, #8b0000 0%, #5a0000 100%); color: #ff4444; padding: 15px; border: 1px solid #ff0000; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif; font-weight: bold;">
+                    💀 Whack Rival Don<br><small style="color: #ffaaaa;">HIGH RISK - PERMADEATH</small>
+                </button>
                 <button onclick="showActiveHeists()" style="background: #333; color: #8b0000; padding: 15px; border: 1px solid #8b0000; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">
                     💰 Big Scores<br><small style="color: #ccc;">Join ongoing jobs</small>
                 </button>
@@ -1874,6 +1877,426 @@ function challengeForTerritory(district) {
 function participateInEvent(eventType, district) {
     alert(`🎯 Participating in ${eventType.replace('_', ' ')} event in ${district}...`);
     logAction(`🎯 Joined city event: ${eventType} in ${district}`);
+}
+
+// ==================== WHACK RIVAL DON PVP SYSTEM ====================
+
+// Show Whack Rival Don screen
+function showWhackRivalDon() {
+    const availableTargets = Object.values(onlineWorldState.playerStates)
+        .filter(p => p.playerId !== (player.id || 'local') && !p.inJail)
+        .sort((a, b) => (b.money || 0) - (a.money || 0));
+
+    let pvpHTML = `
+        <div style="background: rgba(0, 0, 0, 0.95); padding: 20px; border-radius: 15px; border: 2px solid #8b0000;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="color: #ff0000; font-family: 'Georgia', serif; text-shadow: 2px 2px 8px #8b0000;">💀 Whack Rival Don</h3>
+                <button onclick="showOnlineWorld()" style="background: #333; color: #c0a062; padding: 8px 15px; border: 1px solid #c0a062; border-radius: 5px; cursor: pointer; font-family: 'Georgia', serif;">
+                    ← Back
+                </button>
+            </div>
+            
+            <!-- Warning Section -->
+            <div style="background: rgba(139, 0, 0, 0.3); padding: 20px; border-radius: 10px; border: 2px solid #ff0000; margin-bottom: 25px;">
+                <h4 style="color: #ff4444; margin: 0 0 15px 0; font-family: 'Georgia', serif; text-align: center;">⚠️ WARNING: EXTREME RISK ⚠️</h4>
+                <div style="color: #ffaaaa; line-height: 1.8; font-family: 'Georgia', serif;">
+                    <p style="margin: 10px 0;">• <strong>PERMADEATH:</strong> If successful, your target is <span style="color: #ff0000; font-weight: bold;">PERMANENTLY ELIMINATED</span></p>
+                    <p style="margin: 10px 0;">• <strong>HIGH FAILURE RATE:</strong> Most hits fail. You'll take damage either way.</p>
+                    <p style="margin: 10px 0;">• <strong>COSTLY:</strong> Requires upfront payment for weapons, intel, and crew.</p>
+                    <p style="margin: 10px 0;">• <strong>REWARDS:</strong> Successful hits yield random % of victim's money and stolen cars.</p>
+                    <p style="margin: 10px 0; text-align: center; font-style: italic; color: #ff6666;">"This is the business we've chosen."</p>
+                </div>
+            </div>
+            
+            <!-- Available Targets -->
+            <div style="margin: 20px 0;">
+                <h4 style="color: #c0a062; margin-bottom: 15px; font-family: 'Georgia', serif;">🎯 Available Targets</h4>
+                ${availableTargets.length === 0 ? `
+                    <div style="background: rgba(20, 20, 20, 0.8); padding: 30px; border-radius: 10px; text-align: center; border: 1px solid #555;">
+                        <p style="color: #95a5a6; font-style: italic; font-family: 'Georgia', serif;">No targets available. All Dons are either in jail or offline.</p>
+                        <p style="color: #666; font-size: 0.9em; margin-top: 10px;">Check back later...</p>
+                    </div>
+                ` : availableTargets.map(target => {
+                    const hitCost = 25000 + (target.level || 1) * 5000;
+                    const estimatedTake = Math.floor((target.money || 0) * 0.35);
+                    const canAfford = (player.money || 0) >= hitCost;
+                    
+                    return `
+                        <div style="background: rgba(20, 20, 20, 0.9); padding: 20px; margin: 15px 0; border-radius: 10px; border: 1px solid ${canAfford ? '#c0a062' : '#555'};">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                <div style="flex: 1;">
+                                    <div style="font-size: 1.3em; color: #c0a062; font-weight: bold; margin-bottom: 8px; font-family: 'Georgia', serif;">
+                                        ${escapeHTML(target.name || 'Unknown Don')}
+                                    </div>
+                                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 10px 0; font-size: 0.95em;">
+                                        <div><span style="color: #999;">Level:</span> <span style="color: #c0a062;">${target.level || 1}</span></div>
+                                        <div><span style="color: #999;">Reputation:</span> <span style="color: #f39c12;">${target.reputation || 0}</span></div>
+                                        <div><span style="color: #999;">Territory:</span> <span style="color: #27ae60;">${target.territory || 0}</span></div>
+                                        <div><span style="color: #999;">Health:</span> <span style="color: ${(target.health || 100) > 60 ? '#27ae60' : '#e74c3c'}">${target.health || 100}%</span></div>
+                                    </div>
+                                    <div style="margin-top: 12px; padding: 10px; background: rgba(0, 0, 0, 0.5); border-radius: 5px; border-left: 3px solid #27ae60;">
+                                        <div style="color: #999; font-size: 0.85em;">Estimated Take (varies):</div>
+                                        <div style="color: #27ae60; font-weight: bold; font-size: 1.1em;">$${estimatedTake.toLocaleString()} + Random Cars</div>
+                                        <div style="color: #666; font-size: 0.8em; margin-top: 5px;">Actual: 10-50% of wealth</div>
+                                    </div>
+                                </div>
+                                <div style="text-align: right; margin-left: 20px;">
+                                    <div style="background: rgba(139, 0, 0, 0.3); padding: 10px; border-radius: 8px; border: 1px solid #8b0000; margin-bottom: 15px;">
+                                        <div style="color: #ff6666; font-size: 0.85em;">Hit Cost:</div>
+                                        <div style="color: #ff4444; font-weight: bold; font-size: 1.2em;">$${hitCost.toLocaleString()}</div>
+                                    </div>
+                                    <button onclick="confirmWhackRivalDon('${target.playerId}', '${escapeHTML(target.name || 'Unknown')}', ${hitCost})" 
+                                            style="background: ${canAfford ? 'linear-gradient(180deg, #8b0000 0%, #5a0000 100%)' : '#444'}; 
+                                                   color: ${canAfford ? '#ffffff' : '#666'}; 
+                                                   padding: 12px 20px; 
+                                                   border: 1px solid ${canAfford ? '#ff0000' : '#555'}; 
+                                                   border-radius: 8px; 
+                                                   cursor: ${canAfford ? 'pointer' : 'not-allowed'}; 
+                                                   font-family: 'Georgia', serif; 
+                                                   font-weight: bold;
+                                                   ${canAfford ? '' : 'opacity: 0.5;'}">
+                                        ${canAfford ? '💀 Execute Hit' : '💰 Can\'t Afford'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+            
+            <div style="text-align: center; margin-top: 30px;">
+                <button onclick="showOnlineWorld()" 
+                        style="background: #333; color: #c0a062; padding: 15px 30px; border: 1px solid #c0a062; border-radius: 10px; cursor: pointer; font-family: 'Georgia', serif; font-weight: bold;">
+                    🏠 Return to Commission
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById("multiplayer-content").innerHTML = pvpHTML;
+    hideAllScreens();
+    document.getElementById("multiplayer-screen").style.display = "block";
+}
+
+// Confirm and initiate the hit
+function confirmWhackRivalDon(targetId, targetName, cost) {
+    if (!player.money || player.money < cost) {
+        alert('Not enough money to execute this hit. You need $' + cost.toLocaleString());
+        return;
+    }
+    
+    const confirm = window.confirm(
+        `Are you sure you want to whack ${targetName}?\n\n` +
+        `Cost: $${cost.toLocaleString()}\n` +
+        `Risk: HIGH - You will take damage\n` +
+        `Target: PERMADEATH if successful\n\n` +
+        `This action cannot be undone.`
+    );
+    
+    if (confirm) {
+        executeWhackRivalDon(targetId, targetName, cost);
+    }
+}
+
+// Execute the hit with narrative combat
+function executeWhackRivalDon(targetId, targetName, cost) {
+    // Deduct cost
+    player.money -= cost;
+    if (typeof updateUI === 'function') updateUI();
+    
+    // Get target data
+    const target = onlineWorldState.playerStates[targetId];
+    if (!target) {
+        alert('Target is no longer available.');
+        showWhackRivalDon();
+        return;
+    }
+    
+    // Calculate success chance (30% base, modified by skills)
+    const baseChance = 30;
+    const stealthBonus = (player.skills?.stealth || 0) * 2;
+    const violenceBonus = (player.skillTrees?.violence?.firearms || 0) * 3;
+    const intelligenceBonus = (player.skills?.intelligence || 0) * 1.5;
+    const levelDiff = (player.level || 1) - (target.level || 1);
+    const levelBonus = levelDiff * 2; // +/- 2% per level difference
+    
+    const successChance = Math.max(15, Math.min(55, baseChance + stealthBonus + violenceBonus + intelligenceBonus + levelBonus));
+    const success = Math.random() * 100 < successChance;
+    
+    // Attacker always takes damage (20-60%, never fatal)
+    const attackerDamage = 20 + Math.floor(Math.random() * 41); // 20-60%
+    player.health = Math.max(1, (player.health || 100) - attackerDamage);
+    
+    // Generate narrative
+    const narratives = generateHitNarrative(targetName, success, attackerDamage);
+    
+    // Show narrative screen
+    showNarrativeCombat(narratives, success, target, attackerDamage, cost);
+}
+
+// Generate hit narrative
+function generateHitNarrative(targetName, success, attackerDamage) {
+    const setupNarratives = [
+        `You spend days surveilling ${targetName}, learning their patterns, their weaknesses...`,
+        `Your informant whispers locations. You assemble your crew in the dead of night.`,
+        `The contract is set. You load your weapon and rehearse the plan one last time.`,
+        `Intel suggests ${targetName} will be vulnerable tonight. It's now or never.`,
+        `You bribe the doorman. Your inside man confirms the target is alone.`
+    ];
+    
+    const approachNarratives = [
+        `The building is dark. You move silently through the shadows, heart pounding.`,
+        `Your crew positions at every exit. No one gets out alive if this goes wrong.`,
+        `You slip past the guards. Every sound feels deafening in the silence.`,
+        `The hallway stretches before you. Behind that door, ${targetName} waits.`,
+        `Your hand tightens on the weapon. Years of planning come down to this moment.`
+    ];
+    
+    const tensionNarratives = [
+        `You kick open the door. Time slows. ${targetName} reaches for their piece—`,
+        `The confrontation is instant. Gunfire erupts. Chaos. Screaming. Blood.`,
+        `${targetName} turns. Recognition. Fear. Then violence, sudden and brutal.`,
+        `Everything goes wrong. Bodyguards appear from nowhere. You return fire.`,
+        `The ambush is perfect—until it isn't. Someone tipped them off. You're in a firefight.`
+    ];
+    
+    let outcomeNarrative;
+    if (success) {
+        const successOutcomes = [
+            `Your shot is true. ${targetName} collapses. The Don is dead. You grab what you can and vanish into the night.`,
+            `${targetName} never saw it coming. Clean. Professional. You leave no witnesses.`,
+            `The deed is done. ${targetName} lies in a pool of blood. You take their wealth and disappear.`,
+            `One bullet. ${targetName}'s empire crumbles in an instant. You claim your prize.`,
+            `It's over in seconds. ${targetName} is finished. Their cars, their cash—all yours now.`
+        ];
+        outcomeNarrative = successOutcomes[Math.floor(Math.random() * successOutcomes.length)];
+    } else {
+        const failureOutcomes = [
+            `${targetName} returns fire. You take a hit and barely escape with your life.`,
+            `The hit goes sideways. You're wounded, bleeding, but alive. ${targetName} survives.`,
+            `Reinforcements arrive. You fight your way out, hurt and humiliated.`,
+            `Your shot misses. ${targetName}'s crew opens up. You flee, nursing your wounds.`,
+            `It's a disaster. ${targetName} lives. You take a bullet and limp away, money gone, pride shattered.`
+        ];
+        outcomeNarrative = failureOutcomes[Math.floor(Math.random() * failureOutcomes.length)];
+    }
+    
+    const damageNarrative = attackerDamage > 40 ? 
+        `You're hit bad. Blood soaks through your shirt. (-${attackerDamage}% Health)` :
+        `A bullet grazes you. It hurts like hell. (-${attackerDamage}% Health)`;
+    
+    return {
+        setup: setupNarratives[Math.floor(Math.random() * setupNarratives.length)],
+        approach: approachNarratives[Math.floor(Math.random() * approachNarratives.length)],
+        tension: tensionNarratives[Math.floor(Math.random() * tensionNarratives.length)],
+        outcome: outcomeNarrative,
+        damage: damageNarrative
+    };
+}
+
+// Show narrative combat screen
+function showNarrativeCombat(narratives, success, target, attackerDamage, cost) {
+    let currentStage = 0;
+    const stages = ['setup', 'approach', 'tension', 'outcome', 'damage'];
+    
+    function showNextStage() {
+        if (currentStage >= stages.length) {
+            // Show results
+            showHitResults(success, target, attackerDamage, cost);
+            return;
+        }
+        
+        const stage = stages[currentStage];
+        const text = narratives[stage];
+        
+        let bgColor, borderColor;
+        if (stage === 'setup') {
+            bgColor = 'rgba(30, 30, 50, 0.95)';
+            borderColor = '#3498db';
+        } else if (stage === 'approach') {
+            bgColor = 'rgba(40, 40, 30, 0.95)';
+            borderColor = '#f39c12';
+        } else if (stage === 'tension') {
+            bgColor = 'rgba(50, 20, 20, 0.95)';
+            borderColor = '#e74c3c';
+        } else if (stage === 'outcome') {
+            bgColor = success ? 'rgba(20, 50, 20, 0.95)' : 'rgba(50, 10, 10, 0.95)';
+            borderColor = success ? '#27ae60' : '#8b0000';
+        } else {
+            bgColor = 'rgba(60, 20, 20, 0.95)';
+            borderColor = '#ff4444';
+        }
+        
+        const narrativeHTML = `
+            <div style="background: ${bgColor}; padding: 40px; border-radius: 15px; border: 3px solid ${borderColor}; min-height: 400px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+                <div style="color: #fff; font-size: 1.4em; line-height: 1.8; font-family: 'Georgia', serif; max-width: 700px; margin-bottom: 40px;">
+                    ${text}
+                </div>
+                <button onclick="window.narrativeNextStage()" 
+                        style="background: linear-gradient(180deg, #c0a062 0%, #8a6e2f 100%); 
+                               color: #000; 
+                               padding: 18px 50px; 
+                               border: 2px solid #ffd700; 
+                               border-radius: 10px; 
+                               cursor: pointer; 
+                               font-size: 1.2em; 
+                               font-weight: bold; 
+                               font-family: 'Georgia', serif; 
+                               text-transform: uppercase;
+                               box-shadow: 0 4px 15px rgba(192, 160, 98, 0.4);">
+                    ${currentStage < stages.length - 1 ? 'Continue →' : 'See Results →'}
+                </button>
+            </div>
+        `;
+        
+        document.getElementById("multiplayer-content").innerHTML = narrativeHTML;
+        currentStage++;
+    }
+    
+    window.narrativeNextStage = showNextStage;
+    showNextStage();
+}
+
+// Show hit results with loot
+function showHitResults(success, target, attackerDamage, cost) {
+    let lootMoney = 0;
+    let lootCars = [];
+    let resultHTML = '';
+    
+    if (success) {
+        // Target is dead - calculate loot
+        const moneyPercentage = 10 + Math.floor(Math.random() * 41); // 10-50%
+        lootMoney = Math.floor((target.money || 0) * (moneyPercentage / 100));
+        player.money += lootMoney;
+        
+        // Steal random percentage of cars (0-100%, but at least 1 if they have any)
+        if (target.cars && target.cars > 0) {
+            const carsPercentage = Math.floor(Math.random() * 101); // 0-100%
+            const carsToSteal = Math.max(1, Math.floor(target.cars * (carsPercentage / 100)));
+            lootCars = Array(carsToSteal).fill('Stolen Vehicle'); // Simplified for now
+        }
+        
+        resultHTML = `
+            <div style="background: rgba(0, 0, 0, 0.95); padding: 40px; border-radius: 15px; border: 3px solid #27ae60;">
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <div style="font-size: 3em; margin-bottom: 15px;">💀</div>
+                    <h2 style="color: #27ae60; font-family: 'Georgia', serif; margin: 0; font-size: 2em;">HIT SUCCESSFUL</h2>
+                    <div style="color: #aaa; margin-top: 10px; font-size: 1.1em; font-family: 'Georgia', serif;">
+                        ${escapeHTML(target.name || 'The target')} has been permanently eliminated.
+                    </div>
+                </div>
+                
+                <div style="background: rgba(0, 0, 0, 0.7); padding: 25px; border-radius: 10px; margin: 25px 0; border: 1px solid #27ae60;">
+                    <h3 style="color: #c0a062; margin: 0 0 20px 0; font-family: 'Georgia', serif;">💰 The Take</h3>
+                    <div style="display: grid; gap: 15px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(39, 174, 96, 0.1); border-radius: 5px;">
+                            <span style="color: #ccc;">Money Seized:</span>
+                            <span style="color: #27ae60; font-weight: bold; font-size: 1.2em;">+$${lootMoney.toLocaleString()}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(39, 174, 96, 0.1); border-radius: 5px;">
+                            <span style="color: #ccc;">Cars Stolen:</span>
+                            <span style="color: #27ae60; font-weight: bold; font-size: 1.2em;">${lootCars.length} Vehicles</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(231, 76, 60, 0.1); border-radius: 5px; border-top: 1px solid #555;">
+                            <span style="color: #ccc;">Hit Cost:</span>
+                            <span style="color: #e74c3c; font-weight: bold;">-$${cost.toLocaleString()}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(231, 76, 60, 0.1); border-radius: 5px;">
+                            <span style="color: #ccc;">Damage Taken:</span>
+                            <span style="color: #e74c3c; font-weight: bold;">-${attackerDamage}% Health</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: rgba(192, 160, 98, 0.2); border-radius: 5px; border: 2px solid #c0a062; margin-top: 10px;">
+                            <span style="color: #c0a062; font-weight: bold;">Net Profit:</span>
+                            <span style="color: ${lootMoney > cost ? '#27ae60' : '#e74c3c'}; font-weight: bold; font-size: 1.4em;">$${(lootMoney - cost).toLocaleString()}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="background: rgba(139, 0, 0, 0.2); padding: 20px; border-radius: 8px; border-left: 4px solid #8b0000; margin: 25px 0;">
+                    <p style="color: #ff6666; margin: 0; font-family: 'Georgia', serif; font-style: italic;">
+                        "${target.name || 'The Don'}'s empire has fallen. Their name will be forgotten. Their wealth is yours."
+                    </p>
+                </div>
+                
+                <div style="text-align: center; margin-top: 30px;">
+                    <button onclick="showWhackRivalDon()" 
+                            style="background: linear-gradient(180deg, #8b0000 0%, #5a0000 100%); color: #ffffff; padding: 15px 35px; border: 1px solid #ff0000; border-radius: 10px; cursor: pointer; font-family: 'Georgia', serif; font-weight: bold; margin-right: 15px;">
+                        💀 Find Another Target
+                    </button>
+                    <button onclick="showOnlineWorld()" 
+                            style="background: #333; color: #c0a062; padding: 15px 35px; border: 1px solid #c0a062; border-radius: 10px; cursor: pointer; font-family: 'Georgia', serif; font-weight: bold;">
+                        🏠 Return to Commission
+                    </button>
+                </div>
+            </div>
+        `;
+    } else {
+        // Failed hit
+        resultHTML = `
+            <div style="background: rgba(0, 0, 0, 0.95); padding: 40px; border-radius: 15px; border: 3px solid #8b0000;">
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <div style="font-size: 3em; margin-bottom: 15px;">💥</div>
+                    <h2 style="color: #e74c3c; font-family: 'Georgia', serif; margin: 0; font-size: 2em;">HIT FAILED</h2>
+                    <div style="color: #aaa; margin-top: 10px; font-size: 1.1em; font-family: 'Georgia', serif;">
+                        ${escapeHTML(target.name || 'The target')} survives. You barely escape.
+                    </div>
+                </div>
+                
+                <div style="background: rgba(0, 0, 0, 0.7); padding: 25px; border-radius: 10px; margin: 25px 0; border: 1px solid #8b0000;">
+                    <h3 style="color: #c0a062; margin: 0 0 20px 0; font-family: 'Georgia', serif;">💸 The Cost</h3>
+                    <div style="display: grid; gap: 15px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(231, 76, 60, 0.1); border-radius: 5px;">
+                            <span style="color: #ccc;">Hit Cost (Lost):</span>
+                            <span style="color: #e74c3c; font-weight: bold; font-size: 1.2em;">-$${cost.toLocaleString()}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(231, 76, 60, 0.1); border-radius: 5px;">
+                            <span style="color: #ccc;">Damage Taken:</span>
+                            <span style="color: #e74c3c; font-weight: bold; font-size: 1.2em;">-${attackerDamage}% Health</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(231, 76, 60, 0.1); border-radius: 5px;">
+                            <span style="color: #ccc;">Money Seized:</span>
+                            <span style="color: #666; font-weight: bold;">$0</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: rgba(139, 0, 0, 0.3); border-radius: 5px; border: 2px solid #8b0000; margin-top: 10px;">
+                            <span style="color: #ff6666; font-weight: bold;">Total Loss:</span>
+                            <span style="color: #e74c3c; font-weight: bold; font-size: 1.4em;">-$${cost.toLocaleString()}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="background: rgba(139, 0, 0, 0.2); padding: 20px; border-radius: 8px; border-left: 4px solid #8b0000; margin: 25px 0;">
+                    <p style="color: #ff6666; margin: 0; font-family: 'Georgia', serif; font-style: italic;">
+                        "You got sloppy. ${target.name || 'The Don'} is still breathing, and now you're wounded, broke, and marked for death."
+                    </p>
+                </div>
+                
+                <div style="text-align: center; margin-top: 30px;">
+                    <button onclick="showWhackRivalDon()" 
+                            style="background: linear-gradient(180deg, #8b0000 0%, #5a0000 100%); color: #ffffff; padding: 15px 35px; border: 1px solid #ff0000; border-radius: 10px; cursor: pointer; font-family: 'Georgia', serif; font-weight: bold; margin-right: 15px;">
+                        💀 Try Again
+                    </button>
+                    <button onclick="showOnlineWorld()" 
+                            style="background: #333; color: #c0a062; padding: 15px 35px; border: 1px solid #c0a062; border-radius: 10px; cursor: pointer; font-family: 'Georgia', serif; font-weight: bold;">
+                        🏠 Return to Commission
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+    
+    document.getElementById("multiplayer-content").innerHTML = resultHTML;
+    
+    // Update UI
+    if (typeof updateUI === 'function') updateUI();
+    
+    // Log the action
+    if (typeof logAction === 'function') {
+        if (success) {
+            logAction(`💀 Successfully whacked ${target.name || 'rival Don'}! Seized $${lootMoney.toLocaleString()} and ${lootCars.length} cars. Took ${attackerDamage}% damage.`);
+        } else {
+            logAction(`💥 Failed to whack ${target.name || 'rival Don'}. Lost $${cost.toLocaleString()} and took ${attackerDamage}% damage.`);
+        }
+    }
 }
 
 // Keep compatibility with existing game integration
