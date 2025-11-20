@@ -696,8 +696,10 @@ function showPVP() {
         window.pvpCountdownInterval = setInterval(updatePVPCountdown, 1000);
     }
     
+    // Show multiplayer screen container
     if (typeof hideAllScreens === 'function') hideAllScreens();
-    document.getElementById("multiplayer-content").style.display = 'block';
+    const mpScreen = document.getElementById("multiplayer-screen");
+    if (mpScreen) mpScreen.style.display = 'block';
 }
 
 // Helper to calculate attack power for display
