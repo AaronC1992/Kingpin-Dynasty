@@ -11860,6 +11860,42 @@ const tutorialSteps = [
         `
     },
     {
+        title: "Multiplayer PVP & Online World",
+        showUI: "menu",
+        content: `
+            <h3>🌐 The Online Criminal Underworld</h3>
+            <p><strong>Compete with Real Players:</strong> Enter the online world for high-stakes PVP action!</p>
+            <ul>
+                <li><strong>💀 Whack Rival Don:</strong> Assassination PVP with permadeath stakes
+                    <ul style="margin-left: 20px; margin-top: 5px;">
+                        <li>Target real players based on power comparison</li>
+                        <li>Steal 10-50% of their money and cars on success</li>
+                        <li>Targets are permanently removed from the online world</li>
+                        <li>⚠️ High risk: 20-60% health damage to you</li>
+                    </ul>
+                </li>
+                <li><strong>🏛️ Territory Conquest:</strong> Control districts for weekly income
+                    <ul style="margin-left: 20px; margin-top: 5px;">
+                        <li>Assign gang members, cars, and weapons to attack</li>
+                        <li>Earn dirty money income from controlled territories</li>
+                        <li>Battle NPC gangs or player-controlled districts</li>
+                        <li>Watch turf wars in real-time with battle simulation</li>
+                        <li>⚠️ Risk: Lose assigned resources if defeated</li>
+                    </ul>
+                </li>
+                <li><strong>💬 The Wire Tap:</strong> Global chat to coordinate or intimidate rivals</li>
+                <li><strong>👥 Made Men Online:</strong> View active players, their status, and reputation</li>
+            </ul>
+            <p style="background: rgba(139, 0, 0, 0.3); padding: 12px; border-radius: 8px; margin-top: 15px; border: 2px solid #8b0000;">
+                <strong style="color: #ff4444;">⚠️ EXTREME RISK WARNING:</strong><br>
+                <span style="color: #ffaaaa;">Multiplayer PVP features permadeath mechanics. Assassinated players lose their online presence permanently. Territory battles can cost you valuable gang resources. Engage strategically!</span>
+            </p>
+            <p style="background: rgba(243, 156, 18, 0.2); padding: 10px; border-radius: 5px; margin-top: 15px;">
+                <strong>🎯 Strategy Tip:</strong> Build your power base in single-player first. Enter PVP with strong gang, weapons, and territory control for the best chance of survival!
+            </p>
+        `
+    },
+    {
         title: "Competition & Legacy Systems",
         showUI: "menu",
         content: `
