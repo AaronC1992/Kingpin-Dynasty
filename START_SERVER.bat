@@ -5,7 +5,7 @@ echo ================================================
 echo.
 
 :: Change to the correct directory
-cd /d "c:\Users\jenna\OneDrive\Desktop\Portfolio projects\FromDuskToDon"
+cd /d "c:\Users\jenna\OneDrive\Desktop\Portfolio projects\KingpinDynasty"  
 
 :: Check if we're in the right place
 if not exist "server.js" (

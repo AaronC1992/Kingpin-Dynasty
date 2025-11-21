@@ -5,7 +5,7 @@
 Follow these steps to host your game on GitHub Pages:
 
 ### Step 1: Go to Repository Settings
-1. Open your browser and go to: https://github.com/AaronC1992/FromDuskToDon
+1. Open your browser and go to: https://github.com/AaronC1992/KingpinDynasty (after renaming the repository)
 2. Click on the **Settings** tab (top right of the page)
 
 ### Step 2: Navigate to Pages Settings
@@ -25,7 +25,7 @@ Follow these steps to host your game on GitHub Pages:
 
 ### Step 5: Access Your Live Game
 Once deployed, your game will be available at:
-**https://aaronc1992.github.io/FromDuskToDon/**
+**https://aaronc1992.github.io/KingpinDynasty/** (after repo rename)
 
 This link is already in your README.md file!
 
@@ -85,7 +85,7 @@ For most players, **single-player mode on GitHub Pages is the easiest option!**
 
 ## Next Steps
 1. Enable GitHub Pages (follow steps above)
-2. Share the link: https://aaronc1992.github.io/FromDuskToDon/
+2. Share the link: https://aaronc1992.github.io/KingpinDynasty/
 3. Play and enjoy! 🎮
 
 The game will auto-update whenever you push new commits to GitHub!
