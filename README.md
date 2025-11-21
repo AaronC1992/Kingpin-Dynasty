@@ -2,7 +2,7 @@
 
 A criminal empire building game with both local and online multiplayer functionality!
 
-## 🎮 **[PLAY NOW - Live Demo](https://aaronc1992.github.io/KingpinDynasty/)**
+## 🎮 **[PLAY NOW - Live Demo](https://aaronc1992.github.io/Kingpin-Dynasty/)**
 
 Click the link above to play the game instantly in your browser - no installation required!
 
