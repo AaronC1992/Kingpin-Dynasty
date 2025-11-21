@@ -1,4 +1,4 @@
-class ModalSystem {
+export class ModalSystem {
     constructor() {
         this.activeModals = [];
         this.toastContainer = null;
@@ -217,6 +217,7 @@ class ModalSystem {
 }
 
 // Initialize global instance
-const ui = new ModalSystem();
+export const ui = new ModalSystem();
 // Ensure availability to inline handlers and other scripts
 window.ui = ui;
+

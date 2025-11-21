@@ -267,3 +267,281 @@ export function startEnergyRegeneration() {
         regenerateEnergy();
     }, 1000); // Update every second for timer display
 }
+
+// Advanced Skills System Definitions
+
+// Skill Tree Specializations
+export const skillTreeDefinitions = {
+    stealth: {
+        name: "Stealth Mastery",
+        icon: "🥷",
+        color: "#9b59b6",
+        branches: {
+            infiltration: {
+                name: "Infiltration",
+                icon: "🏗️",
+                description: "Master the art of breaking into secured locations",
+                maxLevel: 10,
+                benefits: level => `+${level * 5}% success on stealth jobs, +${level * 2}% lockpicking success`
+            },
+            escape: {
+                name: "Escape Artist",
+                icon: "🚪",
+                description: "Become a master of getting out of sticky situations",
+                maxLevel: 10,
+                benefits: level => `+${level * 3}% breakout success, -${level * 2}% arrest chance`
+            },
+            surveillance: {
+                name: "Surveillance",
+                icon: "👁️",
+                description: "Gather intel and stay ahead of enemies",
+                maxLevel: 10,
+                benefits: level => `+${level * 4}% mission intel, +${level}% critical hit chance`
+            }
+        }
+    },
+    violence: {
+        name: "Combat Prowess",
+        icon: "⚔️",
+        color: "#8b0000",
+        branches: {
+            firearms: {
+                name: "Firearms",
+                icon: "🔫",
+                description: "Master the use of guns and ranged weapons",
+                maxLevel: 10,
+                benefits: level => `+${level * 6}% combat job success, +${level * 3}% headshot chance`
+            },
+            melee: {
+                name: "Melee Combat",
+                icon: "👊",
+                description: "Excel in hand-to-hand combat situations",
+                maxLevel: 10,
+                benefits: level => `+${level * 4}% unarmed damage, +${level * 2}% disarm chance`
+            },
+            intimidation: {
+                name: "Intimidation",
+                icon: "😠",
+                description: "Use fear as your weapon",
+                maxLevel: 10,
+                benefits: level => `+${level * 5}% extortion success, +${level * 3}% reputation gain`
+            }
+        }
+    },
+    charisma: {
+        name: "Social Influence",
+        icon: "🎭",
+        color: "#c0a062",
+        branches: {
+            negotiation: {
+                name: "Negotiation",
+                icon: "🤝",
+                description: "Secure better deals and prices",
+                maxLevel: 10,
+                benefits: level => `+${level * 3}% better prices, +${level * 2}% bribe success`
+            },
+            leadership: {
+                name: "Leadership",
+                icon: "👑",
+                description: "Command respect and loyalty from your gang",
+                maxLevel: 10,
+                benefits: level => `+${level * 5}% gang loyalty, +${level}% gang member capacity`
+            },
+            manipulation: {
+                name: "Manipulation",
+                icon: "🧠",
+                description: "Control others through psychological tactics",
+                maxLevel: 10,
+                benefits: level => `+${level * 4}% information extraction, +${level * 2}% defection resistance`
+            }
+        }
+    },
+    intelligence: {
+        name: "Mental Acuity",
+        icon: "🧩",
+        color: "#c0a062",
+        branches: {
+            hacking: {
+                name: "Hacking",
+                icon: "💻",
+                description: "Master digital infiltration and cyber warfare",
+                maxLevel: 10,
+                benefits: level => `+${level * 7}% hacking success, +${level * 3}% digital heist rewards`
+            },
+            planning: {
+                name: "Strategic Planning",
+                icon: "📋",
+                description: "Perfect preparation prevents poor performance",
+                maxLevel: 10,
+                benefits: level => `+${level * 4}% mission success, +${level * 2}% backup plan chance`
+            },
+            forensics: {
+                name: "Forensics",
+                icon: "🔬",
+                description: "Clean up evidence and avoid detection",
+                maxLevel: 10,
+                benefits: level => `+${level * 5}% evidence cleanup, -${level * 3}% investigation heat`
+            }
+        }
+    },
+    luck: {
+        name: "Fortune's Favor",
+        icon: "🍀",
+        color: "#f39c12",
+        branches: {
+            gambling: {
+                name: "Gambling",
+                icon: "🎲",
+                description: "Turn the odds in your favor",
+                maxLevel: 10,
+                benefits: level => `+${level * 6}% casino winnings, +${level * 2}% jackpot chance`
+            },
+            fortune: {
+                name: "Fortune",
+                icon: "✨",
+                description: "Improve random events and discoveries",
+                maxLevel: 10,
+                benefits: level => `+${level * 4}% positive events, +${level * 3}% rare item finds`
+            },
+            serendipity: {
+                name: "Serendipity",
+                icon: "🌟",
+                description: "Find unexpected opportunities",
+                maxLevel: 10,
+                benefits: level => `+${level * 5}% bonus opportunities, +${level * 2}% special job unlocks`
+            }
+        }
+    },
+    endurance: {
+        name: "Physical Resilience",
+        icon: "💪",
+        color: "#1abc9c",
+        branches: {
+            stamina: {
+                name: "Stamina",
+                icon: "🏃",
+                description: "Perform longer operations without fatigue",
+                maxLevel: 10,
+                benefits: level => `+${level * 3} max energy, -${level * 2}% energy costs`
+            },
+            recovery: {
+                name: "Recovery",
+                icon: "❤️‍🩹",
+                description: "Heal faster and recover energy more quickly",
+                maxLevel: 10,
+                benefits: level => `+${level * 5}% healing rate, +${level * 3}% energy regen`
+            },
+            resistance: {
+                name: "Resistance",
+                icon: "🛡️",
+                description: "Resist drugs, poisons, and environmental hazards",
+                maxLevel: 10,
+                benefits: level => `+${level * 4}% poison resistance, +${level * 3}% drug tolerance`
+            }
+        }
+    }
+};
+
+// Perk System
+export const availablePerks = {
+    // Stealth-based perks
+    shadowWalker: {
+        name: "Shadow Walker",
+        icon: "👤",
+        description: "Your stealth expertise is legendary",
+        requirements: { playstyle: "stealthyJobs", count: 25, skills: { stealth: 15 } },
+        effects: "25% chance to avoid all negative consequences from failed stealth jobs"
+    },
+    ghostProtocol: {
+        name: "Ghost Protocol",
+        icon: "👻",
+        description: "You leave no trace behind",
+        requirements: { playstyle: "stealthyJobs", count: 50, skillTree: "stealth.surveillance", level: 5 },
+        effects: "Automatically clean up evidence after jobs, reducing heat generation by 50%"
+    },
+    
+    // Violence-based perks
+    fearMonger: {
+        name: "Fear Monger",
+        icon: "😱",
+        description: "Your reputation precedes you",
+        requirements: { playstyle: "violentJobs", count: 25, skills: { violence: 15 } },
+        effects: "Intimidation attempts have 30% higher success rate, enemies may flee before combat"
+    },
+    warMachine: {
+        name: "War Machine",
+        icon: "🤖",
+        description: "Violence is your language",
+        requirements: { playstyle: "violentJobs", count: 50, skillTree: "violence.firearms", level: 7 },
+        effects: "Combat jobs pay 50% more, but attract 25% more police attention"
+    },
+    
+    // Charisma-based perks
+    silverTongue: {
+        name: "Silver Tongue",
+        icon: "🗣️",
+        description: "You could sell ice to an eskimo",
+        requirements: { playstyle: "diplomaticActions", count: 30, skills: { charisma: 18 } },
+        effects: "All negotiation attempts automatically succeed on first try"
+    },
+    kingmaker: {
+        name: "Kingmaker",
+        icon: "👑",
+        description: "Leaders are made, not born",
+        requirements: { playstyle: "diplomaticActions", count: 45, skillTree: "charisma.leadership", level: 8 },
+        effects: "Gang members gain experience 100% faster, loyalty never decreases"
+    },
+    
+    // Intelligence-based perks
+    mastermind: {
+        name: "Mastermind",
+        icon: "🧠",
+        description: "Always three steps ahead",
+        requirements: { playstyle: "hackingAttempts", count: 20, skills: { intelligence: 20 } },
+        effects: "25% chance for jobs to succeed automatically without risk"
+    },
+    digitalGod: {
+        name: "Digital God",
+        icon: "💾",
+        description: "The internet bends to your will",
+        requirements: { playstyle: "hackingAttempts", count: 40, skillTree: "intelligence.hacking", level: 9 },
+        effects: "Can hack any system for massive payouts, but creates digital traces"
+    },
+    
+    // Luck-based perks
+    fortuneSon: {
+        name: "Fortune's Son",
+        icon: "🎰",
+        description: "Lady Luck is your mistress",
+        requirements: { playstyle: "gamblingWins", count: 15, skills: { luck: 12 } },
+        effects: "Random events are always positive, critical failures become critical successes"
+    },
+    
+    // Mentorship perks
+    masterTeacher: {
+        name: "Master Teacher",
+        icon: "🎓",
+        description: "Knowledge shared is power multiplied",
+        requirements: { playstyle: "mentoringSessions", count: 10, mentors: 3 },
+        effects: "Can teach skills to gang members, all skill gains increased by 25%"
+    },
+    
+    // Universal perks
+    legendaryStatus: {
+        name: "Legendary Status",
+        icon: "⭐",
+        description: "Your name is whispered in fear and respect",
+        requirements: { reputation: 1000, level: 25, territories: 5 },
+        effects: "All faction reputations change 50% faster, special legendary jobs unlock"
+    }
+};
+
+// Achievements system
+export const achievements = [
+    { id: "first_job", name: "First Day on the Job", description: "Complete your first job", unlocked: false },
+    { id: "millionaire", name: "Big Shot", description: "Earn $100,000", unlocked: false },
+    { id: "jail_break", name: "Great Escape", description: "Successfully break out of jail", unlocked: false },
+    { id: "gang_leader", name: "Gang Leader", description: "Recruit 10 gang members", unlocked: false },
+    { id: "most_wanted", name: "Most Wanted", description: "Reach wanted level 50", unlocked: false },
+    { id: "reputation_max", name: "Legendary Criminal", description: "Reach 100 reputation", unlocked: false }
+];

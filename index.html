@@ -925,21 +925,7 @@
         <div id="hurt-flash"></div>
     </div>
 
-    <!-- Scripts: Load in dependency order -->
-    <!-- 1. Core configuration -->
-    <script src="config/meta.js"></script>
-    <script src="config/balance.js"></script>
-    
-    <!-- 2. Infrastructure (event bus, logging) -->
-    <script src="eventBus.js"></script>
-    <script src="logging.js"></script>
-    
-    <!-- 3. UI utilities -->
-    <script src="mobile-responsive.js"></script>
-    <script src="ui-modal.js"></script>
-    <script src="ui-events.js"></script>
-    
-    <!-- 4. Main game logic -->
-    <script src="game.js"></script>
+    <!-- Main game logic (Module) -->
+    <script type="module" src="game.js"></script>
 </body>
 </html>

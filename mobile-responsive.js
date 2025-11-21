@@ -3,7 +3,7 @@
 //   JS: Device/orientation detection, body class management, mobile nav toggle, touch optimizations
 //   CSS: All layout, visibility, sizing via media queries and device/orientation classes
 
-const MobileSystem = {
+export const MobileSystem = {
     isMobile: false,
     isTablet: false,
     screenOrientation: 'portrait',
@@ -756,28 +756,6 @@ const MobileSystem = {
     }
 };
 
-// Initialize mobile system when DOM is ready
-document.addEventListener('DOMContentLoaded', function() {
-    MobileSystem.init();
-});
-
-// Also initialize on window load as backup
-window.addEventListener('load', function() {
-    if (!MobileSystem.isMobile && !MobileSystem.isTablet) {
-        MobileSystem.init();
-    }
-});
-
-// Update mobile action log when actions are logged
-function updateMobileActionLog() {
-    if (MobileSystem.isMobile || MobileSystem.isTablet) {
-        setTimeout(() => {
-            MobileSystem.updateMobileActionLog();
-        }, 100);
-    }
-}
-
-// Export for global use
+// Ensure global availability for inline handlers
 window.MobileSystem = MobileSystem;
 
-console.log('Mobile Responsive System loaded');

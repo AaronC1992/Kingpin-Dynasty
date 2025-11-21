@@ -1,1755 +1,79 @@
-// Global player stats
-const player = {
-    name: "", // Player's name
-    gender: "", // Player's gender: "male" or "female"
-    ethnicity: "", // Player's ethnicity: "white", "black", "asian", "mexican"
-    portrait: "", // Path to player's portrait image
-    money: 0, // Starting with no money for maximum challenge
-    inventory: [],
-    stolenCars: [], // Array to store stolen cars
-    selectedCar: null, // Currently selected car for jobs
-    energy: 100, // Player's energy (max 100)
-    maxEnergy: 100, // Maximum energy capacity
-    energyRegenTimer: 0, // Timer for energy regeneration (in seconds)
-    ammo: 0, // Player's ammo count
-    gas: 0, // Player's gas count
-    health: 100, // Player's health
-    inJail: false,
-    jailTime: 0, // Time left in jail in seconds
-    breakoutChance: 45, // Breakout chance (in percent), decreased slightly
-    breakoutAttempts: 3, // Number of breakout attempts left
-    power: 0, // Player's power level
-    wantedLevel: 0, // Player's wanted level
-    reputation: 0, // Player's reputation
-    level: 1, // Player's level
-    experience: 0, // Player's experience points
-    skillPoints: 0, // Available skill points
-    skills: {
-        stealth: 0, // Reduces jail chance
-        violence: 0, // Increases success chance for combat jobs
-        charisma: 0, // Better prices and reduced suspicion
-        intelligence: 0, // Better success rates overall
-        luck: 0, // Better random events and payouts
-        endurance: 0 // Reduces energy costs for jobs
-    },
-    // Advanced Skills System
-    skillTrees: {
-        stealth: {
-            infiltration: 0, // Breaking into secured locations
-            escape: 0, // Evading the Feds
-            surveillance: 0 // Gathering intel on rivals
-        },
-        violence: {
-            firearms: 0, // Tommy gun proficiency
-            melee: 0, // Brass knuckles and bats
-            intimidation: 0 // Making them an offer they can't refuse
-        },
-        charisma: {
-            negotiation: 0, // Better deals with the Don
-            leadership: 0, // Commanding your soldiers
-            manipulation: 0 // Pulling the strings
-        },
-        intelligence: {
-            hacking: 0, // Cracking safes and codes
-            planning: 0, // Orchestrating the perfect hit
-            forensics: 0 // Cleaning up the mess
-        },
-        luck: {
-            gambling: 0, // Winning at the tables
-            fortune: 0, // The devil's luck
-            serendipity: 0 // Finding opportunities in chaos
-        },
-        endurance: {
-            stamina: 0, // Outlasting the competition
-            recovery: 0, // Bouncing back from a beating
-            resistance: 0 // Tough as nails
-        }
-    },
-    mentors: [], // Array of captured rivals who can teach skills
-    streetReputation: {
-        torrino: 0, // Torrino Family reputation
-        kozlov: 0, // Kozlov Bratva reputation
-        chen: 0, // Chen Triad reputation
-        morales: 0, // Morales Cartel reputation
-        police: 0, // Police corruption level
-        civilians: 0, // Public respect
-        underground: 0 // Standing in the Commission
-    },
-    unlockedPerks: [], // Array of unlocked perks based on playstyle
-    playstyleStats: {
-        stealthyJobs: 0,
-        violentJobs: 0,
-        diplomaticActions: 0,
-        hackingAttempts: 0,
-        gamblingWins: 0,
-        mentoringSessions: 0
-    },
-    territory: 0, // Controlled turf
-    gang: {
-        members: 0,
-        loyalty: 100,
-        lastTributeTime: 0, // Timestamp of last tribute collection
-        gangMembers: [], // Array to store individual soldiers
-        activeOperations: [], // Array to store ongoing family business
-        trainingQueue: [], // Array to store associates in training
-        betrayalHistory: [], // Track past betrayal events
-        lastBetrayalCheck: 0 // Timestamp of last loyalty check
-    },
-    realEstate: {
-        ownedProperties: [], // Array to store owned properties
-        maxGangMembers: 5 // Base capacity without any safehouses
-    },
-    missions: {
-        activeCampaign: "risingThroughRanks",
-        currentChapter: 0,
-        completedMissions: [],
-        completedCampaigns: [],
-        factionReputation: {
-            torrino: 0,
-            kozlov: 0,
-            chen: 0,
-            morales: 0
-        },
-        unlockedTerritoryMissions: ["suburbs_expansion"],
-        unlockedBossBattles: [],
-        missionStats: {
-            jobsCompleted: 0,
-            moneyEarned: 0,
-            gangMembersRecruited: 0,
-            territoriesControlled: 0,
-            bossesDefeated: 0,
-            factionMissionsCompleted: 0
-        }
-    },
-    businesses: [], // Array to store owned fronts
-    activeLoans: [], // Array to store active debts
-    dirtyMoney: 0, // Cash that needs to be cleaned
-    suspicionLevel: 0, // 0-100, affects Fed attention
-    launderingSetups: [], // Array to store active wash cycles
-    businessLastCollected: {}, // Object to track last collection time for each front
-    
-    // Territory Control System
-    territories: [], // Controlled neighborhoods
-    protectionRackets: [], // Active protection rackets
-    territoryIncome: 0, // Weekly tribute from turf
-    corruptedOfficials: [], // Bribed officials with expiration
-    territoryEvents: [], // Active turf wars
-    territoryHeat: {}, // Heat level per neighborhood
-    territoryPower: 100, // Overall family power
-    territoryReputation: 0, // Reputation on the streets
-    
-    // Long-term Goals System
-    empireRating: {
-        totalScore: 0,
-        moneyPower: 0,
-        gangPower: 0,
-        territoryPower: 0,
-        businessPower: 0,
-        reputationPower: 0,
-        skillPower: 0
-    },
-    legacy: {
-        inheritanceBonus: 0, // Bonus from previous Dons
-        familyReputation: 0, // Name recognition
-        generationNumber: 1, // Which generation this Don is
-        previousCharacters: [] // Array of previous Dons
-    },
-    retirementPlan: {
-        available: false,
-        legitimateAssets: 0,
-        cleanMoney: 0,
-        familyConnections: 0,
-        exitStrategy: null
-    }
-};
+import { player, gainExperience, checkLevelUp, regenerateEnergy, startEnergyRegenTimer, startEnergyRegeneration, skillTreeDefinitions, availablePerks, achievements } from './player.js';
+import { jobs, stolenCarTypes } from './jobs.js';
+import { crimeFamilies, criminalHallOfFame, retirementOutcomes, factionEffects, potentialMentors } from './factions.js';
+import { storyCampaigns, factionMissions, territoryMissions, bossBattles, missionProgress } from './missions.js';
+import { narrationVariations, getRandomNarration } from './narration.js';
+import { storeItems, realEstateProperties, businessTypes, loanOptions, launderingMethods } from './economy.js';
+import { prisonerNames, recruitNames, availableRecruits, randomEncounterRecruit, jailPrisoners, jailbreakPrisoners, generateJailPrisoners, generateJailbreakPrisoners, generateAvailableRecruits, generateRandomEncounter } from './generators.js';
+import { EventBus } from './eventBus.js';
+import { GameLogging } from './logging.js';
+import { ui, ModalSystem } from './ui-modal.js';
+import { MobileSystem } from './mobile-responsive.js';
+import { initUIEvents } from './ui-events.js';
 
-// Job options with risk categories, jail chances, wanted level gains, health loss, required items, and reputation requirements
-const jobs = [
-    { name: "Street Soldier", payout: [GameBalance.jobs.streetSoldier.payoutMin, GameBalance.jobs.streetSoldier.payoutMax], risk: "low", jailChance: GameBalance.jobs.streetSoldier.jailChance, wantedLevelGain: GameBalance.jobs.streetSoldier.wantedLevelGain, healthLoss: GameBalance.jobs.streetSoldier.healthLoss, requiredItems: [], reputation: GameBalance.jobs.streetSoldier.reputation, energyCost: GameBalance.jobs.streetSoldier.energyCost },
-    { name: "Boost a Ride", payout: [GameBalance.jobs.boostRide.payoutMin, GameBalance.jobs.boostRide.payoutMax], risk: "medium", jailChance: GameBalance.jobs.boostRide.jailChance, wantedLevelGain: GameBalance.jobs.boostRide.wantedLevelGain, healthLoss: GameBalance.jobs.boostRide.healthLoss, requiredItems: [], reputation: GameBalance.jobs.boostRide.reputation, special: "car_theft", energyCost: GameBalance.jobs.boostRide.energyCost },
-    { name: "Store Heist", payout: [GameBalance.jobs.storeHeist.payoutMin, GameBalance.jobs.storeHeist.payoutMax], risk: "high", jailChance: GameBalance.jobs.storeHeist.jailChance, wantedLevelGain: GameBalance.jobs.storeHeist.wantedLevelGain, healthLoss: GameBalance.jobs.storeHeist.healthLoss, requiredItems: [], reputation: GameBalance.jobs.storeHeist.reputation, energyCost: GameBalance.jobs.storeHeist.energyCost },
-    // Drug dealing jobs
-    { name: "Bootleg Run", payout: [GameBalance.jobs.bootlegRun.payoutMin, GameBalance.jobs.bootlegRun.payoutMax], risk: "high", jailChance: GameBalance.jobs.bootlegRun.jailChance, wantedLevelGain: GameBalance.jobs.bootlegRun.wantedLevelGain, healthLoss: GameBalance.jobs.bootlegRun.healthLoss, requiredItems: ["Crate Moonshine"], reputation: GameBalance.jobs.bootlegRun.reputation, energyCost: GameBalance.jobs.bootlegRun.energyCost },
-    { name: "Speakeasy Supply", payout: [GameBalance.jobs.speakeasySupply.payoutMin, GameBalance.jobs.speakeasySupply.payoutMax], risk: "very high", jailChance: GameBalance.jobs.speakeasySupply.jailChance, wantedLevelGain: GameBalance.jobs.speakeasySupply.wantedLevelGain, healthLoss: GameBalance.jobs.speakeasySupply.healthLoss, requiredItems: ["Bag of Mary Jane"], reputation: GameBalance.jobs.speakeasySupply.reputation, energyCost: GameBalance.jobs.speakeasySupply.energyCost },
-    { name: "White Powder Distribution", payout: [GameBalance.jobs.whitePowder.payoutMin, GameBalance.jobs.whitePowder.payoutMax], risk: "extreme", jailChance: GameBalance.jobs.whitePowder.jailChance, wantedLevelGain: GameBalance.jobs.whitePowder.wantedLevelGain, healthLoss: GameBalance.jobs.whitePowder.healthLoss, requiredItems: ["Pure Cocaine"], reputation: GameBalance.jobs.whitePowder.reputation, energyCost: GameBalance.jobs.whitePowder.energyCost },
-    // Weapon-based jobs
-    { name: "Protection Collection", payout: [GameBalance.jobs.protectionCollection.payoutMin, GameBalance.jobs.protectionCollection.payoutMax], risk: "medium", jailChance: GameBalance.jobs.protectionCollection.jailChance, wantedLevelGain: GameBalance.jobs.protectionCollection.wantedLevelGain, healthLoss: GameBalance.jobs.protectionCollection.healthLoss, requiredItems: ["Brass Knuckles"], reputation: GameBalance.jobs.protectionCollection.reputation, energyCost: GameBalance.jobs.protectionCollection.energyCost },
-    { name: "Bank Job", payout: [GameBalance.jobs.bankJob.payoutMin, GameBalance.jobs.bankJob.payoutMax], risk: "extreme", jailChance: GameBalance.jobs.bankJob.jailChance, wantedLevelGain: GameBalance.jobs.bankJob.wantedLevelGain, healthLoss: GameBalance.jobs.bankJob.healthLoss, requiredItems: ["Tommy Gun", "Bullets"], reputation: GameBalance.jobs.bankJob.reputation, energyCost: GameBalance.jobs.bankJob.energyCost },
-    { name: "Hit on a Rival", payout: [GameBalance.jobs.hitOnRival.payoutMin, GameBalance.jobs.hitOnRival.payoutMax], risk: "very high", jailChance: GameBalance.jobs.hitOnRival.jailChance, wantedLevelGain: GameBalance.jobs.hitOnRival.wantedLevelGain, healthLoss: GameBalance.jobs.hitOnRival.healthLoss, requiredItems: ["Pistol", "Bullets"], reputation: GameBalance.jobs.hitOnRival.reputation, energyCost: GameBalance.jobs.hitOnRival.energyCost },
-    // High-tech/Vehicle jobs
-    { name: "Luxury Car Ring", payout: [GameBalance.jobs.luxuryCarRing.payoutMin, GameBalance.jobs.luxuryCarRing.payoutMax], risk: "high", jailChance: GameBalance.jobs.luxuryCarRing.jailChance, wantedLevelGain: GameBalance.jobs.luxuryCarRing.wantedLevelGain, healthLoss: GameBalance.jobs.luxuryCarRing.healthLoss, requiredItems: ["Luxury Automobile"], reputation: GameBalance.jobs.luxuryCarRing.reputation, energyCost: GameBalance.jobs.luxuryCarRing.energyCost },
-    { name: "Cross-Border Smuggling", payout: [GameBalance.jobs.crossBorderSmuggling.payoutMin, GameBalance.jobs.crossBorderSmuggling.payoutMax], risk: "extreme", jailChance: GameBalance.jobs.crossBorderSmuggling.jailChance, wantedLevelGain: GameBalance.jobs.crossBorderSmuggling.wantedLevelGain, healthLoss: GameBalance.jobs.crossBorderSmuggling.healthLoss, requiredItems: ["Private Airplane", "Gasoline"], reputation: GameBalance.jobs.crossBorderSmuggling.reputation, energyCost: GameBalance.jobs.crossBorderSmuggling.energyCost },
-    // Gang-based jobs
-    { name: "Turf War", payout: [GameBalance.jobs.turfWar.payoutMin, GameBalance.jobs.turfWar.payoutMax], risk: "very high", jailChance: GameBalance.jobs.turfWar.jailChance, wantedLevelGain: GameBalance.jobs.turfWar.wantedLevelGain, healthLoss: GameBalance.jobs.turfWar.healthLoss, requiredItems: ["Gang Recruit"], reputation: GameBalance.jobs.turfWar.reputation, energyCost: GameBalance.jobs.turfWar.energyCost },
-    { name: "Underground Boxing", payout: [GameBalance.jobs.undergroundBoxing.payoutMin, GameBalance.jobs.undergroundBoxing.payoutMax], risk: "high", jailChance: GameBalance.jobs.undergroundBoxing.jailChance, wantedLevelGain: GameBalance.jobs.undergroundBoxing.wantedLevelGain, healthLoss: GameBalance.jobs.undergroundBoxing.healthLoss, requiredItems: ["Brass Knuckles"], reputation: GameBalance.jobs.undergroundBoxing.reputation, energyCost: GameBalance.jobs.undergroundBoxing.energyCost },
-    // Property-based jobs
-    { name: "Illegal Gambling Den", payout: [GameBalance.jobs.illegalGamblingDen.payoutMin, GameBalance.jobs.illegalGamblingDen.payoutMax], risk: "very high", jailChance: GameBalance.jobs.illegalGamblingDen.jailChance, wantedLevelGain: GameBalance.jobs.illegalGamblingDen.wantedLevelGain, healthLoss: GameBalance.jobs.illegalGamblingDen.healthLoss, requiredItems: ["Criminal Safehouse"], reputation: GameBalance.jobs.illegalGamblingDen.reputation, energyCost: GameBalance.jobs.illegalGamblingDen.energyCost },
-    { name: "Money Laundering", payout: [GameBalance.jobs.moneyLaundering.payoutMin, GameBalance.jobs.moneyLaundering.payoutMax], risk: "high", jailChance: GameBalance.jobs.moneyLaundering.jailChance, wantedLevelGain: GameBalance.jobs.moneyLaundering.wantedLevelGain, healthLoss: GameBalance.jobs.moneyLaundering.healthLoss, requiredItems: ["Basement Hideout", "Luxury Automobile"], reputation: GameBalance.jobs.moneyLaundering.reputation, energyCost: GameBalance.jobs.moneyLaundering.energyCost },
-    // Elite endgame jobs
-    { name: "International Arms Trade", payout: [GameBalance.jobs.internationalArmsTrade.payoutMin, GameBalance.jobs.internationalArmsTrade.payoutMax], risk: "legendary", jailChance: GameBalance.jobs.internationalArmsTrade.jailChance, wantedLevelGain: GameBalance.jobs.internationalArmsTrade.wantedLevelGain, healthLoss: GameBalance.jobs.internationalArmsTrade.healthLoss, requiredItems: ["Private Airplane", "Tommy Gun", "Bulletproof Vest"], reputation: GameBalance.jobs.internationalArmsTrade.reputation, energyCost: GameBalance.jobs.internationalArmsTrade.energyCost },
-    { name: "Take Over the City", payout: [GameBalance.jobs.takeOverCity.payoutMin, GameBalance.jobs.takeOverCity.payoutMax], risk: "legendary", jailChance: GameBalance.jobs.takeOverCity.jailChance, wantedLevelGain: GameBalance.jobs.takeOverCity.wantedLevelGain, healthLoss: GameBalance.jobs.takeOverCity.healthLoss, requiredItems: ["Gang Recruit", "Underground Bunker", "Tommy Gun", "Luxury Automobile"], reputation: GameBalance.jobs.takeOverCity.reputation, energyCost: GameBalance.jobs.takeOverCity.energyCost }
-];
+// Expose to window for legacy compatibility
+window.player = player;
+window.jobs = jobs;
+window.stolenCarTypes = stolenCarTypes;
+window.crimeFamilies = crimeFamilies;
+window.criminalHallOfFame = criminalHallOfFame;
+window.retirementOutcomes = retirementOutcomes;
+window.storyCampaigns = storyCampaigns;
+window.factionMissions = factionMissions;
+window.territoryMissions = territoryMissions;
+window.bossBattles = bossBattles;
+window.missionProgress = missionProgress;
+window.narrationVariations = narrationVariations;
+window.getRandomNarration = getRandomNarration;
+window.storeItems = storeItems;
+window.realEstateProperties = realEstateProperties;
+window.businessTypes = businessTypes;
+window.loanOptions = loanOptions;
+window.launderingMethods = launderingMethods;
+window.prisonerNames = prisonerNames;
+window.recruitNames = recruitNames;
+window.availableRecruits = availableRecruits;
+window.randomEncounterRecruit = randomEncounterRecruit;
+window.jailPrisoners = jailPrisoners;
+window.jailbreakPrisoners = jailbreakPrisoners;
+window.skillTreeDefinitions = skillTreeDefinitions;
+window.factionEffects = factionEffects;
+window.availablePerks = availablePerks;
+window.potentialMentors = potentialMentors;
+window.achievements = achievements;
+window.EventBus = EventBus;
+window.GameLogging = GameLogging;
+window.ui = ui;
+window.ModalSystem = ModalSystem;
+window.MobileSystem = MobileSystem;
+window.initUIEvents = initUIEvents;
 
-// Stolen car types with base values and damage probabilities
-const stolenCarTypes = [
-    { name: "Rusty Jalopy", baseValue: 5000, damageChance: 60, rarity: 40, image: "Rusty Jalopy.png" },
-    { name: "Old Sedan", baseValue: 15000, damageChance: 45, rarity: 30, image: "Old Sedan.png" },
-    { name: "Old Ford", baseValue: 25000, damageChance: 40, rarity: 25, image: "Old Ford.png" },
-    { name: "Family Wagon", baseValue: 30000, damageChance: 35, rarity: 20, image: "Family Wagon.png" },
-    { name: "Sports Coupe", baseValue: 60000, damageChance: 25, rarity: 7, image: "Sports Coupe.png" },
-    { name: "High-End Roadster", baseValue: 120000, damageChance: 15, rarity: 2.5, image: "High-End Roadster.png" },
-    { name: "Luxury Automobile", baseValue: 200000, damageChance: 8, rarity: 0.5, image: "Luxury Automobile.png" }
-];
 
-// Varied narration responses for immersion
-const narrationVariations = {
-    jobFailure: [
-        "💀 The job went south, kid. You walk away with nothing but your life. The Family doesn't forgive easily.",
-        "💀 A disaster. The Feds swarmed the joint. The Don will have words with you.",
-        "💀 Amateur hour! You fumbled like a street punk. In this Family, you earn respect or you disappear.",
-        "💀 The plan fell apart. In this life, mistakes can be fatal. Keep your mouth shut or face exile.",
-        "💀 Luck wasn't with you. You leave empty-handed, swearing on your mother's grave to do better for the Family next time.",
-        "💀 A mess from start to finish. You're lucky you're not sleeping with the fishes tonight."
-    ],
-    
-    jobSuccess: [
-        "💰 The job's done. You slip away with the cash, smooth and professional. That's how a Consigliere would handle it.",
-        "💰 Another score for the Family. You showed respect and precision. The Don will hear of your loyalty.",
-        "💰 Clean work. No witnesses, no heat. The Family's respect for you grows.",
-        "💰 A professional hit. You executed the plan flawlessly. This is what separates a Made Man from a nobody.",
-        "💰 Perfect execution. The money is in hand, and the message has been sent. A good day for business.",
-        "💰 Textbook work. You handled the situation like a true professional. Time to enjoy the spoils."
-    ],
-    
-    jailSentences: [
-        "🔒 The steel bars slam shut. You kept your mouth shut, like a true man of honor. Now you do your time.",
-        "🔒 Caught by the Feds. You know the drill - say nothing, admit nothing. The Family will look after you... eventually.",
-        "🔒 A temporary setback. You're in the joint now, surrounded by rats and snitches. Keep your head down and your eyes open.",
-        "🔒 The judge threw the book at you. Now you're just another number in the system. Don't let them break you.",
-        "🔒 Handcuffs and a cold cell. The price of doing business. Remember the code - silence is golden.",
-        "🔒 The law won this round. You're behind bars, but your mind is still on the streets. Bide your time."
-    ],
-    
-    jailBreakouts: [
-        "🗝️ You're out! Slipping past the guards like a ghost. The air outside tastes like freedom and opportunity.",
-        "🗝️ A clean break. You left the joint without a trace. The Feds will be scratching their heads for weeks.",
-        "🗝️ Escape artist! You navigated the walls and fences like you owned the place. Back to business.",
-        "🗝️ The perfect escape. You orchestrated it with the precision of a bank heist. Freedom is yours again.",
-        "🗝️ Vanished into thin air. You left the cage behind, leaving the guards looking like fools.",
-        "🗝️ Prison couldn't hold you. You walked out like you were checking out of a hotel. The streets are calling."
-    ],
-    
-    carTheftSuccess: [
-        "Clean getaway! The vehicle is now property of the Family.",
-        "A smooth lift. You hotwired the ride and drove off before anyone noticed. Nice wheels.",
-        "Professional work. The car practically begged to be taken. It's in the garage now.",
-        "Flawless. You slipped into the driver's seat and claimed what was yours. Welcome to your new ride.",
-        "Taken like a pro. The car is yours, and the owner is none the wiser.",
-        "Masterful. You acquired the vehicle with the skill of a veteran. It's safe in the garage."
-    ],
-    
-    carTheftDamaged: [
-        "You got the car, but it was messy. It's in the garage, but it'll need some work.",
-        "Success, but at a cost. You secured the vehicle, but left a bit of a trail. Be careful.",
-        "Mission accomplished, barely. The car is yours, but it's seen better days after that escape.",
-        "Stolen, but scarred. You got the wheels, but it wasn't the cleanest job.",
-        "Victory with complications. The car is in the garage, but the heat is on.",
-        "Hard-earned wheels. You got it, but it was a fight. It's safe now, mostly."
-    ],
-    
-    carTheftFailure: [
-        "You scouted for wheels, but found nothing worth the risk.",
-        "No luck. Every car was too hot or too guarded. Better to walk away than get pinched.",
-        "Slim pickings. The streets are crawling with cops. Not the night for a lift.",
-        "Bad timing. Every target had eyes on it. You walked away to fight another day.",
-        "Too much heat. You couldn't find an opening. Smart move to lay low.",
-        "Tough break. All the good rides were locked down tight. Maybe next time."
-    ],
-    
-    healthLoss: [
-        "🩸 You took a hit. Blood on your suit, but you're still standing. Tough it out.",
-        "🩸 That hurt. You patch yourself up, reminding yourself that this life has a price.",
-        "🩸 A painful lesson. You took some damage, but you're not out of the game yet.",
-        "🩸 Battle scars. You add another one to the collection. Wear it with pride.",
-        "🩸 Rough night. You took a beating, but you're still breathing. Others weren't so lucky.",
-        "🩸 Violence is part of the job. You learned that the hard way tonight."
-    ],
-    
-    jailBreakoutFailure: [
-        "🚫 The guards were waiting. Your escape attempt failed. Back to the hole.",
-        "🚫 Busted. Security was too tight. You're back in your cell, with more time to think.",
-        "🚫 So close. You almost made it, but the alarms sounded. Back to square one.",
-        "🚫 Amateur mistake. Your plan fell apart. You're not going anywhere anytime soon.",
-        "🚫 The walls held. Your attempt was futile. You're stuck in here for now.",
-        "🚫 Dragged back. The guards caught you. You're in deeper trouble now."
-    ],
-    
-    territoryExpansionSuccess: [
-        "🏘️ Territory secured. The Family's shadow stretches further. This neighborhood now pays tribute to the Don. ",
-        "🏘️ Expansion complete! You claim another piece of the city as your own. The neighborhood knows who's in charge now.",
-        "🏘️ Turf war victory! Your gang plants its flag in new territory. Respect and revenue follow conquest.",
-        "🏘️ Street domination! You extend your reach across another block. This city is slowly becoming yours.",
-        "🏘️ New ground claimed! Your criminal empire grows with each successful expansion. Power has its rewards.",
-        "🏘️ Territory conquered! Another district falls under your control. Building an empire one block at a time."
-    ],
-    
-    territoryExpansionFailure: [
-        "💥 Expansion failed! The locals fought back harder than expected. You retreat with fewer soldiers than you started with.",
-        "💥 Hostile takeover denied! The enemy was ready for you. Your gang takes losses in the failed power grab.",
-        "💥 Turf war casualty! Your attempt to expand backfires spectacularly. Some of your crew won't be coming home.",
-        "💥 Strategic withdrawal! The operation goes south fast. Better to retreat now than lose everyone in a hopeless fight.",
-        "💥 Costly mistake! Your expansion attempt becomes a bloodbath. The streets remember failed ambitions.",
-        "💥 Territory defense wins! The locals prove that they won't give up their turf without a fight. You pay the price."
-    ],
-    
-    recruitmentSuccess: [
-        "🤝 New blood joins the crew! Fresh talent means fresh opportunities in the criminal underworld.",
-        "🤝 Welcome to the Family! Another soldier joins your ranks, ready to earn respect and serve the Don. ",
-        "🤝 Recruitment successful! Your gang grows stronger with each new member willing to walk the criminal path.",
-        "🤝 Street partnership formed! New talent brings new skills to your organization. The crew expands.",
-        "🤝 Another ally secured! Your criminal network grows as ambitious newcomers join the cause.",
-        "🤝 Gang member acquired! Fresh faces bring fresh energy to your criminal enterprise."
-    ],
-    
-    prisonerBreakoutSuccess: [
-        "🗝️ Liberation achieved! Another soul freed from concrete and steel. Your reputation as a liberator grows.",
-        "🗝️ Jailbreak mastermind! You orchestrate the perfect escape. The underground respects those who free their own.",
-        "🗝️ Freedom fighter! You turn the prison into a revolving door. Guards are left scratching their heads.",
-        "🗝️ Rescue mission complete! You prove that no cage can hold those with friends on the outside.",
-        "🗝️ Prison break success! Your reputation for springing people grows with each successful operation.",
-        "🗝️ Liberation operation successful! You add another name to your list of successful jailbreaks."
-    ],
-    
-    prisonerBreakoutFailure: [
-        "🚨 Breakout blown! Security was ready for your rescue attempt. Sometimes the system wins.",
-        "🚨 Mission compromised! The guards saw through your plan faster than you could execute it.",
-        "🚨 Rescue attempt failed! The prison proves that not all liberation missions succeed.",
-        "🚨 Operation shutdown! Your jailbreak plan crumbles under the weight of tight security.",
-        "🚨 Caught in the act! Your attempt to free a fellow criminal backfires spectacularly.",
-        "🚨 Security victory! The guards prove they're not as incompetent as you thought."
-    ],
-    
-    carDamage: [
-        "🔧 Your ride takes a beating! Metal scrapes and glass cracks as the job gets rough. The car's seen better days.",
-        "🔧 Rough driving! Your vehicle shows the wear and tear of a life lived on the edge.",
-        "🔧 Battle damage! The car bears new scars from your latest criminal enterprise.",
-        "🔧 Wear and tear! Each job leaves its mark on your wheels - the price of doing business.",
-        "🔧 Road warrior wounds! Your car accumulates damage like a veteran of street warfare.",
-        "🔧 Mechanical casualties! The vehicle pays the price for your dangerous lifestyle."
-    ]
-};
 
-// Function to get random narration
-function getRandomNarration(category) {
-    const variations = narrationVariations[category];
-    if (!variations || variations.length === 0) return "";
-    return variations[Math.floor(Math.random() * variations.length)];
-}
 
-// ==================== MISSIONS & STORY SYSTEM ====================
 
-// Crime Families and Factions
-const crimeFamilies = {
-    torrino: {
-        name: "Torrino Family",
-        description: "Old-school Italian mafia family with traditional values and brutal enforcement",
-        reputation: 0, // Player's standing with this family (-100 to 100)
-        color: "#8b0000",
-        boss: "Don Salvatore Torrino",
-        specialty: "Protection rackets and loan sharking",
-        lore: "Founded in the 1920s by Italian immigrants, the Torrino family built their empire on respect, loyalty, and swift retribution. They control the restaurant district and numerous legitimate businesses as fronts."
-    },
-    kozlov: {
-        name: "Kozlov Bratva",
-        description: "Russian crime syndicate specializing in arms dealing and smuggling operations",
-        reputation: 0,
-        color: "#ff6b35",
-        boss: "Dimitri Kozlov",
-        specialty: "Weapons trafficking and smuggling",
-        lore: "Ex-military Russian operatives who brought military discipline to organized crime. They dominate the weapons trade and have connections across Eastern Europe for large-scale smuggling operations."
-    },
-    chen: {
-        name: "Chen Triad",
-        description: "Sophisticated Asian crime organization focusing on high-tech crimes and drug operations",
-        reputation: 0,
-        color: "#2e8b57",
-        boss: "Master Chen Wei",
-        specialty: "Technology crimes and drug manufacturing",
-        lore: "Ancient traditions meet modern technology. The Chen Triad combines centuries-old honor codes with cutting-edge cybercrime and precision drug manufacturing. They value intelligence over brute force."
-    },
-    morales: {
-        name: "Morales Cartel",
-        description: "Powerful South American drug cartel with extensive territory control and distribution networks",
-        reputation: 0,
-        color: "#ff8c00",
-        boss: "El Jefe Morales",
-        specialty: "Drug manufacturing and distribution",
-        lore: "Born from the coca fields of South America, the Morales Cartel expanded northward with ruthless efficiency. They control vast territories and have corrupted officials at every level of government."
-    }
-};
 
-// Criminal Hall of Fame - Legacy System
-let criminalHallOfFame = JSON.parse(localStorage.getItem('criminalHallOfFame')) || [];
 
-// Retirement outcomes and legacy bonuses
-const retirementOutcomes = {
-    legitimate: {
-        name: "Going Legitimate",
-        description: "Clean up your act and start fresh",
-        requirements: {
-            cleanMoney: 1000000,
-            businessEmpire: 10,
-            lowHeat: true
-        },
-        legacyBonus: {
-            startingMoney: 10000,
-            businessDiscount: 0.2,
-            familyReputation: 50
-        }
-    },
-    exile: {
-        name: "Exile to Paradise",
-        description: "Flee to a tropical island with your wealth",
-        requirements: {
-            money: 5000000,
-            privateAirplane: true,
-            lowWantedLevel: true
-        },
-        legacyBonus: {
-            startingMoney: 50000,
-            skillBonus: 1,
-            luxuryStart: true
-        }
-    },
-    familyBusiness: {
-        name: "Family Business Empire",
-        description: "Pass the empire to the next generation",
-        requirements: {
-            gangMembers: 20,
-            territories: 15,
-            businesses: 15
-        },
-        legacyBonus: {
-            inheritedGang: 5,
-            inheritedTerritory: 3,
-            inheritedBusiness: 2,
-            familyReputation: 100
-        }
-    },
-    undergroundKing: {
-        name: "Underground Kingpin",
-        description: "Rule the criminal underworld forever",
-        requirements: {
-            empireRating: 10000,
-            allFactions: true,
-            criminalMastermind: true
-        },
-        legacyBonus: {
-            legendaryStart: true,
-            allSkillsBonus: 2,
-            startingEmpire: true,
-            familyReputation: 200
-        }
-    }
-};
 
-// Story Campaigns - Multi-part missions with narrative progression
-const storyCampaigns = {
-    risingThroughRanks: {
-        id: "risingThroughRanks",
-        name: "Rising Through the Ranks",
-        description: "Your journey from street thug to criminal mastermind",
-        currentChapter: 0,
-        unlocked: true,
-        chapters: [
-            {
-                title: "First Steps",
-                description: "Prove yourself on the streets",
-                objectives: [
-                    { type: "complete_jobs", target: 5, current: 0, text: "Complete 5 jobs" },
-                    { type: "earn_money", target: 500, current: 0, text: "Earn $500" }
-                ],
-                rewards: { money: 250, experience: 40, reputation: 5 },
-                nextChapter: 1
-            },
-            {
-                title: "Building Connections",
-                description: "Start building your criminal network",
-                objectives: [
-                    { type: "recruit_members", target: 3, current: 0, text: "Recruit 3 gang members" },
-                    { type: "complete_faction_mission", target: 1, current: 0, text: "Complete 1 faction mission" }
-                ],
-                rewards: { money: 900, experience: 80, reputation: 10 },
-                nextChapter: 2
-            },
-            {
-                title: "Territory Wars",
-                description: "Expand your influence across the city",
-                objectives: [
-                    { type: "control_territory", target: 3, current: 0, text: "Control 3 territories" },
-                    { type: "win_boss_battle", target: 1, current: 0, text: "Defeat a rival boss" }
-                ],
-                rewards: { money: 2000, experience: 180, reputation: 25 },
-                nextChapter: 3
-            },
-            {
-                title: "Criminal Empire",
-                description: "Establish yourself as a major player",
-                objectives: [
-                    { type: "reach_reputation", target: 75, current: 0, text: "Reach 75 reputation" },
-                    { type: "own_properties", target: 3, current: 0, text: "Own 3 properties" }
-                ],
-                rewards: { money: 4000, experience: 350, reputation: 50 },
-                nextChapter: null // Final chapter
-            }
-        ]
-    }
-};
 
 // Faction Missions - Unique jobs for each crime family
-const factionMissions = {
-    torrino: [
-        {
-            id: "torrino_0",
-            name: "Message Delivery",
-            description: "Deliver an important message to a family associate across town. No questions asked.",
-            payout: [GameBalance.factionMissions.torrino_0.payoutMin, GameBalance.factionMissions.torrino_0.payoutMax],
-            risk: "low",
-            jailChance: GameBalance.factionMissions.torrino_0.jailChance,
-            energyCost: GameBalance.factionMissions.torrino_0.energyCost,
-            requiredItems: [],
-            reputation: GameBalance.factionMissions.torrino_0.reputation,
-            factionRep: GameBalance.factionMissions.torrino_0.factionRep,
-            unlocked: true,
-            story: "The Torrino family values loyalty and discretion. Prove you can handle simple tasks first."
-        },
-        {
-            id: "torrino_1",
-            name: "Collect Overdue Debt",
-            description: "A local shopkeeper hasn't paid protection money. Remind them of their obligations.",
-            payout: [GameBalance.factionMissions.torrino_1.payoutMin, GameBalance.factionMissions.torrino_1.payoutMax],
-            risk: "medium",
-            jailChance: GameBalance.factionMissions.torrino_1.jailChance,
-            energyCost: GameBalance.factionMissions.torrino_1.energyCost,
-            requiredItems: ["Brass Knuckles"],
-            reputation: GameBalance.factionMissions.torrino_1.reputation,
-            factionRep: GameBalance.factionMissions.torrino_1.factionRep,
-            unlocked: true,
-            story: "The Torrino family values loyalty and prompt payment. Show them what happens when debts go unpaid."
-        },
-        {
-            id: "torrino_2",
-            name: "Intimidate Rival Business",
-            description: "A competing restaurant is cutting into family profits. Make them reconsider their location.",
-            payout: [GameBalance.factionMissions.torrino_2.payoutMin, GameBalance.factionMissions.torrino_2.payoutMax],
-            risk: "high",
-            jailChance: GameBalance.factionMissions.torrino_2.jailChance,
-            energyCost: GameBalance.factionMissions.torrino_2.energyCost,
-            requiredItems: ["Pistol", "Bullets"],
-            reputation: GameBalance.factionMissions.torrino_2.reputation,
-            factionRep: GameBalance.factionMissions.torrino_2.factionRep,
-            unlocked: false,
-            story: "Old-school methods for old-school problems. Sometimes business negotiations require... persuasion."
-        }
-    ],
-    kozlov: [
-        {
-            id: "kozlov_0",
-            name: "Street Information",
-            description: "Gather information about police patrol routes in the industrial district.",
-            payout: [GameBalance.factionMissions.kozlov_0.payoutMin, GameBalance.factionMissions.kozlov_0.payoutMax],
-            risk: "low",
-            jailChance: GameBalance.factionMissions.kozlov_0.jailChance,
-            energyCost: GameBalance.factionMissions.kozlov_0.energyCost,
-            requiredItems: [],
-            reputation: GameBalance.factionMissions.kozlov_0.reputation,
-            factionRep: GameBalance.factionMissions.kozlov_0.factionRep,
-            unlocked: true,
-            story: "The Bratva values reliable informants. Prove you can keep your eyes and ears open."
-        },
-        {
-            id: "kozlov_1",
-            name: "Weapons Smuggling Run",
-            description: "Transport a shipment of illegal weapons across the city without getting caught.",
-            payout: [GameBalance.factionMissions.kozlov_1.payoutMin, GameBalance.factionMissions.kozlov_1.payoutMax],
-            risk: "high",
-            jailChance: GameBalance.factionMissions.kozlov_1.jailChance,
-            energyCost: GameBalance.factionMissions.kozlov_1.energyCost,
-            requiredItems: ["Luxury Automobile", "Gasoline"],
-            reputation: GameBalance.factionMissions.kozlov_1.reputation,
-            factionRep: GameBalance.factionMissions.kozlov_1.factionRep,
-            unlocked: true,
-            story: "The Bratva needs reliable drivers for their arms business. Prove you can handle the heat."
-        },
-        {
-            id: "kozlov_2",
-            name: "Border Crossing Operation",
-            description: "Help smuggle goods across international borders using your connections.",
-            payout: [GameBalance.factionMissions.kozlov_2.payoutMin, GameBalance.factionMissions.kozlov_2.payoutMax],
-            risk: "extreme",
-            jailChance: GameBalance.factionMissions.kozlov_2.jailChance,
-            energyCost: GameBalance.factionMissions.kozlov_2.energyCost,
-            requiredItems: ["Private Airplane", "Tommy Gun"],
-            reputation: GameBalance.factionMissions.kozlov_2.reputation,
-            factionRep: GameBalance.factionMissions.kozlov_2.factionRep,
-            unlocked: false,
-            story: "Big risks, bigger rewards. The Kozlovs trust only their most proven associates with this operation."
-        }
-    ],
-    chen: [
-        {
-            id: "chen_0",
-            name: "Digital Surveillance",
-            description: "Monitor communications for suspicious activities using basic hacking tools.",
-            payout: [GameBalance.factionMissions.chen_0.payoutMin, GameBalance.factionMissions.chen_0.payoutMax],
-            risk: "low",
-            jailChance: GameBalance.factionMissions.chen_0.jailChance,
-            energyCost: GameBalance.factionMissions.chen_0.energyCost,
-            requiredItems: [],
-            reputation: GameBalance.factionMissions.chen_0.reputation,
-            factionRep: GameBalance.factionMissions.chen_0.factionRep,
-            unlocked: true,
-            story: "The Triad appreciates those who can work with technology and discretion."
-        },
-        {
-            id: "chen_1",
-            name: "High-Tech Heist",
-            description: "Steal cutting-edge technology from a corporate facility using advanced techniques.",
-            payout: [GameBalance.factionMissions.chen_1.payoutMin, GameBalance.factionMissions.chen_1.payoutMax],
-            risk: "high",
-            jailChance: GameBalance.factionMissions.chen_1.jailChance,
-            energyCost: GameBalance.factionMissions.chen_1.energyCost,
-            requiredItems: ["Bulletproof Vest"],
-            reputation: GameBalance.factionMissions.chen_1.reputation,
-            factionRep: GameBalance.factionMissions.chen_1.factionRep,
-            unlocked: true,
-            story: "The Chen Triad values intelligence and precision. Show them you can handle sophisticated operations."
-        }
-    ],
-    morales: [
-        {
-            id: "morales_0",
-            name: "Neighborhood Watch",
-            description: "Keep an eye on rival gang movements in cartel territory and report back.",
-            payout: [GameBalance.factionMissions.morales_0.payoutMin, GameBalance.factionMissions.morales_0.payoutMax],
-            risk: "low",
-            jailChance: GameBalance.factionMissions.morales_0.jailChance,
-            energyCost: GameBalance.factionMissions.morales_0.energyCost,
-            requiredItems: [],
-            reputation: GameBalance.factionMissions.morales_0.reputation,
-            factionRep: GameBalance.factionMissions.morales_0.factionRep,
-            unlocked: true,
-            story: "El Jefe needs loyal eyes on the street. Show the cartel you can be trusted with their territory."
-        },
-        {
-            id: "morales_1",
-            name: "Drug Lab Protection",
-            description: "Guard a secret drug manufacturing facility from rival gangs and police raids.",
-            payout: [GameBalance.factionMissions.morales_1.payoutMin, GameBalance.factionMissions.morales_1.payoutMax],
-            risk: "very high",
-            jailChance: GameBalance.factionMissions.morales_1.jailChance,
-            energyCost: GameBalance.factionMissions.morales_1.energyCost,
-            requiredItems: ["Tommy Gun", "Bullets"],
-            reputation: GameBalance.factionMissions.morales_1.reputation,
-            factionRep: GameBalance.factionMissions.morales_1.factionRep,
-            unlocked: true,
-            story: "The cartel's operations must be protected at all costs. Are you ready to defend their interests?"
-        }
-    ]
-};
 
-// Territory Missions - Specific missions to expand into new areas
-const territoryMissions = [
-    {
-        id: "docks_expansion",
-        name: "Secure the Docks",
-        description: "Take control of the lucrative shipping district from rival gangs.",
-        territory: "Industrial Docks",
-        difficulty: "medium",
-        requiredGangMembers: GameBalance.territoryMissions.docks_expansion.requiredGangMembers,
-        energyCost: GameBalance.territoryMissions.docks_expansion.energyCost,
-        rewards: {
-            money: GameBalance.territoryMissions.docks_expansion.rewards.money,
-            territory: GameBalance.territoryMissions.docks_expansion.rewards.territory,
-            reputation: GameBalance.territoryMissions.docks_expansion.rewards.reputation,
-            passive_income: GameBalance.territoryMissions.docks_expansion.rewards.passive_income // Per tribute collection
-        },
-        risks: {
-            jailChance: GameBalance.territoryMissions.docks_expansion.risks.jailChance,
-            gangMemberLoss: GameBalance.territoryMissions.docks_expansion.risks.gangMemberLoss, // Chance to lose a gang member
-            healthLoss: GameBalance.territoryMissions.docks_expansion.risks.healthLoss
-        },
-        story: "The docks control all smuggling operations. Whoever controls the ports controls the city's underground economy."
-    },
-    {
-        id: "downtown_expansion",
-        name: "Downtown Takeover",
-        description: "Establish dominance in the city's business district.",
-        territory: "Downtown Business District",
-        difficulty: "hard",
-        requiredGangMembers: GameBalance.territoryMissions.downtown_expansion.requiredGangMembers,
-        energyCost: GameBalance.territoryMissions.downtown_expansion.energyCost,
-        rewards: {
-            money: GameBalance.territoryMissions.downtown_expansion.rewards.money,
-            territory: GameBalance.territoryMissions.downtown_expansion.rewards.territory,
-            reputation: GameBalance.territoryMissions.downtown_expansion.rewards.reputation,
-            passive_income: GameBalance.territoryMissions.downtown_expansion.rewards.passive_income
-        },
-        risks: {
-            jailChance: GameBalance.territoryMissions.downtown_expansion.risks.jailChance,
-            gangMemberLoss: GameBalance.territoryMissions.downtown_expansion.risks.gangMemberLoss,
-            healthLoss: GameBalance.territoryMissions.downtown_expansion.risks.healthLoss
-        },
-        story: "The heart of the city's economy. Control here means influence over legitimate businesses and underground operations alike."
-    },
-    {
-        id: "suburbs_expansion",
-        name: "Suburban Influence",
-        description: "Expand operations into the wealthy suburban areas.",
-        territory: "Wealthy Suburbs",
-        difficulty: "easy",
-        requiredGangMembers: GameBalance.territoryMissions.suburbs_expansion.requiredGangMembers,
-        energyCost: GameBalance.territoryMissions.suburbs_expansion.energyCost,
-        rewards: {
-            money: GameBalance.territoryMissions.suburbs_expansion.rewards.money,
-            territory: GameBalance.territoryMissions.suburbs_expansion.rewards.territory,
-            reputation: GameBalance.territoryMissions.suburbs_expansion.rewards.reputation,
-            passive_income: GameBalance.territoryMissions.suburbs_expansion.rewards.passive_income
-        },
-        risks: {
-            jailChance: GameBalance.territoryMissions.suburbs_expansion.risks.jailChance,
-            gangMemberLoss: GameBalance.territoryMissions.suburbs_expansion.risks.gangMemberLoss,
-            healthLoss: GameBalance.territoryMissions.suburbs_expansion.risks.healthLoss
-        },
-        story: "Rich neighborhoods mean rich targets. But suburban security is tight, and the police response is swift."
-    }
-];
 
-// Boss Battles - High-stakes confrontations with rival leaders
-const bossBattles = [
-    {
-        id: "rival_boss_santos",
-        name: "Eliminate Carlos Santos",
-        description: "Take down the leader of a rival gang threatening your territory.",
-        boss: {
-            name: "Carlos 'El Martillo' Santos",
-            power: GameBalance.bossBattles.rival_boss_santos.boss.power,
-            health: GameBalance.bossBattles.rival_boss_santos.boss.health,
-            gang_size: GameBalance.bossBattles.rival_boss_santos.boss.gang_size,
-            special_abilities: ["Bulletproof Vest", "Loyal Guards"]
-        },
-        requirements: {
-            minPower: GameBalance.bossBattles.rival_boss_santos.requirements.minPower,
-            minGangMembers: GameBalance.bossBattles.rival_boss_santos.requirements.minGangMembers,
-            minReputation: GameBalance.bossBattles.rival_boss_santos.requirements.minReputation
-        },
-        energyCost: GameBalance.bossBattles.rival_boss_santos.energyCost,
-        rewards: {
-            money: GameBalance.bossBattles.rival_boss_santos.rewards.money,
-            reputation: GameBalance.bossBattles.rival_boss_santos.rewards.reputation,
-            territory: GameBalance.bossBattles.rival_boss_santos.rewards.territory,
-            experience: GameBalance.bossBattles.rival_boss_santos.rewards.experience,
-            unique_item: "Santos' Golden Pistol" // Special weapon
-        },
-        risks: {
-            jailChance: GameBalance.bossBattles.rival_boss_santos.risks.jailChance,
-            gangMemberLoss: GameBalance.bossBattles.rival_boss_santos.risks.gangMemberLoss,
-            healthLoss: GameBalance.bossBattles.rival_boss_santos.risks.healthLoss
-        },
-        story: "Santos has been muscling in on your territory for months. It's time to send a message that echoes through every street corner.",
-        unlocked: false
-    },
-    {
-        id: "police_chief_morrison",
-        name: "Corrupt Police Chief Morrison",
-        description: "The police chief has been taking bribes but now threatens to expose your operations.",
-        boss: {
-            name: "Chief Margaret Morrison",
-            power: GameBalance.bossBattles.police_chief_morrison.boss.power,
-            health: GameBalance.bossBattles.police_chief_morrison.boss.health,
-            gang_size: GameBalance.bossBattles.police_chief_morrison.boss.gang_size, // Police officers
-            special_abilities: ["Police Backup", "Legal Immunity"]
-        },
-        requirements: {
-            minPower: GameBalance.bossBattles.police_chief_morrison.requirements.minPower,
-            minGangMembers: GameBalance.bossBattles.police_chief_morrison.requirements.minGangMembers,
-            minReputation: GameBalance.bossBattles.police_chief_morrison.requirements.minReputation
-        },
-        energyCost: GameBalance.bossBattles.police_chief_morrison.energyCost,
-        rewards: {
-            money: GameBalance.bossBattles.police_chief_morrison.rewards.money,
-            reputation: GameBalance.bossBattles.police_chief_morrison.rewards.reputation,
-            wanted_level_reduction: GameBalance.bossBattles.police_chief_morrison.rewards.wanted_level_reduction, // Reduces wanted level
-            experience: GameBalance.bossBattles.police_chief_morrison.rewards.experience
-        },
-        risks: {
-            jailChance: GameBalance.bossBattles.police_chief_morrison.risks.jailChance, // High risk fighting police
-            gangMemberLoss: GameBalance.bossBattles.police_chief_morrison.risks.gangMemberLoss,
-            healthLoss: GameBalance.bossBattles.police_chief_morrison.risks.healthLoss
-        },
-        story: "Morrison has been playing both sides for years. Now she's gotten greedy and threatens to bring down your entire operation.",
-        unlocked: false
-    }
-];
 
-// Mission Progress Tracking
-const missionProgress = {
-    activeCampaign: "risingThroughRanks",
-    completedMissions: [],
-    availableFactionMissions: {},
-    unlockedTerritoryMissions: ["suburbs_expansion"],
-    unlockedBossBattles: [],
-    factionReputation: {
-        torrino: 0,
-        kozlov: 0,
-        chen: 0,
-        morales: 0
-    }
-};
 
-// Store items
-const storeItems = [
-    { name: "Brass Knuckles", price: 7500, power: 10, type: "weapon" },
-    { name: "Pistol", price: 30000, power: 50, type: "gun" },
-    { name: "Leather Jacket", price: 15000, power: 15, type: "armor" },
-    { name: "Armored Car", price: 120000, power: 25, type: "car" },
-    { name: "Bullets", price: 2500, power: 0, type: "ammo" },
-    { name: "Gasoline", price: 4000, power: 0, type: "gas" },
-    { name: "Energy Drink", price: 1500, power: 0, type: "energy", energyRestore: 30 },
-    { name: "Strong Coffee", price: 800, power: 0, type: "energy", energyRestore: 15 },
-    { name: "Steroids", price: 5000, power: 0, type: "energy", energyRestore: 60 },
-    { name: "Crate Moonshine", price: 60000, power: 0, type: "highLevelDrug", maxPayout: 100000 },
-    { name: "Bag of Mary Jane", price: 120000, power: 0, type: "highLevelDrug", maxPayout: 200000 },
-    { name: "Pure Cocaine", price: 200000, power: 0, type: "highLevelDrug", maxPayout: 350000 },
-    // High-end items
-    { name: "Bulletproof Vest", price: 100000, power: 40, type: "armor" },
-    { name: "Tommy Gun", price: 150000, power: 100, type: "gun" },
-    { name: "Luxury Automobile", price: 400000, power: 50, type: "car" },
-    { name: "Private Airplane", price: 1500000, power: 200, type: "vehicle" }
-    // Business items section removed - use the Business Empire system instead
-];
 
-// Utility to get item image or fallback
-function getItemImage(itemName) {
-    // Explicit filename mappings to match case-sensitive hosts
-    const itemImageMap = {
-        "Brass Knuckles": "Brass knuckles.png",
-        "Armored Car": "Armored car.png",
-        "Tommy Gun": "Tommy gun.png"
-    };
-    if (itemImageMap[itemName]) return itemImageMap[itemName];
 
-    const item = storeItems.find(i => i.name === itemName);
-    if (item && item.image) {
-        return item.image;
-    }
-    // Car images
-    const car = typeof stolenCarTypes !== 'undefined' ? stolenCarTypes.find(c => c.name === itemName) : null;
-    if (car && car.image) {
-        return car.image;
-    }
-    // Default to name-based file to support most items
-    return `${itemName}.png`;
-}
 
-// Real Estate Properties
-const realEstateProperties = [
-    { 
-        name: "Abandoned Warehouse", 
-        price: 2500, 
-        type: "hideout", 
-        gangCapacity: 3, 
-        description: "A run-down warehouse on the edge of town. Perfect for small operations.",
-        power: 30,
-        income: 0
-    },
-    { 
-        name: "Basement Hideout", 
-        price: 6000, 
-        type: "hideout", 
-        gangCapacity: 5, 
-        description: "A secure underground hideout with multiple escape routes.",
-        power: 60,
-        income: 10
-    },
-    { 
-        name: "Criminal Safehouse", 
-        price: 12000, 
-        type: "hideout", 
-        gangCapacity: 8, 
-        description: "A well-equipped safehouse with advanced security and communications.",
-        power: 100,
-        income: 25
-    },
-    { 
-        name: "Underground Bunker", 
-        price: 25000, 
-        type: "compound", 
-        gangCapacity: 15, 
-        description: "A fortified underground complex for serious criminal enterprises.",
-        power: 180,
-        income: 50
-    },
-    { 
-        name: "Criminal Fortress", 
-        price: 50000, 
-        type: "compound", 
-        gangCapacity: 25, 
-        description: "An impenetrable fortress that serves as the ultimate criminal headquarters.",
-        power: 300,
-        income: 100
-    },
-    { 
-        name: "Luxury Penthouse", 
-        price: 80000, 
-        type: "mansion", 
-        gangCapacity: 20, 
-        description: "A high-class penthouse that provides legitimacy and luxury for your operations.",
-        power: 250,
-        income: 150
-    },
-    { 
-        name: "Private Island", 
-        price: 200000, 
-        type: "island", 
-        gangCapacity: 50, 
-        description: "Your own private island - the ultimate symbol of criminal success.",
-        power: 500,
-        income: 300
-    }
-];
 
-// Random prisoner names for jail system
-const prisonerNames = [
-    "Tony \"The Snake\" Marconi", "Vincent \"Vinny\" Romano", "Marco \"The Bull\" Santangelo",
-    "Sal \"Scarface\" DeLuca", "Frank \"The Hammer\" Rossini", "Joey \"Two-Times\" Castellano",
-    "Nick \"The Knife\" Moretti", "Rocco \"Rocky\" Benedetto", "Anthony \"Big Tony\" Genovese",
-    "Michael \"Mikey\" Calabrese", "Dominic \"Dom\" Torrino", "Carlo \"The Cat\" Bianchi",
-    "Gino \"The Ghost\" Falcone", "Paulie \"The Wall\" Ricci", "Luca \"Lucky\" Fontana"
-];
 
-// Random recruit names for gang recruitment
-const recruitNames = [
-    "Eddie \"Fast Hands\" Murphy", "Danny \"The Crow\" Sullivan", "Rico \"Smiles\" Martinez",
-    "Jimmy \"Knuckles\" O'Brien", "Carlos \"Snake Eyes\" Rivera", "Tommy \"The Kid\" Chen",
-    "Vinny \"Wheels\" Rossi", "Mickey \"Slim\" Johnson", "Angelo \"The Tank\" Moreno",
-    "Frankie \"Sharp\" Williams", "Bobby \"Ice\" Kowalski", "Sammy \"Brass\" Thompson",
-    "Lou \"The Fixer\" Garcia", "Pete \"Whispers\" Anderson", "Jake \"Lightning\" Davis",
-    "Nicky \"Smoke\" Rodriguez", "Tony \"Razors\" Bennett", "Max \"The Bull\" Jackson",
-    "Sal \"Quick Draw\" Fernandez", "Leo \"Ghost\" Walker", "Ricky \"Viper\" Cruz",
-    "Joey \"Phantom\" Stone", "Manny \"Torch\" Lopez", "Gio \"Shadow\" Milano"
-];
 
-// Available recruits list
-let availableRecruits = [];
-let randomEncounterRecruit = null;
 
-// Generate random prisoners in jail
-let jailPrisoners = [];
-let jailbreakPrisoners = []; // Separate list for jailbreak screen
 
-// Advanced Skills System Definitions
 
-// Skill Tree Specializations
-const skillTreeDefinitions = {
-    stealth: {
-        name: "Stealth Mastery",
-        icon: "🥷",
-        color: "#9b59b6",
-        branches: {
-            infiltration: {
-                name: "Infiltration",
-                icon: "🏗️",
-                description: "Master the art of breaking into secured locations",
-                maxLevel: 10,
-                benefits: level => `+${level * 5}% success on stealth jobs, +${level * 2}% lockpicking success`
-            },
-            escape: {
-                name: "Escape Artist",
-                icon: "🚪",
-                description: "Become a master of getting out of sticky situations",
-                maxLevel: 10,
-                benefits: level => `+${level * 3}% breakout success, -${level * 2}% arrest chance`
-            },
-            surveillance: {
-                name: "Surveillance",
-                icon: "👁️",
-                description: "Gather intel and stay ahead of enemies",
-                maxLevel: 10,
-                benefits: level => `+${level * 4}% mission intel, +${level}% critical hit chance`
-            }
-        }
-    },
-    violence: {
-        name: "Combat Prowess",
-        icon: "⚔️",
-        color: "#8b0000",
-        branches: {
-            firearms: {
-                name: "Firearms",
-                icon: "🔫",
-                description: "Master the use of guns and ranged weapons",
-                maxLevel: 10,
-                benefits: level => `+${level * 6}% combat job success, +${level * 3}% headshot chance`
-            },
-            melee: {
-                name: "Melee Combat",
-                icon: "👊",
-                description: "Excel in hand-to-hand combat situations",
-                maxLevel: 10,
-                benefits: level => `+${level * 4}% unarmed damage, +${level * 2}% disarm chance`
-            },
-            intimidation: {
-                name: "Intimidation",
-                icon: "😠",
-                description: "Use fear as your weapon",
-                maxLevel: 10,
-                benefits: level => `+${level * 5}% extortion success, +${level * 3}% reputation gain`
-            }
-        }
-    },
-    charisma: {
-        name: "Social Influence",
-        icon: "🎭",
-        color: "#c0a062",
-        branches: {
-            negotiation: {
-                name: "Negotiation",
-                icon: "🤝",
-                description: "Secure better deals and prices",
-                maxLevel: 10,
-                benefits: level => `+${level * 3}% better prices, +${level * 2}% bribe success`
-            },
-            leadership: {
-                name: "Leadership",
-                icon: "👑",
-                description: "Command respect and loyalty from your gang",
-                maxLevel: 10,
-                benefits: level => `+${level * 5}% gang loyalty, +${level}% gang member capacity`
-            },
-            manipulation: {
-                name: "Manipulation",
-                icon: "🧠",
-                description: "Control others through psychological tactics",
-                maxLevel: 10,
-                benefits: level => `+${level * 4}% information extraction, +${level * 2}% defection resistance`
-            }
-        }
-    },
-    intelligence: {
-        name: "Mental Acuity",
-        icon: "🧩",
-        color: "#c0a062",
-        branches: {
-            hacking: {
-                name: "Hacking",
-                icon: "💻",
-                description: "Master digital infiltration and cyber warfare",
-                maxLevel: 10,
-                benefits: level => `+${level * 7}% hacking success, +${level * 3}% digital heist rewards`
-            },
-            planning: {
-                name: "Strategic Planning",
-                icon: "📋",
-                description: "Perfect preparation prevents poor performance",
-                maxLevel: 10,
-                benefits: level => `+${level * 4}% mission success, +${level * 2}% backup plan chance`
-            },
-            forensics: {
-                name: "Forensics",
-                icon: "🔬",
-                description: "Clean up evidence and avoid detection",
-                maxLevel: 10,
-                benefits: level => `+${level * 5}% evidence cleanup, -${level * 3}% investigation heat`
-            }
-        }
-    },
-    luck: {
-        name: "Fortune's Favor",
-        icon: "🍀",
-        color: "#f39c12",
-        branches: {
-            gambling: {
-                name: "Gambling",
-                icon: "🎲",
-                description: "Turn the odds in your favor",
-                maxLevel: 10,
-                benefits: level => `+${level * 6}% casino winnings, +${level * 2}% jackpot chance`
-            },
-            fortune: {
-                name: "Fortune",
-                icon: "✨",
-                description: "Improve random events and discoveries",
-                maxLevel: 10,
-                benefits: level => `+${level * 4}% positive events, +${level * 3}% rare item finds`
-            },
-            serendipity: {
-                name: "Serendipity",
-                icon: "🌟",
-                description: "Find unexpected opportunities",
-                maxLevel: 10,
-                benefits: level => `+${level * 5}% bonus opportunities, +${level * 2}% special job unlocks`
-            }
-        }
-    },
-    endurance: {
-        name: "Physical Resilience",
-        icon: "💪",
-        color: "#1abc9c",
-        branches: {
-            stamina: {
-                name: "Stamina",
-                icon: "🏃",
-                description: "Perform longer operations without fatigue",
-                maxLevel: 10,
-                benefits: level => `+${level * 3} max energy, -${level * 2}% energy costs`
-            },
-            recovery: {
-                name: "Recovery",
-                icon: "❤️‍🩹",
-                description: "Heal faster and recover energy more quickly",
-                maxLevel: 10,
-                benefits: level => `+${level * 5}% healing rate, +${level * 3}% energy regen`
-            },
-            resistance: {
-                name: "Resistance",
-                icon: "🛡️",
-                description: "Resist drugs, poisons, and environmental hazards",
-                maxLevel: 10,
-                benefits: level => `+${level * 4}% poison resistance, +${level * 3}% drug tolerance`
-            }
-        }
-    }
-};
 
-// Faction Reputation Effects
-const factionEffects = {
-    torrino: {
-        name: "Torrino Family",
-        icon: "🤵",
-        positiveEffects: [
-            { level: 25, effect: "15% better prices at Italian businesses" },
-            { level: 50, effect: "Access to Torrino weapon dealers" },
-            { level: 75, effect: "Protection from rival family attacks" },
-            { level: 100, effect: "Made member status - major power boost" }
-        ],
-        negativeEffects: [
-            { level: -25, effect: "15% higher prices at Italian businesses" },
-            { level: -50, effect: "Targeted by Torrino enforcers" },
-            { level: -75, effect: "Active bounty on your head" },
-            { level: -100, effect: "Marked for death by the family" }
-        ]
-    },
-    kozlov: {
-        name: "Kozlov Bratva",
-        icon: "🐻",
-        positiveEffects: [
-            { level: 25, effect: "Access to Russian weapons and vehicles" },
-            { level: 50, effect: "Bratva backup in gang wars" },
-            { level: 75, effect: "Smuggling route access" },
-            { level: 100, effect: "Vor status - criminal elite recognition" }
-        ],
-        negativeEffects: [
-            { level: -25, effect: "Russian businesses refuse service" },
-            { level: -50, effect: "Bratva enforcers hunt you" },
-            { level: -75, effect: "Assets frozen by Russian contacts" },
-            { level: -100, effect: "Siberian vacation - permanent" }
-        ]
-    },
-    chen: {
-        name: "Chen Triad",
-        icon: "🐉",
-        positiveEffects: [
-            { level: 25, effect: "Access to Triad drug networks" },
-            { level: 50, effect: "Ancient martial arts training" },
-            { level: 75, effect: "Protection money from Chinatown" },
-            { level: 100, effect: "Dragon Head status - ultimate honor" }
-        ],
-        negativeEffects: [
-            { level: -25, effect: "Banned from Chinatown businesses" },
-            { level: -50, effect: "Triad assassins pursue you" },
-            { level: -75, effect: "Cursed by ancestral spirits" },
-            { level: -100, effect: "Dishonor demands blood payment" }
-        ]
-    },
-    morales: {
-        name: "Morales Cartel",
-        icon: "🌮",
-        positiveEffects: [
-            { level: 25, effect: "Cartel drug discounts and access" },
-            { level: 50, effect: "Border smuggling routes" },
-            { level: 75, effect: "Sicario training programs" },
-            { level: 100, effect: "Patrón status - empire builder" }
-        ],
-        negativeEffects: [
-            { level: -25, effect: "Cartel prices increase 20%" },
-            { level: -50, effect: "Sicarios target your operations" },
-            { level: -75, effect: "All cartel territory becomes hostile" },
-            { level: -100, effect: "Blood feud - no quarter given" }
-        ]
-    },
-    police: {
-        name: "Police Corruption",
-        icon: "👮",
-        positiveEffects: [
-            { level: 25, effect: "10% reduced arrest chance" },
-            { level: 50, effect: "Inside information on raids" },
-            { level: 75, effect: "Evidence tampering available" },
-            { level: 100, effect: "Police protection and cover-ups" }
-        ],
-        negativeEffects: [
-            { level: -25, effect: "Increased police attention" },
-            { level: -50, effect: "No plea bargains available" },
-            { level: -75, effect: "Maximum sentences always given" },
-            { level: -100, effect: "Shoot on sight orders issued" }
-        ]
-    },
-    civilians: {
-        name: "Public Opinion",
-        icon: "👥",
-        positiveEffects: [
-            { level: 25, effect: "Citizens provide tips and intel" },
-            { level: 50, effect: "Public refuses to cooperate with police" },
-            { level: 75, effect: "Neighborhood watch protects you" },
-            { level: 100, effect: "Folk hero status - untouchable" }
-        ],
-        negativeEffects: [
-            { level: -25, effect: "Citizens report suspicious activity" },
-            { level: -50, effect: "Vigilante groups form against you" },
-            { level: -75, effect: "Civilian militia actively hunts you" },
-            { level: -100, effect: "Public enemy #1 - nowhere to hide" }
-        ]
-    },
-    underground: {
-        name: "Criminal Underworld",
-        icon: "🕳️",
-        positiveEffects: [
-            { level: 25, effect: "Access to black market deals" },
-            { level: 50, effect: "Criminal contacts provide jobs" },
-            { level: 75, effect: "Underworld protection and alliances" },
-            { level: 100, effect: "Kingpin status - rules the shadows" }
-        ],
-        negativeEffects: [
-            { level: -25, effect: "Higher prices in black markets" },
-            { level: -50, effect: "Criminal contacts avoid you" },
-            { level: -75, effect: "Bounty hunters target you" },
-            { level: -100, effect: "Marked by all criminal organizations" }
-        ]
-    }
-};
 
-// Perk System
-const availablePerks = {
-    // Stealth-based perks
-    shadowWalker: {
-        name: "Shadow Walker",
-        icon: "👤",
-        description: "Your stealth expertise is legendary",
-        requirements: { playstyle: "stealthyJobs", count: 25, skills: { stealth: 15 } },
-        effects: "25% chance to avoid all negative consequences from failed stealth jobs"
-    },
-    ghostProtocol: {
-        name: "Ghost Protocol",
-        icon: "👻",
-        description: "You leave no trace behind",
-        requirements: { playstyle: "stealthyJobs", count: 50, skillTree: "stealth.surveillance", level: 5 },
-        effects: "Automatically clean up evidence after jobs, reducing heat generation by 50%"
-    },
-    
-    // Violence-based perks
-    fearMonger: {
-        name: "Fear Monger",
-        icon: "😱",
-        description: "Your reputation precedes you",
-        requirements: { playstyle: "violentJobs", count: 25, skills: { violence: 15 } },
-        effects: "Intimidation attempts have 30% higher success rate, enemies may flee before combat"
-    },
-    warMachine: {
-        name: "War Machine",
-        icon: "🤖",
-        description: "Violence is your language",
-        requirements: { playstyle: "violentJobs", count: 50, skillTree: "violence.firearms", level: 7 },
-        effects: "Combat jobs pay 50% more, but attract 25% more police attention"
-    },
-    
-    // Charisma-based perks
-    silverTongue: {
-        name: "Silver Tongue",
-        icon: "🗣️",
-        description: "You could sell ice to an eskimo",
-        requirements: { playstyle: "diplomaticActions", count: 30, skills: { charisma: 18 } },
-        effects: "All negotiation attempts automatically succeed on first try"
-    },
-    kingmaker: {
-        name: "Kingmaker",
-        icon: "👑",
-        description: "Leaders are made, not born",
-        requirements: { playstyle: "diplomaticActions", count: 45, skillTree: "charisma.leadership", level: 8 },
-        effects: "Gang members gain experience 100% faster, loyalty never decreases"
-    },
-    
-    // Intelligence-based perks
-    mastermind: {
-        name: "Mastermind",
-        icon: "🧠",
-        description: "Always three steps ahead",
-        requirements: { playstyle: "hackingAttempts", count: 20, skills: { intelligence: 20 } },
-        effects: "25% chance for jobs to succeed automatically without risk"
-    },
-    digitalGod: {
-        name: "Digital God",
-        icon: "💾",
-        description: "The internet bends to your will",
-        requirements: { playstyle: "hackingAttempts", count: 40, skillTree: "intelligence.hacking", level: 9 },
-        effects: "Can hack any system for massive payouts, but creates digital traces"
-    },
-    
-    // Luck-based perks
-    fortuneSon: {
-        name: "Fortune's Son",
-        icon: "🎰",
-        description: "Lady Luck is your mistress",
-        requirements: { playstyle: "gamblingWins", count: 15, skills: { luck: 12 } },
-        effects: "Random events are always positive, critical failures become critical successes"
-    },
-    
-    // Mentorship perks
-    masterTeacher: {
-        name: "Master Teacher",
-        icon: "🎓",
-        description: "Knowledge shared is power multiplied",
-        requirements: { playstyle: "mentoringSessions", count: 10, mentors: 3 },
-        effects: "Can teach skills to gang members, all skill gains increased by 25%"
-    },
-    
-    // Universal perks
-    legendaryStatus: {
-        name: "Legendary Status",
-        icon: "⭐",
-        description: "Your name is whispered in fear and respect",
-        requirements: { reputation: 1000, level: 25, territories: 5 },
-        effects: "All faction reputations change 50% faster, special legendary jobs unlock"
-    }
-};
 
-// Mentor definitions for captured rivals
-const potentialMentors = [
-    {
-        name: "Viktor 'The Blade' Petrov",
-        faction: "kozlov",
-        specialties: ["violence.melee", "stealth.escape"],
-        personality: "Gruff but honorable, respects strength",
-        dialogue: {
-            first: "You think you can learn from me, малыш? Prove you're worthy first.",
-            teaching: "In Siberia, we learn to fight with whatever we have. Let me show you...",
-            mastered: "You have exceeded even my expectations. Go, make the Bratva proud."
-        },
-        requirements: { violence: 10, reputation: 250 },
-        unlockMessage: "Viktor grudgingly agrees to teach you after seeing your combat prowess"
-    },
-    {
-        name: "Isabella 'La Sombra' Martinez",
-        faction: "morales",
-        specialties: ["stealth.infiltration", "charisma.manipulation"],
-        personality: "Cunning and patient, tests your resolve",
-        dialogue: {
-            first: "Ah, another street rat thinks they can learn the art of shadows...",
-            teaching: "Patience, mijo. The shadows reveal their secrets only to those who wait.",
-            mastered: "You move like smoke now. Even I didn't see that coming."
-        },
-        requirements: { stealth: 12, charisma: 8 },
-        unlockMessage: "Isabella is impressed by your subtlety and agrees to share her techniques"
-    },
-    {
-        name: "Jin 'Digital Dragon' Chen",
-        faction: "chen",
-        specialties: ["intelligence.hacking", "intelligence.forensics"],
-        personality: "Analytical and philosophical, speaks in riddles",
-        dialogue: {
-            first: "The ancient masters say: 'Know yourself and know your enemy...'",
-            teaching: "Code is like water - it flows around obstacles, finds every weakness.",
-            mastered: "You have transcended the physical realm. The digital world bows to you."
-        },
-        requirements: { intelligence: 15, technology: 5 },
-        unlockMessage: "Jin recognizes your intellectual potential and offers to expand your mind"
-    },
-    {
-        name: "Anthony 'The Fixer' Torrino",
-        faction: "torrino",
-        specialties: ["charisma.negotiation", "intelligence.planning"],
-        personality: "Smooth-talking family man who values respect",
-        dialogue: {
-            first: "In this business, reputation is everything. What's yours worth?",
-            teaching: "It's not about what you know, it's about who you know. Let me introduce you...",
-            mastered: "You understand now - this isn't just crime, it's an art form."
-        },
-        requirements: { charisma: 14, reputation: 500 },
-        unlockMessage: "Anthony sees potential in you and offers to teach you the family business"
-    }
-];
 
-function generateJailPrisoners() {
-    jailPrisoners = [];
-    const numPrisoners = Math.floor(Math.random() * 5) + 3; // 3-7 prisoners
-    
-    for (let i = 0; i < numPrisoners; i++) {
-        const name = prisonerNames[Math.floor(Math.random() * prisonerNames.length)];
-        const sentence = Math.floor(Math.random() * 30) + 5; // 5-34 seconds
-        const difficulty = Math.floor(Math.random() * 3) + 1; // 1-3 difficulty
-        
-        jailPrisoners.push({
-            name: name,
-            sentence: sentence,
-            difficulty: difficulty,
-            breakoutSuccess: 30 + (difficulty * 10) // 40%, 50%, 60% based on difficulty
-        });
-    }
-    
-    // Add player to jail list if they're in jail
-    if (player.inJail) {
-        jailPrisoners.unshift({
-            name: player.name || "You",
-            sentence: player.jailTime,
-            difficulty: 0,
-            isPlayer: true
-        });
-    }
-}
-
-// Generate random prisoners for jailbreak missions
-function generateJailbreakPrisoners() {
-    jailbreakPrisoners = [];
-    const numPrisoners = Math.floor(Math.random() * 4) + 2; // 2-5 prisoners
-    
-    for (let i = 0; i < numPrisoners; i++) {
-        const name = prisonerNames[Math.floor(Math.random() * prisonerNames.length)];
-        const sentence = Math.floor(Math.random() * 50) + 10; // 10-59 seconds
-        const difficulty = Math.floor(Math.random() * 4) + 1; // 1-4 difficulty levels
-        const securityLevel = ["Minimum", "Medium", "Maximum", "Supermax"][difficulty - 1];
-        
-        jailbreakPrisoners.push({
-            name: name,
-            sentence: sentence,
-            difficulty: difficulty,
-            securityLevel: securityLevel,
-            breakoutSuccess: Math.max(15, 50 - (difficulty * 10)), // 40%, 30%, 20%, 15% based on difficulty
-            energyCost: 10 + (difficulty * 5), // 15, 20, 25, 30 energy
-            expReward: difficulty * 20 + 15, // 35, 55, 75, 95 XP
-            cashReward: difficulty * 100 + 50, // $150, $250, $350, $450
-            arrestChance: 20 + (difficulty * 10) // 30%, 40%, 50%, 60% arrest chance on failure
-        });
-    }
-}
-
-// Generate available recruits for recruitment screen
-function generateAvailableRecruits() {
-    availableRecruits = [];
-    const numRecruits = Math.floor(Math.random() * 4) + 2; // 2-5 recruits
-    
-    console.log("Generating", numRecruits, "recruits for recruitment screen");
-    
-    for (let i = 0; i < numRecruits; i++) {
-        const name = recruitNames[Math.floor(Math.random() * recruitNames.length)];
-        
-        // Experience level determines tribute generation and cost
-        // 85% chance for levels 1-3, 12% for levels 4-6, 3% for levels 7-10 (made higher exp more common)
-        let experienceLevel;
-        const rarityRoll = Math.random() * 100;
-        
-        if (rarityRoll < 85) {
-            experienceLevel = Math.floor(Math.random() * 3) + 1; // 1-3 (common)
-        } else if (rarityRoll < 97) {
-            experienceLevel = Math.floor(Math.random() * 3) + 4; // 4-6 (rare)
-        } else {
-            experienceLevel = Math.floor(Math.random() * 4) + 7; // 7-10 (legendary)
-        }
-        
-        // Calculate cost and tribute based on experience level
-        const baseCost = 1000;
-        const cost = baseCost + (experienceLevel * 500) + Math.floor(Math.random() * 500); // Random variance
-        const tributeMultiplier = 1 + (experienceLevel * 0.3); // Higher level = more tribute
-        
-        // Determine specialization using the new specialist roles
-        const specializations = ["muscle", "thief", "dealer", "driver", "enforcer", "technician"];
-        const specialization = specializations[Math.floor(Math.random() * specializations.length)];
-        
-        const recruit = {
-            name: name,
-            experienceLevel: experienceLevel,
-            cost: cost,
-            tributeMultiplier: tributeMultiplier,
-            specialization: specialization,
-            loyalty: Math.floor(Math.random() * 30) + 70, // 70-100% initial loyalty
-            skills: {
-                violence: Math.floor(Math.random() * 3) + 1,
-                stealth: Math.floor(Math.random() * 3) + 1,
-                intelligence: Math.floor(Math.random() * 3) + 1
-            },
-            onOperation: false,
-            inTraining: false,
-            arrested: false
-        };
-        
-        availableRecruits.push(recruit);
-        console.log("Generated recruit:", recruit.name, "Level:", recruit.experienceLevel, "Cost:", recruit.cost);
-    }
-    
-    console.log("Total available recruits:", availableRecruits.length);
-}
-
-// Generate random encounter recruit
-function generateRandomEncounter() {
-    if (Math.random() < 0.03) { // 3% chance per job completion
-        const name = recruitNames[Math.floor(Math.random() * recruitNames.length)];
-        
-        // Random encounters have higher chance of better recruits
-        let experienceLevel;
-        const rarityRoll = Math.random() * 100;
-        
-        if (rarityRoll < 70) {
-            experienceLevel = Math.floor(Math.random() * 3) + 1; // 1-3 (70%)
-        } else if (rarityRoll < 90) {
-            experienceLevel = Math.floor(Math.random() * 3) + 4; // 4-6 (20%)
-        } else {
-            experienceLevel = Math.floor(Math.random() * 4) + 7; // 7-10 (10%)
-        }
-        
-        const baseCost = 800; // Slightly cheaper than recruitment screen
-        const cost = baseCost + (experienceLevel * 400) + Math.floor(Math.random() * 400);
-        const tributeMultiplier = 1 + (experienceLevel * 0.3);
-        
-        const specializations = ["muscle", "thief", "dealer", "driver", "enforcer", "technician"];
-        const specialization = specializations[Math.floor(Math.random() * specializations.length)];
-        
-        randomEncounterRecruit = {
-            name: name,
-            experienceLevel: experienceLevel,
-            cost: cost,
-            tributeMultiplier: tributeMultiplier,
-            specialization: specialization,
-            loyalty: Math.floor(Math.random() * 20) + 80, // 80-100% loyalty for encounters
-            encountered: true,
-            skills: {
-                violence: Math.floor(Math.random() * 3) + 1,
-                stealth: Math.floor(Math.random() * 3) + 1,
-                intelligence: Math.floor(Math.random() * 3) + 1
-            },
-            onOperation: false,
-            inTraining: false,
-            arrested: false
-        };
-        
-        return true;
-    }
-    return false;
-}
-
-// Achievements system
-const achievements = [
-    { id: "first_job", name: "First Day on the Job", description: "Complete your first job", unlocked: false },
-    { id: "millionaire", name: "Big Shot", description: "Earn $100,000", unlocked: false },
-    { id: "jail_break", name: "Great Escape", description: "Successfully break out of jail", unlocked: false },
-    { id: "gang_leader", name: "Gang Leader", description: "Recruit 10 gang members", unlocked: false },
-    { id: "most_wanted", name: "Most Wanted", description: "Reach wanted level 50", unlocked: false },
-    { id: "reputation_max", name: "Legendary Criminal", description: "Reach 100 reputation", unlocked: false }
-];
-
-// ==================== ENHANCED ECONOMY SYSTEM ====================
-
-// Business Management System
-const businessTypes = [
-    {
-        id: "restaurant",
-        name: "Family Restaurant",
-        description: "A cozy Italian restaurant perfect for discreet meetings",
-        basePrice: 2500000,
-        baseIncome: 50000,
-        maxLevel: 5,
-        upgradeMultiplier: 1.5,
-        incomeMultiplier: 1.3,
-        launderingCapacity: 200000,
-        legitimacy: 85,
-        category: "food"
-    },
-    {
-        id: "nightclub",
-        name: "Underground Nightclub",
-        description: "Where the city's nightlife meets business opportunities",
-        basePrice: 5000000,
-        baseIncome: 120000,
-        maxLevel: 5,
-        upgradeMultiplier: 1.8,
-        incomeMultiplier: 1.4,
-        launderingCapacity: 500000,
-        legitimacy: 60,
-        category: "entertainment"
-    },
-    {
-        id: "laundromat",
-        name: "24/7 Laundromat",
-        description: "Clean clothes, cleaner money - everyone wins",
-        basePrice: 1500000,
-        baseIncome: 30000,
-        maxLevel: 3,
-        upgradeMultiplier: 1.4,
-        incomeMultiplier: 1.2,
-        launderingCapacity: 800000,
-        legitimacy: 95,
-        category: "service"
-    },
-    {
-        id: "carwash",
-        name: "Premium Car Wash",
-        description: "Making dirty cars clean since forever",
-        basePrice: 3000000,
-        baseIncome: 60000,
-        maxLevel: 4,
-        upgradeMultiplier: 1.6,
-        incomeMultiplier: 1.3,
-        launderingCapacity: 400000,
-        legitimacy: 90,
-        category: "automotive"
-    },
-    {
-        id: "casino",
-        name: "Private Casino",
-        description: "High stakes, higher rewards, highest risks",
-        basePrice: 10000000,
-        baseIncome: 250000,
-        maxLevel: 5,
-        upgradeMultiplier: 2.0,
-        incomeMultiplier: 1.6,
-        launderingCapacity: 1000000,
-        legitimacy: 40,
-        category: "gambling"
-    },
-    {
-        id: "pawnshop",
-        name: "Discount Pawn Shop",
-        description: "No questions asked, fair prices given",
-        basePrice: 2000000,
-        baseIncome: 40000,
-        maxLevel: 4,
-        upgradeMultiplier: 1.5,
-        incomeMultiplier: 1.25,
-        launderingCapacity: 300000,
-        legitimacy: 70,
-        category: "retail"
-    }
-];
-
-// Loan Shark System
-const loanOptions = [
-    {
-        id: "small_loan",
-        name: "Small Loan",
-        amount: 500000,
-        interestRate: 0.15, // 15% weekly
-        duration: 7, // days
-        description: "Quick cash for immediate needs",
-        riskLevel: "low",
-        collateralRequired: false
-    },
-    {
-        id: "medium_loan",
-        name: "Business Loan",
-        amount: 2500000,
-        interestRate: 0.20, // 20% weekly
-        duration: 14, // days
-        description: "Expand your operations with serious capital",
-        riskLevel: "medium",
-        collateralRequired: true,
-        minReputation: 20
-    },
-    {
-        id: "large_loan",
-        name: "High Roller Loan",
-        amount: 10000000,
-        interestRate: 0.25, // 25% weekly
-        duration: 21, // days
-        description: "Big money for big moves - don't default",
-        riskLevel: "high",
-        collateralRequired: true,
-        minReputation: 50,
-        minPower: 200
-    },
-    {
-        id: "emergency_loan",
-        name: "Emergency Cash",
-        amount: 200000,
-        interestRate: 0.30, // 30% weekly (predatory)
-        duration: 3, // days
-        description: "Desperate times call for desperate measures",
-        riskLevel: "extreme",
-        collateralRequired: false,
-        maxLoans: 1 // Can only have one at a time
-    }
-];
-
-// Money Laundering Methods
-const launderingMethods = [
-    {
-        id: "casino_chips",
-        name: "Casino Chips",
-        description: "Convert dirty money through gambling chips",
-        cleanRate: 0.85, // 85% of money comes out clean
-        timeRequired: 2, // hours
-        suspicionRisk: 15, // % chance of raising suspicion
-        minAmount: 100000,
-        maxAmount: 5000000,
-        energyCost: 10,
-        businessRequired: "casino"
-    },
-    {
-        id: "restaurant_sales",
-        name: "Restaurant Revenue",
-        description: "Inflate restaurant sales to clean money",
-        cleanRate: 0.90,
-        timeRequired: 4,
-        suspicionRisk: 10,
-        minAmount: 50000,
-        maxAmount: 2000000,
-        energyCost: 15,
-        businessRequired: "restaurant"
-    },
-    {
-        id: "cash_business",
-        name: "Cash Business Front",
-        description: "Use cash-heavy businesses to clean money",
-        cleanRate: 0.80,
-        timeRequired: 6,
-        suspicionRisk: 25,
-        minAmount: 200000,
-        maxAmount: 10000000,
-        energyCost: 20,
-        businessRequired: null // Any business works
-    },
-    {
-        id: "art_auction",
-        name: "Art Auction",
-        description: "Buy and sell overpriced art to clean large sums",
-        cleanRate: 0.75,
-        timeRequired: 24,
-        suspicionRisk: 30,
-        minAmount: 1000000,
-        maxAmount: 50000000,
-        energyCost: 30,
-        minReputation: 40
-    },
-    {
-        id: "offshore_account",
-        name: "Offshore Banking",
-        description: "Move money through international accounts",
-        cleanRate: 0.95,
-        timeRequired: 48,
-        suspicionRisk: 5,
-        minAmount: 5000000,
-        maxAmount: 100000000,
-        energyCost: 25,
-        minReputation: 60,
-        oneTimeSetupCost: 2500000
-    }
-];
 
 // ==================== MISSION SYSTEM FUNCTIONS ====================
 
@@ -14070,6 +12394,11 @@ function initGame() {
     initializeSaveSystem(); // Initialize save system
     initializeCompetitionSystem(); // Initialize competition system
     
+    // Initialize UI Events
+    if (typeof initUIEvents === 'function') {
+        initUIEvents();
+    }
+
     // Generate initial prisoners and recruits
     generateJailPrisoners();
     generateJailbreakPrisoners();
@@ -16996,3 +15325,276 @@ function loadMultiplayerScript() {
 }
 
 // ==================== MULTIPLAYER INTEGRATION END ====================
+
+// ==================== EXPOSE FUNCTIONS TO GLOBAL SCOPE ====================
+// This is required because this file is now a module, but the HTML onclick handlers
+// expect these functions to be available on the window object.
+
+// Core Game Loop & Initialization
+window.startGame = startGame;
+window.loadMultiplayerScript = loadMultiplayerScript;
+window.updateUI = updateUI;
+window.logAction = logAction;
+window.alert = alert; // Overriding/wrapping standard alert if defined, or exposing custom one
+window.cheatGrantResources = cheatGrantResources;
+window.refreshCurrentScreen = refreshCurrentScreen;
+window.hideAllScreens = hideAllScreens;
+window.goBackToMainMenu = goBackToMainMenu;
+
+// Jobs & Missions
+window.showJobs = showJobs;
+window.refreshJobsList = refreshJobsList;
+window.startJob = startJob;
+window.updateMissionProgress = updateMissionProgress;
+window.checkCampaignProgress = checkCampaignProgress;
+window.completeChapter = completeChapter;
+window.updateMissionAvailability = updateMissionAvailability;
+window.showMissions = showMissions;
+window.generateCampaignHTML = generateCampaignHTML;
+window.generateFactionMissionsHTML = generateFactionMissionsHTML;
+window.generateTerritoryMissionsHTML = generateTerritoryMissionsHTML;
+window.generateBossBattlesHTML = generateBossBattlesHTML;
+window.startFactionMission = startFactionMission;
+window.startTerritoryMission = startTerritoryMission;
+window.startBossBattle = startBossBattle;
+
+// Business & Economy
+window.showBusinesses = showBusinesses;
+window.purchaseBusiness = purchaseBusiness;
+window.upgradeBusiness = upgradeBusiness;
+window.collectBusinessIncome = collectBusinessIncome;
+window.sellBusiness = sellBusiness;
+window.showLoanShark = showLoanShark;
+window.checkLoanEligibility = checkLoanEligibility;
+window.takeLoan = takeLoan;
+window.repayLoan = repayLoan;
+window.showMoneyLaundering = showMoneyLaundering;
+window.checkLaunderingEligibility = checkLaunderingEligibility;
+window.startLaundering = startLaundering;
+window.showStore = showStore;
+window.refreshStoreDynamicElements = refreshStoreDynamicElements;
+window.buyEnergyDrink = buyEnergyDrink;
+window.buyCoffee = buyCoffee;
+window.buySteroids = buySteroids;
+window.showVehiclePurchaseResult = showVehiclePurchaseResult;
+window.closeVehiclePurchaseResult = closeVehiclePurchaseResult;
+
+// Gang & Territory
+window.showGang = showGang;
+window.getAverageLoyalty = getAverageLoyalty;
+window.calculateGangPower = calculateGangPower;
+window.generateGangOperationsHTML = generateGangOperationsHTML;
+window.getAvailableMembersForOperation = getAvailableMembersForOperation;
+window.isOperationOnCooldown = isOperationOnCooldown;
+window.generateGangMembersHTML = generateGangMembersHTML;
+window.generateTrainingProgramsHTML = generateTrainingProgramsHTML;
+window.getAvailableMembersForTraining = getAvailableMembersForTraining;
+window.startGangOperation = startGangOperation;
+window.completeGangOperation = completeGangOperation;
+window.handleOperationBetrayal = handleOperationBetrayal;
+window.handleOperationArrest = handleOperationArrest;
+window.completeTraining = completeTraining;
+window.enrollInTraining = enrollInTraining;
+window.checkForBetrayals = checkForBetrayals;
+window.shouldTriggerBetrayal = shouldTriggerBetrayal;
+window.triggerBetrayalEvent = triggerBetrayalEvent;
+window.showTerritoryControl = showTerritoryControl;
+window.showAvailableTerritories = showAvailableTerritories;
+window.calculateTerritoryIncome = calculateTerritoryIncome;
+window.calculateTotalTerritoryIncome = calculateTotalTerritoryIncome;
+window.showProtectionRackets = showProtectionRackets;
+window.getAvailableBusinessesForProtection = getAvailableBusinessesForProtection;
+window.showCorruption = showCorruption;
+window.getHeatColor = getHeatColor;
+window.getRiskColor = getRiskColor;
+window.approachBusiness = approachBusiness;
+window.collectProtection = collectProtection;
+window.pressureBusiness = pressureBusiness;
+window.manageTerritoryDetails = manageTerritoryDetails;
+window.processTerritoryOperations = processTerritoryOperations;
+window.generateTerritoryEvent = generateTerritoryEvent;
+window.collectTribute = collectTribute;
+window.expandTerritory = expandTerritory;
+window.gangWar = gangWar;
+
+// Skills & Progression
+window.showSkills = showSkills;
+window.showSkillTab = showSkillTab;
+window.generateBasicSkillsContent = generateBasicSkillsContent;
+window.generateSkillTreesContent = generateSkillTreesContent;
+window.generateReputationContent = generateReputationContent;
+window.generateMentorsContent = generateMentorsContent;
+window.generatePerksContent = generatePerksContent;
+window.getSkillDescription = getSkillDescription;
+window.upgradeSkillTree = upgradeSkillTree;
+window.startMentoring = startMentoring;
+window.checkPerkRequirements = checkPerkRequirements;
+window.unlockPerk = unlockPerk;
+window.applyPerkEffects = applyPerkEffects;
+window.upgradeSkill = upgradeSkill;
+window.gainExperience = gainExperience;
+window.checkLevelUp = checkLevelUp;
+window.showLevelUpEffects = showLevelUpEffects;
+window.createLevelUpParticles = createLevelUpParticles;
+window.showNarrativeOverlay = showNarrativeOverlay;
+window.closeNarrativeOverlay = closeNarrativeOverlay;
+window.closeLevelUpOverlay = closeLevelUpOverlay;
+window.unlockAchievement = unlockAchievement;
+window.checkAchievements = checkAchievements;
+
+// Car Theft
+window.handleCarTheft = handleCarTheft;
+window.showCarTheftChoiceResult = showCarTheftChoiceResult;
+window.handleStolenCarChoice = handleStolenCarChoice;
+window.closeCarTheftChoiceResult = closeCarTheftChoiceResult;
+window.showCarTheftResult = showCarTheftResult;
+window.closeCarTheftResult = closeCarTheftResult;
+window.sellStolenCar = sellStolenCar;
+window.showStolenCars = showStolenCars;
+window.useCar = useCar;
+window.damageCar = damageCar;
+
+// Jail & Legal
+window.showJailScreen = showJailScreen;
+window.displayPlayerJailPortrait = displayPlayerJailPortrait;
+window.updatePrisonerList = updatePrisonerList;
+window.breakoutPrisoner = breakoutPrisoner;
+window.sendToJail = sendToJail;
+window.attemptBreakout = attemptBreakout;
+window.showJailbreak = showJailbreak;
+window.updateJailbreakPrisonerList = updateJailbreakPrisonerList;
+window.attemptJailbreak = attemptJailbreak;
+window.refreshPrisoners = refreshPrisoners;
+window.showCourtHouse = showCourtHouse;
+window.resetWantedLevelCourtHouse = resetWantedLevelCourtHouse;
+
+// Recruitment
+window.showRecruitment = showRecruitment;
+window.recruitMember = recruitMember;
+window.refreshRecruits = refreshRecruits;
+window.handleRandomRecruitEncounter = handleRandomRecruitEncounter;
+window.showRecruitEncounterDialog = showRecruitEncounterDialog;
+window.handleRecruitChoice = handleRecruitChoice;
+
+// Events & World
+window.initializeEventsSystem = initializeEventsSystem;
+window.updateCurrentSeason = updateCurrentSeason;
+window.updateSeasonalBackground = updateSeasonalBackground;
+window.changeWeather = changeWeather;
+window.showWeatherAlert = showWeatherAlert;
+window.checkSeasonalEvents = checkSeasonalEvents;
+window.triggerSeasonalEvent = triggerSeasonalEvent;
+window.triggerNewsEvent = triggerNewsEvent;
+window.triggerPoliceCrackdown = triggerPoliceCrackdown;
+window.showEventAlert = showEventAlert;
+window.showNewsAlert = showNewsAlert;
+window.showCrackdownAlert = showCrackdownAlert;
+window.isEventActive = isEventActive;
+window.getActiveEffects = getActiveEffects;
+window.cleanupExpiredEvents = cleanupExpiredEvents;
+window.startEventTimers = startEventTimers;
+window.showEventsStatus = showEventsStatus;
+window.triggerRandomWeatherChange = triggerRandomWeatherChange;
+
+// Mini Games
+window.showMiniGames = showMiniGames;
+window.backToMiniGamesList = backToMiniGamesList;
+window.resetCurrentMiniGame = resetCurrentMiniGame;
+window.startMiniGameTikTakToe = startMiniGameTikTakToe;
+window.mgStartTikTakToe = mgStartTikTakToe;
+window.mgMakeMove = mgMakeMove;
+window.mgMakeAIMove = mgMakeAIMove;
+window.mgFindBestAIMove = mgFindBestAIMove;
+window.mgCheckWinningMove = mgCheckWinningMove;
+window.mgCheckTikTakToeWinner = mgCheckTikTakToeWinner;
+window.mgEndTikTakToeGame = mgEndTikTakToeGame;
+window.mgUpdateTikTakToeDisplay = mgUpdateTikTakToeDisplay;
+window.mgQuitTikTakToe = mgQuitTikTakToe;
+window.mgResetTikTakToe = mgResetTikTakToe;
+window.startNumberGuessing = startNumberGuessing;
+window.makeGuess = makeGuess;
+window.startRockPaperScissors = startRockPaperScissors;
+window.updateRPSDisplay = updateRPSDisplay;
+window.playRPS = playRPS;
+window.startMemoryMatch = startMemoryMatch;
+window.flipMemoryCard = flipMemoryCard;
+window.startSnakeGame = startSnakeGame;
+window.initSnakeGame = initSnakeGame;
+window.generateFood = generateFood;
+window.handleSnakeControls = handleSnakeControls;
+window.handleSnakeMouseMove = handleSnakeMouseMove;
+window.updateSnake = updateSnake;
+window.drawSnake = drawSnake;
+window.gameOverSnake = gameOverSnake;
+window.restartSnake = restartSnake;
+window.startQuickDraw = startQuickDraw;
+window.startReactionTest = startReactionTest;
+window.handleReactionClick = handleReactionClick;
+window.startTikTakToe = startTikTakToe;
+window.makeMove = makeMove;
+window.makeAIMove = makeAIMove;
+window.findBestAIMove = findBestAIMove;
+window.checkWinningMove = checkWinningMove;
+window.checkTikTakToeWinner = checkTikTakToeWinner;
+window.endTikTakToeGame = endTikTakToeGame;
+window.updateTikTakToeDisplay = updateTikTakToeDisplay;
+window.quitTikTakToe = quitTikTakToe;
+window.resetTikTakToe = resetTikTakToe;
+window.checkDailyReset = checkDailyReset;
+window.canPlayMiniGame = canPlayMiniGame;
+window.trackMiniGamePlay = trackMiniGamePlay;
+window.playSlotMachine = playSlotMachine;
+window.playRoulette = playRoulette;
+
+// UI & Helpers
+window.stripEmoji = stripEmoji;
+window.formatShortMoney = formatShortMoney;
+window.trackJobPlaystyle = trackJobPlaystyle;
+window.applySkillTreeBonuses = applySkillTreeBonuses;
+window.updateFactionReputation = updateFactionReputation;
+window.checkForNewPerks = checkForNewPerks;
+window.getReputationPriceModifier = getReputationPriceModifier;
+window.hasRequiredItems = hasRequiredItems;
+window.flashHurtScreen = flashHurtScreen;
+window.updateRightPanel = updateRightPanel;
+
+// Save/Load & Options
+window.saveGame = saveGame;
+window.loadGame = loadGame;
+window.deleteSavedGame = deleteSavedGame;
+window.confirmResetGame = confirmResetGame;
+window.showSaveSystem = showSaveSystem;
+window.showOptions = showOptions;
+window.restartGame = restartGame;
+window.forceNewGame = forceNewGame;
+
+// Intro & Tutorial
+window.showPortraitSelection = showPortraitSelection;
+window.selectPortrait = selectPortrait;
+window.showIntroNarrative = showIntroNarrative;
+window.finishIntro = finishIntro;
+window.showTutorialPrompt = showTutorialPrompt;
+window.startTutorialFromIntro = startTutorialFromIntro;
+window.skipTutorialAndStartGame = skipTutorialAndStartGame;
+window.startGameAfterIntro = startGameAfterIntro;
+window.startTutorial = startTutorial;
+window.updateTutorialDisplay = updateTutorialDisplay;
+window.showTutorialFromMenu = showTutorialFromMenu;
+window.loadGameFromIntro = loadGameFromIntro;
+window.selectGender = selectGender;
+window.selectEthnicity = selectEthnicity;
+window.createCharacter = createCharacter;
+window.goBackToIntro = goBackToIntro;
+window.previousTutorialStep = previousTutorialStep;
+window.nextTutorialStep = nextTutorialStep;
+window.skipTutorial = skipTutorial;
+
+// Other Locations
+window.showRealEstate = showRealEstate;
+window.showInventory = showInventory;
+window.showEmpireRating = showEmpireRating;
+window.showHallOfFame = showHallOfFame;
+window.showCompetition = showCompetition;
+window.showHospital = showHospital;
+window.showCasino = showCasino;
+window.healAtHospital = healAtHospital;
