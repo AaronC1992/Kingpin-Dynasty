@@ -218,3 +218,5 @@ class ModalSystem {
 
 // Initialize global instance
 const ui = new ModalSystem();
+// Ensure availability to inline handlers and other scripts
+window.ui = ui;
