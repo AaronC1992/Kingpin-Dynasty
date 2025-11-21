@@ -513,13 +513,13 @@ const factionMissions = {
             id: "torrino_0",
             name: "Message Delivery",
             description: "Deliver an important message to a family associate across town. No questions asked.",
-            payout: [200000, 350000],
+            payout: [GameBalance.factionMissions.torrino_0.payoutMin, GameBalance.factionMissions.torrino_0.payoutMax],
             risk: "low",
-            jailChance: 5,
-            energyCost: 8,
+            jailChance: GameBalance.factionMissions.torrino_0.jailChance,
+            energyCost: GameBalance.factionMissions.torrino_0.energyCost,
             requiredItems: [],
-            reputation: 5,
-            factionRep: 3,
+            reputation: GameBalance.factionMissions.torrino_0.reputation,
+            factionRep: GameBalance.factionMissions.torrino_0.factionRep,
             unlocked: true,
             story: "The Torrino family values loyalty and discretion. Prove you can handle simple tasks first."
         },
@@ -527,13 +527,13 @@ const factionMissions = {
             id: "torrino_1",
             name: "Collect Overdue Debt",
             description: "A local shopkeeper hasn't paid protection money. Remind them of their obligations.",
-            payout: [300000, 600000],
+            payout: [GameBalance.factionMissions.torrino_1.payoutMin, GameBalance.factionMissions.torrino_1.payoutMax],
             risk: "medium",
-            jailChance: 20,
-            energyCost: 15,
+            jailChance: GameBalance.factionMissions.torrino_1.jailChance,
+            energyCost: GameBalance.factionMissions.torrino_1.energyCost,
             requiredItems: ["Brass Knuckles"],
-            reputation: 10,
-            factionRep: 5,
+            reputation: GameBalance.factionMissions.torrino_1.reputation,
+            factionRep: GameBalance.factionMissions.torrino_1.factionRep,
             unlocked: true,
             story: "The Torrino family values loyalty and prompt payment. Show them what happens when debts go unpaid."
         },
@@ -541,13 +541,13 @@ const factionMissions = {
             id: "torrino_2",
             name: "Intimidate Rival Business",
             description: "A competing restaurant is cutting into family profits. Make them reconsider their location.",
-            payout: [500000, 1000000],
+            payout: [GameBalance.factionMissions.torrino_2.payoutMin, GameBalance.factionMissions.torrino_2.payoutMax],
             risk: "high",
-            jailChance: 30,
-            energyCost: 20,
+            jailChance: GameBalance.factionMissions.torrino_2.jailChance,
+            energyCost: GameBalance.factionMissions.torrino_2.energyCost,
             requiredItems: ["Pistol", "Bullets"],
-            reputation: 25,
-            factionRep: 10,
+            reputation: GameBalance.factionMissions.torrino_2.reputation,
+            factionRep: GameBalance.factionMissions.torrino_2.factionRep,
             unlocked: false,
             story: "Old-school methods for old-school problems. Sometimes business negotiations require... persuasion."
         }
@@ -557,13 +557,13 @@ const factionMissions = {
             id: "kozlov_0",
             name: "Street Information",
             description: "Gather information about police patrol routes in the industrial district.",
-            payout: [200000, 400000],
+            payout: [GameBalance.factionMissions.kozlov_0.payoutMin, GameBalance.factionMissions.kozlov_0.payoutMax],
             risk: "low",
-            jailChance: 10,
-            energyCost: 10,
+            jailChance: GameBalance.factionMissions.kozlov_0.jailChance,
+            energyCost: GameBalance.factionMissions.kozlov_0.energyCost,
             requiredItems: [],
-            reputation: 5,
-            factionRep: 3,
+            reputation: GameBalance.factionMissions.kozlov_0.reputation,
+            factionRep: GameBalance.factionMissions.kozlov_0.factionRep,
             unlocked: true,
             story: "The Bratva values reliable informants. Prove you can keep your eyes and ears open."
         },
@@ -571,13 +571,13 @@ const factionMissions = {
             id: "kozlov_1",
             name: "Weapons Smuggling Run",
             description: "Transport a shipment of illegal weapons across the city without getting caught.",
-            payout: [800000, 1200000],
+            payout: [GameBalance.factionMissions.kozlov_1.payoutMin, GameBalance.factionMissions.kozlov_1.payoutMax],
             risk: "high",
-            jailChance: 35,
-            energyCost: 25,
+            jailChance: GameBalance.factionMissions.kozlov_1.jailChance,
+            energyCost: GameBalance.factionMissions.kozlov_1.energyCost,
             requiredItems: ["Luxury Automobile", "Gasoline"],
-            reputation: 20,
-            factionRep: 8,
+            reputation: GameBalance.factionMissions.kozlov_1.reputation,
+            factionRep: GameBalance.factionMissions.kozlov_1.factionRep,
             unlocked: true,
             story: "The Bratva needs reliable drivers for their arms business. Prove you can handle the heat."
         },
@@ -585,13 +585,13 @@ const factionMissions = {
             id: "kozlov_2",
             name: "Border Crossing Operation",
             description: "Help smuggle goods across international borders using your connections.",
-            payout: [1500000, 2500000],
+            payout: [GameBalance.factionMissions.kozlov_2.payoutMin, GameBalance.factionMissions.kozlov_2.payoutMax],
             risk: "extreme",
-            jailChance: 45,
-            energyCost: 35,
+            jailChance: GameBalance.factionMissions.kozlov_2.jailChance,
+            energyCost: GameBalance.factionMissions.kozlov_2.energyCost,
             requiredItems: ["Private Airplane", "Tommy Gun"],
-            reputation: 50,
-            factionRep: 15,
+            reputation: GameBalance.factionMissions.kozlov_2.reputation,
+            factionRep: GameBalance.factionMissions.kozlov_2.factionRep,
             unlocked: false,
             story: "Big risks, bigger rewards. The Kozlovs trust only their most proven associates with this operation."
         }
@@ -601,13 +601,13 @@ const factionMissions = {
             id: "chen_0",
             name: "Digital Surveillance",
             description: "Monitor communications for suspicious activities using basic hacking tools.",
-            payout: [300000, 500000],
+            payout: [GameBalance.factionMissions.chen_0.payoutMin, GameBalance.factionMissions.chen_0.payoutMax],
             risk: "low",
-            jailChance: 5,
-            energyCost: 8,
+            jailChance: GameBalance.factionMissions.chen_0.jailChance,
+            energyCost: GameBalance.factionMissions.chen_0.energyCost,
             requiredItems: [],
-            reputation: 5,
-            factionRep: 4,
+            reputation: GameBalance.factionMissions.chen_0.reputation,
+            factionRep: GameBalance.factionMissions.chen_0.factionRep,
             unlocked: true,
             story: "The Triad appreciates those who can work with technology and discretion."
         },
@@ -615,13 +615,13 @@ const factionMissions = {
             id: "chen_1",
             name: "High-Tech Heist",
             description: "Steal cutting-edge technology from a corporate facility using advanced techniques.",
-            payout: [600000, 1100000],
+            payout: [GameBalance.factionMissions.chen_1.payoutMin, GameBalance.factionMissions.chen_1.payoutMax],
             risk: "high",
-            jailChance: 25,
-            energyCost: 20,
+            jailChance: GameBalance.factionMissions.chen_1.jailChance,
+            energyCost: GameBalance.factionMissions.chen_1.energyCost,
             requiredItems: ["Bulletproof Vest"],
-            reputation: 30,
-            factionRep: 10,
+            reputation: GameBalance.factionMissions.chen_1.reputation,
+            factionRep: GameBalance.factionMissions.chen_1.factionRep,
             unlocked: true,
             story: "The Chen Triad values intelligence and precision. Show them you can handle sophisticated operations."
         }
@@ -631,13 +631,13 @@ const factionMissions = {
             id: "morales_0",
             name: "Neighborhood Watch",
             description: "Keep an eye on rival gang movements in cartel territory and report back.",
-            payout: [250000, 450000],
+            payout: [GameBalance.factionMissions.morales_0.payoutMin, GameBalance.factionMissions.morales_0.payoutMax],
             risk: "low",
-            jailChance: 15,
-            energyCost: 12,
+            jailChance: GameBalance.factionMissions.morales_0.jailChance,
+            energyCost: GameBalance.factionMissions.morales_0.energyCost,
             requiredItems: [],
-            reputation: 8,
-            factionRep: 5,
+            reputation: GameBalance.factionMissions.morales_0.reputation,
+            factionRep: GameBalance.factionMissions.morales_0.factionRep,
             unlocked: true,
             story: "El Jefe needs loyal eyes on the street. Show the cartel you can be trusted with their territory."
         },
@@ -645,13 +645,13 @@ const factionMissions = {
             id: "morales_1",
             name: "Drug Lab Protection",
             description: "Guard a secret drug manufacturing facility from rival gangs and police raids.",
-            payout: [700000, 1300000],
+            payout: [GameBalance.factionMissions.morales_1.payoutMin, GameBalance.factionMissions.morales_1.payoutMax],
             risk: "very high",
-            jailChance: 40,
-            energyCost: 30,
+            jailChance: GameBalance.factionMissions.morales_1.jailChance,
+            energyCost: GameBalance.factionMissions.morales_1.energyCost,
             requiredItems: ["Tommy Gun", "Bullets"],
-            reputation: 35,
-            factionRep: 12,
+            reputation: GameBalance.factionMissions.morales_1.reputation,
+            factionRep: GameBalance.factionMissions.morales_1.factionRep,
             unlocked: true,
             story: "The cartel's operations must be protected at all costs. Are you ready to defend their interests?"
         }
@@ -666,18 +666,18 @@ const territoryMissions = [
         description: "Take control of the lucrative shipping district from rival gangs.",
         territory: "Industrial Docks",
         difficulty: "medium",
-        requiredGangMembers: 5,
-        energyCost: 25,
+        requiredGangMembers: GameBalance.territoryMissions.docks_expansion.requiredGangMembers,
+        energyCost: GameBalance.territoryMissions.docks_expansion.energyCost,
         rewards: {
-            money: 2000000,
-            territory: 1,
-            reputation: 15,
-            passive_income: 100000 // Per tribute collection
+            money: GameBalance.territoryMissions.docks_expansion.rewards.money,
+            territory: GameBalance.territoryMissions.docks_expansion.rewards.territory,
+            reputation: GameBalance.territoryMissions.docks_expansion.rewards.reputation,
+            passive_income: GameBalance.territoryMissions.docks_expansion.rewards.passive_income // Per tribute collection
         },
         risks: {
-            jailChance: 35,
-            gangMemberLoss: 15, // Chance to lose a gang member
-            healthLoss: 20
+            jailChance: GameBalance.territoryMissions.docks_expansion.risks.jailChance,
+            gangMemberLoss: GameBalance.territoryMissions.docks_expansion.risks.gangMemberLoss, // Chance to lose a gang member
+            healthLoss: GameBalance.territoryMissions.docks_expansion.risks.healthLoss
         },
         story: "The docks control all smuggling operations. Whoever controls the ports controls the city's underground economy."
     },
@@ -687,18 +687,18 @@ const territoryMissions = [
         description: "Establish dominance in the city's business district.",
         territory: "Downtown Business District",
         difficulty: "hard",
-        requiredGangMembers: 8,
-        energyCost: 35,
+        requiredGangMembers: GameBalance.territoryMissions.downtown_expansion.requiredGangMembers,
+        energyCost: GameBalance.territoryMissions.downtown_expansion.energyCost,
         rewards: {
-            money: 4000000,
-            territory: 2,
-            reputation: 25,
-            passive_income: 200000
+            money: GameBalance.territoryMissions.downtown_expansion.rewards.money,
+            territory: GameBalance.territoryMissions.downtown_expansion.rewards.territory,
+            reputation: GameBalance.territoryMissions.downtown_expansion.rewards.reputation,
+            passive_income: GameBalance.territoryMissions.downtown_expansion.rewards.passive_income
         },
         risks: {
-            jailChance: 45,
-            gangMemberLoss: 25,
-            healthLoss: 30
+            jailChance: GameBalance.territoryMissions.downtown_expansion.risks.jailChance,
+            gangMemberLoss: GameBalance.territoryMissions.downtown_expansion.risks.gangMemberLoss,
+            healthLoss: GameBalance.territoryMissions.downtown_expansion.risks.healthLoss
         },
         story: "The heart of the city's economy. Control here means influence over legitimate businesses and underground operations alike."
     },
@@ -708,18 +708,18 @@ const territoryMissions = [
         description: "Expand operations into the wealthy suburban areas.",
         territory: "Wealthy Suburbs",
         difficulty: "easy",
-        requiredGangMembers: 3,
-        energyCost: 15,
+        requiredGangMembers: GameBalance.territoryMissions.suburbs_expansion.requiredGangMembers,
+        energyCost: GameBalance.territoryMissions.suburbs_expansion.energyCost,
         rewards: {
-            money: 1500000,
-            territory: 1,
-            reputation: 10,
-            passive_income: 75000
+            money: GameBalance.territoryMissions.suburbs_expansion.rewards.money,
+            territory: GameBalance.territoryMissions.suburbs_expansion.rewards.territory,
+            reputation: GameBalance.territoryMissions.suburbs_expansion.rewards.reputation,
+            passive_income: GameBalance.territoryMissions.suburbs_expansion.rewards.passive_income
         },
         risks: {
-            jailChance: 25,
-            gangMemberLoss: 10,
-            healthLoss: 15
+            jailChance: GameBalance.territoryMissions.suburbs_expansion.risks.jailChance,
+            gangMemberLoss: GameBalance.territoryMissions.suburbs_expansion.risks.gangMemberLoss,
+            healthLoss: GameBalance.territoryMissions.suburbs_expansion.risks.healthLoss
         },
         story: "Rich neighborhoods mean rich targets. But suburban security is tight, and the police response is swift."
     }
@@ -733,28 +733,28 @@ const bossBattles = [
         description: "Take down the leader of a rival gang threatening your territory.",
         boss: {
             name: "Carlos 'El Martillo' Santos",
-            power: 150,
-            health: 200,
-            gang_size: 12,
+            power: GameBalance.bossBattles.rival_boss_santos.boss.power,
+            health: GameBalance.bossBattles.rival_boss_santos.boss.health,
+            gang_size: GameBalance.bossBattles.rival_boss_santos.boss.gang_size,
             special_abilities: ["Bulletproof Vest", "Loyal Guards"]
         },
         requirements: {
-            minPower: 100,
-            minGangMembers: 8,
-            minReputation: 40
+            minPower: GameBalance.bossBattles.rival_boss_santos.requirements.minPower,
+            minGangMembers: GameBalance.bossBattles.rival_boss_santos.requirements.minGangMembers,
+            minReputation: GameBalance.bossBattles.rival_boss_santos.requirements.minReputation
         },
-        energyCost: 50,
+        energyCost: GameBalance.bossBattles.rival_boss_santos.energyCost,
         rewards: {
-            money: 8000000,
-            reputation: 35,
-            territory: 2,
-            experience: 500,
+            money: GameBalance.bossBattles.rival_boss_santos.rewards.money,
+            reputation: GameBalance.bossBattles.rival_boss_santos.rewards.reputation,
+            territory: GameBalance.bossBattles.rival_boss_santos.rewards.territory,
+            experience: GameBalance.bossBattles.rival_boss_santos.rewards.experience,
             unique_item: "Santos' Golden Pistol" // Special weapon
         },
         risks: {
-            jailChance: 60,
-            gangMemberLoss: 30,
-            healthLoss: 50
+            jailChance: GameBalance.bossBattles.rival_boss_santos.risks.jailChance,
+            gangMemberLoss: GameBalance.bossBattles.rival_boss_santos.risks.gangMemberLoss,
+            healthLoss: GameBalance.bossBattles.rival_boss_santos.risks.healthLoss
         },
         story: "Santos has been muscling in on your territory for months. It's time to send a message that echoes through every street corner.",
         unlocked: false
@@ -765,27 +765,27 @@ const bossBattles = [
         description: "The police chief has been taking bribes but now threatens to expose your operations.",
         boss: {
             name: "Chief Margaret Morrison",
-            power: 120,
-            health: 150,
-            gang_size: 20, // Police officers
+            power: GameBalance.bossBattles.police_chief_morrison.boss.power,
+            health: GameBalance.bossBattles.police_chief_morrison.boss.health,
+            gang_size: GameBalance.bossBattles.police_chief_morrison.boss.gang_size, // Police officers
             special_abilities: ["Police Backup", "Legal Immunity"]
         },
         requirements: {
-            minPower: 80,
-            minGangMembers: 6,
-            minReputation: 30
+            minPower: GameBalance.bossBattles.police_chief_morrison.requirements.minPower,
+            minGangMembers: GameBalance.bossBattles.police_chief_morrison.requirements.minGangMembers,
+            minReputation: GameBalance.bossBattles.police_chief_morrison.requirements.minReputation
         },
-        energyCost: 40,
+        energyCost: GameBalance.bossBattles.police_chief_morrison.energyCost,
         rewards: {
-            money: 6000000,
-            reputation: 30,
-            wanted_level_reduction: 20, // Reduces wanted level
-            experience: 400
+            money: GameBalance.bossBattles.police_chief_morrison.rewards.money,
+            reputation: GameBalance.bossBattles.police_chief_morrison.rewards.reputation,
+            wanted_level_reduction: GameBalance.bossBattles.police_chief_morrison.rewards.wanted_level_reduction, // Reduces wanted level
+            experience: GameBalance.bossBattles.police_chief_morrison.rewards.experience
         },
         risks: {
-            jailChance: 70, // High risk fighting police
-            gangMemberLoss: 25,
-            healthLoss: 40
+            jailChance: GameBalance.bossBattles.police_chief_morrison.risks.jailChance, // High risk fighting police
+            gangMemberLoss: GameBalance.bossBattles.police_chief_morrison.risks.gangMemberLoss,
+            healthLoss: GameBalance.bossBattles.police_chief_morrison.risks.healthLoss
         },
         story: "Morrison has been playing both sides for years. Now she's gotten greedy and threatens to bring down your entire operation.",
         unlocked: false

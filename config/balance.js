@@ -21,5 +21,41 @@
     takeOverCity: { payoutMin: 2000000, payoutMax: 5000000, jailChance: 70, wantedLevelGain: 15, healthLoss: 20, reputation: 80, energyCost: 40 }
   };
 
-  window.GameBalance = { jobs };
+  const factionMissions = {
+    torrino_0: { payoutMin: 200000, payoutMax: 350000, jailChance: 5, energyCost: 8, reputation: 5, factionRep: 3 },
+    torrino_1: { payoutMin: 300000, payoutMax: 600000, jailChance: 20, energyCost: 15, reputation: 10, factionRep: 5 },
+    torrino_2: { payoutMin: 500000, payoutMax: 1000000, jailChance: 30, energyCost: 20, reputation: 25, factionRep: 10 },
+    kozlov_0: { payoutMin: 200000, payoutMax: 400000, jailChance: 10, energyCost: 10, reputation: 5, factionRep: 3 },
+    kozlov_1: { payoutMin: 800000, payoutMax: 1200000, jailChance: 35, energyCost: 25, reputation: 20, factionRep: 8 },
+    kozlov_2: { payoutMin: 1500000, payoutMax: 2500000, jailChance: 45, energyCost: 35, reputation: 50, factionRep: 15 },
+    chen_0:    { payoutMin: 300000, payoutMax: 500000, jailChance: 5, energyCost: 8, reputation: 5, factionRep: 4 },
+    chen_1:    { payoutMin: 600000, payoutMax: 1100000, jailChance: 25, energyCost: 20, reputation: 30, factionRep: 10 },
+    morales_0: { payoutMin: 250000, payoutMax: 450000, jailChance: 15, energyCost: 12, reputation: 8, factionRep: 5 },
+    morales_1: { payoutMin: 700000, payoutMax: 1300000, jailChance: 40, energyCost: 30, reputation: 35, factionRep: 12 }
+  };
+
+  const territoryMissions = {
+    docks_expansion: { requiredGangMembers: 5, energyCost: 25, rewards: { money: 2000000, territory: 1, reputation: 15, passive_income: 100000 }, risks: { jailChance: 35, gangMemberLoss: 15, healthLoss: 20 } },
+    downtown_expansion: { requiredGangMembers: 8, energyCost: 35, rewards: { money: 4000000, territory: 2, reputation: 25, passive_income: 200000 }, risks: { jailChance: 45, gangMemberLoss: 25, healthLoss: 30 } },
+    suburbs_expansion: { requiredGangMembers: 3, energyCost: 15, rewards: { money: 1500000, territory: 1, reputation: 10, passive_income: 75000 }, risks: { jailChance: 25, gangMemberLoss: 10, healthLoss: 15 } }
+  };
+
+  const bossBattles = {
+    rival_boss_santos: {
+      boss: { power: 150, health: 200, gang_size: 12 },
+      requirements: { minPower: 100, minGangMembers: 8, minReputation: 40 },
+      energyCost: 50,
+      rewards: { money: 8000000, reputation: 35, territory: 2, experience: 500 },
+      risks: { jailChance: 60, gangMemberLoss: 30, healthLoss: 50 }
+    },
+    police_chief_morrison: {
+      boss: { power: 120, health: 150, gang_size: 20 },
+      requirements: { minPower: 80, minGangMembers: 6, minReputation: 30 },
+      energyCost: 40,
+      rewards: { money: 6000000, reputation: 30, experience: 400, wanted_level_reduction: 20 },
+      risks: { jailChance: 70, gangMemberLoss: 25, healthLoss: 40 }
+    }
+  };
+
+  window.GameBalance = { jobs, factionMissions, territoryMissions, bossBattles };
 })();
