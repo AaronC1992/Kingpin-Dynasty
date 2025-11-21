@@ -1,3 +1,7 @@
+import { initOnboarding } from './onboarding.js';
+import { applyDailyPassives } from './passiveManager.js';
+import { showEmpireOverview } from './empireOverview.js';
+import { checkRetirement, triggerEnding, showRetirementMenu } from './legacy.js';
 import { player, gainExperience, checkLevelUp, regenerateEnergy, startEnergyRegenTimer, startEnergyRegeneration, skillTreeDefinitions, availablePerks, achievements } from './player.js';
 import { jobs, stolenCarTypes } from './jobs.js';
 import { crimeFamilies, criminalHallOfFame, retirementOutcomes, factionEffects, potentialMentors } from './factions.js';
@@ -8082,14 +8086,15 @@ function mgEndTikTakToeGame(result) {
     if (result === 'X') {
         // Player wins
         player.money += 100;
+        gainExperience('intelligence', 50);
         
         // Track statistics
         updateStatistic('miniGamesWon');
         updateStatistic('totalMoneyEarned', 100);
         
         updateUI();
-        message = `🎉 Victory! You've proven your strategic superiority and earned $100! Your mind is as sharp as your criminal instincts!`;
-        logAction(`🏆 TikTakToe victory! Your strategic thinking pays off with $100 earned. The mind of a mastermind at work.`);
+        message = `🎉 Victory! You've proven your strategic superiority and earned $100! Your mind is as sharp as your criminal instincts! (Intelligence +50 XP)`;
+        logAction(`🏆 TikTakToe victory! Your strategic thinking pays off with $100 earned and increased Intelligence.`);
     } else if (result === 'O') {
         message = `😔 Defeat! The AI outmaneuvered you this time. Even master criminals can learn from failure.`;
         logAction(`💭 TikTakToe defeat! The AI proves its worth, but every loss is a lesson learned.`);
@@ -8197,14 +8202,15 @@ function makeGuess() {
     
     if (guess === numberGuessingTarget) {
         player.money += 100;
+        gainExperience('luck', 50);
         
         // Track statistics
         updateStatistic('miniGamesWon');
         updateStatistic('totalMoneyEarned', 100);
         
         updateUI();
-        document.getElementById('guess-feedback').innerHTML = `<span style="color: #2ecc71;">🎉 Correct! You found ${numberGuessingTarget} in ${numberGuessingAttempts} attempts and earned $100!</span>`;
-        logAction(`🎯 Number Hunter victory! Found the target ${numberGuessingTarget} in ${numberGuessingAttempts} attempts and earned $100. Your intuition is razor-sharp.`);
+        document.getElementById('guess-feedback').innerHTML = `<span style="color: #2ecc71;">🎉 Correct! You found ${numberGuessingTarget} in ${numberGuessingAttempts} attempts and earned $100! (Luck +50 XP)</span>`;
+        logAction(`🎯 Number Hunter victory! Found the target ${numberGuessingTarget} in ${numberGuessingAttempts} attempts and earned $100. Your intuition is razor-sharp. (Luck +50 XP)`);
         setTimeout(() => startNumberGuessing(), 3000);
     } else if (guess < numberGuessingTarget) {
         document.getElementById('guess-feedback').innerHTML = '<span style="color: #f39c12;">📈 Too low! Go higher!</span>';
@@ -8310,8 +8316,9 @@ function playRPS(playerChoice) {
         updateRPSDisplay();
         if (rpsPlayerScore >= 3) {
             player.money += 100;
+            gainExperience('charisma', 50);
             updateUI();
-            logAction("🏆 Rock Paper Scissors champion! Your tactical mind proves superior in this classic game of psychology and earned $100.");
+            logAction("🏆 Rock Paper Scissors champion! Your tactical mind proves superior in this classic game of psychology and earned $100. (Charisma +50 XP)");
         } else if (rpsAIScore >= 3) {
             logAction("💔 The AI outplays you in Rock Paper Scissors. Sometimes the algorithms know best.");
         }
@@ -8436,6 +8443,8 @@ function flipMemoryCard(index) {
                     player.skillTrees.stealth.infiltration = Math.min(10, player.skillTrees.stealth.infiltration + stealthXP);
                     player.skillTrees.intelligence.planning = Math.min(10, player.skillTrees.intelligence.planning + planningXP);
                     
+                    gainExperience('intelligence', 50);
+
                     if (totalEarned > 0) {
                         updateUI();
                     }
@@ -8701,11 +8710,16 @@ function gameOverSnake() {
     if (!player.maxEnergy) player.maxEnergy = 100;
     player.maxEnergy = Math.min(150, player.maxEnergy + staminaBonus);
     
+    const enduranceXP = Math.floor(snakeGame.score * 2);
+    if (enduranceXP > 0) {
+        gainExperience('endurance', enduranceXP);
+    }
+
     if (snakeGame.score > 0) {
         player.money += earnings;
         updateUI();
-        bonusMessage = ` You earned $${earnings.toLocaleString()} ($50 per food) + ${staminaBonus} max energy!`;
-        logAction(`🐍 Snake game over! Final score: ${snakeGame.score}. Your reflexes earned you $${earnings.toLocaleString()} + stamina boost!`);
+        bonusMessage = ` You earned $${earnings.toLocaleString()} ($50 per food) + ${staminaBonus} max energy! (Endurance +${enduranceXP} XP)`;
+        logAction(`🐍 Snake game over! Final score: ${snakeGame.score}. Your reflexes earned you $${earnings.toLocaleString()} + stamina boost! (Endurance +${enduranceXP} XP)`);
     } else {
         logAction(`🐍 Snake game over! Final score: ${snakeGame.score}. Your reflexes were tested and measured.`);
     }
@@ -8847,6 +8861,10 @@ function handleReactionClick() {
     const reflexBonus = reactionTime < 200 ? 3 : (reactionTime < 300 ? 2 : 1);
     player.combatReflexBonus = Math.min(20, player.combatReflexBonus + reflexBonus);
     
+    if (reactionTime < 500) {
+        gainExperience('violence', 50);
+    }
+
     if (totalEarned > 0) {
         updateUI();
     }
@@ -8855,11 +8873,11 @@ function handleReactionClick() {
     
     let bonusText = '';
     if (personalBestBonus && earnedMoney) {
-        bonusText = `<br><span style="color: #2ecc71;">🏆 NEW PERSONAL BEST! +$500!</span><br><span style="color: #2ecc71;">⚡ Sub-300ms reflexes! +$100!</span><br><span style="color: #f1c40f;">Total earned: $${totalEarned}</span>`;
+        bonusText = `<br><span style="color: #2ecc71;">🏆 NEW PERSONAL BEST! +$500!</span><br><span style="color: #2ecc71;">⚡ Sub-300ms reflexes! +$100!</span><br><span style="color: #f1c40f;">Total earned: $${totalEarned}</span><br><span style="color: #e74c3c;">Violence +50 XP</span>`;
     } else if (personalBestBonus) {
-        bonusText = `<br><span style="color: #2ecc71;">🏆 NEW PERSONAL BEST! +$500!</span>`;
+        bonusText = `<br><span style="color: #2ecc71;">🏆 NEW PERSONAL BEST! +$500!</span><br><span style="color: #e74c3c;">Violence +50 XP</span>`;
     } else if (earnedMoney) {
-        bonusText = `<br><span style="color: #2ecc71;">⚡ Sub-300ms reflexes! +$100!</span>`;
+        bonusText = `<br><span style="color: #2ecc71;">⚡ Sub-300ms reflexes! +$100!</span><br><span style="color: #e74c3c;">Violence +50 XP</span>`;
     }
     
     document.getElementById('reaction-result').innerHTML = 
@@ -8867,11 +8885,11 @@ function handleReactionClick() {
     
     // Log the result
     if (personalBestBonus && earnedMoney) {
-        logAction(`⚡ Quick Draw: ${reactionTime}ms - NEW PERSONAL BEST! Lightning reflexes earned you $600 total + Combat Reflex boost!`);
+        logAction(`⚡ Quick Draw: ${reactionTime}ms - NEW PERSONAL BEST! Lightning reflexes earned you $600 total + Combat Reflex boost! (Violence +50 XP)`);
     } else if (personalBestBonus) {
-        logAction(`⚡ Quick Draw: ${reactionTime}ms - NEW PERSONAL BEST! You earned $500 + Combat Reflex boost!`);
+        logAction(`⚡ Quick Draw: ${reactionTime}ms - NEW PERSONAL BEST! You earned $500 + Combat Reflex boost! (Violence +50 XP)`);
     } else if (earnedMoney) {
-        logAction(`⚡ Quick Draw: ${reactionTime}ms - Sub-300ms reflexes earned you $100 + Combat Reflex boost!`);
+        logAction(`⚡ Quick Draw: ${reactionTime}ms - Sub-300ms reflexes earned you $100 + Combat Reflex boost! (Violence +50 XP)`);
     } else {
         logAction(`⚡ Quick Draw: ${reactionTime}ms - ${message.replace(/[🚀⚡👍🐌]/g, '').trim()} Combat Reflex improved slightly.`);
     }
@@ -11548,6 +11566,8 @@ function startPassiveIncomeGenerator() {
     setInterval(() => {
         generatePassiveIncome();
         processTerritoryOperations(); // Process territory income and events
+        applyDailyPassives(); // Apply faction passives (interest, ammo regen, etc.)
+        
         // Auto-collect helpers when Bookie is hired
         if (!player.services) player.services = {};
         if (player.services.bookieHired) {
@@ -12399,6 +12419,9 @@ function initGame() {
         initUIEvents();
     }
 
+    // Initialize Onboarding (Act 0 Guide)
+    initOnboarding();
+
     // Generate initial prisoners and recruits
     generateJailPrisoners();
     generateJailbreakPrisoners();
@@ -12462,6 +12485,7 @@ function initializeHotkeys() {
             'm': () => showMap(),
             'z': () => showStatistics(),
             'r': () => showEmpireRating(),
+            'o': () => showEmpireOverview(), // New hotkey for Empire Overview
             'h': () => showHallOfFame(),
             'f5': () => showSaveSystem(),
             'f7': () => showCompetition(),

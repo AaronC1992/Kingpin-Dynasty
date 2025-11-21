@@ -15,7 +15,22 @@ export const crimeFamilies = {
         color: "#8b0000",
         boss: "Don Salvatore Torrino",
         specialty: "Protection rackets and loan sharking",
-        lore: "Founded in the 1920s by Italian immigrants, the Torrino family built their empire on respect, loyalty, and swift retribution. They control the restaurant district and numerous legitimate businesses as fronts."
+        lore: "Founded in the 1920s by Italian immigrants, the Torrino family built their empire on respect, loyalty, and swift retribution. They control the restaurant district and numerous legitimate businesses as fronts.",
+        passive: {
+            name: "The Books",
+            description: "Earn 5% interest on unspent cash daily.",
+            effectId: "interest_cash",
+            value: 0.05
+        },
+        signatureJob: {
+            id: "torrino_shakedown",
+            name: "Union Shake-down",
+            type: "charisma",
+            description: "Force the local union boss to pay up protection money.",
+            baseReward: 5000,
+            xpReward: 150,
+            cooldown: 24 // hours
+        }
     },
     kozlov: {
         name: "Kozlov Bratva",
@@ -24,7 +39,23 @@ export const crimeFamilies = {
         color: "#ff6b35",
         boss: "Dimitri Kozlov",
         specialty: "Weapons trafficking and smuggling",
-        lore: "Ex-military Russian operatives who brought military discipline to organized crime. They dominate the weapons trade and have connections across Eastern Europe for large-scale smuggling operations."
+        lore: "Ex-military Russian operatives who brought military discipline to organized crime. They dominate the weapons trade and have connections across Eastern Europe for large-scale smuggling operations.",
+        passive: {
+            name: "Arms Deal",
+            description: "Weapons cost 10% less. Small chance to regen ammo daily.",
+            effectId: "cheap_weapons_ammo_regen",
+            discount: 0.10,
+            regenChance: 0.25
+        },
+        signatureJob: {
+            id: "kozlov_convoy",
+            name: "Military Convoy Heist",
+            type: "violence",
+            description: "Ambush a military transport for high-grade weapons.",
+            baseReward: 3000, // Plus weapons
+            xpReward: 200,
+            cooldown: 24
+        }
     },
     chen: {
         name: "Chen Triad",
@@ -33,7 +64,22 @@ export const crimeFamilies = {
         color: "#2e8b57",
         boss: "Master Chen Wei",
         specialty: "Technology crimes and drug manufacturing",
-        lore: "Ancient traditions meet modern technology. The Chen Triad combines centuries-old honor codes with cutting-edge cybercrime and precision drug manufacturing. They value intelligence over brute force."
+        lore: "Ancient traditions meet modern technology. The Chen Triad combines centuries-old honor codes with cutting-edge cybercrime and precision drug manufacturing. They value intelligence over brute force.",
+        passive: {
+            name: "Smuggling Routes",
+            description: "Drug sales and transport jobs earn 15% more.",
+            effectId: "bonus_drug_income",
+            multiplier: 1.15
+        },
+        signatureJob: {
+            id: "chen_cyber_raid",
+            name: "Cyber-Bank Raid",
+            type: "intelligence",
+            description: "Hack into a major bank's server farm for a massive transfer.",
+            baseReward: 8000,
+            xpReward: 180,
+            cooldown: 24
+        }
     },
     morales: {
         name: "Morales Cartel",
@@ -42,7 +88,22 @@ export const crimeFamilies = {
         color: "#ff8c00",
         boss: "El Jefe Morales",
         specialty: "Drug manufacturing and distribution",
-        lore: "Born from the coca fields of South America, the Morales Cartel expanded northward with ruthless efficiency. They control vast territories and have corrupted officials at every level of government."
+        lore: "Born from the coca fields of South America, the Morales Cartel expanded northward with ruthless efficiency. They control vast territories and have corrupted officials at every level of government.",
+        passive: {
+            name: "Cartel Connections",
+            description: "Violent crimes generate 20% less heat.",
+            effectId: "reduced_heat_violence",
+            reduction: 0.20
+        },
+        signatureJob: {
+            id: "morales_border_run",
+            name: "Border Crossing Run",
+            type: "stealth",
+            description: "Smuggle a major shipment across the border undetected.",
+            baseReward: 6000,
+            xpReward: 160,
+            cooldown: 24
+        }
     }
 };
 
