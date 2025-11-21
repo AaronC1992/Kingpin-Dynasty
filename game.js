@@ -8604,17 +8604,26 @@ function endTikTakToeGame(result) {
     let message = '';
     
     if (result === 'X') {
-        // Player wins
-        message = `🎉 Victory! You outsmarted your cellmate with superior strategy. Your mind stays sharp even behind bars!`;
-        logAction(`🏆 TikTakToe victory! You proved your mental superiority over your cellmate. Even in confinement, the criminal mastermind shines.`);
+        // Player wins - reduce sentence and boost gang respect
+        const timeReduction = Math.min(10, Math.floor(player.jailTime * 0.2));
+        player.jailTime -= timeReduction;
+        
+        if (!player.gangRespect) player.gangRespect = 0;
+        player.gangRespect = Math.min(100, player.gangRespect + 2);
+        
+        message = `🎉 Victory! You outsmarted your cellmate with superior strategy. Word spreads fast - your sentence is reduced by ${timeReduction} seconds and you gain +2 Gang Respect!`;
+        logAction(`🏆 TikTakToe victory! You proved your mental superiority over your cellmate. Sentence reduced by ${timeReduction}s. Gang Respect +2. Even in confinement, the criminal mastermind shines.`);
     } else if (result === 'O') {
         // AI wins
         message = `😔 Defeat! Your cellmate outplayed you this time. Sometimes the student becomes the teacher.`;
         logAction(`� TikTakToe defeat! Your cellmate's cunning exceeded your own this round. A humbling reminder that every criminal has something to learn.`);
     } else {
-        // Tie
-        message = `🤝 Stalemate! Neither you nor your cellmate could claim victory. Respect earned on both sides.`;
-        logAction(`🤝 TikTakToe stalemate! Both players showed equal skill in this battle of wits. Honor among thieves indeed.`);
+        // Tie - small gang respect boost
+        if (!player.gangRespect) player.gangRespect = 0;
+        player.gangRespect = Math.min(100, player.gangRespect + 1);
+        
+        message = `🤝 Stalemate! Neither you nor your cellmate could claim victory. Respect earned on both sides (+1 Gang Respect).`;
+        logAction(`🤝 TikTakToe stalemate! Both players showed equal skill in this battle of wits. Gang Respect +1. Honor among thieves indeed.`);
     }
     
     alert(message);
@@ -8697,9 +8706,59 @@ let quickDrawStartTime = 0;
 let quickDrawWaiting = false;
 let quickDrawPersonalBest = null;
 
+// Mini-game cooldown and stat tracking
+let miniGameCooldowns = {
+    memory: 0,
+    quickDraw: 0,
+    snake: 0,
+    tiktaktoe: 0,
+    tiktaktoeJail: 0
+};
+const MINIGAME_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
+const DAILY_GAME_LIMIT = 10; // Max plays per game per day
+let miniGameDailyPlays = {
+    memory: { count: 0, lastReset: Date.now() },
+    quickDraw: { count: 0, lastReset: Date.now() },
+    snake: { count: 0, lastReset: Date.now() },
+    tiktaktoe: { count: 0, lastReset: Date.now() },
+    tiktaktoeJail: { count: 0, lastReset: Date.now() }
+};
+
 // Recruitment event variables
 let activeRecruitment = null;
 let recruitmentTimer = null;
+
+// Helper to check and reset daily play counts
+function checkDailyReset(gameType) {
+    const now = Date.now();
+    const dayInMs = 24 * 60 * 60 * 1000;
+    if (now - miniGameDailyPlays[gameType].lastReset > dayInMs) {
+        miniGameDailyPlays[gameType].count = 0;
+        miniGameDailyPlays[gameType].lastReset = now;
+    }
+}
+
+// Check if mini-game is available (cooldown + daily limit)
+function canPlayMiniGame(gameType) {
+    checkDailyReset(gameType);
+    const now = Date.now();
+    if (miniGameCooldowns[gameType] > now) {
+        const remaining = Math.ceil((miniGameCooldowns[gameType] - now) / 1000 / 60);
+        alert(`⏳ Cool down! You need to wait ${remaining} more minute(s) before playing this again.`);
+        return false;
+    }
+    if (miniGameDailyPlays[gameType].count >= DAILY_GAME_LIMIT) {
+        alert(`🚫 Daily limit reached! You've played this game ${DAILY_GAME_LIMIT} times today. Come back tomorrow!`);
+        return false;
+    }
+    return true;
+}
+
+// Track a mini-game play
+function trackMiniGamePlay(gameType) {
+    miniGameCooldowns[gameType] = Date.now() + MINIGAME_COOLDOWN_MS;
+    miniGameDailyPlays[gameType].count++;
+}
 
 // ==================== EVENTS & RANDOMIZATION SYSTEM ====================
 
@@ -9886,6 +9945,8 @@ function playRPS(playerChoice) {
 
 // Memory Match Game
 function startMemoryMatch() {
+    if (!canPlayMiniGame('memory')) return;
+    
     currentMiniGame = 'memory';
     document.getElementById("other-minigames").style.display = "block";
     
@@ -9899,6 +9960,7 @@ function startMemoryMatch() {
     
     let cardHTML = '<h3 style="color: #f39c12; text-align: center; margin-bottom: 20px;">🧠 Memory Match</h3>';
     cardHTML += '<p style="text-align: center; margin-bottom: 10px;">Find all pairs in under 60s for $100! Beat your best time for $500!</p>';
+    cardHTML += '<p style="text-align: center; margin-bottom: 5px; color: #9b59b6; font-weight: bold;">🥷 Rewards: Stealth & Planning XP boost</p>';
     cardHTML += `<p style="text-align: center; margin-bottom: 10px; color: #f39c12; font-weight: bold;">${bestTimeText}</p>`;
     cardHTML += '<p style="text-align: center; margin-bottom: 20px;">Time: <span id="memory-timer" style="color: #e74c3c; font-weight: bold;">60</span>s | Pairs: <span id="memory-score">0</span>/8</p>';
     cardHTML += '<div style="display: grid; grid-template-columns: repeat(4, 80px); gap: 10px; justify-content: center; margin: 20px auto;">';
@@ -9990,20 +10052,31 @@ function flipMemoryCard(index) {
                         player.money += 100;
                     }
                     
+                    // Grant skill XP bonuses for memory/planning
+                    if (!player.skillTrees) player.skillTrees = { stealth: {}, intelligence: {} };
+                    if (!player.skillTrees.stealth.infiltration) player.skillTrees.stealth.infiltration = 0;
+                    if (!player.skillTrees.intelligence.planning) player.skillTrees.intelligence.planning = 0;
+                    const stealthXP = totalTime <= 40 ? 3 : (totalTime <= 60 ? 2 : 1);
+                    const planningXP = totalTime <= 40 ? 3 : (totalTime <= 60 ? 2 : 1);
+                    player.skillTrees.stealth.infiltration = Math.min(10, player.skillTrees.stealth.infiltration + stealthXP);
+                    player.skillTrees.intelligence.planning = Math.min(10, player.skillTrees.intelligence.planning + planningXP);
+                    
                     if (totalEarned > 0) {
                         updateUI();
                     }
                     
+                    trackMiniGamePlay('memory');
+                    
                     // Create bonus message
                     if (earnedPersonalBest && earnedTimeBonus) {
                         bonusMessage = ` 🏆 NEW PERSONAL BEST! You earned $600 total ($500 + $100)!`;
-                        logAction(`🏆 Memory Match master! New personal best of ${totalTime}s under the time limit, earning you $600 total for exceptional memory skills!`);
+                        logAction(`🏆 Memory Match master! New personal best of ${totalTime}s under the time limit, earning you $600 total + Stealth/Planning XP for exceptional memory skills!`);
                     } else if (earnedPersonalBest) {
                         bonusMessage = ` 🏆 NEW PERSONAL BEST! You earned $500!`;
                         logAction(`🏆 Memory Match: New personal best of ${totalTime}s! Your improving memory earned you $500!`);
                     } else if (earnedTimeBonus) {
                         bonusMessage = ` You completed it in time and earned $100!`;
-                        logAction(`🏆 Memory Match completed in ${totalTime}s under the time limit, earning you $100 for your sharp criminal intellect!`);
+                        logAction(`🏆 Memory Match completed in ${totalTime}s under the time limit, earning you $100 + Stealth/Planning XP for your sharp criminal intellect!`);
                     } else {
                         logAction(`🧠 Memory Match completed in ${totalTime}s. Good memory, but you needed to be faster for bonuses.`);
                     }
@@ -10027,12 +10100,15 @@ function flipMemoryCard(index) {
 
 // Snake Game
 function startSnakeGame() {
+    if (!canPlayMiniGame('snake')) return;
+    
     currentMiniGame = 'snake';
     document.getElementById("other-minigames").style.display = "block";
     
     document.getElementById("minigame-content").innerHTML = `
         <h3 style="color: #9b59b6; text-align: center; margin-bottom: 20px;">🐍 Snake</h3>
         <div style="text-align: center;">
+            <p style="margin-bottom: 5px; color: #27ae60; font-weight: bold;">💪 Rewards: Stamina & Endurance boost</p>
             <p>Score: <span id="snake-score">0</span></p>
             <canvas id="snake-canvas" width="400" height="400" 
                     style="border: 2px solid #9b59b6; background: #2c3e50; margin: 20px auto; display: block; cursor: crosshair;"></canvas>
@@ -10244,14 +10320,22 @@ function gameOverSnake() {
     
     let earnings = snakeGame.score * 50;
     let bonusMessage = '';
+    
+    // Grant stamina/endurance boost based on score
+    const staminaBonus = Math.min(5, Math.floor(snakeGame.score / 3));
+    if (!player.maxEnergy) player.maxEnergy = 100;
+    player.maxEnergy = Math.min(150, player.maxEnergy + staminaBonus);
+    
     if (snakeGame.score > 0) {
         player.money += earnings;
         updateUI();
-        bonusMessage = ` You earned $${earnings.toLocaleString()} ($50 per food eaten)!`;
-        logAction(`🐍 Snake game over! Final score: ${snakeGame.score}. Your reflexes earned you $${earnings.toLocaleString()} ($50 per growth).`);
+        bonusMessage = ` You earned $${earnings.toLocaleString()} ($50 per food) + ${staminaBonus} max energy!`;
+        logAction(`🐍 Snake game over! Final score: ${snakeGame.score}. Your reflexes earned you $${earnings.toLocaleString()} + stamina boost!`);
     } else {
         logAction(`🐍 Snake game over! Final score: ${snakeGame.score}. Your reflexes were tested and measured.`);
     }
+    
+    trackMiniGamePlay('snake');
     
     alert(`Game Over! Final Score: ${snakeGame.score}${bonusMessage}`);
 }
@@ -10272,6 +10356,8 @@ function restartSnake() {
 
 // Quick Draw Reaction Game
 function startQuickDraw() {
+    if (!canPlayMiniGame('quickDraw')) return;
+    
     currentMiniGame = 'quick-draw';
     document.getElementById("other-minigames").style.display = "block";
     
@@ -10281,6 +10367,7 @@ function startQuickDraw() {
         <h3 style="color: #1abc9c; text-align: center; margin-bottom: 20px;">⚡ Quick Draw</h3>
         <div style="text-align: center;">
             <p style="margin-bottom: 10px;">React under 300ms for $100 | Beat your best time for $500!</p>
+            <p style="margin-bottom: 5px; color: #8b0000; font-weight: bold;">🔫 Rewards: Combat Reflex boost (better violent job success)</p>
             <p style="margin-bottom: 20px; color: #f39c12; font-weight: bold;">${bestTimeText}</p>
             <div id="reaction-area" onclick="handleReactionClick()" 
                  style="width: 300px; height: 200px; margin: 20px auto; border: 3px solid #1abc9c; 
@@ -10380,9 +10467,16 @@ function handleReactionClick() {
         color = '#e74c3c';
     }
     
+    // Grant combat reflex bonus (improves violent job success)
+    if (!player.combatReflexBonus) player.combatReflexBonus = 0;
+    const reflexBonus = reactionTime < 200 ? 3 : (reactionTime < 300 ? 2 : 1);
+    player.combatReflexBonus = Math.min(20, player.combatReflexBonus + reflexBonus);
+    
     if (totalEarned > 0) {
         updateUI();
     }
+    
+    trackMiniGamePlay('quickDraw');
     
     let bonusText = '';
     if (personalBestBonus && earnedMoney) {
@@ -10398,13 +10492,13 @@ function handleReactionClick() {
     
     // Log the result
     if (personalBestBonus && earnedMoney) {
-        logAction(`⚡ Quick Draw: ${reactionTime}ms - NEW PERSONAL BEST! Lightning reflexes earned you $600 total ($500 + $100)!`);
+        logAction(`⚡ Quick Draw: ${reactionTime}ms - NEW PERSONAL BEST! Lightning reflexes earned you $600 total + Combat Reflex boost!`);
     } else if (personalBestBonus) {
-        logAction(`⚡ Quick Draw: ${reactionTime}ms - NEW PERSONAL BEST! You earned $500 for breaking your record!`);
+        logAction(`⚡ Quick Draw: ${reactionTime}ms - NEW PERSONAL BEST! You earned $500 + Combat Reflex boost!`);
     } else if (earnedMoney) {
-        logAction(`⚡ Quick Draw: ${reactionTime}ms - Sub-300ms reflexes earned you $100!`);
+        logAction(`⚡ Quick Draw: ${reactionTime}ms - Sub-300ms reflexes earned you $100 + Combat Reflex boost!`);
     } else {
-        logAction(`⚡ Quick Draw: ${reactionTime}ms - ${message.replace(/[🚀⚡👍🐌]/g, '').trim()}`);
+        logAction(`⚡ Quick Draw: ${reactionTime}ms - ${message.replace(/[🚀⚡👍🐌]/g, '').trim()} Combat Reflex improved slightly.`);
     }
 }
 
