@@ -1,6 +1,8 @@
 // ==================== MOBILE RESPONSIVE SYSTEM ====================
+// Responsibilities:
+//   JS: Device/orientation detection, body class management, mobile nav toggle, touch optimizations
+//   CSS: All layout, visibility, sizing via media queries and device/orientation classes
 
-// Mobile device detection and responsive handling
 const MobileSystem = {
     isMobile: false,
     isTablet: false,
@@ -11,10 +13,11 @@ const MobileSystem = {
     // Initialize mobile system
     init() {
         this.detectDevice();
+        this.applyDeviceClasses(); // JS sets classes, CSS handles layout
         this.setupResponsiveHandling();
-        this.applyMobileLayout();
         this.setupOrientationHandling();
-        this.optimizeForMobile();
+        this.setupMobileNavigation(); // Mobile-specific UI (swipe panels, quick actions)
+        this.optimizeTouch(); // Touch-specific enhancements
         
         console.log('Mobile System initialized:', {
             isMobile: this.isMobile,
@@ -61,187 +64,47 @@ const MobileSystem = {
     },
     
     // Setup responsive event handlers
+    // JS RESPONSIBILITY: Detect changes and update body classes; CSS reacts automatically
     setupResponsiveHandling() {
         // Handle window resize
         window.addEventListener('resize', () => {
             this.detectDevice();
-            this.applyMobileLayout();
+            this.applyDeviceClasses(); // Update classes; CSS handles rest
         });
         
         // Handle orientation change
         window.addEventListener('orientationchange', () => {
             setTimeout(() => {
                 this.detectDevice();
-                this.applyMobileLayout();
+                this.applyDeviceClasses();
                 this.handleOrientationChange();
             }, 100);
         });
     },
     
-    // Apply mobile-specific layout
-    applyMobileLayout() {
+    // Apply device/orientation classes to body
+    // JS RESPONSIBILITY: Set high-level classes only; CSS controls all layout/visibility
+    applyDeviceClasses() {
         const body = document.body;
         
-        // Remove existing mobile classes
+        // Remove existing device/orientation classes
         body.classList.remove('mobile-device', 'tablet-device', 'desktop-device', 'portrait-mode', 'landscape-mode');
         
-        // Remove any existing floating menu button
-        const existingBtn = document.getElementById('mobile-menu-btn');
-        if (existingBtn) {
-            existingBtn.remove();
-        }
-        
-        // Add appropriate device class
+        // Add device class (CSS will handle layout via .mobile-device, .tablet-device, .desktop-device)
         if (this.isMobile) {
             body.classList.add('mobile-device');
-            this.setupMobileLayout();
         } else if (this.isTablet) {
             body.classList.add('tablet-device');
-            this.setupTabletLayout();
         } else {
             body.classList.add('desktop-device');
-            this.setupDesktopLayout();
         }
         
-        // Add orientation class
+        // Add orientation class (CSS reacts to .portrait-mode, .landscape-mode)
         body.classList.add(`${this.screenOrientation}-mode`);
-        
-        // Apply specific mobile optimizations
-        if (this.isMobile || this.isTablet) {
-            this.optimizeMobileInterface();
-        }
     },
     
-    // Setup mobile-specific layout
-    setupMobileLayout() {
-        console.log('Applying mobile layout');
-        
-        // Hide side panels on mobile
-        this.hideSidePanels();
-        
-        // Adjust main content
-        this.adjustMainContent();
-        
-        // Show mobile navigation
-        this.setupMobileNavigation();
-        
-        // Optimize touch interactions
-        this.optimizeTouchInteractions();
-    },
-    
-    // Setup tablet layout
-    setupTabletLayout() {
-        console.log('Applying tablet layout');
-        
-        // Tablets can handle side panels but smaller
-        this.adjustSidePanelsForTablet();
-        
-        // Adjust content area
-        this.adjustMainContent();
-        
-        // Optimize for touch
-        this.optimizeTouchInteractions();
-    },
-    
-    // Setup desktop layout
-    setupDesktopLayout() {
-        console.log('Applying desktop layout');
-        
-        // Show all side panels
-        this.showSidePanels();
-        
-        // Reset content area
-        this.resetMainContent();
-    },
-    
-    // Hide side panels for mobile
-    hideSidePanels() {
-        const actionLog = document.getElementById('action-log');
-        const rightPanel = document.getElementById('right-panel');
-        
-        if (actionLog) {
-            actionLog.style.display = 'none';
-        }
-        
-        if (rightPanel) {
-            rightPanel.style.display = 'none';
-        }
-    },
-    
-    // Show side panels for desktop
-    showSidePanels() {
-        const actionLog = document.getElementById('action-log');
-        const rightPanel = document.getElementById('right-panel');
-        
-        if (actionLog) {
-            actionLog.style.display = 'block';
-        }
-        
-        if (rightPanel) {
-            rightPanel.style.display = 'block';
-        }
-    },
-    
-    // Adjust side panels for tablet
-    adjustSidePanelsForTablet() {
-        const actionLog = document.getElementById('action-log');
-        const rightPanel = document.getElementById('right-panel');
-        
-        if (actionLog) {
-            actionLog.style.width = '180px';
-            actionLog.style.fontSize = '11px';
-        }
-        
-        if (rightPanel) {
-            rightPanel.style.width = '160px';
-            rightPanel.style.fontSize = '10px';
-        }
-    },
-    
-    // Adjust main content area
-    adjustMainContent() {
-        const gameContainer = document.getElementById('game');
-        const allScreens = document.querySelectorAll('.game-screen, #menu');
-        
-        if (gameContainer) {
-            gameContainer.style.width = '95%';
-            gameContainer.style.maxWidth = 'none';
-            gameContainer.style.margin = '0 auto';
-        }
-        
-        // Adjust all game screens
-        allScreens.forEach(screen => {
-            if (this.isMobile) {
-                screen.style.marginLeft = '0';
-                screen.style.marginRight = '0';
-                screen.style.width = '100%';
-                screen.style.padding = '15px';
-            } else if (this.isTablet) {
-                screen.style.marginLeft = '200px';
-                screen.style.marginRight = '180px';
-                screen.style.width = 'calc(100% - 380px)';
-                screen.style.padding = '20px';
-            }
-        });
-    },
-    
-    // Reset main content for desktop
-    resetMainContent() {
-        const gameContainer = document.getElementById('game');
-        const allScreens = document.querySelectorAll('.game-screen, #menu');
-        
-        if (gameContainer) {
-            gameContainer.style.width = '90%';
-            gameContainer.style.maxWidth = '800px';
-        }
-        
-        allScreens.forEach(screen => {
-            screen.style.marginLeft = '';
-            screen.style.marginRight = '';
-            screen.style.width = '';
-            screen.style.padding = '';
-        });
-    },
+    // JS RESPONSIBILITY: Setup mobile-specific UI elements (swipe panels, quick actions)
+    // CSS RESPONSIBILITY: All layout, panel visibility, sizing via .mobile-device class
     
     // Setup mobile navigation
     setupMobileNavigation() {
@@ -759,20 +622,19 @@ const MobileSystem = {
         // This is handled in the slide menu
     },
     
-    // Optimize touch interactions
-    optimizeTouchInteractions() {
-        // Increase button sizes for touch
-        const buttons = document.querySelectorAll('button');
-        buttons.forEach(button => {
-            if (this.isMobile) {
-                button.style.minHeight = '44px';
-                button.style.padding = '12px 16px';
-                button.style.fontSize = '14px';
-            }
-        });
+    // JS RESPONSIBILITY: Touch-specific enhancements (feedback, scroll optimization)
+    // CSS RESPONSIBILITY: Button sizing via .mobile-device class
+    optimizeTouch() {
+        if (!this.isMobile && !this.isTablet) return;
         
-        // Add touch feedback
+        // Add touch feedback to interactive elements
         this.addTouchFeedback();
+        
+        // Optimize scrolling for touch
+        document.body.style.webkitOverflowScrolling = 'touch';
+        
+        // Prevent zoom on input focus (mobile UX)
+        this.preventInputZoom();
     },
     
     // Add touch feedback to interactive elements
@@ -795,36 +657,12 @@ const MobileSystem = {
     },
     
     // Handle orientation change
+    // JS RESPONSIBILITY: Update action log, show orientation hint if needed
+    // CSS RESPONSIBILITY: Layout adjustments via .portrait-mode / .landscape-mode classes
     handleOrientationChange() {
-        if (this.isMobile) {
-            // Adjust layout based on orientation
-            const mobileQuickActions = document.getElementById('mobile-quick-actions');
-            
-            if (this.screenOrientation === 'landscape') {
-                // Landscape optimizations
-                if (mobileQuickActions) {
-                    mobileQuickActions.style.padding = '5px';
-                }
-                
-                // Adjust stats bar for landscape
-                const statsBar = document.getElementById('stats-bar');
-                if (statsBar) {
-                    statsBar.style.fontSize = '10px';
-                    statsBar.style.minHeight = '50px';
-                }
-            } else {
-                // Portrait optimizations
-                if (mobileQuickActions) {
-                    mobileQuickActions.style.padding = '10px';
-                }
-                
-                // Reset stats bar for portrait
-                const statsBar = document.getElementById('stats-bar');
-                if (statsBar) {
-                    statsBar.style.fontSize = '';
-                    statsBar.style.minHeight = '';
-                }
-            }
+        // Update mobile action log when orientation changes
+        if (this.isMobile || this.isTablet) {
+            setTimeout(() => this.updateMobileActionLog(), 300);
         }
         
         // Show orientation warning for very small screens in landscape
@@ -892,63 +730,16 @@ const MobileSystem = {
         });
     },
     
-    // Optimize mobile interface
-    optimizeMobileInterface() {
-        // Adjust stats bar for mobile
-        const statsBar = document.getElementById('stats-bar');
-        if (statsBar && this.isMobile) {
-            statsBar.style.flexWrap = 'wrap';
-            statsBar.style.minHeight = '80px';
-        }
-        
-        // Adjust game content margins for mobile quick actions
-        const gameScreens = document.querySelectorAll('.game-screen, #menu');
-        gameScreens.forEach(screen => {
-            if (this.isMobile) {
-                screen.style.marginBottom = '80px'; // Space for quick actions bar
-                screen.style.paddingBottom = '20px';
-            }
-        });
-        
-        // Make menu grids single column on mobile
-        const menuGrids = document.querySelectorAll('.menu-grid');
-        menuGrids.forEach(grid => {
-            if (this.isMobile) {
-                grid.style.gridTemplateColumns = '1fr';
-                grid.style.gap = '15px';
-            }
-        });
-    },
-    
-    // Optimize for mobile (called once)
-    optimizeForMobile() {
-        if (this.isMobile || this.isTablet) {
-            // Disable hover effects on touch devices
-            const hoverStyles = document.createElement('style');
-            hoverStyles.textContent = `
-                @media (hover: none) {
-                    button:hover,
-                    .clickable:hover {
-                        transform: none !important;
-                        box-shadow: none !important;
-                    }
-                }
-            `;
-            document.head.appendChild(hoverStyles);
-            
-            // Optimize scrolling
-            document.body.style.webkitOverflowScrolling = 'touch';
-            
-            // Prevent zoom on input focus
-            const viewport = document.querySelector('meta[name="viewport"]');
-            if (viewport) {
-                viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
-            } else {
-                const newViewport = document.createElement('meta');
-                newViewport.name = 'viewport';
-                newViewport.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
-                document.head.appendChild(newViewport);
-            }
+    // Prevent zoom on input focus for mobile
+    preventInputZoom() {
+        const viewport = document.querySelector('meta[name="viewport"]');
+        if (viewport) {
+            viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+        } else {
+            const newViewport = document.createElement('meta');
+            newViewport.name = 'viewport';
+            newViewport.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+            document.head.appendChild(newViewport);
         }
     },
     
