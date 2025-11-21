@@ -1,4 +1,4 @@
-// ==================== FROM DUSK TO DON - MULTIPLAYER SERVER ====================
+// ==================== KINGPIN DYNASTY - MULTIPLAYER SERVER ====================
 const WebSocket = require('ws');
 const http = require('http');
 const fs = require('fs');
@@ -57,7 +57,7 @@ const server = http.createServer((req, res) => {
                 console.log(`❌ File not found: ${filePath}`);
                 res.writeHead(404, { 'Content-Type': 'text/html' });
                 res.end(`
-                    <h1>🎮 From Dusk to Don - Multiplayer Server</h1>
+                    <h1>🎮 Kingpin Dynasty - Multiplayer Server</h1>
                     <p>File not found: ${req.url}</p>
                     <p><a href="/">🏠 Go to Game</a></p>
                     <hr>
@@ -236,7 +236,7 @@ function ensureUniqueName(baseName) {
     return candidate;
 }
 
-console.log('🌐 From Dusk to Don - Multiplayer Server Starting...');
+console.log('🌐 Kingpin Dynasty - Multiplayer Server Starting...');
 
 // WebSocket connection handler
 wss.on('connection', (ws, req) => {
@@ -306,7 +306,7 @@ wss.on('connection', (ws, req) => {
         playerId: clientId,
         serverInfo: {
             playerCount: clients.size,
-            serverName: 'From Dusk to Don - Main Server',
+            serverName: 'Kingpin Dynasty - Main Server',
             cityEvents: gameState.cityEvents,
             // Use last persisted snapshot for initial info
             globalLeaderboard: persistedLeaderboard

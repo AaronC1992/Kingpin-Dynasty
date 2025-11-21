@@ -1,7 +1,7 @@
 # PvP & Online Gang Wars - Design Document
 
 ## Overview
-Enable player-vs-player combat and gang-vs-gang territory wars in From Dusk to Don. This document outlines the minimal backend infrastructure and client integration needed for multiplayer competitive features.
+Enable player-vs-player combat and gang-vs-gang territory wars in Kingpin Dynasty. This document outlines the minimal backend infrastructure and client integration needed for multiplayer competitive features.
 
 ## Goals
 - **Endgame Competition**: PvP becomes the primary late-game content for money, power, and reputation

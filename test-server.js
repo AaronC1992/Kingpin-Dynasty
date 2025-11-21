@@ -2,14 +2,14 @@
 const fs = require('fs');
 const path = require('path');
 
-console.log('🧪 Testing From Dusk to Don Server...');
+console.log('🧪 Testing Kingpin Dynasty Server...');
 console.log('Current directory:', process.cwd());
 
 // Check if key files exist
 const filesToCheck = [
     'server.js',
     'index.html',
-    'From DusktoDonLogo.png',
+    'gamelogo.png',
     'Asian female.png',
     'game.js'
 ];
@@ -27,7 +27,7 @@ filesToCheck.forEach(file => {
 // Test if we can read an image file
 console.log('\n🖼️ Testing image file access:');
 try {
-    const logoPath = 'From DusktoDonLogo.png';
+    const logoPath = 'gamelogo.png';
     if (fs.existsSync(logoPath)) {
         const imageData = fs.readFileSync(logoPath);
         console.log(`✅ Logo image loaded successfully (${imageData.length} bytes)`);

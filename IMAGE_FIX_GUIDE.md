@@ -1,4 +1,4 @@
-# 🎮 From Dusk to Don - Image Loading Fix Guide
+# 🎮 Kingpin Dynasty - Image Loading Fix Guide
 
 ## The Problem
 Your game's images (logo and character portraits) aren't loading when accessed through ngrok because the server needs to be running to serve static files.
@@ -23,7 +23,7 @@ Your game's images (logo and character portraits) aren't loading when accessed t
 ### Step 2: Check Server is Running
 You should see output like:
 ```
-🚀 From Dusk to Don Multiplayer Server running on port 8080
+🚀 Kingpin Dynasty Multiplayer Server running on port 8080
 🌐 WebSocket server ready for connections
 ```
 
@@ -35,17 +35,13 @@ Your ngrok gives you TWO URLs:
 ## What Should Work Now
 
 ### ✅ Image Files Available:
-- `From DusktoDonLogo.png` - Main game logo
-- `White male.png`, `White female.png` - Character portraits
-- `Black male.png`, `Black female.png` - Character portraits
-- `Asian male.png`, `Asian female.png` - Character portraits
-- `Mexican male.png`, `Mexican female.png` - Character portraits
+ `gamelogo.png` - Main game logo
 - All vehicle and item PNG files
 
 ### ✅ Test URLs:
 When your server is running, these should work:
 - Game: https://a815bff97d8c.ngrok-free.app
-- Logo: https://a815bff97d8c.ngrok-free.app/From%20DusktoDonLogo.png
+- Logo: https://a815bff97d8c.ngrok-free.app/gamelogo.png
 - Portrait: https://a815bff97d8c.ngrok-free.app/White%20male.png
 
 ## Troubleshooting

@@ -1,6 +1,6 @@
 @echo off
 echo ========================================
-echo  FROM DUSK TO DON - MULTIPLAYER SETUP
+echo  KINGPIN DYNASTY - MULTIPLAYER SETUP
 echo ========================================
 echo.
 

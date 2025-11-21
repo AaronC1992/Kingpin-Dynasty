@@ -30,7 +30,7 @@ let onlineWorldState = {
     playerId: null,
     serverInfo: {
         playerCount: 0,
-        serverName: 'From Dusk to Don - The Commission',
+        serverName: 'Kingpin Dynasty - The Commission',
         cityEvents: [],
         globalLeaderboard: []
     },

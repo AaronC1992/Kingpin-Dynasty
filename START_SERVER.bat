@@ -1,6 +1,6 @@
 @echo off
 echo ================================================
-echo FROM DUSK TO DON - MULTIPLAYER SERVER STARTER
+echo KINGPIN DYNASTY - MULTIPLAYER SERVER STARTER
 echo ================================================
 echo.
 
@@ -23,7 +23,7 @@ echo Key files found:
 if exist "server.js" echo ✓ server.js
 if exist "index.html" echo ✓ index.html
 if exist "multiplayer.js" echo ✓ multiplayer.js
-if exist "From DusktoDonLogo.png" echo ✓ From DusktoDonLogo.png
+if exist "gamelogo.png" echo ✓ gamelogo.png
 echo.
 
 :: Check Node.js

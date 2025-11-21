@@ -1,4 +1,4 @@
-# From Dusk to Don - Multiplayer Edition
+# Kingpin Dynasty - Multiplayer Edition
 
 A criminal empire building game with both local and online multiplayer functionality!
 
@@ -66,6 +66,6 @@ Click the link above to play the game instantly in your browser - no installatio
 
 ## Have Fun!
 
-From Dusk to Don multiplayer brings the criminal underworld to life with friends. Whether you're competing for the crown or working together to build an empire, the streets await your command!
+Kingpin Dynasty multiplayer brings the criminal underworld to life with friends. Whether you're competing for the crown or working together to build an empire, the streets await your command!
 
 Build your legacy, expand your territory, and prove who's the ultimate Don!

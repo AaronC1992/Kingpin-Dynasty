@@ -1,4 +1,4 @@
-# From Dusk to Don - Multiplayer Setup Guide
+# Kingpin Dynasty - Multiplayer Setup Guide
 
 ## 🎮 Quick Start (Local Testing)
 

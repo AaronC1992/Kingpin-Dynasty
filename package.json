@@ -1,7 +1,7 @@
 {
-  "name": "from-dusk-to-don-multiplayer",
+  "name": "kingpin-dynasty-multiplayer",
   "version": "1.0.0",
-  "description": "Multiplayer server for From Dusk to Don criminal empire game",
+  "description": "Multiplayer server for Kingpin Dynasty criminal empire game",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

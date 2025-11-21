@@ -1,4 +1,4 @@
-Write-Host 'From Dusk to Don - Image Fix Server Starter' -ForegroundColor Green
+Write-Host 'Kingpin Dynasty - Image Fix Server Starter' -ForegroundColor Green
 Write-Host '=============================================' -ForegroundColor Green
 Write-Host ''
 
@@ -7,7 +7,7 @@ $currentDir = Get-Location
 Write-Host ("Current directory: {0}" -f $currentDir) -ForegroundColor Yellow
 
 # Check for required files
-$requiredFiles = @("server.js", "index.html", "From DusktoDonLogo.png", "White male.png")
+$requiredFiles = @("server.js", "index.html", "gamelogo.png", "White male.png")
 $missingFiles = @()
 
 foreach ($file in $requiredFiles) {

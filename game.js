@@ -11896,7 +11896,7 @@ const tutorialSteps = [
         showUI: "none",
         content: `
             <div style="text-align: center; margin-bottom: 20px;">
-                <img src="From DusktoDonLogo.png" alt="From Dusk to Don Logo" 
+                <img src="gamelogo.png" alt="Kingpin Dynasty Logo" 
                      style="max-width: 300px; width: 80%; height: auto; border-radius: 10px; 
                             box-shadow: 0 5px 15px rgba(0,0,0,0.5); border: 2px solid #e74c3c;" />
             </div>
