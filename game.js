@@ -9505,27 +9505,7 @@ function closeVehiclePurchaseResult() {
     }
 }
 
-// Function to gain experience and level up
-function gainExperience(amount) {
-    player.experience += amount;
-    logAction(`You gained ${amount} experience points.`);
-}
-
-// Function to check for level up
-function checkLevelUp() {
-    // More gradual XP curve: quadratic scaling
-    let requiredXP = Math.floor(player.level * 150 + Math.pow(player.level, 2) * 10);
-    if (player.experience >= requiredXP) {
-        player.level++;
-        player.experience -= requiredXP;
-    player.skillPoints += 2; // Gain 2 skill points per level (slower progression)
-        
-        // Show dramatic level up screen effects
-        showLevelUpEffects();
-        
-        logAction(`🎉 The streets recognize your growing power! You've clawed your way up to level ${player.level}. Every scar tells a story, every skill hard-earned.`);
-    }
-}
+// (Removed duplicate gainExperience and checkLevelUp; using imported versions from player.js)
 
 // Function to show level up screen effects
 function showLevelUpEffects() {
