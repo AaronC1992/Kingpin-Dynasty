@@ -925,8 +925,10 @@
         <div id="hurt-flash"></div>
     </div>
 
-    <script src="mobile-responsive.js"></script>
-    <script src="ui-modal.js"></script>
-    <script src="game.js"></script>
+    <!-- Module scripts (ES Modules) -->
+    <script type="module" src="mobile-responsive.js"></script>
+    <script type="module" src="ui-modal.js"></script>
+    <!-- Main entry point now imports modularized game data -->
+    <script type="module" src="game.js"></script>
 </body>
 </html>
