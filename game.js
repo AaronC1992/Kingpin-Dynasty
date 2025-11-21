@@ -5657,10 +5657,12 @@ function refreshCurrentScreen() {
         return;
     }
     
-    // Avoid re-rendering the store each tick to prevent flicker
+    // If store is open, only refresh dynamic elements to avoid flicker
     const storeScreen = document.getElementById("store-screen");
     if (storeScreen && storeScreen.style.display !== "none") {
-        // Intentionally skip full refresh; prices/buttons update on actions
+        if (typeof refreshStoreDynamicElements === 'function') {
+            refreshStoreDynamicElements();
+        }
         return;
     }
     
@@ -10954,12 +10956,12 @@ function showStore() {
                     <div style="margin-bottom: 8px; color: #bdc3c7;">
                         ${itemDescription}
                     </div>
-                    <div style="color: #f1c40f; font-weight: bold; font-size: 1.1em;">
+                    <div id="store-price-${index}" data-base-price="${item.price}" style="color: #f1c40f; font-weight: bold; font-size: 1.1em;">
                         $${finalPrice.toLocaleString()}${discountText}
                     </div>
                 </div>
                 <div style="flex-shrink: 0;">
-                    <button onclick="buyItem(${index})" 
+                    <button id="buy-btn-${index}" onclick="buyItem(${index})" 
                             style="background: ${player.money >= finalPrice ? '#27ae60' : '#7f8c8d'}; 
                                    color: white; padding: 12px 20px; border: none; border-radius: 6px; 
                                    cursor: ${player.money >= finalPrice ? 'pointer' : 'not-allowed'}; 
@@ -11003,6 +11005,31 @@ function showStore() {
     document.getElementById("inventory-list").innerHTML = inventoryListHTML;
     hideAllScreens();
     document.getElementById("store-screen").style.display = "block";
+}
+
+// Refresh only dynamic elements on the store (prices, button states)
+function refreshStoreDynamicElements() {
+    if (!document.getElementById("store-screen") || document.getElementById("store-screen").style.display === 'none') return;
+    storeItems.forEach((item, index) => {
+        const priceEl = document.getElementById(`store-price-${index}`);
+        const btnEl = document.getElementById(`buy-btn-${index}`);
+        if (!priceEl || !btnEl) return;
+        const base = parseInt(priceEl.getAttribute('data-base-price'), 10) || item.price;
+        const finalPrice = Math.floor(base * (1 - player.skills.charisma * 0.02));
+        const discountText = player.skills.charisma > 0 ? ` (${((1 - finalPrice/base) * 100).toFixed(0)}% off!)` : '';
+        priceEl.textContent = `$${finalPrice.toLocaleString()}${discountText}`;
+        if (player.money >= finalPrice) {
+            btnEl.disabled = false;
+            btnEl.style.background = '#27ae60';
+            btnEl.style.cursor = 'pointer';
+            btnEl.textContent = 'Purchase';
+        } else {
+            btnEl.disabled = true;
+            btnEl.style.background = '#7f8c8d';
+            btnEl.style.cursor = 'not-allowed';
+            btnEl.textContent = 'Too Expensive';
+        }
+    });
 }
 
 // Function to buy an item
