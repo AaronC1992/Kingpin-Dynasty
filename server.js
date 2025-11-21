@@ -3,6 +3,8 @@ const WebSocket = require('ws');
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+// JSON file persistence utilities
+const { loadWorldState, saveWorldState } = require('./worldPersistence');
 
 // Server configuration
 const PORT = process.env.PORT || 3000;
@@ -139,20 +141,10 @@ wss.on('close', function close() {
 const gameState = {
     players: new Map(),
     playerStates: new Map(), // Detailed player states including jail status
-    cityDistricts: {
-        downtown: { controlledBy: null, crimeLevel: 50 },
-        docks: { controlledBy: null, crimeLevel: 75 },
-        suburbs: { controlledBy: null, crimeLevel: 25 },
-        industrial: { controlledBy: null, crimeLevel: 60 },
-        redlight: { controlledBy: null, crimeLevel: 90 }
-    },
+    cityDistricts: {},
     activeHeists: [],
     globalChat: [],
-    cityEvents: [
-        { type: 'police_raid', district: 'industrial', description: 'Heavy police presence, high risk/reward jobs available', timeLeft: '15 min', createdAt: Date.now() },
-        { type: 'market_crash', district: 'downtown', description: 'Economic instability, weapon prices fluctuating', timeLeft: '1 hour', createdAt: Date.now() },
-        { type: 'gang_meeting', district: 'docks', description: 'Underground meeting, recruitment opportunities', timeLeft: '30 min', createdAt: Date.now() }
-    ],
+    cityEvents: [],
     tradeOffers: [],
     gangWars: [],
     serverStats: {
@@ -163,6 +155,50 @@ const gameState = {
         successfulJailbreaks: 0
     }
 };
+
+// Load world persistence on startup
+let persistedLeaderboard = [];
+try {
+    const persisted = loadWorldState();
+    gameState.cityDistricts = persisted.cityDistricts || {};
+    gameState.cityEvents = Array.isArray(persisted.cityEvents) ? persisted.cityEvents : [];
+    persistedLeaderboard = Array.isArray(persisted.leaderboard) ? persisted.leaderboard : [];
+    console.log('💾 World state loaded from world-state.json');
+} catch (e) {
+    console.log('⚠️ Failed to load world state; using defaults');
+    // Provide defaults if not loaded
+    gameState.cityDistricts = {
+        downtown: { controlledBy: null, crimeLevel: 50 },
+        docks: { controlledBy: null, crimeLevel: 75 },
+        suburbs: { controlledBy: null, crimeLevel: 25 },
+        industrial: { controlledBy: null, crimeLevel: 60 },
+        redlight: { controlledBy: null, crimeLevel: 90 }
+    };
+    gameState.cityEvents = [
+        { type: 'police_raid', district: 'industrial', description: 'Heavy police presence, high risk/reward jobs available', timeLeft: '15 min', createdAt: Date.now() },
+        { type: 'market_crash', district: 'downtown', description: 'Economic instability, weapon prices fluctuating', timeLeft: '1 hour', createdAt: Date.now() },
+        { type: 'gang_meeting', district: 'docks', description: 'Underground meeting, recruitment opportunities', timeLeft: '30 min', createdAt: Date.now() }
+    ];
+}
+
+// Debounced save to avoid frequent disk writes
+let savePending = false;
+function scheduleWorldSave() {
+    if (savePending) return;
+    savePending = true;
+    setTimeout(() => {
+        savePending = false;
+        try {
+            saveWorldState({
+                cityDistricts: gameState.cityDistricts,
+                cityEvents: gameState.cityEvents,
+                leaderboard: persistedLeaderboard
+            });
+        } catch (err) {
+            console.error('⚠️ Error during world save:', err.message);
+        }
+    }, 5000);
+}
 
 // Connected clients
 // Identity/session management
@@ -249,6 +285,7 @@ wss.on('connection', (ws, req) => {
                         district: district,
                         playerName: player.name
                     });
+                    scheduleWorldSave();
                 }
             });
             
@@ -271,7 +308,8 @@ wss.on('connection', (ws, req) => {
             playerCount: clients.size,
             serverName: 'From Dusk to Don - Main Server',
             cityEvents: gameState.cityEvents,
-            globalLeaderboard: generateLeaderboard()
+            // Use last persisted snapshot for initial info
+            globalLeaderboard: persistedLeaderboard
         }
     }));
 });
@@ -503,6 +541,7 @@ function handleTerritoryClaim(clientId, message) {
         // Add to global chat
         addGlobalChatMessage('System', `🏛️ ${player.name} claimed ${district} district!`, '#e74c3c');
         broadcastPlayerStates();
+        scheduleWorldSave();
     }
 }
 
@@ -596,6 +635,10 @@ function handlePlayerChallenge(clientId, message) {
         });
         
         addGlobalChatMessage('System', `⚔️ ${challenger.name} defeated ${targetPlayer.name} in combat!`, '#e74c3c');
+        // Persist leaderboard changes
+        persistedLeaderboard = generateLeaderboard();
+        broadcastToAll({ type: 'player_ranked', leaderboard: persistedLeaderboard });
+        scheduleWorldSave();
     } else {
         const repLoss = 2 + Math.floor(Math.random() * 5);
         challenger.reputation = Math.max(0, challenger.reputation - repLoss);
@@ -609,6 +652,9 @@ function handlePlayerChallenge(clientId, message) {
             loser: challenger.name,
             repChange: 3
         });
+        persistedLeaderboard = generateLeaderboard();
+        broadcastToAll({ type: 'player_ranked', leaderboard: persistedLeaderboard });
+        scheduleWorldSave();
     }
 }
 
@@ -705,10 +751,12 @@ function handlePlayerUpdate(clientId, message) {
     
     // Send updated leaderboard if reputation changed
     if (message.reputation !== undefined) {
+        persistedLeaderboard = generateLeaderboard();
         broadcastToAll({
             type: 'player_ranked',
-            leaderboard: generateLeaderboard()
+            leaderboard: persistedLeaderboard
         });
+        scheduleWorldSave();
     }
 }
 
@@ -912,7 +960,9 @@ function handleJobIntent(clientId, message) {
     }
 
     broadcastPlayerStates();
-    broadcastToAll({ type: 'player_ranked', leaderboard: generateLeaderboard() });
+    persistedLeaderboard = generateLeaderboard();
+    broadcastToAll({ type: 'player_ranked', leaderboard: persistedLeaderboard });
+    scheduleWorldSave();
 }
 
 // Broadcast player states to all clients
@@ -951,6 +1001,9 @@ function executeHeist(heist) {
         });
         
         addGlobalChatMessage('System', `🎉 Heist successful! ${heist.target} netted $${heist.reward.toLocaleString()}!`, '#2ecc71');
+        persistedLeaderboard = generateLeaderboard();
+        broadcastToAll({ type: 'player_ranked', leaderboard: persistedLeaderboard });
+        scheduleWorldSave();
     } else {
         // Failed heist
         heist.participants.forEach(participantId => {
@@ -967,6 +1020,9 @@ function executeHeist(heist) {
         });
         
         addGlobalChatMessage('System', `💀 Heist failed! ${heist.target} was too well defended.`, '#e74c3c');
+        persistedLeaderboard = generateLeaderboard();
+        broadcastToAll({ type: 'player_ranked', leaderboard: persistedLeaderboard });
+        scheduleWorldSave();
     }
     
     // Remove from active heists
