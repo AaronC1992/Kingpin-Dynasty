@@ -11352,46 +11352,7 @@ function policeInformant() {
     updateUI();
 }
 
-// Energy regeneration system
-function regenerateEnergy() {
-    if (player.energy < player.maxEnergy && !player.inJail) {
-        player.energyRegenTimer--;
-        
-        if (player.energyRegenTimer <= 0) {
-            // Base 1 energy per tick; Recovery skill increases energy gained per tick
-            const recoveryLevel = (player.skillTrees && player.skillTrees.endurance && player.skillTrees.endurance.recovery) || 0;
-            const extraPerTick = Math.floor(recoveryLevel / 5); // +1 energy per 5 recovery levels
-            const energyGain = Math.max(1, 1 + extraPerTick);
-            player.energy = Math.min(player.energy + energyGain, player.maxEnergy);
-            player.energyRegenTimer = 30; // Reset timer to 30 seconds
-            logAction(`💤 You catch your breath in the shadows. The adrenaline fades and your strength slowly returns. (+${energyGain} energy)`);
-            
-            // Forensics skill: Advanced wanted level decay
-            if (player.wantedLevel > 0 && player.skillTrees.intelligence.forensics > 0) {
-                let forensicsDecayChance = player.skillTrees.intelligence.forensics * 3; // 3% chance per level
-                if (Math.random() * 100 < forensicsDecayChance) {
-                    player.wantedLevel = Math.max(0, player.wantedLevel - 1);
-                    logAction("🔬 Your forensics expertise helps eliminate evidence over time. Heat level decreased by 1!");
-                }
-            }
-        }
-        updateUI();
-    }
-}
-
-// Function to start energy regeneration timer when energy is consumed
-function startEnergyRegenTimer() {
-    if (player.energyRegenTimer === 0 && player.energy < player.maxEnergy) {
-        player.energyRegenTimer = 30; // Start 30-second countdown
-    }
-}
-
-// Start energy regeneration (1 energy per 30 seconds)
-function startEnergyRegeneration() {
-    setInterval(() => {
-        regenerateEnergy();
-    }, 1000); // Update every second for timer display
-}
+// (Removed duplicate regenerateEnergy, startEnergyRegenTimer, startEnergyRegeneration; using player.js exports)
 
 // Passive income system
 function generatePassiveIncome() {
