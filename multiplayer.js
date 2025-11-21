@@ -252,6 +252,21 @@ function handleServerMessage(message) {
                 onlineWorldState.playerStates = message.playerStates;
                 updateJailVisibility();
                 updateOnlinePlayerList();
+
+                // SERVER-AUTHORITATIVE SYNC: overwrite local critical stats from authoritative state
+                const selfPs = onlineWorldState.playerStates[onlineWorldState.playerId];
+                if (selfPs) {
+                    // Only trust server for these values
+                    if (typeof player.money === 'number' && typeof selfPs.money === 'number') player.money = selfPs.money;
+                    if (typeof selfPs.reputation === 'number') player.reputation = selfPs.reputation;
+                    if (typeof selfPs.level === 'number') player.level = selfPs.level;
+                    if (typeof selfPs.territory === 'number') player.territory = selfPs.territory;
+                    player.inJail = !!selfPs.inJail;
+                    player.jailTime = selfPs.jailTime || 0;
+                    if (typeof selfPs.wantedLevel === 'number') player.wantedLevel = selfPs.wantedLevel;
+                    if (typeof selfPs.energy === 'number') player.energy = selfPs.energy;
+                    updateUI(); // reflect authoritative corrections
+                }
             }
             
             updateConnectionStatus();
@@ -321,6 +336,51 @@ function handleServerMessage(message) {
         case 'territory_taken':
             onlineWorldState.cityDistricts[message.district].controlledBy = message.playerName;
             addWorldEvent(`🏛️ ${message.playerName} claimed ${message.district} district!`);
+            // If this was our claim, apply authoritative money & territory
+            if (message.playerId === onlineWorldState.playerId) {
+                if (typeof message.money === 'number') player.money = message.money;
+                if (typeof message.territory === 'number') player.territory = message.territory;
+                updateUI();
+            }
+            break;
+
+        case 'job_result':
+            // SERVER-AUTHORITATIVE job outcome (sent only to requesting client)
+            if (message.success) {
+                if (typeof message.money === 'number') player.money = message.money;
+                if (typeof message.reputation === 'number') player.reputation = message.reputation;
+                if (typeof message.wantedLevel === 'number') player.wantedLevel = message.wantedLevel;
+                if (typeof message.energy === 'number') player.energy = message.energy;
+                player.inJail = !!message.jailed ? true : player.inJail;
+                if (message.jailed) player.jailTime = message.jailTime || player.jailTime;
+                // Log outcome
+                const earningsStr = message.earnings ? `+$${message.earnings.toLocaleString()}` : '';
+                logAction(`💼 Job '${message.jobId}' completed ${earningsStr} (Rep +${message.repGain || 0}, Wanted +${message.wantedAdded || 0})`);
+                if (message.jailed) {
+                    logAction(`🚔 Arrested during job. Jail Time: ${player.jailTime}s`);
+                    addWorldEvent(`🚔 Arrested during ${message.jobId} job.`);
+                }
+            } else {
+                logAction(`💀 Job '${message.jobId}' failed: ${message.error || 'Unknown error'}`);
+            }
+            updateUI();
+            break;
+
+        case 'jailbreak_success':
+            // If we were freed, update local jail status
+            if (message.helperName) {
+                showSystemMessage(`🔓 ${message.helperName} freed you from jail!`, '#c0a062');
+            }
+            player.inJail = false;
+            player.jailTime = 0;
+            updateUI();
+            break;
+
+        case 'jailbreak_failed_arrested':
+            // We got arrested during jailbreak attempt
+            showSystemMessage(message.message || 'Jailbreak failed and you were arrested.', '#8b0000');
+            // Jail state will sync on next world_update; avoid guessing remaining time here.
+            updateUI();
             break;
             
         case 'heist_broadcast':
@@ -487,41 +547,21 @@ function attemptPlayerJailbreak(targetPlayerId, targetPlayerName) {
     const confirmBreakout = confirm(`Attempt to break ${targetPlayerName} out of jail? This will cost 15 energy and has risks.`);
     
     if (confirmBreakout) {
+        // SERVER-AUTHORITATIVE INTENT: Energy deducted locally, outcome (success/arrest) decided by server.
         player.energy -= 15;
-        
-        // Send jailbreak attempt to server
         if (onlineWorldState.socket && onlineWorldState.socket.readyState === WebSocket.OPEN) {
             onlineWorldState.socket.send(JSON.stringify({
                 type: 'jailbreak_attempt',
-                targetPlayerId: targetPlayerId,
-                targetPlayerName: targetPlayerName,
+                targetPlayerId,
+                targetPlayerName,
                 helperPlayerId: onlineWorldState.playerId,
                 helperPlayerName: player.name || 'You'
             }));
-        }
-        
-        // Simulate jailbreak result locally
-        const successChance = 25 + (player.skills?.stealth || 0) * 3; // Base 25% + stealth bonus
-        const success = Math.random() * 100 < successChance;
-        
-        if (success) {
-            player.reputation += 5;
-            alert(`🎉 Success! You helped ${targetPlayerName} escape from jail! (+5 reputation)`);
-            logAction(`🔓 Successfully helped ${targetPlayerName} break out of jail (+5 reputation)`);
+            logAction(`🔓 Jailbreak intent sent to free ${targetPlayerName}. Awaiting authoritative outcome...`);
         } else {
-            const arrestChance = 30; // 30% chance of getting arrested
-            if (Math.random() * 100 < arrestChance) {
-                // Player gets arrested for failed jailbreak attempt
-                sendToJail(2);
-                alert(`💀 Jailbreak failed and you were caught! You've been arrested.`);
-                logAction(`🚔 Failed jailbreak attempt - arrested while trying to help ${targetPlayerName}`);
-            } else {
-                alert(`💀 Jailbreak failed, but you managed to escape undetected.`);
-                logAction(`⚠️ Failed to break ${targetPlayerName} out of jail, but avoided capture`);
-            }
+            alert('Connection lost before sending jailbreak intent.');
         }
-        
-        updateUI();
+        updateUI(); // Show reduced energy immediately; success/failure will arrive via server messages
     }
 }
 
@@ -564,6 +604,29 @@ function syncPlayerState() {
             }
         }));
     }
+}
+
+// ==================== SERVER-AUTHORITATIVE JOB INTENT ====================
+// Send a job intent to the server. The server decides earnings, reputation, wanted level, jail outcome, and energy.
+// Temporary mapping: collapse many local job types into limited server prototypes.
+function sendJobIntent(localJob) {
+    if (!onlineWorldState.isConnected || !onlineWorldState.socket || onlineWorldState.socket.readyState !== WebSocket.OPEN) {
+        return false;
+    }
+    // Map local job risk to a prototype jobId recognized by server.
+    // This is a placeholder until full job catalog mirrored server-side.
+    let jobId;
+    const risk = (localJob.risk || '').toLowerCase();
+    if (risk === 'low') jobId = 'pickpocket';
+    else if (risk === 'medium') jobId = 'carTheft';
+    else jobId = 'bankRobbery'; // high / very high / extreme / legendary bucket for now
+
+    onlineWorldState.socket.send(JSON.stringify({
+        type: 'job_intent',
+        jobId
+    }));
+    logAction(`💼 Job intent sent (${localJob.name} → ${jobId}). Awaiting authoritative result...`);
+    return true;
 }
 
 // ==================== GLOBAL CHAT SYSTEM ====================
@@ -1672,18 +1735,17 @@ function claimTerritory(districtName) {
     }
     
     if (confirm(`Claim ${districtName} district for $${cost.toLocaleString()}? This will be visible to all players.`)) {
-        player.money -= cost;
-        district.controlledBy = player.name || 'You';
-        player.territory += 1;
-        
-        alert(`🏛️ Successfully claimed ${districtName} district!`);
-        logAction(`🏛️ Claimed ${districtName} district for $${cost.toLocaleString()}`);
-        
-        // Broadcast to world
-        addWorldEvent(`🏛️ ${player.name || 'A player'} claimed ${districtName} district!`);
-        
-        // Update display
-        showOnlineWorld();
+        // SERVER-AUTHORITATIVE INTENT: Do NOT mutate local money/territory.
+        // Send territory_claim intent; server will validate cost, apply changes, then broadcast territory_taken.
+        if (onlineWorldState.socket && onlineWorldState.socket.readyState === WebSocket.OPEN) {
+            onlineWorldState.socket.send(JSON.stringify({
+                type: 'territory_claim',
+                district: districtName
+            }));
+            logAction(`🏛️ Territory claim intent sent for ${districtName} ($${cost.toLocaleString()}). Awaiting authoritative confirmation...`);
+        } else {
+            alert('Connection lost before sending claim intent.');
+        }
     }
 }
 

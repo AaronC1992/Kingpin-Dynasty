@@ -6272,7 +6272,21 @@ function startJob(index) {
         return;
     }
 
-    // Consume energy before attempting the job
+    // SERVER-AUTHORITATIVE (ONLINE) BRANCH:
+    // If connected to online world, convert job action into intent and let server decide outcome.
+    if (typeof onlineWorldState !== 'undefined' && onlineWorldState.isConnected) {
+        // Attempt to send intent (multiplayer.js risk mapping). Do NOT mutate economy stats locally.
+        const sent = sendJobIntent(job);
+        if (sent) {
+            // Show minimal feedback; energy will be set by server (authoritative) so we don't deduct locally.
+            alert(`Job intent sent: ${job.name}. Awaiting server outcome...`);
+            updateUI();
+            return; // Exit early; offline simulation bypassed.
+        }
+        // If sending failed (socket not open), fall back to offline simulation below.
+    }
+
+    // OFFLINE / FALLBACK: proceed with legacy local simulation
     player.energy -= actualEnergyCost;
     startEnergyRegenTimer(); // Start the regeneration timer
 

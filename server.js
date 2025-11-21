@@ -284,6 +284,13 @@ function handleClientMessage(clientId, message, ws) {
         case 'request_world_state':
             sendWorldState(clientId, ws);
             break;
+        
+        // ==================== SERVER-AUTHORITATIVE INTENTS (FIRST PASS) ====================
+        // Clients now send INTENT messages only. The server validates and computes outcomes.
+        // Future gameplay actions should follow this pattern: client -> intent, server -> authoritative result.
+        case 'job_intent':
+            handleJobIntent(clientId, message);
+            break;
             
         default:
             console.log(`⚠️ Unknown message type: ${message.type}`);
@@ -430,19 +437,29 @@ function handleTerritoryClaim(clientId, message) {
         player.money -= cost;
         player.territory += 1;
         gameState.cityDistricts[district].controlledBy = player.name;
+        // Keep authoritative playerStates map in sync
+        const ps = gameState.playerStates.get(clientId);
+        if (ps) {
+            ps.money = player.money;
+            ps.territory = player.territory;
+            ps.lastUpdate = Date.now();
+        }
         
         console.log(`🏛️ ${player.name} claimed ${district} for $${cost}`);
         
-        // Broadcast territory change
+        // Broadcast territory change with authoritative numeric state
         broadcastToAll({
             type: 'territory_taken',
             district: district,
             playerName: player.name,
-            playerId: clientId
+            playerId: clientId,
+            money: player.money,
+            territory: player.territory
         });
         
         // Add to global chat
         addGlobalChatMessage('System', `🏛️ ${player.name} claimed ${district} district!`, '#e74c3c');
+        broadcastPlayerStates();
     }
 }
 
@@ -755,6 +772,102 @@ function handleJailbreakAttempt(clientId, message) {
     
     // Broadcast updated player states
     broadcastPlayerStates();
+}
+
+// ==================== JOB INTENT HANDLER (SERVER AUTHORITATIVE) ====================
+// Minimal first-pass job definitions. In future, load from shared balance config.
+const JOB_DEFS = {
+    pickpocket: { base: 200, risk: 'low', wanted: 1, jailChance: 2, energyCost: 5 },
+    carTheft: { base: 1200, risk: 'medium', wanted: 3, jailChance: 5, energyCost: 15 },
+    bankRobbery: { base: 25000, risk: 'high', wanted: 8, jailChance: 15, energyCost: 35 }
+};
+
+function handleJobIntent(clientId, message) {
+    const player = gameState.players.get(clientId);
+    const ps = gameState.playerStates.get(clientId);
+    if (!player || !ps) return;
+
+    const jobId = message.jobId;
+    const jobDef = JOB_DEFS[jobId];
+    if (!jobDef) {
+        const ws = clients.get(clientId);
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'job_result', jobId, success: false, error: 'Unknown job' }));
+        }
+        return;
+    }
+
+    // Validation: jail & energy
+    if (ps.inJail) {
+        const ws = clients.get(clientId);
+        if (ws) ws.send(JSON.stringify({ type: 'job_result', jobId, success: false, error: 'Player in jail' }));
+        return;
+    }
+    if ((ps.energy || 0) < jobDef.energyCost) {
+        const ws = clients.get(clientId);
+        if (ws) ws.send(JSON.stringify({ type: 'job_result', jobId, success: false, error: 'Not enough energy' }));
+        return;
+    }
+
+    // Deduct energy
+    ps.energy = Math.max(0, (ps.energy || 0) - jobDef.energyCost);
+
+    // Compute reward authoritatively
+    const variance = 0.5 + Math.random(); // 0.5x - 1.5x
+    const earnings = Math.floor(jobDef.base * variance);
+    player.money += earnings;
+    ps.money = player.money;
+
+    // Reputation gain scaled by risk
+    let repGain = jobDef.risk === 'low' ? 1 : jobDef.risk === 'medium' ? 3 : 6;
+    player.reputation += repGain;
+    ps.reputation = player.reputation;
+
+    // Wanted level increase
+    ps.wantedLevel = (ps.wantedLevel || 0) + jobDef.wanted;
+
+    // Jail chance
+    let jailed = false;
+    if (Math.random() * 100 < jobDef.jailChance) {
+        ps.inJail = true;
+        ps.jailTime = 15 + Math.floor(Math.random() * 20); // 15-34 seconds
+        jailed = true;
+    }
+
+    ps.lastUpdate = Date.now();
+
+    // Send authoritative result to requesting client only
+    const ws = clients.get(clientId);
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+            type: 'job_result',
+            jobId,
+            success: true,
+            earnings,
+            repGain,
+            wantedAdded: jobDef.wanted,
+            jailed,
+            jailTime: ps.jailTime || 0,
+            money: ps.money,
+            reputation: ps.reputation,
+            wantedLevel: ps.wantedLevel,
+            energy: ps.energy
+        }));
+    }
+
+    // If jailed, broadcast arrest to others
+    if (jailed) {
+        broadcastToAll({
+            type: 'player_arrested',
+            playerId: clientId,
+            playerName: player.name,
+            jailTime: ps.jailTime
+        }, clientId);
+        addGlobalChatMessage('System', `🚔 ${player.name} was arrested after a ${jobId} job!`, '#e74c3c');
+    }
+
+    broadcastPlayerStates();
+    broadcastToAll({ type: 'player_ranked', leaderboard: generateLeaderboard() });
 }
 
 // Broadcast player states to all clients
