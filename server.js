@@ -4,7 +4,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 // JSON file persistence utilities
-const { loadWorldState, saveWorldState } = require('./worldPersistence');
+const { loadWorldState, saveWorldState, flushWorldState } = require('./worldPersistence');
 
 // Server configuration
 const PORT = process.env.PORT || 3000;
@@ -1078,3 +1078,47 @@ function generateClientId() {
 server.listen(PORT, () => {
     console.log(`Server started on port ${PORT}`);
 });
+
+// ==================== GRACEFUL SHUTDOWN ====================
+// Handle server shutdown to save world state
+process.on('SIGTERM', gracefulShutdown);
+process.on('SIGINT', gracefulShutdown);
+
+function gracefulShutdown() {
+    console.log('\n🛑 Server shutting down gracefully...');
+    
+    // Flush any pending world state changes
+    try {
+        flushWorldState();
+        console.log('💾 World state flushed to disk');
+    } catch (err) {
+        console.error('⚠️ Error flushing world state:', err.message);
+    }
+    
+    // Notify all connected clients
+    broadcastToAll({
+        type: 'server_shutdown',
+        message: 'Server is shutting down. Please reconnect in a moment.'
+    });
+    
+    // Close all WebSocket connections
+    wss.clients.forEach(client => {
+        try {
+            client.close(1000, 'Server shutdown');
+        } catch (err) {
+            console.error('Error closing client connection:', err.message);
+        }
+    });
+    
+    // Close the server
+    server.close(() => {
+        console.log('👋 Server shut down successfully');
+        process.exit(0);
+    });
+    
+    // Force exit after 10 seconds if graceful shutdown fails
+    setTimeout(() => {
+        console.error('⚠️ Forced shutdown after timeout');
+        process.exit(1);
+    }, 10000);
+}
