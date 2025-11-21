@@ -844,6 +844,14 @@ const storeItems = [
 
 // Utility to get item image or fallback
 function getItemImage(itemName) {
+    // Explicit filename mappings to match case-sensitive hosts
+    const itemImageMap = {
+        "Brass Knuckles": "Brass knuckles.png",
+        "Armored Car": "Armored car.png",
+        "Tommy Gun": "Tommy gun.png"
+    };
+    if (itemImageMap[itemName]) return itemImageMap[itemName];
+
     const item = storeItems.find(i => i.name === itemName);
     if (item && item.image) {
         return item.image;
@@ -853,8 +861,8 @@ function getItemImage(itemName) {
     if (car && car.image) {
         return car.image;
     }
-    // Fallback
-    return "missing-item.png";
+    // Default to name-based file to support most items
+    return `${itemName}.png`;
 }
 
 // Real Estate Properties
@@ -5649,10 +5657,10 @@ function refreshCurrentScreen() {
         return;
     }
     
-    // Check if store screen is visible and refresh it
+    // Avoid re-rendering the store each tick to prevent flicker
     const storeScreen = document.getElementById("store-screen");
     if (storeScreen && storeScreen.style.display !== "none") {
-        showStore(); // Refresh the store screen
+        // Intentionally skip full refresh; prices/buttons update on actions
         return;
     }
     
@@ -10923,8 +10931,8 @@ function showStore() {
             itemDescription = `(Power: ${item.power})`;
         }
         
-        // Create image source from item name
-        const imageSrc = `${item.name}.png`;
+        // Resolve image source with case-safe mapping
+        const imageSrc = getItemImage(item.name);
         
         return `
             <li style="display: flex; align-items: center; gap: 15px; padding: 15px; margin: 10px 0; background: rgba(52, 73, 94, 0.6); border-radius: 8px; border-left: 4px solid #3498db;">
@@ -10968,7 +10976,7 @@ function showStore() {
     }).join('');
 
     let inventoryListHTML = player.inventory.map(item => {
-        const imageSrc = `${item.name}.png`;
+        const imageSrc = getItemImage(item.name);
         return `
             <li style="display: flex; align-items: center; gap: 10px; padding: 10px; margin: 5px 0; 
                        background: rgba(39, 174, 96, 0.3); border-radius: 6px; border-left: 3px solid #2ecc71;">
@@ -11047,7 +11055,7 @@ async function buyItem(index) {
 
 // Function to show vehicle purchase result with photo
 function showVehiclePurchaseResult(item, finalPrice) {
-    const vehicleImageSrc = `${item.name}.png`;
+    const vehicleImageSrc = getItemImage(item.name);
     
     const resultHTML = `
         <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); 
