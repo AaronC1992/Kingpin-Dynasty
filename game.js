@@ -15219,9 +15219,12 @@ function showCharacterShowcase() {
 
 // ==================== END COMPETITION SYSTEM ====================
 
-window.onload = function() {
+// Start the game when the page is fully loaded
+if (document.readyState === 'complete') {
     startLoadingSequence();
-};
+} else {
+    window.addEventListener('load', startLoadingSequence);
+}
 
 // Loading sequence with progress updates
 function startLoadingSequence() {
