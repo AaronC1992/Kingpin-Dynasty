@@ -165,14 +165,49 @@ const gameState = {
 };
 
 // Connected clients
+// Identity/session management
+// - clients: Map of server-assigned playerId -> WebSocket (for targeted sends and broadcasting)
+// - sessions: Map of WebSocket -> { playerId, playerName } (authoritative identity bound to connection)
 const clients = new Map();
+const sessions = new Map();
+
+// Basic player name sanitization & uniqueness helpers
+function sanitizePlayerName(raw) {
+    let name = (raw || '').toString();
+    // Strip HTML and trim
+    name = name.replace(/<[^>]*>/g, '').trim();
+    // Collapse whitespace
+    name = name.replace(/\s+/g, ' ');
+    // Enforce length
+    if (name.length > 20) name = name.substring(0, 20);
+    // Fallback if empty or profane
+    if (!name || isProfane(name)) {
+        name = `Player_${Math.random().toString(36).slice(-4)}`;
+    }
+    return name;
+}
+
+function ensureUniqueName(baseName) {
+    const existing = new Set(Array.from(gameState.players.values()).map(p => p.name));
+    if (!existing.has(baseName)) return baseName;
+    // Append suffix until unique
+    let i = 2;
+    let candidate = `${baseName}#${i}`;
+    while (existing.has(candidate) && i < 1000) {
+        i++;
+        candidate = `${baseName}#${i}`;
+    }
+    return candidate;
+}
 
 console.log('🌐 From Dusk to Don - Multiplayer Server Starting...');
 
 // WebSocket connection handler
 wss.on('connection', (ws, req) => {
+    // SERVER-SIDE IDENTITY: assign server-generated playerId and bind to this WebSocket
     const clientId = generateClientId();
     clients.set(clientId, ws);
+    sessions.set(ws, { playerId: clientId, playerName: null });
     gameState.serverStats.totalConnections++;
     
     console.log(`🎮 Player connected: ${clientId} (Total: ${clients.size})`);
@@ -225,6 +260,7 @@ wss.on('connection', (ws, req) => {
         }
         
         clients.delete(clientId);
+        sessions.delete(ws);
     });
     
     // Send welcome message
@@ -299,9 +335,16 @@ function handleClientMessage(clientId, message, ws) {
 
 // Player connection handler
 function handlePlayerConnect(clientId, message, ws) {
+    // Sanitize and enforce uniqueness on desired name
+    const desiredName = sanitizePlayerName(message.playerName || `Player_${clientId.slice(-4)}`);
+    const finalName = ensureUniqueName(desiredName);
+    // Persist on session for reference
+    const sess = sessions.get(ws);
+    if (sess) sess.playerName = finalName;
+
     const player = {
         id: clientId,
-        name: message.playerName || `Player_${clientId.slice(-4)}`,
+        name: finalName,
         money: message.playerStats?.money || 10000,
         reputation: message.playerStats?.reputation || 0,
         territory: message.playerStats?.territory || 0,
@@ -622,8 +665,9 @@ function handlePlayerUpdate(clientId, message) {
     // Update all state fields from message
     if (message.playerState) {
         Object.assign(playerState, message.playerState);
+        // Do NOT trust client-sent identity; enforce server-side identity
         playerState.playerId = clientId;
-        playerState.name = message.playerName || player.name;
+        playerState.name = player.name;
         playerState.lastUpdate = Date.now();
     }
     
@@ -684,14 +728,15 @@ function handleJailbreakAttempt(clientId, message) {
         return;
     }
     
+    const targetName = targetState.name || (gameState.players.get(message.targetPlayerId)?.name) || 'Unknown';
     if (!targetState.inJail) {
-        console.log(`❌ ${helper.name} tried to break out ${message.targetPlayerName} who isn't in jail`);
+        console.log(`❌ ${helper.name} tried to break out ${targetName} who isn't in jail`);
         return;
     }
     
     gameState.serverStats.jailbreakAttempts++;
     
-    console.log(`🔓 ${helper.name} attempting to break out ${message.targetPlayerName}`);
+    console.log(`🔓 ${helper.name} attempting to break out ${targetName}`);
     
     // Calculate success chance (server authoritative)
     const baseSuccessChance = 25;
@@ -708,7 +753,7 @@ function handleJailbreakAttempt(clientId, message) {
         
         gameState.serverStats.successfulJailbreaks++;
         
-        console.log(`✅ Jailbreak successful! ${helper.name} freed ${message.targetPlayerName}`);
+        console.log(`✅ Jailbreak successful! ${helper.name} freed ${targetName}`);
         
         // Notify target player if they're online
         const targetClient = clients.get(message.targetPlayerId);
@@ -726,11 +771,11 @@ function handleJailbreakAttempt(clientId, message) {
             playerId: clientId,
             playerName: helper.name,
             targetPlayerId: message.targetPlayerId,
-            targetPlayerName: message.targetPlayerName,
+            targetPlayerName: targetName,
             success: true
         });
         
-        addGlobalChatMessage('System', `🎉 ${helper.name} successfully broke ${message.targetPlayerName} out of jail!`, '#2ecc71');
+        addGlobalChatMessage('System', `🎉 ${helper.name} successfully broke ${targetName} out of jail!`, '#2ecc71');
     } else {
         // Failed jailbreak
         const arrestChance = 30; // 30% chance helper gets arrested
@@ -751,11 +796,11 @@ function handleJailbreakAttempt(clientId, message) {
                 }));
             }
             
-            addGlobalChatMessage('System', `💀 ${helper.name} failed to break out ${message.targetPlayerName} and was arrested!`, '#e74c3c');
+            addGlobalChatMessage('System', `💀 ${helper.name} failed to break out ${targetName} and was arrested!`, '#e74c3c');
         } else {
             console.log(`💀 Jailbreak failed but ${helper.name} escaped`);
             
-            addGlobalChatMessage('System', `💀 ${helper.name} failed to break out ${message.targetPlayerName} but escaped undetected.`, '#f39c12');
+            addGlobalChatMessage('System', `💀 ${helper.name} failed to break out ${targetName} but escaped undetected.`, '#f39c12');
         }
         
         // Broadcast failed jailbreak
@@ -764,7 +809,7 @@ function handleJailbreakAttempt(clientId, message) {
             playerId: clientId,
             playerName: helper.name,
             targetPlayerId: message.targetPlayerId,
-            targetPlayerName: message.targetPlayerName,
+            targetPlayerName: targetName,
             success: false,
             helperArrested: helperState.inJail
         });
