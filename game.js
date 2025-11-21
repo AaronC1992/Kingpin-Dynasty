@@ -5531,8 +5531,52 @@ function updateUI() {
         }
     }
     
+    // Emit state change events (pub/sub)
+    try {
+        if (window.EventBus) {
+            if (!window.__lastEventSnapshot) {
+                window.__lastEventSnapshot = {
+                    money: player.money,
+                    reputation: player.reputation,
+                    wantedLevel: player.wantedLevel,
+                    energy: player.energy,
+                    health: player.health,
+                    inJail: player.inJail,
+                    jailTime: player.jailTime,
+                    territoryCount: player.territories.length,
+                    level: player.level,
+                    experience: player.experience
+                };
+            }
+            const snap = window.__lastEventSnapshot;
+            const emitNum = (key, value, evt) => {
+                const old = snap[key];
+                if (old !== value) {
+                    EventBus.emit(evt, { oldValue: old, newValue: value });
+                    snap[key] = value;
+                }
+            };
+            if (snap.inJail !== player.inJail) {
+                EventBus.emit('jailStatusChanged', { inJail: player.inJail, jailTime: player.jailTime });
+                snap.inJail = player.inJail;
+            }
+            if (snap.jailTime !== player.jailTime) {
+                EventBus.emit('jailTimeUpdated', { jailTime: player.jailTime });
+                snap.jailTime = player.jailTime;
+            }
+            emitNum('money', player.money, 'moneyChanged');
+            emitNum('reputation', Math.floor(player.reputation), 'reputationChanged');
+            emitNum('wantedLevel', player.wantedLevel, 'wantedLevelChanged');
+            emitNum('energy', player.energy, 'energyChanged');
+            emitNum('health', player.health, 'healthChanged');
+            emitNum('territoryCount', player.territories.length, 'territoryChanged');
+            emitNum('level', player.level, 'levelChanged');
+            emitNum('experience', player.experience, 'experienceChanged');
+        }
+    } catch (e) { /* no-op */ }
+
     const dirty = (player.dirtyMoney || 0);
-    document.getElementById("money-display").innerText = `Money: $${player.money.toLocaleString()} | Dirty: $${dirty.toLocaleString()}`;
+    // Money and wanted level HUD updates handled via EventBus subscribers
     document.getElementById("power-display").innerText = `Power: ${player.power}`;
     
     // Add territory display if player has territories
@@ -5547,7 +5591,6 @@ function updateUI() {
     }
     
     document.getElementById("inventory-display").innerText = `Inventory: ${player.inventory.length} Items`;
-    document.getElementById("wanted-level-display").innerText = `Wanted Level: ${player.wantedLevel}`;
     document.getElementById("ammo-display").innerText = `Ammo: ${player.ammo}`;
     document.getElementById("gas-display").innerText = `Gas: ${player.gas}`;
     document.getElementById("health-display").innerText = `Health: ${player.health}`;
@@ -5596,7 +5639,6 @@ function updateUI() {
     updateRightPanel();
 
     if (player.inJail) {
-        document.getElementById("money-display").innerText = `In Jail for ${player.jailTime} seconds`;
         showJailScreen(); // Ensure jail screen is shown when in jail
     }
 
@@ -6979,6 +7021,10 @@ function sendToJail(wantedLevelLoss) {
     player.inJail = true;
     player.jailTime = Math.max(15, 10 + player.wantedLevel); // Minimum 15 seconds jail time
     console.log('Initial jail time set to:', player.jailTime);
+
+    if (window.EventBus) {
+        try { EventBus.emit('jailStatusChanged', { inJail: true, jailTime: player.jailTime }); } catch(e) {}
+    }
     
     player.wantedLevel -= wantedLevelLoss; // Lose wanted level when in jail
     player.wantedLevel = Math.max(0, player.wantedLevel); // Ensure wanted level doesn't go negative
@@ -7024,6 +7070,10 @@ function attemptBreakout() {
         player.inJail = false;
         player.jailTime = 0;
         player.breakoutAttempts = 3; // Reset breakout attempts
+
+        if (window.EventBus) {
+            try { EventBus.emit('jailStatusChanged', { inJail: false, jailTime: 0 }); } catch(e) {}
+        }
         
         // Update statistics
         updateStatistic('timesEscaped', 1);
@@ -12652,6 +12702,10 @@ function updateJailTimer() {
             
             player.jailTime--;
             console.log('Jail time decremented to:', player.jailTime);
+
+            if (window.EventBus) {
+                try { EventBus.emit('jailTimeUpdated', { jailTime: player.jailTime }); } catch(e) {}
+            }
             
             // Update jail-related UI elements again after decrement
             updateJailUI();
@@ -12675,6 +12729,9 @@ function updateJailTimer() {
         } else {
             console.log('Jail time expired, releasing player');
             player.inJail = false;
+            if (window.EventBus) {
+                try { EventBus.emit('jailStatusChanged', { inJail: false, jailTime: 0 }); } catch(e) {}
+            }
             updateUI();
             
             // Sync jail status with online world

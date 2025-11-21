@@ -1,0 +1,17 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Format changed JS files",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$files = @('index.html','eventBus.js','ui-events.js','game.js'); $ErrorActionPreference='Stop'; foreach($f in $files){ if(Test-Path $f){ (Get-Content $f) | Set-Content $f } } Write-Host 'Formatted files: ' ($files -join ', ')"
+			],
+			"isBackground": false,
+			"group": "none"
+		}
+	]
+}
