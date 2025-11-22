@@ -9,14 +9,16 @@ export const MobileSystem = {
     screenOrientation: 'portrait',
     screenWidth: window.innerWidth,
     screenHeight: window.innerHeight,
+    mobileNavigationActive: false,
+    swipeGesturesConfigured: false,
     
     // Initialize mobile system
     init() {
         this.detectDevice();
         this.applyDeviceClasses(); // JS sets classes, CSS handles layout
+        this.updateMobileNavigationState();
         this.setupResponsiveHandling();
         this.setupOrientationHandling();
-        this.setupMobileNavigation(); // Mobile-specific UI (swipe panels, quick actions)
         this.optimizeTouch(); // Touch-specific enhancements
         
         console.log('Mobile System initialized:', {
@@ -70,6 +72,7 @@ export const MobileSystem = {
         window.addEventListener('resize', () => {
             this.detectDevice();
             this.applyDeviceClasses(); // Update classes; CSS handles rest
+            this.updateMobileNavigationState();
         });
         
         // Handle orientation change
@@ -77,6 +80,7 @@ export const MobileSystem = {
             setTimeout(() => {
                 this.detectDevice();
                 this.applyDeviceClasses();
+                this.updateMobileNavigationState();
                 this.handleOrientationChange();
             }, 100);
         });
@@ -108,11 +112,20 @@ export const MobileSystem = {
     
     // Setup mobile navigation
     setupMobileNavigation() {
+        if (!(this.isMobile || this.isTablet)) {
+            this.teardownMobileNavigation();
+            return;
+        }
+
         // Create mobile action log panel that slides from right
         this.createMobileActionPanel();
-        this.setupSwipeGestures();
+        if (!this.swipeGesturesConfigured) {
+            this.setupSwipeGestures();
+            this.swipeGesturesConfigured = true;
+        }
         this.showSwipeHint(); // Show hint on first load
         this.createMobileQuickActions();
+        this.mobileNavigationActive = true;
     },
     
     // Create mobile menu button (disabled - using swipe gestures instead)
@@ -335,21 +348,13 @@ export const MobileSystem = {
     
     // Remove panel overlay
     removePanelOverlay() {
-        // Remove all potential overlays to ensure cleanup
-        const overlays = document.querySelectorAll('#mobile-panel-overlay');
-        overlays.forEach(overlay => {
-            if (overlay && overlay.parentNode) {
-                overlay.remove();
-            }
-        });
-        
-        // Also remove any stray overlays by class or other selectors
-        const straysOverlays = document.querySelectorAll('[id*="overlay"], [id*="mobile-panel"]');
-        straysOverlays.forEach(overlay => {
-            if (overlay.style.background && overlay.style.background.includes('rgba(0, 0, 0')) {
-                overlay.remove();
-            }
-        });
+        // Remove the dedicated mobile panel overlay if present
+            const overlays = document.querySelectorAll('#mobile-panel-overlay');
+            overlays.forEach(overlay => {
+                if (overlay && overlay.parentNode) {
+                    overlay.remove();
+                }
+            });
     },
     
     // Toggle action panel visibility (legacy support)
@@ -616,6 +621,22 @@ export const MobileSystem = {
         
         document.body.appendChild(quickActionsBar);
     },
+
+    // Remove quick actions bar when not needed
+    removeMobileQuickActions() {
+        const quickActionsBar = document.getElementById('mobile-quick-actions');
+        if (quickActionsBar) {
+            quickActionsBar.remove();
+        }
+    },
+
+    // Remove the mobile action panel entirely
+    removeMobileActionPanel() {
+        const actionPanel = document.getElementById('mobile-action-panel');
+        if (actionPanel) {
+            actionPanel.remove();
+        }
+    },
     
     // Create mobile action log display
     createMobileActionLog() {
@@ -753,6 +774,23 @@ export const MobileSystem = {
             height: this.screenHeight,
             userAgent: navigator.userAgent
         };
+    },
+
+    // Toggle mobile navigation UI based on device class
+    updateMobileNavigationState() {
+        if (this.isMobile || this.isTablet) {
+            this.setupMobileNavigation();
+        } else {
+            this.teardownMobileNavigation();
+        }
+    },
+
+    // Clean up mobile-only UI when switching to desktop view
+    teardownMobileNavigation() {
+        this.removeMobileQuickActions();
+        this.removeMobileActionPanel();
+        this.removePanelOverlay();
+        this.mobileNavigationActive = false;
     }
 };
 
