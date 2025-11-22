@@ -5362,6 +5362,7 @@ function alert(message, isRed = false) {
 function sendToJail(wantedLevelLoss) {
     console.log('sendToJail called with wantedLevelLoss:', wantedLevelLoss);
     console.log('Current wanted level:', player.wantedLevel);
+    stopJailTimer();
     
     player.inJail = true;
     player.jailTime = Math.max(15, 10 + player.wantedLevel); // Minimum 15 seconds jail time
@@ -5415,6 +5416,8 @@ function attemptBreakout() {
         player.inJail = false;
         player.jailTime = 0;
         player.breakoutAttempts = 3; // Reset breakout attempts
+
+        stopJailTimer();
 
         if (window.EventBus) {
             try { EventBus.emit('jailStatusChanged', { inJail: false, jailTime: 0 }); } catch(e) {}
@@ -10870,6 +10873,7 @@ function forceReleaseFromJail() {
     console.log('forceReleaseFromJail called');
     player.inJail = false;
     player.jailTime = 0;
+    stopJailTimer();
     updateUI();
     
     // Sync with online world
@@ -10906,25 +10910,41 @@ function updateJailUI() {
 }
 
 // Function to update the jail timer
+let jailTimerInterval = null;
+
+function stopJailTimer() {
+    if (jailTimerInterval) {
+        clearInterval(jailTimerInterval);
+        jailTimerInterval = null;
+    }
+}
+
 function updateJailTimer() {
-    console.log('updateJailTimer called - player.inJail:', player.inJail, 'player.jailTime:', player.jailTime);
-    
-    if (player.inJail) {
+    console.log('updateJailTimer called - starting jail timer loop', player.inJail, player.jailTime);
+    stopJailTimer();
+
+    if (!player.inJail) {
+        console.log('Player is not in jail, skipping timer start.');
+        return;
+    }
+
+    jailTimerInterval = setInterval(() => {
+        if (!player.inJail) {
+            stopJailTimer();
+            return;
+        }
+
         if (player.jailTime > 0) {
-            // Update all jail UI elements first
             updateJailUI();
-            
             player.jailTime--;
             console.log('Jail time decremented to:', player.jailTime);
 
             if (window.EventBus) {
-                try { EventBus.emit('jailTimeUpdated', { jailTime: player.jailTime }); } catch(e) {}
+                try { EventBus.emit('jailTimeUpdated', { jailTime: player.jailTime }); } catch (e) {}
             }
-            
-            // Update jail-related UI elements again after decrement
+
             updateJailUI();
-            
-            // Update prisoner sentences and remove those who are freed
+
             jailPrisoners = jailPrisoners.filter(prisoner => {
                 if (prisoner.isPlayer) {
                     prisoner.sentence = player.jailTime;
@@ -10933,32 +10953,29 @@ function updateJailTimer() {
                     prisoner.sentence--;
                     if (prisoner.sentence <= 0) {
                         logAction(`🚪 ${prisoner.name} walks out the front door, sentence served. They nod at you with respect - you might see them on the streets again.`);
-                        return false; // Remove prisoner
+                        return false;
                     }
                     return true;
                 }
             });
-            
-            setTimeout(updateJailTimer, 1000);
         } else {
+            stopJailTimer();
             console.log('Jail time expired, releasing player');
             player.inJail = false;
+            player.jailTime = 0;
             if (window.EventBus) {
-                try { EventBus.emit('jailStatusChanged', { inJail: false, jailTime: 0 }); } catch(e) {}
+                try { EventBus.emit('jailStatusChanged', { inJail: false, jailTime: 0 }); } catch (e) {}
             }
             updateUI();
-            
-            // Sync jail status with online world
+
             if (typeof syncPlayerState === 'function') {
                 syncPlayerState();
             }
-            
+
             alert("You served your sentence and are now free.");
             goBackToMainMenu();
         }
-    } else {
-        console.log('updateJailTimer called but player is not in jail');
-    }
+    }, 1000);
 }
 
 // Function to show the Court House screen
@@ -11080,6 +11097,7 @@ function restartGame() {
     player.health = 100;
     player.inJail = false;
     player.jailTime = 0;
+    stopJailTimer();
     player.breakoutChance = 45;
     player.breakoutAttempts = 3;
     player.power = 0;
@@ -12164,6 +12182,7 @@ function resetGame() {
     player.health = 100;
     player.inJail = false;
     player.jailTime = 0;
+    stopJailTimer();
     player.breakoutChance = 45;
     player.breakoutAttempts = 3;
     player.power = 0;
@@ -13739,6 +13758,7 @@ function applySaveData(saveData) {
         }
     } else {
         console.log('applySaveData - Player is not in jail');
+        stopJailTimer();
     }
     
     // Initialize missing data structures for older saves
