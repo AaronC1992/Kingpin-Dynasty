@@ -1,4 +1,4 @@
-import { initOnboarding } from './onboarding.js';
+import { initOnboarding, updateTracker } from './onboarding.js';
 import { applyDailyPassives } from './passiveManager.js';
 import { showEmpireOverview } from './empireOverview.js';
 import { checkRetirement, triggerEnding, showRetirementMenu } from './legacy.js';
@@ -3983,6 +3983,9 @@ function updateUI() {
     if (Math.random() < 0.1) { // 10% chance per UI update to avoid too frequent checks
         checkWeeklyChallenges();
     }
+
+    // Refresh onboarding tracker text if tutorial still active
+    updateTracker();
 }
 
 // ==================== CHEAT / DEBUG FUNCTION ====================
@@ -11722,7 +11725,7 @@ function showSaveSelectionInterface(saves) {
             </div>
             
             <div style="text-align: center;">
-                <button onclick="goBackToMainMenu()" style="background: #95a5a6; color: white; padding: 15px 30px; border: none; border-radius: 10px; cursor: pointer; font-size: 1.1em;">
+                <button onclick="exitLoadInterface('menu')" style="background: #95a5a6; color: white; padding: 15px 30px; border: none; border-radius: 10px; cursor: pointer; font-size: 1.1em;">
                     ← Back to Main Menu
                 </button>
             </div>
@@ -11730,6 +11733,10 @@ function showSaveSelectionInterface(saves) {
     `;
     
     document.getElementById('statistics-content').innerHTML = content;
+    const statsContent = document.getElementById('statistics-content');
+    if (statsContent) {
+        statsContent.dataset.loadContext = 'loadGame';
+    }
 }
 
 // Function to load game from intro screen - use the new save selection interface
@@ -11831,6 +11838,31 @@ function showSaveSelectionFromIntro(saves) {
     document.body.appendChild(overlay);
 }
 
+function exitLoadInterface(target = 'menu') {
+    const overlay = document.getElementById('intro-save-overlay');
+    if (overlay) {
+        overlay.remove();
+    }
+
+    const statsScreen = document.getElementById('statistics-screen');
+    if (statsScreen) {
+        statsScreen.style.display = 'none';
+    }
+
+    const statsContent = document.getElementById('statistics-content');
+    if (statsContent && statsContent.dataset.loadContext === 'loadGame') {
+        statsContent.innerHTML = '';
+        delete statsContent.dataset.loadContext;
+    }
+
+    hideAllScreens();
+    if (target === 'intro') {
+        document.getElementById('intro-screen').style.display = 'block';
+    } else {
+        document.getElementById('menu').style.display = 'block';
+    }
+}
+
 function loadGameFromIntroSlot(slotNumber) {
     // Load the game from the selected slot
     if (loadGameFromSlot(slotNumber)) {
@@ -11857,12 +11889,7 @@ function loadGameFromIntroSlot(slotNumber) {
 }
 
 function cancelLoadFromIntro() {
-    // Remove the overlay and show intro screen again
-    const overlay = document.getElementById('intro-save-overlay');
-    if (overlay) {
-        overlay.remove();
-    }
-    document.getElementById('intro-screen').style.display = 'block';
+    exitLoadInterface('intro');
 }
 
 // Helper function to check for slot saves

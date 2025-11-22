@@ -85,7 +85,7 @@ function createTrackerUI() {
     tracker.style.maxWidth = '250px';
     tracker.innerHTML = `
         <h4 style="margin: 0 0 5px 0; color: #ffd700;">Current Objective</h4>
-        <div id="tutorial-text">Loading...</div>
+        <div id="tutorial-tracker-text">Loading...</div>
     `;
     document.body.appendChild(tracker);
 }
@@ -94,7 +94,7 @@ export function updateTracker() {
     if (!isTutorialActive) return;
 
     const step = tutorialSteps[currentStepIndex];
-    const trackerText = document.getElementById('tutorial-text');
+    const trackerText = document.getElementById('tutorial-tracker-text');
     
     if (trackerText) {
         trackerText.textContent = step.text;
