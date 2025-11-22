@@ -129,10 +129,7 @@ body.season-winter {
     flex-shrink: 0;
 }
 
-#dirty-money-display {
-    color: #f39c12;
-    border: 1px solid rgba(243, 156, 18, 0.4);
-}
+/* Dirty money uses the same base pill styling as other stats; no extra highlight needed. */
 
 .stats-container {
     display: grid;
