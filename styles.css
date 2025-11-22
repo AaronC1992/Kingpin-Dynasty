@@ -129,6 +129,11 @@ body.season-winter {
     flex-shrink: 0;
 }
 
+#dirty-money-display {
+    color: #f39c12;
+    border: 1px solid rgba(243, 156, 18, 0.4);
+}
+
 .stats-container {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));

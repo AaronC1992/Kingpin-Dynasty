@@ -3865,6 +3865,7 @@ function updateUI() {
             if (!window.__lastEventSnapshot) {
                 window.__lastEventSnapshot = {
                     money: player.money,
+                    dirtyMoney: dirty,
                     reputation: player.reputation,
                     wantedLevel: player.wantedLevel,
                     energy: player.energy,
@@ -3893,6 +3894,7 @@ function updateUI() {
                 snap.jailTime = player.jailTime;
             }
             emitNum('money', player.money, 'moneyChanged');
+            emitNum('dirtyMoney', dirty, 'dirtyMoneyChanged');
             emitNum('reputation', Math.floor(player.reputation), 'reputationChanged');
             emitNum('wantedLevel', player.wantedLevel, 'wantedLevelChanged');
             emitNum('energy', player.energy, 'energyChanged');

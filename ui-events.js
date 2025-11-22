@@ -11,14 +11,19 @@ function formatMoney(n) {
 
 function refreshMoneyDisplay() {
     const moneyEl = document.getElementById('money-display');
+    const dirtyEl = document.getElementById('dirty-money-display');
     if (!moneyEl) return;
-    
+
     if (player.inJail) {
         moneyEl.innerText = `In Jail for ${player.jailTime} seconds`;
     } else {
-        const dirty = player.dirtyMoney || 0;
         const money = player.money || 0;
-        moneyEl.innerText = `Money: $${formatMoney(money)} | Dirty: $${formatMoney(dirty)}`;
+        moneyEl.innerText = `Money: $${formatMoney(money)}`;
+    }
+
+    if (dirtyEl) {
+        const dirty = player.dirtyMoney || 0;
+        dirtyEl.innerText = `Dirty: $${formatMoney(dirty)}`;
     }
 }
 
@@ -26,6 +31,10 @@ export function initUIEvents() {
     EventBus.on('moneyChanged', ({ oldValue, newValue }) => {
         // Only update cash HUD when not in jail (jail handler takes precedence)
         if (player.inJail) return;
+        refreshMoneyDisplay();
+    });
+
+    EventBus.on('dirtyMoneyChanged', ({ oldValue, newValue }) => {
         refreshMoneyDisplay();
     });
 
