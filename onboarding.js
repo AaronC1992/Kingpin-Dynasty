@@ -93,6 +93,7 @@ function createTrackerUI() {
         overlay.addEventListener('click', (e) => {
             if (e.target === overlay) {
                 overlay.style.display = 'none';
+                tracker.style.display = 'none';
             }
         });
         
