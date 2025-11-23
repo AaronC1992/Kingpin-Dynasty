@@ -17,7 +17,7 @@ const tutorialSteps = [
     },
     {
         id: "first_job",
-        text: "Complete a 'Mug Civilian' job to earn cash.",
+        text: "Complete a 'Street Soldier' job to earn cash.",
         check: () => player.missions.missionStats.jobsCompleted > 0,
         next: "buy_weapon"
     },
