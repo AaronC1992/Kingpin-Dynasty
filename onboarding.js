@@ -72,8 +72,11 @@ export function initOnboarding() {
 function createTrackerUI() {
     const isMobileDevice = document.body.classList.contains('mobile-device') || window.innerWidth <= 768;
     
-    // Create modal overlay for mobile (hidden by default)
+    // Desktop: Use the right panel objective section (already in HTML)
+    // Mobile: Create modal overlay and popup
+    
     if (isMobileDevice) {
+        // Create modal overlay for mobile (hidden by default)
         const overlay = document.createElement('div');
         overlay.id = 'tutorial-tracker-overlay';
         overlay.style.cssText = `
@@ -93,57 +96,47 @@ function createTrackerUI() {
         overlay.addEventListener('click', (e) => {
             if (e.target === overlay) {
                 overlay.style.display = 'none';
-                tracker.style.display = 'none';
+                const tracker = document.getElementById('tutorial-tracker');
+                if (tracker) tracker.style.display = 'none';
             }
         });
         
         document.body.appendChild(overlay);
-    }
-    
-    const tracker = document.createElement('div');
-    tracker.id = 'tutorial-tracker';
-    tracker.style.position = 'fixed';
-    
-    if (isMobileDevice) {
-        // Mobile: centered modal style, hidden by default
-        tracker.style.top = '50%';
-        tracker.style.left = '50%';
-        tracker.style.transform = 'translate(-50%, -50%)';
-        tracker.style.display = 'none';
-        tracker.style.zIndex = '10000';
-        tracker.style.maxWidth = '90%';
-        tracker.style.width = '320px';
-    } else {
-        // Desktop: top-right corner, always visible
-        tracker.style.top = '10px';
-        tracker.style.right = '10px';
-        tracker.style.display = 'block';
-        tracker.style.zIndex = '1000';
-        tracker.style.maxWidth = '250px';
-    }
-    
-    tracker.style.background = 'rgba(0, 0, 0, 0.95)';
-    tracker.style.color = '#fff';
-    tracker.style.padding = '15px';
-    tracker.style.border = '2px solid #ffd700';
-    tracker.style.borderRadius = '8px';
-    tracker.style.fontFamily = 'monospace';
-    tracker.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.5)';
-    
-    tracker.innerHTML = `
-        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px;">
-            <h4 style="margin: 0; color: #ffd700; font-size: 14px;">Current Objective</h4>
-            ${isMobileDevice ? '<button class="tutorial-tracker-close" style="background: #8b0000; border: 1px solid #ff0000; color: #fff; border-radius: 4px; font-size: 12px; padding: 4px 8px; cursor: pointer; font-weight: bold; touch-action: manipulation;">Close</button>' : ''}
-        </div>
-        <div class="tutorial-tracker-body" style="font-size: 13px; line-height: 1.4;">
-            <div id="tutorial-tracker-text">Loading...</div>
-        </div>
-    `;
-    
-    document.body.appendChild(tracker);
-
-    // Mobile close button - setup AFTER adding to DOM
-    if (isMobileDevice) {
+        
+        // Create mobile tracker modal
+        const tracker = document.createElement('div');
+        tracker.id = 'tutorial-tracker';
+        tracker.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+            z-index: 10000;
+            max-width: 90%;
+            width: 320px;
+            background: rgba(0, 0, 0, 0.95);
+            color: #fff;
+            padding: 15px;
+            border: 2px solid #ffd700;
+            border-radius: 8px;
+            font-family: monospace;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        `;
+        
+        tracker.innerHTML = `
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px;">
+                <h4 style="margin: 0; color: #ffd700; font-size: 14px;">Current Objective</h4>
+                <button class="tutorial-tracker-close" style="background: #8b0000; border: 1px solid #ff0000; color: #fff; border-radius: 4px; font-size: 12px; padding: 4px 8px; cursor: pointer; font-weight: bold; touch-action: manipulation;">Close</button>
+            </div>
+            <div class="tutorial-tracker-body" style="font-size: 13px; line-height: 1.4;">
+                <div id="tutorial-tracker-text-mobile">Loading...</div>
+            </div>
+        `;
+        
+        document.body.appendChild(tracker);
+        
+        // Mobile close button - setup AFTER adding to DOM
         const closeButton = tracker.querySelector('.tutorial-tracker-close');
         if (closeButton) {
             closeButton.addEventListener('click', (e) => {
@@ -155,16 +148,24 @@ function createTrackerUI() {
             });
         }
     }
+    // Desktop uses the built-in right panel section, no need to create tracker element
 }
 
 export function updateTracker() {
     if (!isTutorialActive) return;
 
     const step = tutorialSteps[currentStepIndex];
-    const trackerText = document.getElementById('tutorial-tracker-text');
     
-    if (trackerText) {
-        trackerText.textContent = step.text;
+    // Update desktop tracker (right panel)
+    const trackerTextDesktop = document.getElementById('tutorial-tracker-text');
+    if (trackerTextDesktop) {
+        trackerTextDesktop.textContent = step.text;
+    }
+    
+    // Update mobile tracker (popup)
+    const trackerTextMobile = document.getElementById('tutorial-tracker-text-mobile');
+    if (trackerTextMobile) {
+        trackerTextMobile.textContent = step.text;
     }
 
     // Check for completion
@@ -187,8 +188,16 @@ export function updateTracker() {
             isTutorialActive = false;
             localStorage.setItem('tutorialStep', 'complete');
             if (window.logAction) window.logAction("You've learned the basics. Now go run this city!");
+            
+            // Update both desktop and mobile to show completion
+            if (trackerTextDesktop) trackerTextDesktop.textContent = 'Tutorial Complete!';
+            if (trackerTextMobile) trackerTextMobile.textContent = 'Tutorial Complete!';
+            
+            // Remove mobile tracker after a delay
             const tracker = document.getElementById('tutorial-tracker');
-            if (tracker) tracker.remove();
+            if (tracker) {
+                setTimeout(() => tracker.remove(), 3000);
+            }
         }
     }
 }
