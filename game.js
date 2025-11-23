@@ -15895,6 +15895,7 @@ window.showOptions = showOptions;
 window.restartGame = restartGame;
 window.forceNewGame = forceNewGame;
 window.saveToSlot = saveToSlot;
+window.loadGameFromSlot = loadGameFromSlot;
 window.exitLoadInterface = exitLoadInterface;
 
 // Intro & Tutorial
