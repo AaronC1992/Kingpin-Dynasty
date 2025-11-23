@@ -794,6 +794,17 @@ export const MobileSystem = {
     }
 };
 
-// Ensure global availability for inline handlers
+// Standalone helper function for updating mobile action log
+// Safe to call from any context (modules or globals)
+export function updateMobileActionLog() {
+    if (MobileSystem.isMobile || MobileSystem.isTablet) {
+        setTimeout(() => {
+            MobileSystem.updateMobileActionLog();
+        }, 100);
+    }
+}
+
+// Ensure global availability for inline handlers and non-module scripts
 window.MobileSystem = MobileSystem;
+window.updateMobileActionLog = updateMobileActionLog;
 

@@ -12,7 +12,7 @@ import { prisonerNames, recruitNames, availableRecruits, randomEncounterRecruit,
 import { EventBus } from './eventBus.js';
 import { GameLogging } from './logging.js';
 import { ui, ModalSystem } from './ui-modal.js';
-import { MobileSystem } from './mobile-responsive.js';
+import { MobileSystem, updateMobileActionLog } from './mobile-responsive.js';
 import { initUIEvents } from './ui-events.js';
 
 // Expose to window for legacy compatibility
@@ -50,6 +50,7 @@ window.GameLogging = GameLogging;
 window.ui = ui;
 window.ModalSystem = ModalSystem;
 window.MobileSystem = MobileSystem;
+window.updateMobileActionLog = updateMobileActionLog;
 window.initUIEvents = initUIEvents;
 
 
@@ -4411,11 +4412,7 @@ function logAction(message) {
     logItem.scrollIntoView({ behavior: "smooth" }); // Scroll to the new log item
     
     // Update mobile action log if mobile system is loaded
-    if (typeof window.MobileSystem !== 'undefined') {
-        setTimeout(() => {
-            window.MobileSystem.updateMobileActionLog();
-        }, 100);
-    }
+    updateMobileActionLog();
 }
 
 // Advanced Skills Integration Functions
