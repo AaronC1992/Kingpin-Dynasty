@@ -8798,16 +8798,17 @@ function goBackToMainMenu() {
   hideAllScreens();
   document.getElementById("menu").style.display = "block";
   
-  // Explicitly hide these screens as backup
-  document.getElementById("jail-screen").style.display = "none";
-  document.getElementById("dark-web-screen").style.display = "none";
-  document.getElementById("court-house-screen").style.display = "none";
-  document.getElementById("inventory-screen").style.display = "none";
-  document.getElementById("hospital-screen").style.display = "none";
-  document.getElementById("death-screen").style.display = "none";
-  document.getElementById("achievements-screen").style.display = "none";
-  document.getElementById("jailbreak-screen").style.display = "none";
-  document.getElementById("recruitment-screen").style.display = "none";
+  // Explicitly hide these screens as backup (with null checks)
+  const screensToHide = [
+    "jail-screen", "dark-web-screen", "court-house-screen", 
+    "inventory-screen", "hospital-screen", "death-screen", 
+    "achievements-screen", "jailbreak-screen", "recruitment-screen"
+  ];
+  
+  screensToHide.forEach(screenId => {
+    const screen = document.getElementById(screenId);
+    if (screen) screen.style.display = "none";
+  });
   
   // Ensure multiplayer/global chat screen is hidden
   const multiplayerScreen = document.getElementById("multiplayer-screen");
@@ -9868,6 +9869,130 @@ async function showSimpleCharacterCreation() {
   
   // Now show portrait selection screen
   showPortraitSelection();
+}
+
+// Character creation helper variables
+let selectedGender = '';
+let selectedEthnicity = '';
+
+// Function to select gender during character creation
+function selectGender(gender) {
+  selectedGender = gender;
+  
+  // Update button states
+  document.querySelectorAll('[data-gender]').forEach(btn => {
+    btn.classList.remove('selected');
+  });
+  const selectedBtn = document.querySelector(`[data-gender="${gender}"]`);
+  if (selectedBtn) {
+    selectedBtn.classList.add('selected');
+  }
+  
+  // Update preview if both gender and ethnicity are selected
+  updateCharacterPreview();
+}
+
+// Function to select ethnicity during character creation
+function selectEthnicity(ethnicity) {
+  selectedEthnicity = ethnicity;
+  
+  // Update button states
+  document.querySelectorAll('[data-ethnicity]').forEach(btn => {
+    btn.classList.remove('selected');
+  });
+  const selectedBtn = document.querySelector(`[data-ethnicity="${ethnicity}"]`);
+  if (selectedBtn) {
+    selectedBtn.classList.add('selected');
+  }
+  
+  // Update preview if both gender and ethnicity are selected
+  updateCharacterPreview();
+}
+
+// Function to update character preview
+function updateCharacterPreview() {
+  const nameInput = document.getElementById('character-name');
+  const previewName = document.getElementById('preview-name');
+  const selectedPortrait = document.getElementById('selected-portrait');
+  const createBtn = document.getElementById('create-character-btn');
+  
+  if (nameInput && previewName) {
+    const name = nameInput.value.trim();
+    previewName.textContent = name ? `Name: ${name}` : 'Name: Unknown';
+  }
+  
+  // Show portrait if both selections made
+  if (selectedGender && selectedEthnicity && selectedPortrait) {
+    const ethnicityMap = {
+      'white': 'White',
+      'black': 'Black',
+      'asian': 'Asian',
+      'mexican': 'Mexican'
+    };
+    const genderMap = {
+      'male': 'male',
+      'female': 'female'
+    };
+    const portraitPath = `profile_pics/${ethnicityMap[selectedEthnicity]} ${genderMap[selectedGender]}.png`;
+    selectedPortrait.src = portraitPath;
+    selectedPortrait.style.display = 'block';
+  }
+  
+  // Enable create button if all selections made and name entered
+  if (createBtn && nameInput) {
+    const name = nameInput.value.trim();
+    createBtn.disabled = !(selectedGender && selectedEthnicity && name.length > 0);
+  }
+}
+
+// Function to create character after all selections made
+function createCharacter() {
+  const nameInput = document.getElementById('character-name');
+  const name = nameInput ? nameInput.value.trim() : '';
+  
+  if (!name) {
+    alert('Enter your name first.');
+    return;
+  }
+  
+  if (!selectedGender) {
+    alert('Select your gender.');
+    return;
+  }
+  
+  if (!selectedEthnicity) {
+    alert('Select your heritage.');
+    return;
+  }
+  
+  const ethnicityMap = {
+    'white': 'White',
+    'black': 'Black',
+    'asian': 'Asian',
+    'mexican': 'Mexican'
+  };
+  
+  // Set player data
+  player.name = name;
+  player.gender = selectedGender;
+  player.ethnicity = selectedEthnicity;
+  player.portrait = `profile_pics/${ethnicityMap[selectedEthnicity]} ${selectedGender}.png`;
+  
+  // Set default current slot for new character
+  SAVE_SYSTEM.currentSlot = 1;
+  saveSaveSystemPrefs();
+  
+  // Hide character creation screen
+  const charScreen = document.getElementById('character-creation');
+  if (charScreen) {
+    charScreen.style.display = 'none';
+  }
+  
+  // Log character creation
+  logAction(`🎭 ${player.name} emerges from the shadows - ready to conquer the criminal underworld.`);
+  
+  // Show intro narrative
+  showIntroNarrative();
 }
 
 function showPortraitSelection() {
@@ -11609,13 +11734,13 @@ function startScreenRefreshTimer() {
 // Function to update jailbreak prisoner timers (separate from display)
 function updateJailbreakPrisonerTimers() {
   // Update prisoner sentences and remove those who are freed
-  jailbreakPrisoners = jailbreakPrisoners.filter(prisoner => {
-    prisoner.sentence--;
-    if (prisoner.sentence <= 0) {
-      return false; // Remove prisoner
+  // Can't reassign imported variable, so modify array in place
+  for (let i = jailbreakPrisoners.length - 1; i >= 0; i--) {
+    jailbreakPrisoners[i].sentence--;
+    if (jailbreakPrisoners[i].sentence <= 0) {
+      jailbreakPrisoners.splice(i, 1); // Remove prisoner
     }
-    return true;
-  });
+  }
   
   // Refresh the display
   updateJailbreakPrisonerList();
@@ -12363,6 +12488,12 @@ function initGame() {
   // Always show intro screen with Start Game and Load Game buttons
   document.getElementById("intro-screen").style.display = "block";
   document.getElementById("menu").style.display = "none";
+  
+  // Add event listener for character name input
+  const charNameInput = document.getElementById('character-name');
+  if (charNameInput) {
+    charNameInput.addEventListener('input', updateCharacterPreview);
+  }
   
   // Update UI
   updateUI();
