@@ -9985,6 +9985,27 @@ function createCharacter() {
   showIntroNarrative();
 }
 
+// Function to go back to intro screen from character creation
+function goBackToIntro() {
+  const charCreationScreen = document.getElementById('character-creation-screen');
+  const introScreen = document.getElementById('intro-screen');
+  
+  if (charCreationScreen) {
+    charCreationScreen.style.display = 'none';
+  }
+  
+  if (introScreen) {
+    introScreen.style.display = 'block';
+  }
+  
+  // Reset selections
+  selectedPortraitFile = '';
+  const nameInput = document.getElementById('character-name');
+  if (nameInput) {
+    nameInput.value = '';
+  }
+}
+
 function showPortraitSelection() {
   // Hide intro screen and show portrait selection
   document.getElementById("intro-screen").style.display = "none";
@@ -14602,7 +14623,12 @@ function checkWeeklyChallenges() {
   let newCompletions = 0;
   
   challenges.forEach(challenge => {
-    if (!challenge.completed && challenge.checkProgress(challenge.target)) {
+    // Safely check if checkProgress function exists and call it
+    const hasProgress = challenge.checkProgress && typeof challenge.checkProgress === 'function' 
+      ? challenge.checkProgress(challenge.target) 
+      : false;
+      
+    if (!challenge.completed && hasProgress) {
       challenge.completed = true;
       challenge.completedAt = new Date().toISOString();
       
