@@ -14,6 +14,8 @@ import { GameLogging } from './logging.js';
 import { ui, ModalSystem } from './ui-modal.js';
 import { MobileSystem, updateMobileActionLog } from './mobile-responsive.js';
 import { initUIEvents } from './ui-events.js';
+import ExpandedSystems from './expanded-systems.js';
+import ExpandedUI from './expanded-ui.js';
 
 // Expose to window for legacy compatibility
 window.player = player;
@@ -52,6 +54,8 @@ window.ModalSystem = ModalSystem;
 window.MobileSystem = MobileSystem;
 window.updateMobileActionLog = updateMobileActionLog;
 window.initUIEvents = initUIEvents;
+window.ExpandedSystems = ExpandedSystems;
+window.ExpandedUI = ExpandedUI;
 
 
 
@@ -9117,21 +9121,39 @@ function recruitMember(index) {
             player.gang.gangMembers = [];
         }
         
-        player.gang.gangMembers.push({
-            name: recruit.name,
-            experienceLevel: recruit.experienceLevel,
-            tributeMultiplier: recruit.tributeMultiplier,
-            specialization: recruit.specialization,
-            loyalty: recruit.loyalty,
-            skills: recruit.skills || {
-                violence: Math.floor(Math.random() * 3) + 1,
-                stealth: Math.floor(Math.random() * 3) + 1,
-                intelligence: Math.floor(Math.random() * 3) + 1
-            },
-            onOperation: false,
-            inTraining: false,
-            arrested: false
-        });
+        // EXPANDED: Create enhanced gang member with role system if enabled
+        let newMember;
+        if (ExpandedSystems && ExpandedSystems.CONFIG.gangRolesEnabled) {
+            // Generate expanded gang member with role
+            newMember = ExpandedSystems.generateGangMember(null, recruit.name);
+            
+            // Merge with legacy data
+            newMember.experienceLevel = recruit.experienceLevel;
+            newMember.tributeMultiplier = recruit.tributeMultiplier;
+            newMember.specialization = recruit.specialization;
+            newMember.onOperation = false;
+            newMember.inTraining = false;
+            newMember.arrested = false;
+        } else {
+            // Legacy gang member format
+            newMember = {
+                name: recruit.name,
+                experienceLevel: recruit.experienceLevel,
+                tributeMultiplier: recruit.tributeMultiplier,
+                specialization: recruit.specialization,
+                loyalty: recruit.loyalty,
+                skills: recruit.skills || {
+                    violence: Math.floor(Math.random() * 3) + 1,
+                    stealth: Math.floor(Math.random() * 3) + 1,
+                    intelligence: Math.floor(Math.random() * 3) + 1
+                },
+                onOperation: false,
+                inTraining: false,
+                arrested: false
+            };
+        }
+        
+        player.gang.gangMembers.push(newMember);
         
         // Increase territory power based on recruit's experience level
         const powerGain = Math.floor(recruit.experienceLevel * 2) + 5; // 7-25 power depending on level
@@ -9140,7 +9162,8 @@ function recruitMember(index) {
         // Remove recruited member from available list
         availableRecruits.splice(index, 1);
 
-        alert(`${getRandomNarration('recruitmentSuccess')} ${recruit.name} will start generating tribute in the next collection.`);
+        const roleInfo = newMember.roleData ? ` as a ${newMember.roleData.icon} ${newMember.roleData.name}` : '';
+        alert(`${getRandomNarration('recruitmentSuccess')} ${recruit.name}${roleInfo} will start generating tribute in the next collection.`);
         logAction(`🤝 ${recruit.name} joins your crew! The ${recruit.specialization} brings level ${recruit.experienceLevel} skills to your organization. Your empire grows stronger.`);
         
         // Update mission progress
@@ -12275,6 +12298,13 @@ function initGame() {
     initializeSaveSystem(); // Initialize save system
     initializeCompetitionSystem(); // Initialize competition system
     
+    // Initialize expanded systems (gang roles, territory wars, etc.)
+    ExpandedSystems.initializeExpandedSystems(player);
+    
+    // Start rival AI and interactive events
+    ExpandedUI.startRivalAISystem();
+    setInterval(() => ExpandedUI.checkAndTriggerInteractiveEvent(), 60000); // Check every minute
+    
     // Initialize UI Events
     if (typeof initUIEvents === 'function') {
         initUIEvents();
@@ -15213,6 +15243,25 @@ function loadMultiplayerScript() {
     }
 }
 
+// Safe wrappers for multiplayer functions (loaded dynamically)
+function showGlobalChat() {
+    if (typeof window.showGlobalChat === 'function' && window.showGlobalChat !== showGlobalChat) {
+        window.showGlobalChat();
+    } else {
+        alert('Wire Tap is loading... Please try again in a moment.');
+        loadMultiplayerScript();
+    }
+}
+
+function showPVP() {
+    if (typeof window.showPVP === 'function' && window.showPVP !== showPVP) {
+        window.showPVP();
+    } else {
+        alert('PVP Arena is loading... Please try again in a moment.');
+        loadMultiplayerScript();
+    }
+}
+
 // ==================== MULTIPLAYER INTEGRATION END ====================
 
 // ==================== EXPOSE FUNCTIONS TO GLOBAL SCOPE ====================
@@ -15434,6 +15483,10 @@ window.canPlayMiniGame = canPlayMiniGame;
 window.trackMiniGamePlay = trackMiniGamePlay;
 window.playSlotMachine = playSlotMachine;
 window.playRoulette = playRoulette;
+
+// Multiplayer (wrapper functions that load multiplayer.js if needed)
+window.showGlobalChat = showGlobalChat;
+window.showPVP = showPVP;
 
 // UI & Helpers
 window.stripEmoji = stripEmoji;
