@@ -14053,6 +14053,17 @@ function getItemImage(itemName) {
     "Police Cruiser": "vehicles/Police Cruiser.png"
   };
   
+  // Mapping for items (energy drinks, drugs, etc.)
+  const items = {
+    "Energy Drink": "items/Energy Drink.png",
+    "Strong Coffee": "items/Strong Coffee.png",
+    "Steroids": "items/Steroids.png",
+    "Gasoline": "items/Gasoline.png",
+    "Bag of Mary Jane": "items/Bag of Mary Jane.png",
+    "Crate Moonshine": "items/Crate Moonshine.png",
+    "Pure Cocaine": "items/Pure Cocaine.png"
+  };
+  
   // Check if the item is in weapons/armor
   if (weaponsArmor[itemName]) {
     return weaponsArmor[itemName];
@@ -14061,6 +14072,11 @@ function getItemImage(itemName) {
   // Check if the item is a vehicle
   if (vehicles[itemName]) {
     return vehicles[itemName];
+  }
+  
+  // Check if the item is in items folder
+  if (items[itemName]) {
+    return items[itemName];
   }
   
   // Default fallback - return a placeholder or the item name
