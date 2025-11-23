@@ -9856,14 +9856,24 @@ function showPortraitSelection() {
     
     // Create portrait selection HTML
     const portraitOptions = [
-        { file: "profile_pics/White male.png", label: "Option 1" },
-        { file: "profile_pics/White female.png", label: "Option 2" },
-        { file: "profile_pics/Black male.png", label: "Option 3" },
-        { file: "profile_pics/Black female.png", label: "Option 4" },
-        { file: "profile_pics/Asian male.png", label: "Option 5" },
-        { file: "profile_pics/Asian female.png", label: "Option 6" },
-        { file: "profile_pics/Mexican male.png", label: "Option 7" },
-        { file: "profile_pics/Mexican female.png", label: "Option 8" }
+        { file: "profile_pics/White male.png", label: "White Male" },
+        { file: "profile_pics/White female.png", label: "White Female" },
+        { file: "profile_pics/Black male.png", label: "Black Male" },
+        { file: "profile_pics/Black female.png", label: "Black Female" },
+        { file: "profile_pics/Asian male.png", label: "Asian Male" },
+        { file: "profile_pics/Asian female.png", label: "Asian Female" },
+        { file: "profile_pics/Mexican male.png", label: "Hispanic Male" },
+        { file: "profile_pics/Mexican female.png", label: "Hispanic Female" },
+        { file: "profile_pics/Old Male.png", label: "Old Male" },
+        { file: "profile_pics/Old Female.png", label: "Old Female" },
+        { file: "profile_pics/Stylized White Male.png", label: "Stylized White Male" },
+        { file: "profile_pics/Stylized White Female.png", label: "Stylized White Female" },
+        { file: "profile_pics/Stylized Black Male.png", label: "Stylized Black Male" },
+        { file: "profile_pics/Stylized Black Female.png", label: "Stylized Black Female" },
+        { file: "profile_pics/Stylized Asian Male.png", label: "Stylized Asian Male" },
+        { file: "profile_pics/Stylized Asian Female.png", label: "Stylized Asian Female" },
+        { file: "profile_pics/Stylized Hispanic Male.png", label: "Stylized Hispanic Male" },
+        { file: "profile_pics/Stylized Hispanic Female.png", label: "Stylized Hispanic Female" }
     ];
     
     let portraitHTML = `
