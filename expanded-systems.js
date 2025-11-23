@@ -23,7 +23,6 @@ export const EXPANDED_SYSTEMS_CONFIG = {
     interactiveEventsEnabled: true,
     rivalKingpinsEnabled: true,
     legacyPerksEnabled: true,
-    collectiblesEnabled: true,
     respectSystemEnabled: true,
     
     // Balance settings
@@ -1136,99 +1135,7 @@ export function applyLegacyPerks(player, unlockedPerks) {
     });
 }
 
-// ==================== 6. COLLECTIBLES & THE DON'S VAULT ====================
-
-export const COLLECTIBLE_CATEGORIES = {
-    rare_cars: {
-        name: "Rare Vehicles",
-        icon: "",
-        items: [
-            { id: "classic_cadillac", name: "1959 Cadillac Eldorado", rarity: "legendary", value: 150000 },
-            { id: "bulletproof_limo", name: "Armored Limousine", rarity: "epic", value: 85000 },
-            { id: "sports_coupe", name: "Ferrari 250 GT", rarity: "rare", value: 120000 },
-            { id: "getaway_muscle", name: "Dodge Charger R/T", rarity: "uncommon", value: 45000 }
-        ]
-    },
-    exotic_weapons: {
-        name: "Exotic Weapons",
-        icon: "",
-        items: [
-            { id: "golden_tommy", name: "Gold-Plated Tommy Gun", rarity: "legendary", value: 75000 },
-            { id: "antique_revolver", name: "Antique .44 Magnum", rarity: "epic", value: 35000 },
-            { id: "silenced_pistol", name: "Suppressed Walther PPK", rarity: "rare", value: 25000 },
-            { id: "classic_shotgun", name: "Lupara (Sawed-Off Shotgun)", rarity: "uncommon", value: 15000 }
-        ]
-    },
-    artwork: {
-        name: "Fine Art",
-        icon: "",
-        items: [
-            { id: "stolen_vermeer", name: "Stolen Vermeer Painting", rarity: "legendary", value: 500000 },
-            { id: "renaissance_sculpture", name: "Renaissance Sculpture", rarity: "epic", value: 200000 },
-            { id: "modern_masterpiece", name: "Modern Art Piece", rarity: "rare", value: 75000 },
-            { id: "vintage_portrait", name: "Vintage Family Portrait", rarity: "uncommon", value: 30000 }
-        ]
-    },
-    luxury_items: {
-        name: "Luxury Items",
-        icon: "",
-        items: [
-            { id: "hope_diamond", name: "The Hope Diamond (Replica)", rarity: "legendary", value: 250000 },
-            { id: "solid_gold_watch", name: "Solid Gold Rolex", rarity: "epic", value: 85000 },
-            { id: "cuban_cigars", name: "Box of Pre-Embargo Cubans", rarity: "rare", value: 15000 },
-            { id: "vintage_whiskey", name: "1920s Prohibition Whiskey", rarity: "uncommon", value: 8000 }
-        ]
-    }
-};
-
-// Add a collectible to player's vault
-export function addCollectible(player, category, itemId) {
-    if (!player.vault) {
-        player.vault = {
-            rare_cars: [],
-            exotic_weapons: [],
-            artwork: [],
-            luxury_items: []
-        };
-    }
-    
-    const item = COLLECTIBLE_CATEGORIES[category].items.find(i => i.id === itemId);
-    if (!item) return { success: false, message: "Item not found" };
-    
-    // Check if already collected
-    if (player.vault[category].includes(itemId)) {
-        return { success: false, message: "Already collected" };
-    }
-    
-    player.vault[category].push(itemId);
-    
-    // Calculate vault completion bonus
-    const completion = calculateVaultCompletion(player.vault);
-    
-    return {
-        success: true,
-        item: item,
-        completion: completion
-    };
-}
-
-function calculateVaultCompletion(vault) {
-    let collected = 0;
-    let total = 0;
-    
-    Object.keys(COLLECTIBLE_CATEGORIES).forEach(category => {
-        total += COLLECTIBLE_CATEGORIES[category].items.length;
-        collected += vault[category] ? vault[category].length : 0;
-    });
-    
-    return {
-        collected: collected,
-        total: total,
-        percentage: Math.floor((collected / total) * 100)
-    };
-}
-
-// ==================== 7. RESPECT-BASED RELATIONSHIP SYSTEM ====================
+// ==================== 6. RESPECT-BASED RELATIONSHIP SYSTEM ====================
 
 // Initialize respect for all factions/rivals
 export function initializeRespectSystem(player) {
@@ -1360,16 +1267,6 @@ export function initializeExpandedSystems(player) {
         player.legacy.availableLegacyPoints = 0;
     }
     
-    // Vault
-    if (!player.vault) {
-        player.vault = {
-            rare_cars: [],
-            exotic_weapons: [],
-            artwork: [],
-            luxury_items: []
-        };
-    }
-    
     // Respect system
     initializeRespectSystem(player);
     
@@ -1391,7 +1288,6 @@ export default {
     EVENTS: INTERACTIVE_EVENTS,
     RIVALS: RIVAL_KINGPINS,
     LEGACY_PERKS: LEGACY_PERKS,
-    COLLECTIBLES: COLLECTIBLE_CATEGORIES,
     
     // Gang functions
     generateGangMember,
@@ -1413,9 +1309,6 @@ export default {
     // Legacy functions
     calculateLegacyPoints,
     applyLegacyPerks,
-    
-    // Collectible functions
-    addCollectible,
     
     // Respect functions
     initializeRespectSystem,

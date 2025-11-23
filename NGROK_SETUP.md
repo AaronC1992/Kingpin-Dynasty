@@ -26,18 +26,18 @@ Ngrok creates a secure tunnel from your local computer to the internet, allowing
 ### 4. Start Ngrok
 1. Open a new Command Prompt or PowerShell window
 2. Navigate to your ngrok folder: `cd C:\ngrok`
-3. Run: `ngrok http 8080`
+3. Run: `ngrok http 3000`
 4. You'll see something like:
    ```
    Session Status    online
    Account           your-email@example.com
-   Forwarding        https://abc123.ngrok.io -> http://localhost:8080
+   Forwarding        https://abc123.ngrok.io -> http://localhost:3000
    ```
 5. **Copy the https URL** (like `https://abc123.ngrok.io`)
 
 ### 5. Update Your Game
 1. Open `multiplayer.js` in a text editor (Notepad, VS Code, etc.)
-2. Find line 5: `serverUrl: 'ws://localhost:8080',`
+2. Find the line: `serverUrl: 'ws://localhost:3000',`
 3. Change it to: `serverUrl: 'wss://abc123.ngrok.io',` (use YOUR ngrok URL)
 4. **Important:** Remove `https://` and replace with `wss://`
 5. Save the file
@@ -92,7 +92,7 @@ Ngrok creates a secure tunnel from your local computer to the internet, allowing
 ```bash
 # Start ngrok (run this every time)
 cd C:\ngrok
-ngrok http 8080
+ngrok http 3000
 
 # Add authtoken (one-time setup)
 ngrok config add-authtoken YOUR_TOKEN

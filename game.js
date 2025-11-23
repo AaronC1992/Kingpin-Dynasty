@@ -13244,7 +13244,7 @@ function showEmpireRating() {
   const content = `
     <div style="max-width: 1000px; margin: 0 auto;">
       <h2 style="text-align: center; color: ${grade.color}; font-size: 2.5em; margin-bottom: 10px;">
-        ⭐ Criminal Empire Rating ⭐
+        ⭐ Empire Rating ⭐
       </h2>
       
       <div style="text-align: center; margin-bottom: 30px; padding: 20px; background: rgba(0,0,0,0.3); border-radius: 15px; border: 3px solid ${grade.color};">
@@ -14318,6 +14318,13 @@ function submitToLeaderboards() {
     return;
   }
   
+  // Check if connected to multiplayer server
+  const isConnected = window.onlineWorldState && window.onlineWorldState.isConnected;
+  
+  if (!isConnected) {
+    alert('⚠️ NOT CONNECTED TO SERVER\n\nLeaderboards are currently LOCAL ONLY.\n\nTo compete globally:\n1. Server must be running\n2. Connect via "Wire Tap" or "PVP Arena"\n3. Then submit rankings\n\nYour local rankings have been saved.');
+  }
+  
   const empireRating = calculateEmpireRating();
   const playTime = calculatePlaytime();
   
@@ -14361,7 +14368,11 @@ function submitToLeaderboards() {
   
   COMPETITION_SYSTEM.lastSubmission = now;
   saveCompetitionData();
-  showBriefNotification("🏆 Successfully submitted to leaderboards!", 3000);
+  
+  const message = isConnected 
+    ? "🏆 Successfully submitted to GLOBAL leaderboards!" 
+    : "💾 Rankings saved locally";
+  showBriefNotification(message, 3000);
 }
 
 function getPlayerRanking(categoryId) {
@@ -14716,9 +14727,119 @@ function displayImportedShowcase(showcase) {
 }
 
 // Competition UI Functions
-function showCompetition() {
+function showRivalsScreen() {
   hideAllScreens();
   document.getElementById('statistics-screen').style.display = 'block';
+  
+  const isConnected = window.onlineWorldState && window.onlineWorldState.isConnected;
+  const rivals = player.rivalKingpins || (window.ExpandedSystems ? window.ExpandedSystems.RIVALS : []);
+  const playerRankings = {};
+  COMPETITION_SYSTEM.leaderboardCategories.forEach(category => {
+    playerRankings[category.id] = getPlayerRanking(category.id);
+  });
+  
+  const content = `
+    <div style="max-width: 1200px; margin: 0 auto;">
+      <h2 style="text-align: center; color: #e74c3c; font-size: 2.5em; margin-bottom: 20px;">
+        🏆 Rivals & Competition
+      </h2>
+      
+      <!-- Server Connection Status -->
+      <div style="background: ${isConnected ? 'rgba(46, 204, 113, 0.2)' : 'rgba(231, 76, 60, 0.2)'}; 
+                  padding: 15px; border-radius: 10px; margin-bottom: 20px; 
+                  border: 2px solid ${isConnected ? '#2ecc71' : '#e74c3c'}; text-align: center;">
+        <h3 style="color: ${isConnected ? '#2ecc71' : '#e74c3c'}; margin: 0 0 5px 0;">
+          ${isConnected ? '✅ Connected to Global Server' : '⚠️ Local Mode Only'}
+        </h3>
+        <p style="margin: 0; color: #ecf0f1; font-size: 0.9em;">
+          ${isConnected 
+            ? 'Rankings will be submitted to global leaderboards' 
+            : 'Connect via Wire Tap or PVP Arena for global competition'}
+        </p>
+      </div>
+      
+      <!-- Navigation Tabs -->
+      <div style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #34495e; padding-bottom: 10px;">
+        <button onclick="showRivalsTab()" id="rivals-tab-btn" style="flex: 1; background: linear-gradient(45deg, #e74c3c, #c0392b); color: white; padding: 12px; border: none; border-radius: 8px 8px 0 0; cursor: pointer; font-weight: bold;">
+          🎯 AI Rivals
+        </button>
+        <button onclick="showCompetitionTab()" id="competition-tab-btn" style="flex: 1; background: rgba(52, 73, 94, 0.6); color: #95a5a6; padding: 12px; border: none; border-radius: 8px 8px 0 0; cursor: pointer; font-weight: bold;">
+          🏆 Global Competition
+        </button>
+      </div>
+      
+      <!-- Content Area -->
+      <div id="rivals-content-area">
+        <!-- Tab content will be inserted here -->
+      </div>
+      
+      <div style="text-align: center; margin-top: 30px;">
+        <button onclick="goBackToMainMenu()" style="background: linear-gradient(45deg, #95a5a6, #7f8c8d); color: white; padding: 15px 30px; border: none; border-radius: 12px; font-size: 1.2em; font-weight: bold; cursor: pointer;">
+          🏠 Back to Main Menu
+        </button>
+      </div>
+    </div>
+  `;
+  
+  document.getElementById('statistics-content').innerHTML = content;
+  showRivalsTab(); // Default to AI rivals tab
+}
+
+function showRivalsTab() {
+  // Update tab buttons
+  document.getElementById('rivals-tab-btn').style.background = 'linear-gradient(45deg, #e74c3c, #c0392b)';
+  document.getElementById('rivals-tab-btn').style.color = 'white';
+  document.getElementById('competition-tab-btn').style.background = 'rgba(52, 73, 94, 0.6)';
+  document.getElementById('competition-tab-btn').style.color = '#95a5a6';
+  
+  const rivals = player.rivalKingpins || (window.ExpandedSystems ? window.ExpandedSystems.RIVALS : []);
+  
+  const content = `
+    <div>
+      <h3 style="color: #ecf0f1; margin-bottom: 15px; text-align: center;">Track your AI competitors and plan your moves</h3>
+      
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+        ${rivals.map(rival => {
+          const playerRespect = player.relationships?.[rival.id] || 0;
+          const respectColor = playerRespect > 20 ? '#2ecc71' : playerRespect < -20 ? '#e74c3c' : '#7f8c8d';
+          
+          return `
+            <div style="background: rgba(44, 62, 80, 0.6); padding: 20px; border-radius: 15px; border: 2px solid #34495e;">
+              <h3 style="color: #e74c3c; margin: 0 0 5px 0;">${rival.name}</h3>
+              <div style="color: #95a5a6; font-size: 0.9em; margin-bottom: 15px;">${rival.faction.toUpperCase()}</div>
+              
+              <div style="display: grid; gap: 8px; margin-bottom: 15px;">
+                <div style="color: #ecf0f1;">💪 Power: ${rival.powerRating}</div>
+                <div style="color: #ecf0f1;">👥 Gang Size: ${rival.gangSize}</div>
+                <div style="color: #ecf0f1;">💰 Wealth: $${rival.wealth.toLocaleString()}</div>
+                <div style="color: #ecf0f1;">🗺️ Territories: ${rival.territories.length}</div>
+                <div style="color: ${respectColor};">⭐ Respect: ${playerRespect > 0 ? '+' : ''}${playerRespect}</div>
+              </div>
+              
+              <div style="background: rgba(0, 0, 0, 0.3); padding: 10px; border-radius: 8px; margin-bottom: 10px;">
+                <div style="color: #95a5a6; font-size: 0.9em; margin-bottom: 5px;"><strong>Personality:</strong> ${rival.personality}</div>
+                <div style="color: #f39c12;">⚔️ Aggressiveness: ${Math.floor(rival.aggressiveness * 100)}%</div>
+              </div>
+              
+              <div style="background: rgba(155, 89, 182, 0.3); padding: 10px; border-radius: 8px; border: 1px solid #9b59b6;">
+                <div style="color: #ecf0f1; font-size: 0.9em;"><strong>🌟 Special:</strong> ${formatSpecialAbility(rival.specialAbility)}</div>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
+  
+  document.getElementById('rivals-content-area').innerHTML = content;
+}
+
+function showCompetitionTab() {
+  // Update tab buttons
+  document.getElementById('rivals-tab-btn').style.background = 'rgba(52, 73, 94, 0.6)';
+  document.getElementById('rivals-tab-btn').style.color = '#95a5a6';
+  document.getElementById('competition-tab-btn').style.background = 'linear-gradient(45deg, #3498db, #2980b9)';
+  document.getElementById('competition-tab-btn').style.color = 'white';
   
   const playerRankings = {};
   COMPETITION_SYSTEM.leaderboardCategories.forEach(category => {
@@ -14729,11 +14850,7 @@ function showCompetition() {
   const canSubmit = Date.now() - COMPETITION_SYSTEM.lastSubmission >= COMPETITION_SYSTEM.submissionCooldown;
   
   const content = `
-    <div style="max-width: 1200px; margin: 0 auto;">
-      <h2 style="text-align: center; color: #e74c3c; font-size: 2.5em; margin-bottom: 20px;">
-        🏆 Criminal Competition
-      </h2>
-      
+    <div>
       <!-- Competition Overview -->
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-bottom: 30px;">
         <div style="background: rgba(52, 152, 219, 0.2); padding: 15px; border-radius: 10px; border: 2px solid #3498db;">
@@ -14806,16 +14923,32 @@ function showCompetition() {
           </div>
         </div>
       ` : ''}
-      
-      <div style="text-align: center; margin-top: 30px;">
-        <button onclick="goBackToMainMenu()" style="background: linear-gradient(45deg, #95a5a6, #7f8c8d); color: white; padding: 15px 30px; border: none; border-radius: 12px; font-size: 1.2em; font-weight: bold; cursor: pointer;">
-          🏠Back to Main Menu
-        </button>
-      </div>
     </div>
   `;
   
-  document.getElementById('statistics-content').innerHTML = content;
+  document.getElementById('rivals-content-area').innerHTML = content;
+}
+
+function formatSpecialAbility(ability) {
+  const abilities = {
+    "old_school_tactics": "Old School Tactics - +10% defense",
+    "brutal_efficiency": "Brutal Efficiency - +15% attack power",
+    "financial_genius": "Financial Genius - +25% income",
+    "network_expansion": "Network Expansion - Grows faster",
+    "guerrilla_warfare": "Guerrilla Warfare - Surprise attacks"
+  };
+  return abilities[ability] || ability;
+}
+
+// Legacy function for backwards compatibility
+function showCompetition() {
+  showRivalsScreen();
+  // Automatically switch to competition tab after a brief delay
+  setTimeout(() => {
+    if (document.getElementById('competition-tab-btn')) {
+      showCompetitionTab();
+    }
+  }, 100);
 }
 
 function showLeaderboards() {
@@ -15037,8 +15170,8 @@ function showWeeklyChallenges() {
       ` : ''}
       
       <div style="text-align: center; margin-top: 30px;">
-        <button onclick="showCompetition()" style="background: linear-gradient(45deg, #e74c3c, #c0392b); color: white; padding: 15px 30px; border: none; border-radius: 12px; font-size: 1.2em; font-weight: bold; cursor: pointer; margin-right: 15px;">
-          🏆 Back to Competition
+        <button onclick="showRivalsScreen()" style="background: linear-gradient(45deg, #e74c3c, #c0392b); color: white; padding: 15px 30px; border: none; border-radius: 12px; font-size: 1.2em; font-weight: bold; cursor: pointer; margin-right: 15px;">
+          🏆 Back to Rivals
         </button>
         <button onclick="goBackToMainMenu()" style="background: linear-gradient(45deg, #95a5a6, #7f8c8d); color: white; padding: 15px 30px; border: none; border-radius: 12px; font-size: 1.2em; font-weight: bold; cursor: pointer;">
           🏠Back to Main Menu
@@ -15178,8 +15311,8 @@ function showCharacterShowcase() {
       ` : ''}
       
       <div style="text-align: center; margin-top: 30px;">
-        <button onclick="showCompetition()" style="background: linear-gradient(45deg, #e74c3c, #c0392b); color: white; padding: 15px 30px; border: none; border-radius: 12px; font-size: 1.2em; font-weight: bold; cursor: pointer; margin-right: 15px;">
-          🏆 Back to Competition
+        <button onclick="showRivalsScreen()" style="background: linear-gradient(45deg, #e74c3c, #c0392b); color: white; padding: 15px 30px; border: none; border-radius: 12px; font-size: 1.2em; font-weight: bold; cursor: pointer; margin-right: 15px;">
+          🏆 Back to Rivals
         </button>
         <button onclick="goBackToMainMenu()" style="background: linear-gradient(45deg, #95a5a6, #7f8c8d); color: white; padding: 15px 30px; border: none; border-radius: 12px; font-size: 1.2em; font-weight: bold; cursor: pointer;">
           🏠Back to Main Menu
@@ -15618,7 +15751,10 @@ window.showRealEstate = showRealEstate;
 window.showInventory = showInventory;
 window.showEmpireRating = showEmpireRating;
 window.showHallOfFame = showHallOfFame;
-window.showCompetition = showCompetition;
+window.showRivalsScreen = showRivalsScreen;
+window.showRivalsTab = showRivalsTab;
+window.showCompetitionTab = showCompetitionTab;
+window.showCompetition = showCompetition; // Legacy support
 window.showHospital = showHospital;
 window.showCasino = showCasino;
 window.healAtHospital = healAtHospital;

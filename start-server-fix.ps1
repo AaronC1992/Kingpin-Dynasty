@@ -63,11 +63,6 @@ Write-Host ''
 try {
     node server.js
 } catch {
-    Write-Host '[ERROR] Error starting main server. Trying simple test server...' -ForegroundColor Red
-    try {
-        node simple-server.js
-    } catch {
-        Write-Host '[ERROR] Could not start any server. Check Node.js installation.' -ForegroundColor Red
-        Read-Host "Press Enter to exit"
-    }
+    Write-Host '[ERROR] Error starting server. Check Node.js installation and dependencies.' -ForegroundColor Red
+    Read-Host "Press Enter to exit"
 }

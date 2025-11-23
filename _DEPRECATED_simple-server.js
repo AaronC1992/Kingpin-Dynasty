@@ -1,3 +1,7 @@
+// ⚠️ DEPRECATED - Use server.js instead
+// This file is kept for reference only
+// The main server.js now includes all functionality
+
 const http = require('http');
 const fs = require('fs');
 const path = require('path');

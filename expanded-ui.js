@@ -742,6 +742,11 @@ export default {
 // Expose to window
 window.showGangManagementScreen = showGangManagementScreen;
 window.showTerritoryMapScreen = showTerritoryMapScreen;
-window.showRivalActivityScreen = showRivalActivityScreen;
+// showRivalActivityScreen now redirects to unified Rivals screen in game.js
+window.showRivalActivityScreen = () => {
+  if (window.showRivalsScreen) {
+    window.showRivalsScreen();
+  }
+};
 window.showLegacyPerkShop = showLegacyPerkShop;
 window.showRelationshipsScreen = showRelationshipsScreen;

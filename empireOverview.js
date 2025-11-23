@@ -84,15 +84,15 @@ export function showEmpireOverview() {
 }
 
 function calculateDailyIncome() {
-    // Placeholder logic - sum up business income, territory tribute, etc.
-    // This would need to be connected to the actual economy system
+    // Calculate estimated daily income from territories and faction bonuses
     let income = 0;
-    // Example: $100 per territory
+    // Territory income: $100 per block controlled
     income += (player.territory || 0) * 100;
-    // Example: Interest from Torrino passive
+    // Torrino Family passive: 5% daily interest on cash holdings
     if (player.missions.factionReputation.torrino >= 10) {
         income += Math.floor(player.money * 0.05);
     }
+    // TODO: Add business income, protection rackets, etc.
     return income;
 }
 

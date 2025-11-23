@@ -67,7 +67,7 @@ npm run dev
 
 The server will start on `http://localhost:3000`
 
-For online multiplayer with friends, see `NGROK_SETUP.md`
+For online multiplayer with friends, see `MULTIPLAYER_README.md` and `NGROK_SETUP.md`
 
 ## 🔧 Configuration & Balancing
 
@@ -94,6 +94,8 @@ This file is automatically created and updated by the server.
 ```
 ├── index.html              # Main game interface
 ├── game.js                 # Core game logic
+├── expanded-systems.js     # Extended gameplay systems
+├── expanded-ui.js          # UI for expanded features
 ├── server.js               # Multiplayer server
 ├── config/
 │   ├── meta.js            # Game name, version, metadata
@@ -104,6 +106,15 @@ This file is automatically created and updated by the server.
 ├── worldPersistence.js    # Server world state save/load
 └── world-state.json       # Persistent world data (auto-generated)
 ```
+
+## 📚 Documentation
+
+- **README.md** - Main project overview and setup (you're reading it)
+- **QUICK_START.md** - Gameplay guide for expanded systems
+- **MULTIPLAYER_README.md** - Local and online multiplayer setup
+- **NGROK_SETUP.md** - Detailed ngrok configuration for online play
+- **CHANGELOG.md** - Version history and updates
+- **docs_archive/** - Archived implementation notes and refactoring logs
 
 ## 🛠️ Development
 

@@ -25,7 +25,7 @@
 
 ### Step 2: Expose Your Server
 1. Start your game server first (run `start-server.bat`)
-2. In a new terminal/command prompt, run: `ngrok http 8080`
+2. In a new terminal/command prompt, run: `ngrok http 3000`
 3. Copy the **https** URL (looks like: `https://abc123.ngrok.io`)
 
 ### Step 3: Update Your Game
@@ -48,7 +48,7 @@ serverUrl: 'wss://abc123.ngrok.io', // Your ngrok URL
 
 ### "Connection Error" Message
 - Make sure the server is running (`start-server.bat`)
-- Check if port 8080 is blocked by antivirus/firewall
+- Check if port 3000 is blocked by antivirus/firewall
 - Try restarting the server
 
 ### Ngrok Issues

@@ -4,8 +4,8 @@ echo KINGPIN DYNASTY - MULTIPLAYER SERVER STARTER
 echo ================================================
 echo.
 
-:: Change to the correct directory
-cd /d "c:\Users\jenna\OneDrive\Desktop\Portfolio projects\KingpinDynasty"  
+:: Change to the correct directory (update this path if needed)
+cd /d "%~dp0"
 
 :: Check if we're in the right place
 if not exist "server.js" (
@@ -37,9 +37,9 @@ if %errorlevel% neq 0 (
 )
 
 echo.
-echo Starting server on port 8080...
+echo Starting multiplayer server on port 3000...
 echo ⚠️ Keep this window open!
-echo ⚠️ Your ngrok should forward to: http://localhost:8080
+echo ⚠️ Configure ngrok to forward to: http://localhost:3000
 echo.
 
 :: Start the server
