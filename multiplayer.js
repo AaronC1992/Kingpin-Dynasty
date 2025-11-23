@@ -750,7 +750,12 @@ function showPVP() {
         </div>
     `;
     
-    document.getElementById("multiplayer-content").innerHTML = pvpHTML;
+    const mpContent = document.getElementById("multiplayer-content");
+    if (!mpContent) {
+        console.error("Error: multiplayer-content element not found in DOM");
+        return;
+    }
+    mpContent.innerHTML = pvpHTML;
     
     // Start countdown display
     updatePVPCountdown();
