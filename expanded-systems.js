@@ -38,7 +38,7 @@ export const EXPANDED_SYSTEMS_CONFIG = {
 export const GANG_MEMBER_ROLES = {
     bruiser: {
         name: "Bruiser",
-        icon: "💪",
+        icon: "",
         description: "Muscle for hire. Excels in combat and intimidation.",
         baseStat: { violence: 15, stealth: 5, intelligence: 5, loyalty: 50 },
         perk: {
@@ -48,7 +48,7 @@ export const GANG_MEMBER_ROLES = {
     },
     fixer: {
         name: "Fixer",
-        icon: "🤝",
+        icon: "",
         description: "Smooth talker who knows everyone worth knowing.",
         baseStat: { violence: 5, stealth: 10, intelligence: 15, loyalty: 60 },
         perk: {
@@ -58,7 +58,7 @@ export const GANG_MEMBER_ROLES = {
     },
     hacker: {
         name: "Hacker",
-        icon: "💻",
+        icon: "",
         description: "Tech wizard specializing in breaking electronic security.",
         baseStat: { violence: 3, stealth: 15, intelligence: 20, loyalty: 55 },
         perk: {
@@ -68,7 +68,7 @@ export const GANG_MEMBER_ROLES = {
     },
     enforcer: {
         name: "Enforcer",
-        icon: "🔫",
+        icon: "",
         description: "Professional killer who handles the wet work.",
         baseStat: { violence: 18, stealth: 12, intelligence: 8, loyalty: 45 },
         perk: {
@@ -78,7 +78,7 @@ export const GANG_MEMBER_ROLES = {
     },
     driver: {
         name: "Wheelman",
-        icon: "🚗",
+        icon: "",
         description: "Master behind the wheel, perfect for getaways.",
         baseStat: { violence: 8, stealth: 15, intelligence: 10, loyalty: 65 },
         perk: {
@@ -88,7 +88,7 @@ export const GANG_MEMBER_ROLES = {
     },
     scout: {
         name: "Scout",
-        icon: "👁️",
+        icon: "",
         description: "Expert at gathering intelligence on targets.",
         baseStat: { violence: 6, stealth: 18, intelligence: 15, loyalty: 70 },
         perk: {
@@ -98,7 +98,7 @@ export const GANG_MEMBER_ROLES = {
     },
     accountant: {
         name: "Accountant",
-        icon: "📊",
+        icon: "",
         description: "Numbers genius who maximizes profits.",
         baseStat: { violence: 2, stealth: 10, intelligence: 22, loyalty: 75 },
         perk: {
@@ -446,7 +446,7 @@ export function processTerritoryAttack(territory, attackerName, attackStrength, 
 export const INTERACTIVE_EVENTS = [
     {
         id: "police_raid",
-        title: "🚨 Police Raid!",
+        title: " Police Raid!",
         description: "The cops just kicked in the door of one of your operations! They're looking for evidence.",
         choices: [
             {
@@ -501,7 +501,7 @@ export const INTERACTIVE_EVENTS = [
     },
     {
         id: "betrayal_rumor",
-        title: "🐍 Whispers of Betrayal",
+        title: " Whispers of Betrayal",
         description: "Word on the street is that one of your crew might be talking to the feds.",
         choices: [
             {
@@ -557,7 +557,7 @@ export const INTERACTIVE_EVENTS = [
     },
     {
         id: "rival_scandal",
-        title: "📰 Rival Boss Scandal",
+        title: " Rival Boss Scandal",
         description: "A rival crime boss just got caught in a compromising situation. The tabloids are having a field day.",
         choices: [
             {
@@ -607,7 +607,7 @@ export const INTERACTIVE_EVENTS = [
     },
     {
         id: "arms_deal",
-        title: "🔫 Black Market Arms Deal",
+        title: " Black Market Arms Deal",
         description: "A weapons smuggler has a shipment of military-grade hardware. First come, first served.",
         choices: [
             {
@@ -656,7 +656,7 @@ export const INTERACTIVE_EVENTS = [
     },
     {
         id: "witness_problem",
-        title: "👁️ Witness to Eliminate",
+        title: " Witness to Eliminate",
         description: "Someone saw your crew during that last job. They're set to testify in three days.",
         choices: [
             {
@@ -998,7 +998,7 @@ export const LEGACY_PERKS = {
         description: "+15% XP gain from all sources",
         cost: 100,
         effect: { xpMultiplier: 1.15 },
-        icon: "📈"
+        icon: ""
     },
     family_ties: {
         id: "family_ties",
@@ -1006,7 +1006,7 @@ export const LEGACY_PERKS = {
         description: "Start with 3 loyal gang members",
         cost: 150,
         effect: { startingGangMembers: 3 },
-        icon: "👥"
+        icon: ""
     },
     laundering_genius: {
         id: "laundering_genius",
@@ -1014,7 +1014,7 @@ export const LEGACY_PERKS = {
         description: "Launder money 25% faster with 10% less loss",
         cost: 200,
         effect: { launderSpeed: 1.25, launderLoss: 0.9 },
-        icon: "💰"
+        icon: ""
     },
     heat_resistant: {
         id: "heat_resistant",
@@ -1022,7 +1022,7 @@ export const LEGACY_PERKS = {
         description: "Heat decays 50% faster",
         cost: 175,
         effect: { heatDecay: 1.5 },
-        icon: "🧊"
+        icon: ""
     },
     natural_leader: {
         id: "natural_leader",
@@ -1030,7 +1030,7 @@ export const LEGACY_PERKS = {
         description: "+5 max gang capacity",
         cost: 125,
         effect: { maxGangBonus: 5 },
-        icon: "👑"
+        icon: ""
     },
     strategic_mind: {
         id: "strategic_mind",
@@ -1038,7 +1038,7 @@ export const LEGACY_PERKS = {
         description: "+10% success chance on all jobs",
         cost: 250,
         effect: { jobSuccessBonus: 0.1 },
-        icon: "🧠"
+        icon: ""
     },
     old_money: {
         id: "old_money",
@@ -1046,7 +1046,7 @@ export const LEGACY_PERKS = {
         description: "Start each run with $10,000",
         cost: 200,
         effect: { startingMoney: 10000 },
-        icon: "💵"
+        icon: ""
     },
     iron_will: {
         id: "iron_will",
@@ -1054,7 +1054,7 @@ export const LEGACY_PERKS = {
         description: "+25% breakout success chance",
         cost: 150,
         effect: { breakoutBonus: 0.25 },
-        icon: "🔓"
+        icon: ""
     },
     master_recruiter: {
         id: "master_recruiter",
@@ -1070,7 +1070,7 @@ export const LEGACY_PERKS = {
         description: "+20% income from all territories",
         cost: 175,
         effect: { territoryIncomeBonus: 1.2 },
-        icon: "🏙️"
+        icon: ""
     }
 };
 
@@ -1141,7 +1141,7 @@ export function applyLegacyPerks(player, unlockedPerks) {
 export const COLLECTIBLE_CATEGORIES = {
     rare_cars: {
         name: "Rare Vehicles",
-        icon: "🏎️",
+        icon: "",
         items: [
             { id: "classic_cadillac", name: "1959 Cadillac Eldorado", rarity: "legendary", value: 150000 },
             { id: "bulletproof_limo", name: "Armored Limousine", rarity: "epic", value: 85000 },
@@ -1151,7 +1151,7 @@ export const COLLECTIBLE_CATEGORIES = {
     },
     exotic_weapons: {
         name: "Exotic Weapons",
-        icon: "🔫",
+        icon: "",
         items: [
             { id: "golden_tommy", name: "Gold-Plated Tommy Gun", rarity: "legendary", value: 75000 },
             { id: "antique_revolver", name: "Antique .44 Magnum", rarity: "epic", value: 35000 },
@@ -1161,7 +1161,7 @@ export const COLLECTIBLE_CATEGORIES = {
     },
     artwork: {
         name: "Fine Art",
-        icon: "🖼️",
+        icon: "",
         items: [
             { id: "stolen_vermeer", name: "Stolen Vermeer Painting", rarity: "legendary", value: 500000 },
             { id: "renaissance_sculpture", name: "Renaissance Sculpture", rarity: "epic", value: 200000 },
@@ -1171,7 +1171,7 @@ export const COLLECTIBLE_CATEGORIES = {
     },
     luxury_items: {
         name: "Luxury Items",
-        icon: "💎",
+        icon: "",
         items: [
             { id: "hope_diamond", name: "The Hope Diamond (Replica)", rarity: "legendary", value: 250000 },
             { id: "solid_gold_watch", name: "Solid Gold Rolex", rarity: "epic", value: 85000 },

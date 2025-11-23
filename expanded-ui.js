@@ -25,7 +25,7 @@ export function showGangManagementScreen() {
     
     let html = `
         <div class="expanded-screen gang-management-screen">
-            <h2>👥 Gang Management</h2>
+            <h2> Gang Management</h2>
             <div class="gang-stats">
                 <p><strong>Active Members:</strong> ${gangMembers.filter(m => m.status === "active").length}</p>
                 <p><strong>Total Gang Size:</strong> ${gangMembers.length}</p>
@@ -37,7 +37,7 @@ export function showGangManagementScreen() {
             </div>
             
             <div class="gang-actions">
-                <button onclick="recruitGangMemberExpanded()">🎯 Recruit New Member ($5,000)</button>
+                <button onclick="recruitGangMemberExpanded()"> Recruit New Member ($5,000)</button>
                 <button onclick="closeScreen()">← Back</button>
             </div>
         </div>
@@ -47,13 +47,13 @@ export function showGangManagementScreen() {
 }
 
 function renderGangMember(member) {
-    const roleData = member.roleData || { name: "Soldier", icon: "🔪" };
+    const roleData = member.roleData || { name: "Soldier", icon: "" };
     const statusIcon = {
-        "active": "✅",
-        "injured": "🤕",
-        "jailed": "🔒",
-        "dead": "💀"
-    }[member.status] || "❓";
+        "active": "",
+        "injured": "",
+        "jailed": "",
+        "dead": ""
+    }[member.status] || "";
     
     const loyaltyColor = member.stats.loyalty > 70 ? "green" : 
                          member.stats.loyalty > 40 ? "orange" : "red";
@@ -70,15 +70,15 @@ function renderGangMember(member) {
             </div>
             
             <div class="member-stats">
-                <div class="stat">💪 Violence: ${member.stats.violence}</div>
-                <div class="stat">🥷 Stealth: ${member.stats.stealth}</div>
-                <div class="stat">🧠 Intelligence: ${member.stats.intelligence}</div>
-                <div class="stat" style="color: ${loyaltyColor}">❤️ Loyalty: ${member.stats.loyalty}%</div>
+                <div class="stat"> Violence: ${member.stats.violence}</div>
+                <div class="stat"> Stealth: ${member.stats.stealth}</div>
+                <div class="stat"> Intelligence: ${member.stats.intelligence}</div>
+                <div class="stat" style="color: ${loyaltyColor}"> Loyalty: ${member.stats.loyalty}%</div>
             </div>
             
             ${member.perk ? `
                 <div class="member-perk">
-                    <strong>🎖️ ${member.perk.name}:</strong> ${member.perk.effect}
+                    <strong> ${member.perk.name}:</strong> ${member.perk.effect}
                 </div>
             ` : ''}
             
@@ -89,13 +89,13 @@ function renderGangMember(member) {
             ` : ''}
             
             ${member.assignedTo ? `
-                <div class="assignment">📍 Assigned to: ${member.assignedTo}</div>
+                <div class="assignment"> Assigned to: ${member.assignedTo}</div>
             ` : ''}
             
             ${member.status === "active" ? `
                 <div class="member-actions">
-                    <button onclick="assignMemberToTerritory('${member.id}')">📍 Assign to Territory</button>
-                    <button onclick="dismissMember('${member.id}')">❌ Dismiss</button>
+                    <button onclick="assignMemberToTerritory('${member.id}')"> Assign to Territory</button>
+                    <button onclick="dismissMember('${member.id}')"> Dismiss</button>
                 </div>
             ` : ''}
         </div>
@@ -159,7 +159,7 @@ export function showTerritoryMapScreen() {
     
     let html = `
         <div class="expanded-screen territory-map-screen">
-            <h2>🗺️ Territory Control Map</h2>
+            <h2> Territory Control Map</h2>
             <p class="subtitle">Assign gang members to defend your territories from rival attacks</p>
             
             <div class="territory-grid">
@@ -192,31 +192,31 @@ function renderTerritory(territory) {
             <p class="territory-description">${territory.description}</p>
             
             <div class="territory-info">
-                <div>💰 Income: $${territory.baseIncome.toLocaleString()}/day</div>
-                <div>🛡️ Defense Required: ${territory.defenseRequired}</div>
-                <div>⚠️ Risk: ${territory.riskLevel}</div>
+                <div> Income: $${territory.baseIncome.toLocaleString()}/day</div>
+                <div> Defense Required: ${territory.defenseRequired}</div>
+                <div> Risk: ${territory.riskLevel}</div>
             </div>
             
             ${isControlled ? `
                 <div class="territory-status controlled">
-                    <strong>✅ CONTROLLED</strong>
-                    <div>🛡️ Defense Strength: ${defenseStrength}</div>
-                    <div>🔨 Fortification Level: ${territory.fortificationLevel}</div>
-                    <div>👥 Defenders: ${defenders.length}</div>
+                    <strong> CONTROLLED</strong>
+                    <div> Defense Strength: ${defenseStrength}</div>
+                    <div> Fortification Level: ${territory.fortificationLevel}</div>
+                    <div> Defenders: ${defenders.length}</div>
                 </div>
                 
                 <div class="territory-actions">
-                    <button onclick="manageDefenders('${territory.id}')">👥 Manage Defenders</button>
-                    <button onclick="fortifyTerritory('${territory.id}')">🔨 Fortify ($10,000)</button>
+                    <button onclick="manageDefenders('${territory.id}')"> Manage Defenders</button>
+                    <button onclick="fortifyTerritory('${territory.id}')"> Fortify ($10,000)</button>
                 </div>
             ` : `
                 <div class="territory-status uncontrolled">
-                    <strong>❌ Not Controlled</strong>
+                    <strong> Not Controlled</strong>
                     ${territory.controlledBy ? `<div>Held by: ${territory.controlledBy}</div>` : `<div>Available for takeover</div>`}
                 </div>
                 
                 ${!territory.controlledBy ? `
-                    <button onclick="claimTerritory('${territory.id}')">🎯 Claim Territory ($${territory.baseIncome})</button>
+                    <button onclick="claimTerritory('${territory.id}')"> Claim Territory ($${territory.baseIncome})</button>
                 ` : ''}
             `}
         </div>
@@ -232,7 +232,7 @@ window.manageDefenders = function(territoryId) {
     
     let html = `
         <div class="defender-manager">
-            <h2>👥 Manage Defenders: ${territory.name}</h2>
+            <h2> Manage Defenders: ${territory.name}</h2>
             <p>Select gang members to defend this territory</p>
             
             <div class="current-defenders">
@@ -320,7 +320,7 @@ window.claimTerritory = function(territoryId) {
     player.money -= territory.baseIncome;
     territory.controlledBy = "player";
     
-    GameLogging.logEvent(`🎯 Claimed ${territory.name}! Now earning $${territory.baseIncome}/day.`);
+    GameLogging.logEvent(` Claimed ${territory.name}! Now earning $${territory.baseIncome}/day.`);
     showTerritoryMapScreen();
     updateUI();
 };
@@ -369,7 +369,7 @@ function showInteractiveEvent(event) {
                             <h3>${choice.text}</h3>
                             ${choice.successChance < 1 ? `<div class="success-chance">Success Chance: ${Math.floor(choice.successChance * 100)}%</div>` : ''}
                             ${renderRequirements(choice.requirements)}
-                            ${disabled ? `<div class="requirements-not-met">❌ ${reqCheck.reason}</div>` : ''}
+                            ${disabled ? `<div class="requirements-not-met"> ${reqCheck.reason}</div>` : ''}
                         </div>
                     `;
                 }).join('')}
@@ -402,11 +402,11 @@ function checkChoiceRequirements(requirements) {
 
 function renderRequirements(requirements) {
     const reqs = [];
-    if (requirements.money) reqs.push(`💰 $${requirements.money.toLocaleString()}`);
-    if (requirements.gangMembers) reqs.push(`👥 ${requirements.gangMembers} members`);
-    if (requirements.violence) reqs.push(`💪 Violence ${requirements.violence}`);
-    if (requirements.intelligence) reqs.push(`🧠 Intelligence ${requirements.intelligence}`);
-    if (requirements.charisma) reqs.push(`🎭 Charisma ${requirements.charisma}`);
+    if (requirements.money) reqs.push(` $${requirements.money.toLocaleString()}`);
+    if (requirements.gangMembers) reqs.push(` ${requirements.gangMembers} members`);
+    if (requirements.violence) reqs.push(` Violence ${requirements.violence}`);
+    if (requirements.intelligence) reqs.push(` Intelligence ${requirements.intelligence}`);
+    if (requirements.charisma) reqs.push(` Charisma ${requirements.charisma}`);
     
     return reqs.length > 0 ? `<div class="requirements">Requires: ${reqs.join(', ')}</div>` : '';
 }
@@ -425,16 +425,16 @@ window.makeEventChoice = function(choiceIndex) {
     const outcome = result.outcome;
     let outcomeHtml = `
         <div class="event-outcome ${result.eventSuccess ? 'success' : 'failure'}">
-            <h2>${result.eventSuccess ? '✅ SUCCESS!' : '❌ FAILURE!'}</h2>
+            <h2>${result.eventSuccess ? ' SUCCESS!' : ' FAILURE!'}</h2>
             <p class="outcome-message">${outcome.message}</p>
             
             <div class="outcome-effects">
-                ${result.result.money ? `<div>💰 Money: ${result.result.money > 0 ? '+' : ''}$${result.result.money.toLocaleString()}</div>` : ''}
-                ${result.result.heat ? `<div>🔥 Heat: ${result.result.heat > 0 ? '+' : ''}${result.result.heat}</div>` : ''}
+                ${result.result.money ? `<div> Money: ${result.result.money > 0 ? '+' : ''}$${result.result.money.toLocaleString()}</div>` : ''}
+                ${result.result.heat ? `<div> Heat: ${result.result.heat > 0 ? '+' : ''}${result.result.heat}</div>` : ''}
                 ${result.result.respect ? `<div>⭐ Respect: ${result.result.respect > 0 ? '+' : ''}${result.result.respect}</div>` : ''}
-                ${result.result.loyalty ? `<div>❤️ Gang Loyalty: ${result.result.loyalty > 0 ? '+' : ''}${result.result.loyalty}%</div>` : ''}
-                ${result.result.lostMembers ? `<div>💀 Lost: ${result.result.lostMembers.join(', ')}</div>` : ''}
-                ${result.result.jailed ? `<div>🔒 You've been arrested!</div>` : ''}
+                ${result.result.loyalty ? `<div> Gang Loyalty: ${result.result.loyalty > 0 ? '+' : ''}${result.result.loyalty}%</div>` : ''}
+                ${result.result.lostMembers ? `<div> Lost: ${result.result.lostMembers.join(', ')}</div>` : ''}
+                ${result.result.jailed ? `<div> You've been arrested!</div>` : ''}
             </div>
             
             <button onclick="closeScreen(); updateUI();">Continue</button>
@@ -459,7 +459,7 @@ export function showRivalActivityScreen() {
     
     let html = `
         <div class="expanded-screen rivals-screen">
-            <h2>🎯 Rival Kingpins</h2>
+            <h2> Rival Kingpins</h2>
             <p class="subtitle">Track your competitors and plan your moves</p>
             
             <div class="rivals-grid">
@@ -483,20 +483,20 @@ function renderRival(rival) {
             <div class="rival-faction">${rival.faction.toUpperCase()}</div>
             
             <div class="rival-stats">
-                <div>💪 Power: ${rival.powerRating}</div>
-                <div>👥 Gang Size: ${rival.gangSize}</div>
-                <div>💰 Wealth: $${rival.wealth.toLocaleString()}</div>
-                <div>🗺️ Territories: ${rival.territories.length}</div>
+                <div> Power: ${rival.powerRating}</div>
+                <div> Gang Size: ${rival.gangSize}</div>
+                <div> Wealth: $${rival.wealth.toLocaleString()}</div>
+                <div> Territories: ${rival.territories.length}</div>
                 <div style="color: ${respectColor}">⭐ Respect: ${playerRespect > 0 ? '+' : ''}${playerRespect}</div>
             </div>
             
             <div class="rival-personality">
                 <strong>Personality:</strong> ${rival.personality}
-                <div>⚔️ Aggressiveness: ${Math.floor(rival.aggressiveness * 100)}%</div>
+                <div> Aggressiveness: ${Math.floor(rival.aggressiveness * 100)}%</div>
             </div>
             
             <div class="rival-ability">
-                <strong>🎖️ Special:</strong> ${formatSpecialAbility(rival.specialAbility)}
+                <strong> Special:</strong> ${formatSpecialAbility(rival.specialAbility)}
             </div>
         </div>
     `;
@@ -521,11 +521,11 @@ export function showLegacyPerkShop() {
     
     let html = `
         <div class="expanded-screen legacy-shop-screen">
-            <h2>🏛️ Legacy Perk Shop</h2>
+            <h2> Legacy Perk Shop</h2>
             <p class="subtitle">Permanent upgrades that carry over between runs</p>
             
             <div class="legacy-points">
-                <h3>💎 Available Legacy Points: ${availablePoints}</h3>
+                <h3> Available Legacy Points: ${availablePoints}</h3>
             </div>
             
             <div class="perks-grid">
@@ -537,14 +537,14 @@ export function showLegacyPerkShop() {
                         <div class="perk-card ${isUnlocked ? 'unlocked' : ''} ${canAfford ? '' : 'locked'}">
                             <h3>${perk.icon} ${perk.name}</h3>
                             <p>${perk.description}</p>
-                            <div class="perk-cost">💎 Cost: ${perk.cost} LP</div>
+                            <div class="perk-cost"> Cost: ${perk.cost} LP</div>
                             
                             ${isUnlocked ? `
-                                <div class="perk-status">✅ UNLOCKED</div>
+                                <div class="perk-status"> UNLOCKED</div>
                             ` : canAfford ? `
                                 <button onclick="purchaseLegacyPerk('${perk.id}')">Purchase</button>
                             ` : `
-                                <div class="perk-status">🔒 Not enough Legacy Points</div>
+                                <div class="perk-status"> Not enough Legacy Points</div>
                             `}
                         </div>
                     `;
@@ -577,7 +577,7 @@ window.purchaseLegacyPerk = function(perkId) {
     player.legacy.availableLegacyPoints -= perk.cost;
     player.legacy.permanentPerks.push(perkId);
     
-    GameLogging.logEvent(`🏛️ Unlocked Legacy Perk: ${perk.name}!`);
+    GameLogging.logEvent(` Unlocked Legacy Perk: ${perk.name}!`);
     showLegacyPerkShop();
     updateUI();
 };
@@ -596,7 +596,7 @@ export function showDonsVault() {
     
     let html = `
         <div class="expanded-screen vault-screen">
-            <h2>💎 The Don's Vault</h2>
+            <h2> The Don's Vault</h2>
             <p class="subtitle">Your collection of rare and exotic items</p>
             
             <div class="vault-completion">
@@ -622,10 +622,10 @@ export function showDonsVault() {
                                         ${isCollected ? `
                                             <h4>${item.name}</h4>
                                             <div class="rarity">${item.rarity.toUpperCase()}</div>
-                                            <div class="value">💰 $${item.value.toLocaleString()}</div>
+                                            <div class="value"> $${item.value.toLocaleString()}</div>
                                         ` : `
                                             <h4>???</h4>
-                                            <div class="locked-message">🔒 Not yet discovered</div>
+                                            <div class="locked-message"> Not yet discovered</div>
                                         `}
                                     </div>
                                 `;
@@ -698,10 +698,10 @@ function renderRelationship(targetId, respect) {
         respect >= -60 ? 'low' : 'very-low';
     
     const respectLabel =
-        respect >= 60 ? '✅ Allied' :
-        respect >= 20 ? '🤝 Friendly' :
-        respect >= -19 ? '⚪ Neutral' :
-        respect >= -60 ? '⚠️ Hostile' : '☠️ Enemy';
+        respect >= 60 ? ' Allied' :
+        respect >= 20 ? ' Friendly' :
+        respect >= -19 ? ' Neutral' :
+        respect >= -60 ? ' Hostile' : ' Enemy';
     
     return `
         <div class="relationship-card ${respectLevel}">
@@ -789,10 +789,10 @@ export function startRivalAISystem() {
 
 function showTerritoryAttackAlert(result) {
     const message = result.lostTerritory ? 
-        `🚨 TERRITORY LOST! ${result.attacker} has taken ${result.territory}!
+        ` TERRITORY LOST! ${result.attacker} has taken ${result.territory}!
         Casualties: ${result.casualties.join(', ') || 'None'}
         Injured: ${result.injuredDefenders.join(', ') || 'None'}` :
-        `🛡️ ATTACK REPELLED! Successfully defended ${result.territory} against ${result.attacker}!
+        ` ATTACK REPELLED! Successfully defended ${result.territory} against ${result.attacker}!
         Reward: $${result.rewards.money}, +${result.rewards.respect} respect
         Injured: ${result.injuredDefenders.join(', ') || 'None'}`;
     

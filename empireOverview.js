@@ -40,28 +40,28 @@ export function showEmpireOverview() {
     const content = `
         <div style="background: #1a1a1a; padding: 30px; border-radius: 10px; border: 2px solid #d4af37; max-width: 800px; width: 90%; max-height: 90vh; overflow-y: auto;">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; padding-bottom: 15px; margin-bottom: 20px;">
-                <h2 style="margin: 0; color: #d4af37;">👑 Empire Overview: ${player.name || "The Don"}</h2>
+                <h2 style="margin: 0; color: #d4af37;"> Empire Overview: ${player.name || "The Don"}</h2>
                 <button onclick="document.getElementById('${modalId}').remove()" style="background: none; border: none; color: #fff; font-size: 24px; cursor: pointer;">&times;</button>
             </div>
 
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px;">
                 <div style="background: #2c2c2c; padding: 15px; border-radius: 5px; text-align: center;">
-                    <div style="font-size: 2em;">💵</div>
+                    <div style="font-size: 2em;"></div>
                     <div style="color: #aaa; font-size: 0.9em;">Liquid Assets</div>
                     <div style="font-size: 1.5em; color: #4caf50;">$${player.money.toLocaleString()}</div>
                 </div>
                 <div style="background: #2c2c2c; padding: 15px; border-radius: 5px; text-align: center;">
-                    <div style="font-size: 2em;">🏙️</div>
+                    <div style="font-size: 2em;"></div>
                     <div style="color: #aaa; font-size: 0.9em;">Territory Controlled</div>
                     <div style="font-size: 1.5em; color: #2196f3;">${totalTerritory} Blocks</div>
                 </div>
                 <div style="background: #2c2c2c; padding: 15px; border-radius: 5px; text-align: center;">
-                    <div style="font-size: 2em;">📈</div>
+                    <div style="font-size: 2em;"></div>
                     <div style="color: #aaa; font-size: 0.9em;">Est. Daily Income</div>
                     <div style="font-size: 1.5em; color: #ffeb3b;">$${dailyIncome.toLocaleString()}</div>
                 </div>
                 <div style="background: #2c2c2c; padding: 15px; border-radius: 5px; text-align: center;">
-                    <div style="font-size: 2em;">🤝</div>
+                    <div style="font-size: 2em;"></div>
                     <div style="color: #aaa; font-size: 0.9em;">Total Influence</div>
                     <div style="font-size: 1.5em; color: #9c27b0;">${totalRep} Rep</div>
                 </div>

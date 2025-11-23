@@ -18,7 +18,7 @@
 export const GANG_MEMBER_ROLES = {
     bruiser: {
         name: "Bruiser",
-        icon: "💪",
+        icon: "",
         description: "Pure muscle. When you need someone hurt, intimidated, or broken, this is your guy. Not the sharpest tool, but the heaviest hammer.",
         baseStat: { 
             violence: 18, 
@@ -36,7 +36,7 @@ export const GANG_MEMBER_ROLES = {
     
     fixer: {
         name: "Fixer",
-        icon: "🤝",
+        icon: "",
         description: "The smooth operator who knows everyone worth knowing. Can talk their way out of anything and has connections in high places.",
         baseStat: { 
             violence: 6, 
@@ -54,7 +54,7 @@ export const GANG_MEMBER_ROLES = {
     
     hacker: {
         name: "Hacker",
-        icon: "💻",
+        icon: "",
         description: "Digital ghost who can crack any system. Perfect for high-tech heists and covering your digital tracks.",
         baseStat: { 
             violence: 3, 
@@ -72,7 +72,7 @@ export const GANG_MEMBER_ROLES = {
     
     enforcer: {
         name: "Enforcer",
-        icon: "🔫",
+        icon: "",
         description: "Professional killer. Cold, efficient, and utterly ruthless. Handles the wet work without asking questions.",
         baseStat: { 
             violence: 20, 
@@ -90,7 +90,7 @@ export const GANG_MEMBER_ROLES = {
     
     wheelman: {
         name: "Wheelman",
-        icon: "🚗",
+        icon: "",
         description: "Master driver who can outrun anyone. Perfect for getaways, smuggling runs, and high-speed chases.",
         baseStat: { 
             violence: 8, 
@@ -108,7 +108,7 @@ export const GANG_MEMBER_ROLES = {
     
     scout: {
         name: "Scout",
-        icon: "👁️",
+        icon: "",
         description: "Expert observer who knows how to stay invisible. Gathers intelligence and watches your enemies.",
         baseStat: { 
             violence: 6, 
@@ -126,7 +126,7 @@ export const GANG_MEMBER_ROLES = {
     
     accountant: {
         name: "Accountant",
-        icon: "📊",
+        icon: "",
         description: "Numbers wizard who can make money appear and disappear. Expert at laundering and maximizing profits.",
         baseStat: { 
             violence: 2, 
@@ -144,7 +144,7 @@ export const GANG_MEMBER_ROLES = {
     
     consigliere: {
         name: "Consigliere",
-        icon: "🎩",
+        icon: "",
         description: "Your trusted advisor. Wise, experienced, and loyal to the end. Provides strategic guidance and counsel.",
         baseStat: { 
             violence: 10, 
@@ -162,7 +162,7 @@ export const GANG_MEMBER_ROLES = {
     
     smuggler: {
         name: "Smuggler",
-        icon: "📦",
+        icon: "",
         description: "Knows every border crossing, port, and hidden route. Moves goods where they need to go, no questions asked.",
         baseStat: { 
             violence: 9, 
@@ -180,7 +180,7 @@ export const GANG_MEMBER_ROLES = {
     
     medic: {
         name: "Street Medic",
-        icon: "⚕️",
+        icon: "",
         description: "Patched up more gunshot wounds than any ER doc. Keeps your crew alive when things go south.",
         baseStat: { 
             violence: 4, 
@@ -198,7 +198,7 @@ export const GANG_MEMBER_ROLES = {
     
     safecracker: {
         name: "Safecracker",
-        icon: "🔓",
+        icon: "",
         description: "Can open anything with a lock. Old-school master of the trade with steady hands and patience.",
         baseStat: { 
             violence: 5, 
@@ -216,7 +216,7 @@ export const GANG_MEMBER_ROLES = {
     
     forger: {
         name: "Forger",
-        icon: "✍️",
+        icon: "",
         description: "Artist of deception. Can create flawless documents, IDs, and certificates. The pen is mightier than the sword.",
         baseStat: { 
             violence: 3, 
@@ -477,7 +477,7 @@ export const RIVAL_KINGPINS = {
         faction: "torrino",
         personality: "traditional",
         description: "Old-school Mafia don who believes in honor, tradition, and famiglia. Slow to anger but unforgiving once crossed.",
-        portrait: "👴",
+        portrait: "",
         
         startingStats: {
             territories: ["little_italy"],
@@ -518,7 +518,7 @@ export const RIVAL_KINGPINS = {
         faction: "kozlov",
         personality: "ruthless",
         description: "Former KGB operative turned crime lord. Brutal, efficient, and utterly without mercy. Fear is his favorite weapon.",
-        portrait: "🧔",
+        portrait: "",
         
         startingStats: {
             territories: ["docks"],
@@ -559,7 +559,7 @@ export const RIVAL_KINGPINS = {
         faction: "chen",
         personality: "strategic",
         description: "Brilliant strategist and master of the long game. Controls vast underground networks. Patient, cunning, and always three steps ahead.",
-        portrait: "🧑‍💼",
+        portrait: "",
         
         startingStats: {
             territories: ["chinatown", "casino_district"],
@@ -600,7 +600,7 @@ export const RIVAL_KINGPINS = {
         faction: "morales",
         personality: "ambitious",
         description: "Rising star of the cartel world. Young, ruthless, and hungry for power. Building an empire from the ground up.",
-        portrait: "👸",
+        portrait: "",
         
         startingStats: {
             territories: ["university_district", "red_light_district"],
@@ -641,7 +641,7 @@ export const RIVAL_KINGPINS = {
         faction: "independent",
         personality: "opportunistic",
         description: "Unpredictable wildcard who plays all sides. No loyalty, no honor, just profit. Strikes when you least expect it.",
-        portrait: "😈",
+        portrait: "",
         
         startingStats: {
             territories: [],
@@ -681,14 +681,14 @@ export const RIVAL_KINGPINS = {
 export const INTERACTIVE_EVENTS = [
     {
         id: "police_raid_warehouse",
-        title: "🚨 POLICE RAID: Warehouse Bust",
+        title: " POLICE RAID: Warehouse Bust",
         category: "law_enforcement",
         description: "The cops just kicked in the door of your main warehouse! They've got a warrant and they're tearing the place apart looking for evidence. Your crew is scrambling.",
         rarity: "common",
         
         choices: [
             {
-                text: "🔫 Fight them off (Violent Response)",
+                text: " Fight them off (Violent Response)",
                 requirements: { gangMembers: 5, violence: 12 },
                 successChance: 0.55,
                 outcomes: {
@@ -711,7 +711,7 @@ export const INTERACTIVE_EVENTS = [
                 }
             },
             {
-                text: "💰 Bribe the lead detective ($15,000)",
+                text: " Bribe the lead detective ($15,000)",
                 requirements: { money: 15000, intelligence: 10 },
                 successChance: 0.80,
                 outcomes: {
@@ -731,7 +731,7 @@ export const INTERACTIVE_EVENTS = [
                 }
             },
             {
-                text: "🙏 Cooperate and take the hit",
+                text: " Cooperate and take the hit",
                 requirements: {},
                 successChance: 1.0,
                 outcomes: {
@@ -744,7 +744,7 @@ export const INTERACTIVE_EVENTS = [
                 }
             },
             {
-                text: "🔥 Burn the evidence (Destroy warehouse)",
+                text: " Burn the evidence (Destroy warehouse)",
                 requirements: { money: 10000, intelligence: 8 },
                 successChance: 0.70,
                 outcomes: {
@@ -768,14 +768,14 @@ export const INTERACTIVE_EVENTS = [
     
     {
         id: "betrayal_rumor",
-        title: "🐍 Whispers of Betrayal",
+        title: " Whispers of Betrayal",
         category: "loyalty",
         description: "Word on the street is that someone in your crew is talking to the feds. Your consigliere hands you a list of three names. One of them is a rat.",
         rarity: "common",
         
         choices: [
             {
-                text: "🔍 Investigate quietly (Intelligence check)",
+                text: " Investigate quietly (Intelligence check)",
                 requirements: { intelligence: 18 },
                 successChance: 0.75,
                 outcomes: {
@@ -794,7 +794,7 @@ export const INTERACTIVE_EVENTS = [
                 }
             },
             {
-                text: "❓ Ignore the rumors (Risk it)",
+                text: " Ignore the rumors (Risk it)",
                 requirements: {},
                 successChance: 0.40,
                 outcomes: {
@@ -814,7 +814,7 @@ export const INTERACTIVE_EVENTS = [
                 }
             },
             {
-                text: "💀 Make an example (Kill a random suspect)",
+                text: " Make an example (Kill a random suspect)",
                 requirements: { gangMembers: 3 },
                 successChance: 1.0,
                 outcomes: {
@@ -829,7 +829,7 @@ export const INTERACTIVE_EVENTS = [
                 }
             },
             {
-                text: "💰 Buy loyalty (Pay everyone $5,000 bonus)",
+                text: " Buy loyalty (Pay everyone $5,000 bonus)",
                 requirements: { money: 50000 },
                 successChance: 0.85,
                 outcomes: {
@@ -850,14 +850,14 @@ export const INTERACTIVE_EVENTS = [
     
     {
         id: "rival_scandal",
-        title: "📰 Rival Boss Caught in Scandal",
+        title: " Rival Boss Caught in Scandal",
         category: "opportunity",
         description: "A rival crime boss just got caught in a very public, very embarrassing scandal. Photos, witnesses, the works. The tabloids are having a field day. This is your chance to capitalize.",
         rarity: "uncommon",
         
         choices: [
             {
-                text: "💀 Blackmail them ($25,000 payout)",
+                text: " Blackmail them ($25,000 payout)",
                 requirements: { intelligence: 15 },
                 successChance: 0.70,
                 outcomes: {
@@ -876,7 +876,7 @@ export const INTERACTIVE_EVENTS = [
                 }
             },
             {
-                text: "🤝 Help them cover it up ($10,000 cost)",
+                text: " Help them cover it up ($10,000 cost)",
                 requirements: { money: 10000 },
                 successChance: 0.90,
                 outcomes: {
@@ -888,7 +888,7 @@ export const INTERACTIVE_EVENTS = [
                 }
             },
             {
-                text: "📢 Leak everything to the press",
+                text: " Leak everything to the press",
                 requirements: {},
                 successChance: 1.0,
                 outcomes: {
@@ -901,7 +901,7 @@ export const INTERACTIVE_EVENTS = [
                 }
             },
             {
-                text: "🤐 Stay out of it (Do nothing)",
+                text: " Stay out of it (Do nothing)",
                 requirements: {},
                 successChance: 1.0,
                 outcomes: {
@@ -915,14 +915,14 @@ export const INTERACTIVE_EVENTS = [
     
     {
         id: "arms_deal",
-        title: "🔫 Black Market Arms Deal",
+        title: " Black Market Arms Deal",
         category: "opportunity",
         description: "A Serbian arms dealer has a container ship full of military-grade hardware sitting in the harbor. Assault rifles, grenades, body armor – the works. He's looking for buyers. First come, first served.",
         rarity: "rare",
         
         choices: [
             {
-                text: "💰 Buy the entire shipment ($40,000)",
+                text: " Buy the entire shipment ($40,000)",
                 requirements: { money: 40000 },
                 successChance: 1.0,
                 outcomes: {
@@ -935,7 +935,7 @@ export const INTERACTIVE_EVENTS = [
                 }
             },
             {
-                text: "🏴‍☠️ Hijack the shipment (Violent)",
+                text: " Hijack the shipment (Violent)",
                 requirements: { gangMembers: 6, violence: 18 },
                 successChance: 0.60,
                 outcomes: {
@@ -956,7 +956,7 @@ export const INTERACTIVE_EVENTS = [
                 }
             },
             {
-                text: "🤝 Split the deal with a rival ($20,000 each)",
+                text: " Split the deal with a rival ($20,000 each)",
                 requirements: { money: 20000, intelligence: 12 },
                 successChance: 0.85,
                 outcomes: {
@@ -976,7 +976,7 @@ export const INTERACTIVE_EVENTS = [
                 }
             },
             {
-                text: "🚨 Tip off the cops (Anonymous call)",
+                text: " Tip off the cops (Anonymous call)",
                 requirements: {},
                 successChance: 1.0,
                 outcomes: {
@@ -992,14 +992,14 @@ export const INTERACTIVE_EVENTS = [
     
     {
         id: "witness_elimination",
-        title: "👁️ The Witness Problem",
+        title: " The Witness Problem",
         category: "crisis",
         description: "A civilian witnessed your crew during that last heist. They're cooperating with the DA and set to testify in 72 hours. If they talk, multiple crew members go away for 10-20 years. The clock is ticking.",
         rarity: "uncommon",
         
         choices: [
             {
-                text: "💀 Send a hitter (Assassinate)",
+                text: " Send a hitter (Assassinate)",
                 requirements: { gangMembers: 1, violence: 15 },
                 successChance: 0.65,
                 outcomes: {
@@ -1019,7 +1019,7 @@ export const INTERACTIVE_EVENTS = [
                 }
             },
             {
-                text: "😨 Intimidate them ($8,000 + threats)",
+                text: " Intimidate them ($8,000 + threats)",
                 requirements: { money: 8000, violence: 10 },
                 successChance: 0.75,
                 outcomes: {
@@ -1037,7 +1037,7 @@ export const INTERACTIVE_EVENTS = [
                 }
             },
             {
-                text: "💰 Relocate them ($35,000 buyout)",
+                text: " Relocate them ($35,000 buyout)",
                 requirements: { money: 35000 },
                 successChance: 0.95,
                 outcomes: {
@@ -1049,7 +1049,7 @@ export const INTERACTIVE_EVENTS = [
                 }
             },
             {
-                text: "⚖️ Let your lawyer handle it (Legal approach)",
+                text: " Let your lawyer handle it (Legal approach)",
                 requirements: { money: 20000, intelligence: 14 },
                 successChance: 0.60,
                 outcomes: {
@@ -1071,14 +1071,14 @@ export const INTERACTIVE_EVENTS = [
     
     {
         id: "shipment_opportunity",
-        title: "📦 High-Value Shipment",
+        title: " High-Value Shipment",
         category: "opportunity",
         description: "Your inside man at the port just tipped you off: there's a container coming through tomorrow worth $100,000. Problem is, it belongs to a major crime family and they'll know if it goes missing.",
         rarity: "uncommon",
         
         choices: [
             {
-                text: "🏴‍☠️ Steal it (High risk, high reward)",
+                text: " Steal it (High risk, high reward)",
                 requirements: { gangMembers: 5, stealth: 15 },
                 successChance: 0.50,
                 outcomes: {
@@ -1098,7 +1098,7 @@ export const INTERACTIVE_EVENTS = [
                 }
             },
             {
-                text: "🤝 Negotiate a cut (Diplomacy)",
+                text: " Negotiate a cut (Diplomacy)",
                 requirements: { intelligence: 16 },
                 successChance: 0.70,
                 outcomes: {
@@ -1114,7 +1114,7 @@ export const INTERACTIVE_EVENTS = [
                 }
             },
             {
-                text: "🚨 Alert the owners (Build goodwill)",
+                text: " Alert the owners (Build goodwill)",
                 requirements: {},
                 successChance: 1.0,
                 outcomes: {
@@ -1126,7 +1126,7 @@ export const INTERACTIVE_EVENTS = [
                 }
             },
             {
-                text: "🤐 Stay out of it (Safe choice)",
+                text: " Stay out of it (Safe choice)",
                 requirements: {},
                 successChance: 1.0,
                 outcomes: {
@@ -1140,14 +1140,14 @@ export const INTERACTIVE_EVENTS = [
     
     {
         id: "turf_war_provocation",
-        title: "⚔️ Rival Gang Provocation",
+        title: " Rival Gang Provocation",
         category: "conflict",
         description: "A rival gang just jumped two of your guys in broad daylight. One's in the hospital, the other's in the morgue. The whole city's watching to see how you respond. Show weakness now and you're finished.",
         rarity: "common",
         
         choices: [
             {
-                text: "💀 Retaliate immediately (All-out war)",
+                text: " Retaliate immediately (All-out war)",
                 requirements: { gangMembers: 8, violence: 16 },
                 successChance: 0.65,
                 outcomes: {
@@ -1170,7 +1170,7 @@ export const INTERACTIVE_EVENTS = [
                 }
             },
             {
-                text: "🤝 Demand a sit-down (Negotiate)",
+                text: " Demand a sit-down (Negotiate)",
                 requirements: { intelligence: 14, respect: 30 },
                 successChance: 0.70,
                 outcomes: {
@@ -1186,7 +1186,7 @@ export const INTERACTIVE_EVENTS = [
                 }
             },
             {
-                text: "💰 Hire professional hitters ($25,000)",
+                text: " Hire professional hitters ($25,000)",
                 requirements: { money: 25000 },
                 successChance: 0.85,
                 outcomes: {
@@ -1205,7 +1205,7 @@ export const INTERACTIVE_EVENTS = [
                 }
             },
             {
-                text: "😔 Let it go (Show restraint)",
+                text: " Let it go (Show restraint)",
                 requirements: {},
                 successChance: 1.0,
                 outcomes: {
@@ -1221,14 +1221,14 @@ export const INTERACTIVE_EVENTS = [
     
     {
         id: "corrupt_cop_offer",
-        title: "👮 Corrupt Cop on the Take",
+        title: " Corrupt Cop on the Take",
         category: "opportunity",
         description: "A detective from the Major Crimes unit approaches you with an offer. He can feed you intel on investigations, warn you about raids, and lose evidence... for the right price.",
         rarity: "rare",
         
         choices: [
             {
-                text: "💰 Put him on the payroll ($10,000/month)",
+                text: " Put him on the payroll ($10,000/month)",
                 requirements: { money: 10000 },
                 successChance: 0.75,
                 outcomes: {
@@ -1247,7 +1247,7 @@ export const INTERACTIVE_EVENTS = [
                 }
             },
             {
-                text: "🎥 Record him and use as blackmail",
+                text: " Record him and use as blackmail",
                 requirements: { intelligence: 18 },
                 successChance: 0.80,
                 outcomes: {
@@ -1263,7 +1263,7 @@ export const INTERACTIVE_EVENTS = [
                 }
             },
             {
-                text: "🚨 Report him to Internal Affairs",
+                text: " Report him to Internal Affairs",
                 requirements: {},
                 successChance: 1.0,
                 outcomes: {
@@ -1275,7 +1275,7 @@ export const INTERACTIVE_EVENTS = [
                 }
             },
             {
-                text: "❌ Decline and walk away",
+                text: " Decline and walk away",
                 requirements: {},
                 successChance: 1.0,
                 outcomes: {
@@ -1289,14 +1289,14 @@ export const INTERACTIVE_EVENTS = [
     
     {
         id: "family_emergency",
-        title: "👨‍👩‍👧 Family Crisis",
+        title: " Family Crisis",
         category: "personal",
         description: "Your sister calls in tears. Her husband's gambling debts have attracted the wrong kind of attention. Loan sharks are threatening violence if he doesn't pay $30,000 by tomorrow. She's begging for your help.",
         rarity: "uncommon",
         
         choices: [
             {
-                text: "💰 Pay the debt ($30,000)",
+                text: " Pay the debt ($30,000)",
                 requirements: { money: 30000 },
                 successChance: 1.0,
                 outcomes: {
@@ -1308,7 +1308,7 @@ export const INTERACTIVE_EVENTS = [
                 }
             },
             {
-                text: "💀 'Talk' to the loan sharks",
+                text: " 'Talk' to the loan sharks",
                 requirements: { gangMembers: 4, violence: 12 },
                 successChance: 0.70,
                 outcomes: {
@@ -1326,7 +1326,7 @@ export const INTERACTIVE_EVENTS = [
                 }
             },
             {
-                text: "🤝 Negotiate a payment plan",
+                text: " Negotiate a payment plan",
                 requirements: { intelligence: 12 },
                 successChance: 0.60,
                 outcomes: {
@@ -1342,7 +1342,7 @@ export const INTERACTIVE_EVENTS = [
                 }
             },
             {
-                text: "❌ Refuse to help",
+                text: " Refuse to help",
                 requirements: {},
                 successChance: 1.0,
                 outcomes: {
@@ -1357,14 +1357,14 @@ export const INTERACTIVE_EVENTS = [
     
     {
         id: "territory_expansion_opportunity",
-        title: "🗺️ Weak Territory Detected",
+        title: " Weak Territory Detected",
         category: "expansion",
         description: "Your scouts report that a key territory is poorly defended right now. The current owner's crew is depleted from a recent battle. This is your window to strike and claim it before they recover.",
         rarity: "uncommon",
         
         choices: [
             {
-                text: "⚔️ Attack now (Strike fast)",
+                text: " Attack now (Strike fast)",
                 requirements: { gangMembers: 8, violence: 14 },
                 successChance: 0.75,
                 outcomes: {
@@ -1384,7 +1384,7 @@ export const INTERACTIVE_EVENTS = [
                 }
             },
             {
-                text: "🤝 Make an offer to buy it ($50,000)",
+                text: " Make an offer to buy it ($50,000)",
                 requirements: { money: 50000, intelligence: 14 },
                 successChance: 0.80,
                 outcomes: {
@@ -1401,7 +1401,7 @@ export const INTERACTIVE_EVENTS = [
                 }
             },
             {
-                text: "⏰ Wait for backup (Cautious approach)",
+                text: " Wait for backup (Cautious approach)",
                 requirements: {},
                 successChance: 0.50,
                 outcomes: {

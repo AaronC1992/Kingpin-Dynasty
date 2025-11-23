@@ -20,7 +20,7 @@ export const LEGACY_PERKS = {
         tier: 1,
         cost: 10,
         description: "You know every shortcut, every angle, every way to squeeze extra profit from the streets. Built different from day one.",
-        icon: "💵",
+        icon: "",
         effects: {
             incomeMultiplier: 1.10,
             jobSuccessBonus: 0.05
@@ -34,7 +34,7 @@ export const LEGACY_PERKS = {
         tier: 1,
         cost: 15,
         description: "Blood is thicker than water. Your crew's loyalty runs deep, passed down from your father's generation.",
-        icon: "👨‍👩‍👧",
+        icon: "",
         effects: {
             gangLoyaltyBonus: 15,
             loyaltyDecayReduction: 0.25
@@ -48,7 +48,7 @@ export const LEGACY_PERKS = {
         tier: 1,
         cost: 12,
         description: "You learned the game young. Reading people, spotting danger, knowing when to fold. These instincts can't be taught.",
-        icon: "🧠",
+        icon: "",
         effects: {
             heatReduction: 0.10,
             eventSuccessBonus: 0.10
@@ -62,7 +62,7 @@ export const LEGACY_PERKS = {
         tier: 1,
         cost: 15,
         description: "People naturally follow you. Even as a kid, you were organizing the neighborhood. It's in your blood.",
-        icon: "👑",
+        icon: "",
         effects: {
             maxGangMembers: 5,
             recruitmentCostReduction: 0.10
@@ -77,7 +77,7 @@ export const LEGACY_PERKS = {
         tier: 2,
         cost: 25,
         description: "Your family's accountant taught you the art of making dirty money clean. You could launder cash in your sleep.",
-        icon: "💼",
+        icon: "",
         effects: {
             launderingSpeed: 1.30,
             launderingLossReduction: 0.15
@@ -91,7 +91,7 @@ export const LEGACY_PERKS = {
         tier: 2,
         cost: 30,
         description: "Your family's lawyer has gotten you out of more jams than you can count. The feds know your name but can't make anything stick.",
-        icon: "🔥",
+        icon: "",
         effects: {
             heatDecayMultiplier: 1.40,
             jailTimeReduction: 0.25
@@ -105,7 +105,7 @@ export const LEGACY_PERKS = {
         tier: 2,
         cost: 35,
         description: "Your father led with respect, not fear. You inherited that gift. Men would die for you.",
-        icon: "👥",
+        icon: "",
         effects: {
             maxGangMembers: 10,
             gangEffectivenessBonus: 0.15,
@@ -120,7 +120,7 @@ export const LEGACY_PERKS = {
         tier: 2,
         cost: 40,
         description: "Like a chess master, you see moves others don't. Your grandfather was the same – always three steps ahead.",
-        icon: "♟️",
+        icon: "",
         effects: {
             jobPlanningBonus: 0.20,
             eventPreviewDuration: 300,
@@ -135,7 +135,7 @@ export const LEGACY_PERKS = {
         tier: 2,
         cost: 50,
         description: "Your family's been in the game for three generations. You started with connections and capital others can only dream of.",
-        icon: "💰",
+        icon: "",
         effects: {
             startingCash: 50000,
             incomeMultiplier: 1.15,
@@ -151,7 +151,7 @@ export const LEGACY_PERKS = {
         tier: 3,
         cost: 60,
         description: "Your family never breaks. The feds tried to flip your uncle for 15 years. He did his time and never said a word. You inherited that backbone.",
-        icon: "🛡️",
+        icon: "",
         effects: {
             gangLoyaltyBonus: 30,
             betrayalChance: -0.50,
@@ -166,7 +166,7 @@ export const LEGACY_PERKS = {
         tier: 3,
         cost: 75,
         description: "You can spot talent a mile away. The best soldiers, the smartest operators – they all want to work for you.",
-        icon: "🎯",
+        icon: "",
         effects: {
             maxGangMembers: 20,
             recruitmentCostReduction: 0.25,
@@ -182,7 +182,7 @@ export const LEGACY_PERKS = {
         tier: 3,
         cost: 70,
         description: "Your family controlled half the city once. You know every street, every contact, every vulnerability. Time to reclaim your legacy.",
-        icon: "🗺️",
+        icon: "",
         effects: {
             territoryIncomeBonus: 0.25,
             territoryClaimCostReduction: 0.30,
@@ -198,7 +198,7 @@ export const LEGACY_PERKS = {
         tier: 3,
         cost: 80,
         description: "Your family built an empire that operated in the shadows. Legitimate fronts, offshore accounts, untraceable networks. You know the blueprint.",
-        icon: "🕶️",
+        icon: "",
         effects: {
             heatGenerationReduction: 0.30,
             businessProfitBonus: 0.35,
@@ -214,7 +214,7 @@ export const LEGACY_PERKS = {
         tier: 4,
         cost: 100,
         description: "Your family has judges, senators, and police chiefs in their pocket. The law bends around you like gravity around a black hole.",
-        icon: "⚖️",
+        icon: "",
         effects: {
             jailChanceReduction: 0.60,
             heatDecayMultiplier: 2.0,
@@ -230,7 +230,7 @@ export const LEGACY_PERKS = {
         tier: 4,
         cost: 150,
         description: "Your family name is legend. Your grandfather was a kingpin, your father expanded the empire, and now it's your turn to surpass them both.",
-        icon: "👑",
+        icon: "",
         effects: {
             respectGainMultiplier: 1.50,
             maxGangMembers: 50,
@@ -253,7 +253,7 @@ export const LEGACY_PERKS = {
         tier: 4,
         cost: 120,
         description: "You don't just run a gang – you build dynasties. Legitimate businesses, political connections, international operations. The whole package.",
-        icon: "🏛️",
+        icon: "",
         effects: {
             businessSlots: 10,
             businessProfitBonus: 0.50,
@@ -269,7 +269,7 @@ export const LEGACY_PERKS = {
         tier: 4,
         cost: 200,
         description: "Ultimate power. Ultimate respect. You ARE the law in this city. Your family's legacy spans generations, and your name will echo through history.",
-        icon: "🎩",
+        icon: "",
         effects: {
             allBonusesDoubled: true,
             immortalLegacy: true,
@@ -292,7 +292,7 @@ export const LEGACY_PERKS = {
         tier: 2,
         cost: 35,
         description: "Your family specialized in the wet work. You learned from the best killers in the business. Death follows your orders.",
-        icon: "🗡️",
+        icon: "",
         effects: {
             hitSuccessRate: 1.40,
             enforcerEffectiveness: 1.30,
@@ -307,7 +307,7 @@ export const LEGACY_PERKS = {
         tier: 2,
         cost: 30,
         description: "Your uncle ran guns across three borders. You know every route, every contact, every way to move contraband invisibly.",
-        icon: "🚢",
+        icon: "",
         effects: {
             smugglingProfitBonus: 0.40,
             smugglingSuccessRate: 0.25,
@@ -322,7 +322,7 @@ export const LEGACY_PERKS = {
         tier: 3,
         cost: 65,
         description: "While old-timers were counting cash, your family was building digital empires. Cryptocurrency, hacking, cyber crime – you own the future.",
-        icon: "💻",
+        icon: "",
         effects: {
             hackerEffectiveness: 1.50,
             digitalCrimeUnlocked: true,
@@ -338,7 +338,7 @@ export const LEGACY_PERKS = {
         tier: 3,
         cost: 70,
         description: "Your family doesn't just bribe politicians – they OWN them. City council, DA's office, even the mayor... all in your pocket.",
-        icon: "🏛️",
+        icon: "",
         effects: {
             policeInterferenceReduction: 0.50,
             legalProtection: 1.60,
@@ -355,7 +355,7 @@ export const COLLECTIBLE_CATEGORIES = {
     rare_cars: {
         category: "Rare Luxury Cars",
         description: "High-end vehicles that show your status and style. Each one's a masterpiece.",
-        icon: "🚗",
+        icon: "",
         items: [
             {
                 id: "ferrari_f40",
@@ -431,7 +431,7 @@ export const COLLECTIBLE_CATEGORIES = {
     exotic_weapons: {
         category: "Exotic Weapons",
         description: "Rare, powerful, and dangerous tools of the trade. These aren't just guns – they're statements.",
-        icon: "🔫",
+        icon: "",
         items: [
             {
                 id: "gold_desert_eagle",
@@ -521,7 +521,7 @@ export const COLLECTIBLE_CATEGORIES = {
     artwork_treasures: {
         category: "Stolen Art & Treasures",
         description: "Priceless works of art, liberated from those who couldn't appreciate them properly.",
-        icon: "🖼️",
+        icon: "",
         items: [
             {
                 id: "van_gogh_sunflowers",
@@ -597,7 +597,7 @@ export const COLLECTIBLE_CATEGORIES = {
     luxury_items: {
         category: "Luxury Items & Status Symbols",
         description: "The finest things money can buy (or steal). Because living like a king is the whole point.",
-        icon: "💎",
+        icon: "",
         items: [
             {
                 id: "patek_philippe_watch",
@@ -698,7 +698,7 @@ export const COLLECTIBLE_CATEGORIES = {
     rare_memorabilia: {
         category: "Crime History Memorabilia",
         description: "Pieces of criminal history. Items that once belonged to legends of the underworld.",
-        icon: "🏆",
+        icon: "",
         items: [
             {
                 id: "capone_suit",

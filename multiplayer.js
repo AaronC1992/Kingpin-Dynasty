@@ -145,7 +145,7 @@ function connectToOnlineWorld() {
     try {
         // Try to connect to real WebSocket server
         const serverUrl = onlineWorld.serverUrl;
-        logAction("🌐 Connecting to online world...");
+        logAction(" Connecting to online world...");
         
         onlineWorldState.socket = new WebSocket(serverUrl);
         
@@ -180,7 +180,7 @@ function connectToOnlineWorld() {
             initializeWorldData();
             startWorldUpdates();
             
-            logAction(`🌐 Connected to online world! Player ID: ${onlineWorldState.playerId}`);
+            logAction(` Connected to online world! Player ID: ${onlineWorldState.playerId}`);
             showWelcomeMessage();
         };
         
@@ -192,7 +192,7 @@ function connectToOnlineWorld() {
             onlineWorldState.isConnected = false;
             onlineWorldState.connectionStatus = 'disconnected';
             updateConnectionStatus();
-            logAction("🌐 Disconnected from online world");
+            logAction(" Disconnected from online world");
             
             // Attempt to reconnect
             setTimeout(() => {
@@ -203,7 +203,7 @@ function connectToOnlineWorld() {
         onlineWorldState.socket.onerror = function(error) {
             onlineWorldState.connectionStatus = 'error';
             updateConnectionStatus();
-            logAction("❌ Failed to connect to online world. Retrying...");
+            logAction(" Failed to connect to online world. Retrying...");
             
             // Fallback to local demo mode
             setTimeout(() => {
@@ -214,7 +214,7 @@ function connectToOnlineWorld() {
     } catch (error) {
         onlineWorldState.connectionStatus = 'error';
         updateConnectionStatus();
-        logAction("❌ Failed to connect to online world. Retrying...");
+        logAction(" Failed to connect to online world. Retrying...");
         
         setTimeout(() => {
             connectToLocalDemo();
@@ -224,7 +224,7 @@ function connectToOnlineWorld() {
 
 // Fallback to local demo mode when server is unavailable
 function connectToLocalDemo() {
-    logAction("🔧 Starting in offline demo mode...");
+    logAction(" Starting in offline demo mode...");
     
     setTimeout(() => {
         onlineWorldState.isConnected = false; // Keep as demo mode
@@ -236,7 +236,7 @@ function connectToLocalDemo() {
         initializeWorldData();
         startWorldUpdates();
         
-        logAction(`🔧 Demo mode active - ${onlineWorldState.serverInfo.playerCount} simulated players`);
+        logAction(` Demo mode active - ${onlineWorldState.serverInfo.playerCount} simulated players`);
     }, 2000);
 }
 
@@ -315,7 +315,7 @@ function handleServerMessage(message) {
             
         case 'jailbreak_attempt':
             // Notify about jailbreak attempts by other players
-            const jailbreakMsg = `🚨 ${message.playerName} ${message.success ? 'successfully broke out of jail!' : 'failed a jailbreak attempt!'}`;
+            const jailbreakMsg = ` ${message.playerName} ${message.success ? 'successfully broke out of jail!' : 'failed a jailbreak attempt!'}`;
             addWorldEvent(jailbreakMsg);
             
             if (document.getElementById('global-chat-area')) {
@@ -325,7 +325,7 @@ function handleServerMessage(message) {
             
         case 'player_arrested':
             // Notify when another player gets arrested
-            const arrestMsg = `🚔 ${message.playerName} was arrested and sent to jail!`;
+            const arrestMsg = ` ${message.playerName} was arrested and sent to jail!`;
             addWorldEvent(arrestMsg);
             
             if (document.getElementById('global-chat-area')) {
@@ -335,7 +335,7 @@ function handleServerMessage(message) {
             
         case 'territory_taken':
             onlineWorldState.cityDistricts[message.district].controlledBy = message.playerName;
-            addWorldEvent(`🏛️ ${message.playerName} claimed ${message.district} district!`);
+            addWorldEvent(` ${message.playerName} claimed ${message.district} district!`);
             // If this was our claim, apply authoritative money & territory
             if (message.playerId === onlineWorldState.playerId) {
                 if (typeof message.money === 'number') player.money = message.money;
@@ -355,13 +355,13 @@ function handleServerMessage(message) {
                 if (message.jailed) player.jailTime = message.jailTime || player.jailTime;
                 // Log outcome
                 const earningsStr = message.earnings ? `+$${message.earnings.toLocaleString()}` : '';
-                logAction(`💼 Job '${message.jobId}' completed ${earningsStr} (Rep +${message.repGain || 0}, Wanted +${message.wantedAdded || 0})`);
+                logAction(` Job '${message.jobId}' completed ${earningsStr} (Rep +${message.repGain || 0}, Wanted +${message.wantedAdded || 0})`);
                 if (message.jailed) {
-                    logAction(`🚔 Arrested during job. Jail Time: ${player.jailTime}s`);
-                    addWorldEvent(`🚔 Arrested during ${message.jobId} job.`);
+                    logAction(` Arrested during job. Jail Time: ${player.jailTime}s`);
+                    addWorldEvent(` Arrested during ${message.jobId} job.`);
                 }
             } else {
-                logAction(`💀 Job '${message.jobId}' failed: ${message.error || 'Unknown error'}`);
+                logAction(` Job '${message.jobId}' failed: ${message.error || 'Unknown error'}`);
             }
             updateUI();
             break;
@@ -369,7 +369,7 @@ function handleServerMessage(message) {
         case 'jailbreak_success':
             // If we were freed, update local jail status
             if (message.helperName) {
-                showSystemMessage(`🔓 ${message.helperName} freed you from jail!`, '#c0a062');
+                showSystemMessage(` ${message.helperName} freed you from jail!`, '#c0a062');
             }
             player.inJail = false;
             player.jailTime = 0;
@@ -385,7 +385,7 @@ function handleServerMessage(message) {
             
         case 'heist_broadcast':
             onlineWorldState.activeHeists.push(message.heist);
-            addWorldEvent(`💰 ${message.playerName} is organizing a heist!`);
+            addWorldEvent(` ${message.playerName} is organizing a heist!`);
             break;
             
         case 'player_ranked':
@@ -431,7 +431,7 @@ function updateJailVisibility() {
     const jailStatusContainer = document.getElementById('online-jail-status');
     if (!jailStatusContainer) return;
     
-    let jailHTML = '<h4 style="color: #8b0000; margin: 0 0 15px 0; font-family: \'Georgia\', serif;">🔒 Made Men In The Can</h4>';
+    let jailHTML = '<h4 style="color: #8b0000; margin: 0 0 15px 0; font-family: \'Georgia\', serif;"> Made Men In The Can</h4>';
     
     const playersInJail = Object.values(onlineWorldState.playerStates || {}).filter(p => p.inJail);
     
@@ -452,7 +452,7 @@ function updateJailVisibility() {
                                 <button onclick="attemptPlayerJailbreak('${prisoner.playerId}', '${prisoner.name}')" 
                                         style="background: #f39c12; color: white; border: none; padding: 6px 12px; 
                                                border-radius: 4px; cursor: pointer; font-size: 0.8em;">
-                                    🔓 Break Out
+                                     Break Out
                                 </button>
                             ` : `
                                 <span style="color: #95a5a6; font-style: italic;">You</span>
@@ -472,7 +472,7 @@ function updateOnlinePlayerList() {
     const playerListContainer = document.getElementById('online-player-list');
     if (!playerListContainer) return;
     
-    let playersHTML = '<h4 style="color: #c0a062; margin: 0 0 15px 0; font-family: \'Georgia\', serif;">👥 Made Men Online</h4>';
+    let playersHTML = '<h4 style="color: #c0a062; margin: 0 0 15px 0; font-family: \'Georgia\', serif;"> Made Men Online</h4>';
     
     const onlinePlayers = Object.values(onlineWorldState.playerStates || {});
     
@@ -480,7 +480,7 @@ function updateOnlinePlayerList() {
         playersHTML += '<div style="color: #95a5a6; font-style: italic; text-align: center;">Loading player list...</div>';
     } else {
         onlinePlayers.forEach(player => {
-            const statusIcon = player.inJail ? '🔒' : '🟢';
+            const statusIcon = player.inJail ? '' : '🟢';
             const statusText = player.inJail ? 'In Jail' : 'Free';
             const statusColor = player.inJail ? '#8b0000' : '#c0a062';
             
@@ -557,7 +557,7 @@ function attemptPlayerJailbreak(targetPlayerId, targetPlayerName) {
                 helperPlayerId: onlineWorldState.playerId,
                 helperPlayerName: player.name || 'You'
             }));
-            logAction(`🔓 Jailbreak intent sent to free ${targetPlayerName}. Awaiting authoritative outcome...`);
+            logAction(` Jailbreak intent sent to free ${targetPlayerName}. Awaiting authoritative outcome...`);
         } else {
             alert('Connection lost before sending jailbreak intent.');
         }
@@ -625,7 +625,7 @@ function sendJobIntent(localJob) {
         type: 'job_intent',
         jobId
     }));
-    logAction(`💼 Job intent sent (${localJob.name} → ${jobId}). Awaiting authoritative result...`);
+    logAction(` Job intent sent (${localJob.name} → ${jobId}). Awaiting authoritative result...`);
     return true;
 }
 
@@ -655,13 +655,13 @@ function showPVP() {
     const pvpHTML = `
         <div style="background: rgba(0, 0, 0, 0.95); padding: 40px; border-radius: 15px; border: 3px solid #8b0000;">
             <div style="text-align: center; margin-bottom: 30px;">
-                <h1 style="color: #8b0000; font-family: 'Georgia', serif; font-size: 2.5em; text-shadow: 2px 2px 8px #000; margin: 0;">⚔️ PVP ARENA</h1>
+                <h1 style="color: #8b0000; font-family: 'Georgia', serif; font-size: 2.5em; text-shadow: 2px 2px 8px #000; margin: 0;"> PVP ARENA</h1>
                 <p style="color: #ff6666; margin: 10px 0 0 0; font-size: 1.1em; font-style: italic;">Prove your worth. Crush your rivals. Take what's theirs.</p>
             </div>
             
             <!-- Territory Income Timer -->
             <div id="territory-income-timer-pvp" style="background: rgba(39, 174, 96, 0.1); padding: 12px; border-radius: 8px; margin-bottom: 20px; border: 2px solid #27ae60; text-align: center;">
-                <div style="color: #27ae60; font-weight: bold; font-size: 1.1em;">💰 Next Territory Income</div>
+                <div style="color: #27ae60; font-weight: bold; font-size: 1.1em;"> Next Territory Income</div>
                 <div id="income-countdown-pvp" style="color: #ccc; margin-top: 5px; font-family: monospace; font-size: 1.3em;">Calculating...</div>
                 <div style="color: #888; font-size: 0.85em; margin-top: 5px;">Controlled Territories: <span id="controlled-count-pvp" style="color: #27ae60; font-weight: bold;">0</span> | Weekly Income: <span id="weekly-income-total-pvp" style="color: #27ae60; font-weight: bold;">$0</span></div>
             </div>
@@ -672,14 +672,14 @@ function showPVP() {
                 <!-- Whack Rival Don -->
                 <div style="background: linear-gradient(180deg, rgba(139, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.8) 100%); padding: 25px; border-radius: 15px; border: 2px solid #8b0000; cursor: pointer; transition: transform 0.2s;" onclick="showWhackRivalDon()" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
                     <div style="text-align: center;">
-                        <div style="font-size: 4em; margin-bottom: 15px;">💀</div>
+                        <div style="font-size: 4em; margin-bottom: 15px;"></div>
                         <h3 style="color: #ff4444; margin: 0 0 10px 0; font-family: 'Georgia', serif; font-size: 1.5em;">Whack Rival Don</h3>
                         <p style="color: #ffaaaa; margin: 0 0 15px 0; font-size: 0.95em;">High-risk assassination with permadeath</p>
                         <div style="background: rgba(0, 0, 0, 0.6); padding: 12px; border-radius: 8px; margin-top: 15px;">
                             <div style="color: #ccc; font-size: 0.85em; line-height: 1.6;">
-                                ✓ Steal 10-50% money + cars<br>
-                                ✓ Target permanently removed<br>
-                                ⚠️ Risk: 20-60% health damage
+                                 Steal 10-50% money + cars<br>
+                                 Target permanently removed<br>
+                                 Risk: 20-60% health damage
                             </div>
                         </div>
                     </div>
@@ -688,15 +688,15 @@ function showPVP() {
                 <!-- Territory Conquest -->
                 <div style="background: linear-gradient(180deg, rgba(243, 156, 18, 0.3) 0%, rgba(0, 0, 0, 0.8) 100%); padding: 25px; border-radius: 15px; border: 2px solid #f39c12; cursor: pointer; transition: transform 0.2s;" onclick="showOnlineWorld()" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
                     <div style="text-align: center;">
-                        <div style="font-size: 4em; margin-bottom: 15px;">🏛️</div>
+                        <div style="font-size: 4em; margin-bottom: 15px;"></div>
                         <h3 style="color: #f39c12; margin: 0 0 10px 0; font-family: 'Georgia', serif; font-size: 1.5em;">Territory Conquest</h3>
                         <p style="color: #f9ca7e; margin: 0 0 15px 0; font-size: 0.95em;">Conquer districts for weekly income</p>
                         <div style="background: rgba(0, 0, 0, 0.6); padding: 12px; border-radius: 8px; margin-top: 15px;">
                             <div style="color: #ccc; font-size: 0.85em; line-height: 1.6;">
-                                ✓ Assign gang/cars/weapons<br>
-                                ✓ Weekly dirty money income<br>
-                                ✓ Battle NPC or player gangs<br>
-                                ⚠️ Risk: Lose assigned resources
+                                 Assign gang/cars/weapons<br>
+                                 Weekly dirty money income<br>
+                                 Battle NPC or player gangs<br>
+                                 Risk: Lose assigned resources
                             </div>
                         </div>
                     </div>
@@ -706,7 +706,7 @@ function showPVP() {
             
             <!-- PVP Stats Overview -->
             <div style="background: rgba(0, 0, 0, 0.7); padding: 20px; border-radius: 10px; margin: 25px 0; border: 1px solid #555;">
-                <h3 style="color: #c0a062; margin: 0 0 15px 0; font-family: 'Georgia', serif; text-align: center;">📊 Your PVP Stats</h3>
+                <h3 style="color: #c0a062; margin: 0 0 15px 0; font-family: 'Georgia', serif; text-align: center;"> Your PVP Stats</h3>
                 <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; text-align: center;">
                     <div>
                         <div style="color: #888; font-size: 0.85em;">Attack Power</div>
@@ -729,7 +729,7 @@ function showPVP() {
             
             <!-- Warning Notice -->
             <div style="background: rgba(139, 0, 0, 0.2); padding: 20px; border-radius: 8px; border-left: 4px solid #8b0000; margin: 25px 0;">
-                <h4 style="color: #ff6666; margin: 0 0 10px 0;">⚠️ PVP WARNING</h4>
+                <h4 style="color: #ff6666; margin: 0 0 10px 0;"> PVP WARNING</h4>
                 <p style="color: #ccc; margin: 0; font-size: 0.95em; line-height: 1.6;">
                     PVP actions carry real consequences. Assassination attempts can result in permanent character death (permadeath). 
                     Territory battles may result in the loss of gang members, vehicles, and weapons. Only engage if you're prepared to lose what you stake.
@@ -740,11 +740,11 @@ function showPVP() {
             <div style="text-align: center; margin-top: 30px;">
                 <button onclick="showOnlineWorld()" 
                         style="background: #333; color: #c0a062; padding: 15px 35px; border: 1px solid #c0a062; border-radius: 10px; cursor: pointer; font-family: 'Georgia', serif; font-weight: bold; margin-right: 10px;">
-                    🌐 The Commission
+                     The Commission
                 </button>
                 <button onclick="goBackToMainMenu()" 
                         style="background: #333; color: #c0a062; padding: 15px 35px; border: 1px solid #c0a062; border-radius: 10px; cursor: pointer; font-family: 'Georgia', serif; font-weight: bold;">
-                    🏠 Main Menu
+                     Main Menu
                 </button>
             </div>
         </div>
@@ -851,7 +851,7 @@ function showGlobalChat() {
     
     let chatHTML = `
         <div class="game-screen" style="display: block;">
-            <h2 style="color: #c0a062; font-family: 'Georgia', serif; text-shadow: 2px 2px 4px #000;">📞 The Wire</h2>
+            <h2 style="color: #c0a062; font-family: 'Georgia', serif; text-shadow: 2px 2px 4px #000;"> The Wire</h2>
             <p style="color: #ccc;">Communicate with other associates in the family.</p>
             
             <!-- Connection Status -->
@@ -872,34 +872,34 @@ function showGlobalChat() {
                            onkeypress="if(event.key==='Enter') sendChatMessage()">
                     <button onclick="sendChatMessage()" 
                             style="padding: 12px 20px; background: linear-gradient(180deg, #c0a062 0%, #8a6e2f 100%); color: #000; border: 1px solid #ffd700; border-radius: 8px; cursor: pointer; font-weight: bold; font-family: 'Georgia', serif; text-transform: uppercase;">
-                        📞 Send
+                         Send
                     </button>
                 </div>
                 
                 <!-- Quick Chat Options -->
                 <div style="margin-top: 15px;">
-                    <h4 style="color: #c0a062; margin-bottom: 10px; font-family: 'Georgia', serif;">⚡ Quick Words</h4>
+                    <h4 style="color: #c0a062; margin-bottom: 10px; font-family: 'Georgia', serif;"> Quick Words</h4>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px;">
-                        <button onclick="sendQuickChat('Respect.')" style="padding: 8px; background: #27ae60; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 12px;">🎩 Respect.</button>
-                        <button onclick="sendQuickChat('Looking for work.')" style="padding: 8px; background: linear-gradient(45deg, #333, #000); color: #c0a062; border: 1px solid #c0a062; border-radius: 5px; cursor: pointer; font-size: 12px; font-family: 'Georgia', serif;">💼 Looking for work</button>
-                        <button onclick="sendQuickChat('Watch your back.')" style="padding: 8px; background: #8b0000; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 12px;">🔫 Watch your back</button>
-                        <button onclick="sendQuickChat('Good business.')" style="padding: 8px; background: #f39c12; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 12px;">🤝 Good business</button>
-                        <button onclick="sendQuickChat('Anyone need a lawyer?')" style="padding: 8px; background: #9b59b6; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 12px;">⚖️ Need a lawyer?</button>
-                        <button onclick="sendQuickChat('My regards to the Don.')" style="padding: 8px; background: #1abc9c; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 12px;">🍷 Regards to the Don</button>
+                        <button onclick="sendQuickChat('Respect.')" style="padding: 8px; background: #27ae60; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 12px;"> Respect.</button>
+                        <button onclick="sendQuickChat('Looking for work.')" style="padding: 8px; background: linear-gradient(45deg, #333, #000); color: #c0a062; border: 1px solid #c0a062; border-radius: 5px; cursor: pointer; font-size: 12px; font-family: 'Georgia', serif;"> Looking for work</button>
+                        <button onclick="sendQuickChat('Watch your back.')" style="padding: 8px; background: #8b0000; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 12px;"> Watch your back</button>
+                        <button onclick="sendQuickChat('Good business.')" style="padding: 8px; background: #f39c12; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 12px;"> Good business</button>
+                        <button onclick="sendQuickChat('Anyone need a lawyer?')" style="padding: 8px; background: #9b59b6; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 12px;"> Need a lawyer?</button>
+                        <button onclick="sendQuickChat('My regards to the Don.')" style="padding: 8px; background: #1abc9c; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 12px;"> Regards to the Don</button>
                     </div>
                 </div>
             </div>
             
             <!-- Online Players List -->
             <div style="background: rgba(0, 0, 0, 0.8); padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #c0a062;">
-                <h4 style="color: #c0a062; margin-bottom: 10px; font-family: 'Georgia', serif;">👥 Made Men Online</h4>
+                <h4 style="color: #c0a062; margin-bottom: 10px; font-family: 'Georgia', serif;"> Made Men Online</h4>
                 <div id="chat-player-list" style="max-height: 150px; overflow-y: auto;">
                     ${generateOnlinePlayersHTML()}
                 </div>
             </div>
             
             <button onclick="goBackToMainMenu()" style="background: linear-gradient(180deg, #333 0%, #000 100%); color: #c0a062; padding: 15px 30px; border: 1px solid #c0a062; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: bold; font-family: 'Georgia', serif; text-transform: uppercase;">
-                🏠 Back to Safehouse
+                 Back to Safehouse
             </button>
         </div>
     `;
@@ -1104,7 +1104,7 @@ function getConnectionStatusHTML() {
     if (onlineWorldState.isConnected) {
         return `<span style="color: #c0a062; font-family: 'Georgia', serif;">🟢 Connected to The Wire</span>`;
     } else {
-        return `<span style="color: #8b0000; font-family: 'Georgia', serif;">🔴 Connecting to The Wire...</span>`;
+        return `<span style="color: #8b0000; font-family: 'Georgia', serif;"> Connecting to The Wire...</span>`;
     }
 }
 
@@ -1116,7 +1116,7 @@ function generateOnlinePlayersHTML() {
     
     return onlineWorldState.nearbyPlayers.map(player => `
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 5px 8px; margin: 2px 0; background: rgba(52, 73, 94, 0.3); border-radius: 5px;">
-            <span style="color: ${player.color};">🎭 ${player.name}</span>
+            <span style="color: ${player.color};"> ${player.name}</span>
             <span style="color: #95a5a6; font-size: 12px;">Level ${player.level}</span>
         </div>
     `).join('');
@@ -1128,12 +1128,12 @@ function showOnlineWorld() {
     syncMultiplayerTerritoriesToPlayer();
     
     let worldHTML = `
-        <h2 style="color: #c0a062; font-family: 'Georgia', serif; text-shadow: 2px 2px 4px #000;">🌐 The Commission</h2>
+        <h2 style="color: #c0a062; font-family: 'Georgia', serif; text-shadow: 2px 2px 4px #000;"> The Commission</h2>
         <p style="color: #ccc;">Welcome to the family. Compete and cooperate with other Dons worldwide.</p>
         
         <!-- Territory Income Timer -->
         <div id="territory-income-timer" style="background: rgba(39, 174, 96, 0.1); padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 2px solid #27ae60; text-align: center;">
-            <div style="color: #27ae60; font-weight: bold; font-size: 1.1em;">💰 Next Territory Income</div>
+            <div style="color: #27ae60; font-weight: bold; font-size: 1.1em;"> Next Territory Income</div>
             <div id="income-countdown" style="color: #ccc; margin-top: 5px; font-family: monospace; font-size: 1.3em;">Calculating...</div>
             <div style="color: #888; font-size: 0.85em; margin-top: 5px;">Controlled Territories: <span id="controlled-count" style="color: #27ae60; font-weight: bold;">0</span> | Weekly Income: <span id="weekly-income-total" style="color: #27ae60; font-weight: bold;">$0</span></div>
         </div>
@@ -1149,7 +1149,7 @@ function showOnlineWorld() {
             <!-- Online Players List -->
             <div style="background: rgba(0, 0, 0, 0.8); padding: 20px; border-radius: 15px; border: 2px solid #c0a062;">
                 <div id="online-player-list">
-                    <h4 style="color: #c0a062; margin: 0 0 15px 0; font-family: 'Georgia', serif;">👥 Made Men Online</h4>
+                    <h4 style="color: #c0a062; margin: 0 0 15px 0; font-family: 'Georgia', serif;"> Made Men Online</h4>
                     <div style="color: #95a5a6; font-style: italic; text-align: center;">Loading associates...</div>
                 </div>
             </div>
@@ -1157,7 +1157,7 @@ function showOnlineWorld() {
             <!-- Players in Jail -->
             <div style="background: rgba(0, 0, 0, 0.8); padding: 20px; border-radius: 15px; border: 2px solid #8b0000;">
                 <div id="online-jail-status">
-                    <h4 style="color: #8b0000; margin: 0 0 15px 0; font-family: 'Georgia', serif;">🔒 In The Can</h4>
+                    <h4 style="color: #8b0000; margin: 0 0 15px 0; font-family: 'Georgia', serif;"> In The Can</h4>
                     <div style="color: #95a5a6; font-style: italic; text-align: center;">Checking prison records...</div>
                 </div>
             </div>
@@ -1168,7 +1168,7 @@ function showOnlineWorld() {
             
             <!-- City Districts -->
             <div style="background: rgba(0, 0, 0, 0.8); padding: 20px; border-radius: 15px; border: 2px solid #f39c12;">
-                <h3 style="color: #f39c12; text-align: center; margin-bottom: 15px; font-family: 'Georgia', serif;">🏙️ Turf</h3>
+                <h3 style="color: #f39c12; text-align: center; margin-bottom: 15px; font-family: 'Georgia', serif;"> Turf</h3>
                 <div id="city-districts">
                     ${Object.keys(onlineWorldState.cityDistricts).map(district => {
                         const districtData = onlineWorldState.cityDistricts[district];
@@ -1190,11 +1190,11 @@ function showOnlineWorld() {
                                     <div style="text-align: right;">
                                         <button onclick="viewTerritoryDetails('${district}')" 
                                                 style="background: #f39c12; color: #000; padding: 8px 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-bottom: 5px; width: 100%;">
-                                            📊 Details
+                                             Details
                                         </button>
                                         <button onclick="challengeForTerritory('${district}')" 
                                                 style="background: linear-gradient(180deg, #8b0000 0%, #5a0000 100%); color: #fff; padding: 8px 12px; border: 1px solid #ff0000; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%;">
-                                            ⚔️ Attack
+                                             Attack
                                         </button>
                                     </div>
                                 </div>
@@ -1206,7 +1206,7 @@ function showOnlineWorld() {
             
             <!-- Global Leaderboard -->
             <div style="background: rgba(0, 0, 0, 0.8); padding: 20px; border-radius: 15px; border: 2px solid #c0a062;">
-                <h3 style="color: #c0a062; text-align: center; margin-bottom: 15px; font-family: 'Georgia', serif;">🏆 The Bosses</h3>
+                <h3 style="color: #c0a062; text-align: center; margin-bottom: 15px; font-family: 'Georgia', serif;"> The Bosses</h3>
                 <div id="global-leaderboard">
                     <div style="color: #95a5a6; text-align: center; font-style: italic;">
                         Loading rankings...
@@ -1217,35 +1217,35 @@ function showOnlineWorld() {
         
         <!-- Online Activities -->
         <div style="background: rgba(0, 0, 0, 0.8); padding: 20px; border-radius: 15px; border: 2px solid #c0a062; margin: 20px 0;">
-            <h3 style="color: #c0a062; text-align: center; margin-bottom: 15px; font-family: 'Georgia', serif;">⚡ Family Business</h3>
+            <h3 style="color: #c0a062; text-align: center; margin-bottom: 15px; font-family: 'Georgia', serif;"> Family Business</h3>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
                 <button onclick="showGlobalChat()" style="background: #333; color: #c0a062; padding: 15px; border: 1px solid #c0a062; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">
-                    📞 The Wire<br><small style="color: #ccc;">Talk with the family</small>
+                     The Wire<br><small style="color: #ccc;">Talk with the family</small>
                 </button>
                 <button onclick="showWhackRivalDon()" style="background: linear-gradient(180deg, #8b0000 0%, #5a0000 100%); color: #ff4444; padding: 15px; border: 1px solid #ff0000; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif; font-weight: bold;">
-                    💀 Whack Rival Don<br><small style="color: #ffaaaa;">HIGH RISK - PERMADEATH</small>
+                     Whack Rival Don<br><small style="color: #ffaaaa;">HIGH RISK - PERMADEATH</small>
                 </button>
                 <button onclick="showActiveHeists()" style="background: #333; color: #8b0000; padding: 15px; border: 1px solid #8b0000; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">
-                    💰 Big Scores<br><small style="color: #ccc;">Join ongoing jobs</small>
+                     Big Scores<br><small style="color: #ccc;">Join ongoing jobs</small>
                 </button>
                 <button onclick="showTradeMarket()" style="background: #333; color: #27ae60; padding: 15px; border: 1px solid #27ae60; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">
-                    🛒 Black Market<br><small style="color: #ccc;">Buy/sell contraband</small>
+                     Black Market<br><small style="color: #ccc;">Buy/sell contraband</small>
                 </button>
                 <button onclick="showGangWars()" style="background: #333; color: #8b0000; padding: 15px; border: 1px solid #8b0000; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">
-                    ⚔️ Turf Wars<br><small style="color: #ccc;">Fight for territory</small>
+                     Turf Wars<br><small style="color: #ccc;">Fight for territory</small>
                 </button>
                 <button onclick="showNearbyPlayers()" style="background: #333; color: #f39c12; padding: 15px; border: 1px solid #f39c12; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">
-                    👥 Local Crew<br><small style="color: #ccc;">Players in your area</small>
+                     Local Crew<br><small style="color: #ccc;">Players in your area</small>
                 </button>
                 <button onclick="showCityEvents()" style="background: #333; color: #9b59b6; padding: 15px; border: 1px solid #9b59b6; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">
-                    📰 Street News<br><small style="color: #ccc;">Special opportunities</small>
+                     Street News<br><small style="color: #ccc;">Special opportunities</small>
                 </button>
             </div>
         </div>
         
         <!-- Quick Chat Access -->
         <div style="background: rgba(0, 0, 0, 0.8); padding: 15px; border-radius: 10px; margin: 20px 0; border: 2px solid #c0a062;">
-            <h4 style="color: #c0a062; margin: 0 0 10px 0; font-family: 'Georgia', serif;">💬 Quick Wire</h4>
+            <h4 style="color: #c0a062; margin: 0 0 10px 0; font-family: 'Georgia', serif;"> Quick Wire</h4>
             <div style="display: flex; gap: 10px; align-items: center;">
                 <input type="text" id="quick-chat-input" placeholder="Send a message to the family..." 
                        style="flex: 1; padding: 8px; border-radius: 5px; border: 1px solid #c0a062; background: #222; color: #c0a062;"
@@ -1267,7 +1267,7 @@ function showOnlineWorld() {
         
         <!-- Recent World Activity -->
         <div style="background: rgba(0, 0, 0, 0.8); padding: 20px; border-radius: 10px; margin-top: 20px; border: 1px solid #555;">
-            <h3 style="color: #ccc; font-family: 'Georgia', serif;">📊 Street Activity</h3>
+            <h3 style="color: #ccc; font-family: 'Georgia', serif;"> Street Activity</h3>
             <div id="world-activity-feed" style="height: 200px; overflow-y: auto; background: rgba(20, 20, 20, 0.8); padding: 10px; border-radius: 5px;">
                 <div style="color: #95a5a6; font-style: italic;">Loading street news...</div>
             </div>
@@ -1277,7 +1277,7 @@ function showOnlineWorld() {
             <button onclick="goBackToMainMenu()" 
                     style="background: linear-gradient(180deg, #333 0%, #000 100%); color: #c0a062; padding: 18px 35px; 
                            border: 1px solid #c0a062; border-radius: 12px; font-size: 1.3em; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif; text-transform: uppercase;">
-                🏠 Back to Safehouse
+                 Back to Safehouse
             </button>
         </div>
     `;
@@ -1314,7 +1314,7 @@ function updateConnectionStatus() {
         case 'connecting':
             statusHTML = `
                 <div style="text-align: center;">
-                    <h4 style="color: #f39c12;">🔄 Connecting to Online World...</h4>
+                    <h4 style="color: #f39c12;"> Connecting to Online World...</h4>
                     <p>Establishing connection to ${onlineWorldState.serverInfo.serverName}</p>
                 </div>
             `;
@@ -1323,7 +1323,7 @@ function updateConnectionStatus() {
         case 'connected':
             statusHTML = `
                 <div style="text-align: center;">
-                    <h4 style="color: #c0a062; font-family: 'Georgia', serif;">✅ Connected to The Commission</h4>
+                    <h4 style="color: #c0a062; font-family: 'Georgia', serif;"> Connected to The Commission</h4>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 10px;">
                         <div><strong>Server:</strong> ${onlineWorldState.serverInfo.serverName}</div>
                         <div><strong>Players Online:</strong> ${onlineWorldState.serverInfo.playerCount}</div>
@@ -1337,7 +1337,7 @@ function updateConnectionStatus() {
         case 'demo':
             statusHTML = `
                 <div style="text-align: center;">
-                    <h4 style="color: #f39c12;">🔧 Demo Mode (Server Offline)</h4>
+                    <h4 style="color: #f39c12;"> Demo Mode (Server Offline)</h4>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 10px;">
                         <div><strong>Mode:</strong> Offline Demo</div>
                         <div><strong>Simulated Players:</strong> ${onlineWorldState.serverInfo.playerCount}</div>
@@ -1354,7 +1354,7 @@ function updateConnectionStatus() {
         case 'error':
             statusHTML = `
                 <div style="text-align: center;">
-                    <h4 style="color: #e74c3c;">❌ Connection Error</h4>
+                    <h4 style="color: #e74c3c;"> Connection Error</h4>
                     <p>Unable to connect to online world. Retrying automatically...</p>
                     <p style="margin-top: 10px; color: #95a5a6; font-size: 0.9em;">
                         The game will continue trying to connect in the background
@@ -1366,7 +1366,7 @@ function updateConnectionStatus() {
         default:
             statusHTML = `
                 <div style="text-align: center;">
-                    <h4 style="color: #f39c12;">🔄 Connecting to Online World...</h4>
+                    <h4 style="color: #f39c12;"> Connecting to Online World...</h4>
                     <p>Establishing connection automatically...</p>
                     <p style="margin-top: 10px; color: #95a5a6; font-size: 0.9em;">
                         Please wait while we connect you to the global network
@@ -1426,7 +1426,7 @@ function showWelcomeMessage() {
     const welcomeMsg = messages[Math.floor(Math.random() * messages.length)];
     
     setTimeout(() => {
-        alert(`🌐 ${welcomeMsg}`);
+        alert(` ${welcomeMsg}`);
     }, 1000);
 }
 
@@ -1456,7 +1456,7 @@ function exploreDistrict(districtName) {
     
     let districtHTML = `
         <div style="background: rgba(0, 0, 0, 0.9); padding: 20px; border-radius: 15px; max-width: 600px; margin: 20px auto; border: 2px solid #c0a062;">
-            <h3 style="color: #c0a062; font-family: 'Georgia', serif;">🏙️ ${districtName.charAt(0).toUpperCase() + districtName.slice(1)} District</h3>
+            <h3 style="color: #c0a062; font-family: 'Georgia', serif;"> ${districtName.charAt(0).toUpperCase() + districtName.slice(1)} District</h3>
             
             <div style="background: rgba(20, 20, 20, 0.8); padding: 15px; border-radius: 10px; margin: 15px 0; border: 1px solid #555;">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
@@ -1467,16 +1467,16 @@ function exploreDistrict(districtName) {
             
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 20px 0;">
                 <button onclick="doDistrictJob('${districtName}')" style="background: #333; color: #c0a062; padding: 10px; border: 1px solid #c0a062; border-radius: 5px; cursor: pointer; font-family: 'Georgia', serif;">
-                    💼 Find Work
+                     Find Work
                 </button>
                 <button onclick="claimTerritory('${districtName}')" style="background: #333; color: #8b0000; padding: 10px; border: 1px solid #8b0000; border-radius: 5px; cursor: pointer; font-family: 'Georgia', serif;">
-                    🏛️ Claim Turf
+                     Claim Turf
                 </button>
                 <button onclick="findPlayersInDistrict('${districtName}')" style="background: #333; color: #f39c12; padding: 10px; border: 1px solid #f39c12; border-radius: 5px; cursor: pointer; font-family: 'Georgia', serif;">
-                    👥 Find Crew
+                     Find Crew
                 </button>
                 <button onclick="startDistrictHeist('${districtName}')" style="background: #333; color: #27ae60; padding: 10px; border: 1px solid #27ae60; border-radius: 5px; cursor: pointer; font-family: 'Georgia', serif;">
-                    💰 Plan Score
+                     Plan Score
                 </button>
             </div>
             
@@ -1490,7 +1490,7 @@ function exploreDistrict(districtName) {
     
     document.getElementById("multiplayer-content").innerHTML = districtHTML;
     
-    logAction(`🏙️ Exploring ${districtName} district...`);
+    logAction(` Exploring ${districtName} district...`);
 }
 
 // Load global leaderboard
@@ -1539,7 +1539,7 @@ function generateGlobalChatHistory() {
     const messages = [
         { player: 'CrimeBoss42', message: 'Anyone want to team up for a heist?', time: '2 min ago', color: '#3498db' },
         { player: 'ShadowDealer', message: 'Trading high-end weapons, good prices!', time: '5 min ago', color: '#e74c3c' },
-        { player: 'StreetKing', message: 'Just took over downtown district 💪', time: '8 min ago', color: '#2ecc71' },
+        { player: 'StreetKing', message: 'Just took over downtown district ', time: '8 min ago', color: '#2ecc71' },
         { player: 'System', message: 'City Event: Police raid in industrial district!', time: '10 min ago', color: '#f39c12' }
     ];
     return messages;
@@ -1563,11 +1563,11 @@ function generateActiveHeists() {
 
 function generateRandomWorldEvent() {
     const events = [
-        `🚨 Police raid in ${Object.keys(onlineWorldState.cityDistricts)[Math.floor(Math.random() * 5)]} district!`,
-        `💰 ${onlineWorldState.nearbyPlayers[Math.floor(Math.random() * onlineWorldState.nearbyPlayers.length)]?.name || 'A player'} completed a major heist!`,
-        `🏛️ Territory war brewing between rival gangs!`,
-        `📈 Weapon prices surge in black market!`,
-        `🎯 New high-value target spotted in the city!`
+        ` Police raid in ${Object.keys(onlineWorldState.cityDistricts)[Math.floor(Math.random() * 5)]} district!`,
+        ` ${onlineWorldState.nearbyPlayers[Math.floor(Math.random() * onlineWorldState.nearbyPlayers.length)]?.name || 'A player'} completed a major heist!`,
+        ` Territory war brewing between rival gangs!`,
+        ` Weapon prices surge in black market!`,
+        ` New high-value target spotted in the city!`
     ];
     return events[Math.floor(Math.random() * events.length)];
 }
@@ -1578,13 +1578,13 @@ function loadWorldActivityFeed() {
     if (!feedElement) return;
     
     const activities = [
-        '🏛️ CrimeBoss42 claimed territory in downtown district',
-        '💰 ShadowDealer completed a $50,000 heist',
-        '⚔️ Gang war started between Serpents and Wolves',
-        '🛒 StreetKing sold rare weapons in trade market',
-        '🎯 Police raid ended in industrial district',
-        '💬 15 players currently in global chat',
-        '🌐 67 players online worldwide'
+        ' CrimeBoss42 claimed territory in downtown district',
+        ' ShadowDealer completed a $50,000 heist',
+        ' Gang war started between Serpents and Wolves',
+        ' StreetKing sold rare weapons in trade market',
+        ' Police raid ended in industrial district',
+        ' 15 players currently in global chat',
+        ' 67 players online worldwide'
     ];
     
     feedElement.innerHTML = activities.map((activity, index) => `
@@ -1636,7 +1636,7 @@ function sendGlobalChatMessage() {
     
     chatInput.value = '';
     
-    logAction(`💬 Sent message to global chat: "${message}"`);
+    logAction(` Sent message to global chat: "${message}"`);
 }
 
 // Quick chat function for main online world screen
@@ -1664,7 +1664,7 @@ function sendQuickChatMessage() {
     
     quickChatInput.value = '';
     
-    logAction(`💬 Sent message to global chat: "${message}"`);
+    logAction(` Sent message to global chat: "${message}"`);
 }
 
 // Update quick chat display when new messages arrive
@@ -1712,12 +1712,12 @@ function doDistrictJob(districtName) {
     const district = onlineWorldState.cityDistricts[districtName];
     const riskMultiplier = district.crimeLevel / 100;
     
-    alert(`🎯 Looking for jobs in ${districtName}... Crime level affects difficulty and rewards.`);
+    alert(` Looking for jobs in ${districtName}... Crime level affects difficulty and rewards.`);
     
     // Integrate with existing job system but with online world context
     showJobs();
     
-    logAction(`💼 Searching for jobs in ${districtName} district (Crime Level: ${district.crimeLevel}%)`);
+    logAction(` Searching for jobs in ${districtName} district (Crime Level: ${district.crimeLevel}%)`);
 }
 
 function claimTerritory(districtName) {
@@ -1742,7 +1742,7 @@ function claimTerritory(districtName) {
                 type: 'territory_claim',
                 district: districtName
             }));
-            logAction(`🏛️ Territory claim intent sent for ${districtName} ($${cost.toLocaleString()}). Awaiting authoritative confirmation...`);
+            logAction(` Territory claim intent sent for ${districtName} ($${cost.toLocaleString()}). Awaiting authoritative confirmation...`);
         } else {
             alert('Connection lost before sending claim intent.');
         }
@@ -1764,7 +1764,7 @@ function findPlayersInDistrict(districtName) {
     
     let playersHTML = `
         <div style="background: rgba(0, 0, 0, 0.9); padding: 20px; border-radius: 15px; border: 2px solid #c0a062;">
-            <h3 style="color: #c0a062; font-family: 'Georgia', serif;">👥 Crew in ${districtName.charAt(0).toUpperCase() + districtName.slice(1)}</h3>
+            <h3 style="color: #c0a062; font-family: 'Georgia', serif;"> Crew in ${districtName.charAt(0).toUpperCase() + districtName.slice(1)}</h3>
             <div style="margin: 20px 0;">
                 ${playersInDistrict.map(p => `
                     <div style="background: rgba(20, 20, 20, 0.8); padding: 15px; margin: 10px 0; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #555;">
@@ -1774,10 +1774,10 @@ function findPlayersInDistrict(districtName) {
                         </div>
                         <div>
                             <button onclick="challengePlayer('${p.name}')" style="background: #8b0000; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; margin: 2px; font-family: 'Georgia', serif;">
-                                ⚔️ Challenge
+                                 Challenge
                             </button>
                             <button onclick="tradeWithPlayer('${p.name}')" style="background: #27ae60; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; margin: 2px; font-family: 'Georgia', serif;">
-                                🤝 Trade
+                                 Trade
                             </button>
                         </div>
                     </div>
@@ -1800,7 +1800,7 @@ function startDistrictHeist(districtName) {
         return;
     }
     
-    alert(`💰 Organizing heist in ${districtName}... This will be broadcast to all players in the area!`);
+    alert(` Organizing heist in ${districtName}... This will be broadcast to all players in the area!`);
     
     const heistTarget = `${districtName.charAt(0).toUpperCase() + districtName.slice(1)} Bank`;
     const reward = 100000 + (Math.random() * 200000);
@@ -1818,8 +1818,8 @@ function startDistrictHeist(districtName) {
     
     onlineWorldState.activeHeists.push(newHeist);
     
-    logAction(`💰 Organized heist: ${heistTarget} (Reward: $${newHeist.reward.toLocaleString()})`);
-    addWorldEvent(`💰 ${player.name || 'A player'} is organizing a heist in ${districtName}!`);
+    logAction(` Organized heist: ${heistTarget} (Reward: $${newHeist.reward.toLocaleString()})`);
+    addWorldEvent(` ${player.name || 'A player'} is organizing a heist in ${districtName}!`);
     
     setTimeout(() => {
         showActiveHeists();
@@ -1831,7 +1831,7 @@ function showActiveHeists() {
     let heistsHTML = `
         <div style="background: rgba(0, 0, 0, 0.9); padding: 20px; border-radius: 15px; border: 2px solid #c0a062;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h3 style="color: #8b0000; font-family: 'Georgia', serif;">💰 Active Scores</h3>
+                <h3 style="color: #8b0000; font-family: 'Georgia', serif;"> Active Scores</h3>
                 <button onclick="showOnlineWorld()" style="background: #333; color: #c0a062; padding: 8px 15px; border: 1px solid #c0a062; border-radius: 5px; cursor: pointer; font-family: 'Georgia', serif;">
                     ← Back
                 </button>
@@ -1849,19 +1849,19 @@ function showActiveHeists() {
                                 <h4 style="color: #c0a062; margin: 0; font-family: 'Georgia', serif;">${heist.target}</h4>
                                 <p style="margin: 5px 0; color: #ccc;">Organized by: <strong style="color: #fff;">${heist.organizer}</strong></p>
                                 <div style="display: flex; gap: 20px; font-size: 0.9em; color: #999;">
-                                    <span>👥 ${heist.participants}/${heist.maxParticipants}</span>
-                                    <span>🎯 ${heist.difficulty}</span>
-                                    <span style="color: #27ae60;">💰 $${heist.reward.toLocaleString()}</span>
+                                    <span> ${heist.participants}/${heist.maxParticipants}</span>
+                                    <span> ${heist.difficulty}</span>
+                                    <span style="color: #27ae60;"> $${heist.reward.toLocaleString()}</span>
                                 </div>
                             </div>
                             <div>
                                 ${heist.organizer === (player.name || 'You') ? `
                                     <button onclick="manageHeist('${heist.id}')" style="background: #f39c12; color: #000; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
-                                        ⚙️ Manage
+                                         Manage
                                     </button>
                                 ` : `
                                     <button onclick="joinHeist('${heist.id}')" style="background: #27ae60; color: #fff; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;" ${heist.participants >= heist.maxParticipants ? 'disabled' : ''}>
-                                        ${heist.participants >= heist.maxParticipants ? 'Full' : '🚀 Join'}
+                                        ${heist.participants >= heist.maxParticipants ? 'Full' : ' Join'}
                                     </button>
                                 `}
                             </div>
@@ -1880,7 +1880,7 @@ function showTradeMarket() {
     let marketHTML = `
         <div style="background: rgba(0, 0, 0, 0.9); padding: 20px; border-radius: 15px; border: 2px solid #c0a062;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h3 style="color: #27ae60; font-family: 'Georgia', serif;">🛒 Black Market</h3>
+                <h3 style="color: #27ae60; font-family: 'Georgia', serif;"> Black Market</h3>
                 <button onclick="showOnlineWorld()" style="background: #333; color: #c0a062; padding: 8px 15px; border: 1px solid #c0a062; border-radius: 5px; cursor: pointer; font-family: 'Georgia', serif;">
                     ← Back
                 </button>
@@ -1888,7 +1888,7 @@ function showTradeMarket() {
             
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                 <div style="background: rgba(20, 20, 20, 0.8); padding: 15px; border-radius: 10px; border: 1px solid #555;">
-                    <h4 style="color: #c0a062; font-family: 'Georgia', serif;">🛍️ Buy Contraband</h4>
+                    <h4 style="color: #c0a062; font-family: 'Georgia', serif;"> Buy Contraband</h4>
                     <div style="margin: 15px 0;">
                         <div style="background: rgba(0, 0, 0, 0.5); padding: 10px; margin: 5px 0; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #333;">
                             <div><strong style="color: #fff;">Bulletproof Vest</strong><br><small style="color: #999;">Seller: CrimeBoss42</small></div>
@@ -1902,11 +1902,11 @@ function showTradeMarket() {
                 </div>
                 
                 <div style="background: rgba(20, 20, 20, 0.8); padding: 15px; border-radius: 10px; border: 1px solid #555;">
-                    <h4 style="color: #c0a062; font-family: 'Georgia', serif;">💰 Sell Goods</h4>
+                    <h4 style="color: #c0a062; font-family: 'Georgia', serif;"> Sell Goods</h4>
                     <div style="margin: 15px 0;">
                         <p style="color: #ccc;">List your items for other players to buy:</p>
                         <button onclick="listItemForSale()" style="background: #f39c12; color: #000; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; width: 100%; font-weight: bold;">
-                            📝 List Item for Sale
+                             List Item for Sale
                         </button>
                     </div>
                 </div>
@@ -1922,14 +1922,14 @@ function showGangWars() {
     let warsHTML = `
         <div style="background: rgba(0, 0, 0, 0.9); padding: 20px; border-radius: 15px; border: 2px solid #c0a062;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h3 style="color: #8b0000; font-family: 'Georgia', serif;">⚔️ Turf Wars</h3>
+                <h3 style="color: #8b0000; font-family: 'Georgia', serif;"> Turf Wars</h3>
                 <button onclick="showOnlineWorld()" style="background: #333; color: #c0a062; padding: 8px 15px; border: 1px solid #c0a062; border-radius: 5px; cursor: pointer; font-family: 'Georgia', serif;">
                     ← Back
                 </button>
             </div>
             
             <div style="background: rgba(20, 20, 20, 0.8); padding: 15px; border-radius: 10px; margin: 20px 0; border: 1px solid #555;">
-                <h4 style="color: #c0a062; font-family: 'Georgia', serif;">🏛️ Territory Battles</h4>
+                <h4 style="color: #c0a062; font-family: 'Georgia', serif;"> Territory Battles</h4>
                 <p style="color: #ccc;">Fight other families for control of city districts. Winners gain territory and respect.</p>
                 
                 <div style="margin: 15px 0;">
@@ -1940,7 +1940,7 @@ function showGangWars() {
                                 <br><small style="color: #ccc;">CrimeBoss42 vs ShadowDealer</small>
                             </div>
                             <button onclick="spectateWar('downtown')" style="background: #333; color: #c0a062; padding: 8px 12px; border: 1px solid #c0a062; border-radius: 4px; cursor: pointer; font-family: 'Georgia', serif;">
-                                👁️ Watch
+                                 Watch
                             </button>
                         </div>
                     </div>
@@ -1952,7 +1952,7 @@ function showGangWars() {
                                 <br><small style="color: #ccc;">Challenge the current owner</small>
                             </div>
                             <button onclick="challengeForTerritory('docks')" style="background: #8b0000; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-family: 'Georgia', serif;">
-                                ⚔️ Challenge
+                                 Challenge
                             </button>
                         </div>
                     </div>
@@ -1969,7 +1969,7 @@ function showNearbyPlayers() {
     let playersHTML = `
         <div style="background: rgba(0, 0, 0, 0.9); padding: 20px; border-radius: 15px; border: 2px solid #c0a062;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h3 style="color: #f39c12; font-family: 'Georgia', serif;">👥 Local Crew</h3>
+                <h3 style="color: #f39c12; font-family: 'Georgia', serif;"> Local Crew</h3>
                 <button onclick="showOnlineWorld()" style="background: #333; color: #c0a062; padding: 8px 15px; border: 1px solid #c0a062; border-radius: 5px; cursor: pointer; font-family: 'Georgia', serif;">
                     ← Back
                 </button>
@@ -1990,13 +1990,13 @@ function showNearbyPlayers() {
                             </div>
                             <div style="display: flex; gap: 10px;">
                                 <button onclick="challengePlayer('${p.name}')" style="background: #8b0000; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-family: 'Georgia', serif;">
-                                    ⚔️ Challenge
+                                     Challenge
                                 </button>
                                 <button onclick="tradeWithPlayer('${p.name}')" style="background: #27ae60; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-family: 'Georgia', serif;">
-                                    🤝 Trade
+                                     Trade
                                 </button>
                                 <button onclick="inviteToHeist('${p.name}')" style="background: #f39c12; color: #000; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-family: 'Georgia', serif;">
-                                    💰 Invite
+                                     Invite
                                 </button>
                             </div>
                         </div>
@@ -2014,7 +2014,7 @@ function showCityEvents() {
     let eventsHTML = `
         <div style="background: rgba(0, 0, 0, 0.9); padding: 20px; border-radius: 15px; border: 2px solid #c0a062;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h3 style="color: #9b59b6; font-family: 'Georgia', serif;">📰 Street News</h3>
+                <h3 style="color: #9b59b6; font-family: 'Georgia', serif;"> Street News</h3>
                 <button onclick="showOnlineWorld()" style="background: #333; color: #c0a062; padding: 8px 15px; border: 1px solid #c0a062; border-radius: 5px; cursor: pointer; font-family: 'Georgia', serif;">
                     ← Back
                 </button>
@@ -2030,9 +2030,9 @@ function showCityEvents() {
                                 <small style="color: #999;">District: ${event.district.charAt(0).toUpperCase() + event.district.slice(1)}</small>
                             </div>
                             <div style="text-align: right;">
-                                <div style="color: #f39c12; font-weight: bold;">⏰ ${event.timeLeft}</div>
+                                <div style="color: #f39c12; font-weight: bold;"> ${event.timeLeft}</div>
                                 <button onclick="participateInEvent('${event.type}', '${event.district}')" style="background: #9b59b6; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; margin-top: 5px; font-family: 'Georgia', serif;">
-                                    🎯 Get Involved
+                                     Get Involved
                                 </button>
                             </div>
                         </div>
@@ -2061,14 +2061,14 @@ function challengePlayer(playerName) {
         if (victory) {
             const repGain = 5 + Math.floor(Math.random() * 10);
             player.reputation += repGain;
-            alert(`🏆 Victory! You defeated ${playerName} and gained ${repGain} reputation!`);
-            logAction(`⚔️ Defeated ${playerName} in combat (+${repGain} reputation)`);
-            addWorldEvent(`⚔️ ${player.name || 'A player'} defeated ${playerName} in combat!`);
+            alert(` Victory! You defeated ${playerName} and gained ${repGain} reputation!`);
+            logAction(` Defeated ${playerName} in combat (+${repGain} reputation)`);
+            addWorldEvent(` ${player.name || 'A player'} defeated ${playerName} in combat!`);
         } else {
             const repLoss = 2 + Math.floor(Math.random() * 5);
             player.reputation = Math.max(0, player.reputation - repLoss);
-            alert(`💀 Defeat! ${playerName} defeated you. Lost ${repLoss} reputation.`);
-            logAction(`💀 Defeated by ${playerName} in combat (-${repLoss} reputation)`);
+            alert(` Defeat! ${playerName} defeated you. Lost ${repLoss} reputation.`);
+            logAction(` Defeated by ${playerName} in combat (-${repLoss} reputation)`);
         }
     }
 }
@@ -2079,8 +2079,8 @@ function tradeWithPlayer(playerName) {
         return;
     }
     
-    alert(`🤝 Trade request sent to ${playerName}! (In a real implementation, this would open direct trade negotiations)`);
-    logAction(`🤝 Sent trade request to ${playerName}`);
+    alert(` Trade request sent to ${playerName}! (In a real implementation, this would open direct trade negotiations)`);
+    logAction(` Sent trade request to ${playerName}`);
 }
 
 function inviteToHeist(playerName) {
@@ -2089,8 +2089,8 @@ function inviteToHeist(playerName) {
         return;
     }
     
-    alert(`💰 Heist invitation sent to ${playerName}! They can join your next heist.`);
-    logAction(`💰 Invited ${playerName} to join heist`);
+    alert(` Heist invitation sent to ${playerName}! They can join your next heist.`);
+    logAction(` Invited ${playerName} to join heist`);
 }
 
 // ==================== UTILITY FUNCTIONS ====================
@@ -2140,28 +2140,28 @@ function joinHeist(heistId) {
     const heist = onlineWorldState.activeHeists.find(h => h.id === heistId);
     if (heist && heist.participants < heist.maxParticipants) {
         heist.participants++;
-        alert(`🚀 Joined ${heist.target}! Get ready for action.`);
-        logAction(`💰 Joined heist: ${heist.target}`);
+        alert(` Joined ${heist.target}! Get ready for action.`);
+        logAction(` Joined heist: ${heist.target}`);
         showActiveHeists(); // Refresh the display
     }
 }
 
 function manageHeist(heistId) {
-    alert("🎯 Heist management panel would open here (start heist, kick players, etc.)");
+    alert(" Heist management panel would open here (start heist, kick players, etc.)");
 }
 
 function buyFromPlayer(item, price) {
     if (player.money >= price) {
         player.money -= price;
-        alert(`✅ Purchased ${item} for $${price.toLocaleString()}!`);
-        logAction(`🛒 Bought ${item} from player for $${price.toLocaleString()}`);
+        alert(` Purchased ${item} for $${price.toLocaleString()}!`);
+        logAction(` Bought ${item} from player for $${price.toLocaleString()}`);
     } else {
-        alert("❌ Not enough money!");
+        alert(" Not enough money!");
     }
 }
 
 function listItemForSale() {
-    alert("📝 Item listing interface would open here (select item, set price, etc.)");
+    alert(" Item listing interface would open here (select item, set price, etc.)");
 }
 
 function spectateWar(district) {
@@ -2200,8 +2200,8 @@ function spectateWar(district) {
     header.style.justifyContent = 'space-between';
     header.style.alignItems = 'center';
     header.innerHTML = `
-        <h3 style="margin:0; color:#ff4444; text-shadow:2px 2px 6px #8b0000;">👁️ Turf War: ${district}</h3>
-        <button style="background:#333; color:#c0a062; padding:6px 12px; border:1px solid #c0a062; border-radius:6px; cursor:pointer;" onclick="document.getElementById('turf-war-spectator').remove();">✖ Close</button>
+        <h3 style="margin:0; color:#ff4444; text-shadow:2px 2px 6px #8b0000;"> Turf War: ${district}</h3>
+        <button style="background:#333; color:#c0a062; padding:6px 12px; border:1px solid #c0a062; border-radius:6px; cursor:pointer;" onclick="document.getElementById('turf-war-spectator').remove();"> Close</button>
     `;
     modal.appendChild(header);
 
@@ -2254,7 +2254,7 @@ function spectateWar(district) {
         logArea.scrollTop = logArea.scrollHeight;
     }
 
-    log(`👁️ You begin watching the clash for ${district}...`);
+    log(` You begin watching the clash for ${district}...`);
 
     const attackerBar = () => document.getElementById('attacker-bar');
     const defenderBar = () => document.getElementById('defender-bar');
@@ -2271,12 +2271,12 @@ function spectateWar(district) {
         if (attackerHit) {
             const dmg = 3 + Math.floor(Math.random()*6);
             defenderStrength = Math.max(0, defenderStrength - dmg);
-            log(`🩸 Attacker pushes forward (-${dmg} defender strength)`);
+            log(` Attacker pushes forward (-${dmg} defender strength)`);
         }
         if (defenderHit) {
             const dmg = 2 + Math.floor(Math.random()*6);
             attackerStrength = Math.max(0, attackerStrength - dmg);
-            log(`💥 Counter-fire from defenders (-${dmg} attacker strength)`);
+            log(` Counter-fire from defenders (-${dmg} attacker strength)`);
         }
 
         // Momentum swings
@@ -2285,10 +2285,10 @@ function spectateWar(district) {
             const swing = 4 + Math.floor(Math.random()*5);
             if (swingTarget === 'attacker') {
                 attackerStrength += swing;
-                log(`🔥 Sudden reinforcements bolster attackers (+${swing})`);
+                log(` Sudden reinforcements bolster attackers (+${swing})`);
             } else {
                 defenderStrength += swing;
-                log(`🛡️ Hidden reserves fortify defenders (+${swing})`);
+                log(` Hidden reserves fortify defenders (+${swing})`);
             }
         }
 
@@ -2306,15 +2306,15 @@ function spectateWar(district) {
                 outcome = 'Stalemate — both sides withdraw';
             } else if (attackerStrength > defenderStrength) {
                 outcome = 'Attackers overwhelm defenders — territory likely to flip';
-                addWorldEvent?.(`🔥 Attackers appear victorious in ${district}!`);
+                addWorldEvent?.(` Attackers appear victorious in ${district}!`);
             } else {
                 outcome = 'Defenders hold firm — control remains';
-                addWorldEvent?.(`🛡️ Defenders repel assault in ${district}.`);
+                addWorldEvent?.(` Defenders repel assault in ${district}.`);
             }
-            log(`🏁 Battle concludes: ${outcome}`);
-            log(`📊 Final Strength — A:${attackerStrength} D:${defenderStrength}`);
+            log(` Battle concludes: ${outcome}`);
+            log(` Final Strength — A:${attackerStrength} D:${defenderStrength}`);
             setTimeout(() => { footer.innerHTML = outcome; }, 500);
-            logAction?.(`👁️ Spectated turf war in ${district} (${outcome})`);
+            logAction?.(` Spectated turf war in ${district} (${outcome})`);
         }
     }, 1000);
 }
@@ -2322,8 +2322,8 @@ function spectateWar(district) {
 // Removed placeholder challengeForTerritory(district); full implementation defined later.
 
 function participateInEvent(eventType, district) {
-    alert(`🎯 Participating in ${eventType.replace('_', ' ')} event in ${district}...`);
-    logAction(`🎯 Joined city event: ${eventType} in ${district}`);
+    alert(` Participating in ${eventType.replace('_', ' ')} event in ${district}...`);
+    logAction(` Joined city event: ${eventType} in ${district}`);
 }
 
 // ==================== WHACK RIVAL DON PVP SYSTEM ====================
@@ -2337,7 +2337,7 @@ function showWhackRivalDon() {
     let pvpHTML = `
         <div style="background: rgba(0, 0, 0, 0.95); padding: 20px; border-radius: 15px; border: 2px solid #8b0000;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h3 style="color: #ff0000; font-family: 'Georgia', serif; text-shadow: 2px 2px 8px #8b0000;">💀 Whack Rival Don</h3>
+                <h3 style="color: #ff0000; font-family: 'Georgia', serif; text-shadow: 2px 2px 8px #8b0000;"> Whack Rival Don</h3>
                 <button onclick="showOnlineWorld()" style="background: #333; color: #c0a062; padding: 8px 15px; border: 1px solid #c0a062; border-radius: 5px; cursor: pointer; font-family: 'Georgia', serif;">
                     ← Back
                 </button>
@@ -2345,7 +2345,7 @@ function showWhackRivalDon() {
             
             <!-- Warning Section -->
             <div style="background: rgba(139, 0, 0, 0.3); padding: 20px; border-radius: 10px; border: 2px solid #ff0000; margin-bottom: 25px;">
-                <h4 style="color: #ff4444; margin: 0 0 15px 0; font-family: 'Georgia', serif; text-align: center;">⚠️ WARNING: EXTREME RISK ⚠️</h4>
+                <h4 style="color: #ff4444; margin: 0 0 15px 0; font-family: 'Georgia', serif; text-align: center;"> WARNING: EXTREME RISK </h4>
                 <div style="color: #ffaaaa; line-height: 1.8; font-family: 'Georgia', serif;">
                     <p style="margin: 10px 0;">• <strong>PERMADEATH:</strong> If successful, your target is <span style="color: #ff0000; font-weight: bold;">PERMANENTLY ELIMINATED</span></p>
                     <p style="margin: 10px 0;">• <strong>HIGH FAILURE RATE:</strong> Most hits fail. You'll take damage either way.</p>
@@ -2357,7 +2357,7 @@ function showWhackRivalDon() {
             
             <!-- Available Targets -->
             <div style="margin: 20px 0;">
-                <h4 style="color: #c0a062; margin-bottom: 15px; font-family: 'Georgia', serif;">🎯 Available Targets</h4>
+                <h4 style="color: #c0a062; margin-bottom: 15px; font-family: 'Georgia', serif;"> Available Targets</h4>
                 ${availableTargets.length === 0 ? `
                     <div style="background: rgba(20, 20, 20, 0.8); padding: 30px; border-radius: 10px; text-align: center; border: 1px solid #555;">
                         <p style="color: #95a5a6; font-style: italic; font-family: 'Georgia', serif;">No targets available. All Dons are either in jail or offline.</p>
@@ -2402,7 +2402,7 @@ function showWhackRivalDon() {
                                                    font-family: 'Georgia', serif; 
                                                    font-weight: bold;
                                                    ${canAfford ? '' : 'opacity: 0.5;'}">
-                                        ${canAfford ? '💀 Execute Hit' : '💰 Can\'t Afford'}
+                                        ${canAfford ? ' Execute Hit' : ' Can\'t Afford'}
                                     </button>
                                 </div>
                             </div>
@@ -2414,7 +2414,7 @@ function showWhackRivalDon() {
             <div style="text-align: center; margin-top: 30px;">
                 <button onclick="showOnlineWorld()" 
                         style="background: #333; color: #c0a062; padding: 15px 30px; border: 1px solid #c0a062; border-radius: 10px; cursor: pointer; font-family: 'Georgia', serif; font-weight: bold;">
-                    🏠 Return to Commission
+                     Return to Commission
                 </button>
             </div>
         </div>
@@ -2653,7 +2653,7 @@ function showHitResults(success, target, attackerDamage, cost) {
         resultHTML = `
             <div style="background: rgba(0, 0, 0, 0.95); padding: 40px; border-radius: 15px; border: 3px solid #27ae60;">
                 <div style="text-align: center; margin-bottom: 30px;">
-                    <div style="font-size: 3em; margin-bottom: 15px;">💀</div>
+                    <div style="font-size: 3em; margin-bottom: 15px;"></div>
                     <h2 style="color: #27ae60; font-family: 'Georgia', serif; margin: 0; font-size: 2em;">HIT SUCCESSFUL</h2>
                     <div style="color: #aaa; margin-top: 10px; font-size: 1.1em; font-family: 'Georgia', serif;">
                         ${escapeHTML(target.name || 'The target')} has been permanently eliminated.
@@ -2661,7 +2661,7 @@ function showHitResults(success, target, attackerDamage, cost) {
                 </div>
                 
                 <div style="background: rgba(0, 0, 0, 0.7); padding: 25px; border-radius: 10px; margin: 25px 0; border: 1px solid #27ae60;">
-                    <h3 style="color: #c0a062; margin: 0 0 20px 0; font-family: 'Georgia', serif;">💰 The Take</h3>
+                    <h3 style="color: #c0a062; margin: 0 0 20px 0; font-family: 'Georgia', serif;"> The Take</h3>
                     <div style="display: grid; gap: 15px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(39, 174, 96, 0.1); border-radius: 5px;">
                             <span style="color: #ccc;">Money Seized:</span>
@@ -2695,11 +2695,11 @@ function showHitResults(success, target, attackerDamage, cost) {
                 <div style="text-align: center; margin-top: 30px;">
                     <button onclick="showWhackRivalDon()" 
                             style="background: linear-gradient(180deg, #8b0000 0%, #5a0000 100%); color: #ffffff; padding: 15px 35px; border: 1px solid #ff0000; border-radius: 10px; cursor: pointer; font-family: 'Georgia', serif; font-weight: bold; margin-right: 15px;">
-                        💀 Find Another Target
+                         Find Another Target
                     </button>
                     <button onclick="showOnlineWorld()" 
                             style="background: #333; color: #c0a062; padding: 15px 35px; border: 1px solid #c0a062; border-radius: 10px; cursor: pointer; font-family: 'Georgia', serif; font-weight: bold;">
-                        🏠 Return to Commission
+                         Return to Commission
                     </button>
                 </div>
             </div>
@@ -2709,7 +2709,7 @@ function showHitResults(success, target, attackerDamage, cost) {
         resultHTML = `
             <div style="background: rgba(0, 0, 0, 0.95); padding: 40px; border-radius: 15px; border: 3px solid #8b0000;">
                 <div style="text-align: center; margin-bottom: 30px;">
-                    <div style="font-size: 3em; margin-bottom: 15px;">💥</div>
+                    <div style="font-size: 3em; margin-bottom: 15px;"></div>
                     <h2 style="color: #e74c3c; font-family: 'Georgia', serif; margin: 0; font-size: 2em;">HIT FAILED</h2>
                     <div style="color: #aaa; margin-top: 10px; font-size: 1.1em; font-family: 'Georgia', serif;">
                         ${escapeHTML(target.name || 'The target')} survives. You barely escape.
@@ -2717,7 +2717,7 @@ function showHitResults(success, target, attackerDamage, cost) {
                 </div>
                 
                 <div style="background: rgba(0, 0, 0, 0.7); padding: 25px; border-radius: 10px; margin: 25px 0; border: 1px solid #8b0000;">
-                    <h3 style="color: #c0a062; margin: 0 0 20px 0; font-family: 'Georgia', serif;">💸 The Cost</h3>
+                    <h3 style="color: #c0a062; margin: 0 0 20px 0; font-family: 'Georgia', serif;"> The Cost</h3>
                     <div style="display: grid; gap: 15px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(231, 76, 60, 0.1); border-radius: 5px;">
                             <span style="color: #ccc;">Hit Cost (Lost):</span>
@@ -2747,11 +2747,11 @@ function showHitResults(success, target, attackerDamage, cost) {
                 <div style="text-align: center; margin-top: 30px;">
                     <button onclick="showWhackRivalDon()" 
                             style="background: linear-gradient(180deg, #8b0000 0%, #5a0000 100%); color: #ffffff; padding: 15px 35px; border: 1px solid #ff0000; border-radius: 10px; cursor: pointer; font-family: 'Georgia', serif; font-weight: bold; margin-right: 15px;">
-                        💀 Try Again
+                         Try Again
                     </button>
                     <button onclick="showOnlineWorld()" 
                             style="background: #333; color: #c0a062; padding: 15px 35px; border: 1px solid #c0a062; border-radius: 10px; cursor: pointer; font-family: 'Georgia', serif; font-weight: bold;">
-                        🏠 Return to Commission
+                         Return to Commission
                     </button>
                 </div>
             </div>
@@ -2766,9 +2766,9 @@ function showHitResults(success, target, attackerDamage, cost) {
     // Log the action
     if (typeof logAction === 'function') {
         if (success) {
-            logAction(`💀 Successfully whacked ${target.name || 'rival Don'}! Seized $${lootMoney.toLocaleString()} and ${lootCars.length} cars. Took ${attackerDamage}% damage.`);
+            logAction(` Successfully whacked ${target.name || 'rival Don'}! Seized $${lootMoney.toLocaleString()} and ${lootCars.length} cars. Took ${attackerDamage}% damage.`);
         } else {
-            logAction(`💥 Failed to whack ${target.name || 'rival Don'}. Lost $${cost.toLocaleString()} and took ${attackerDamage}% damage.`);
+            logAction(` Failed to whack ${target.name || 'rival Don'}. Lost $${cost.toLocaleString()} and took ${attackerDamage}% damage.`);
         }
     }
 }
@@ -2786,7 +2786,7 @@ function viewTerritoryDetails(districtName) {
     const detailsHTML = `
         <div style="background: rgba(0, 0, 0, 0.95); padding: 40px; border-radius: 15px; border: 3px solid ${isPlayerControlled ? '#c0a062' : '#666'};">
             <div style="text-align: center; margin-bottom: 30px;">
-                <div style="font-size: 3em; margin-bottom: 15px;">🏛️</div>
+                <div style="font-size: 3em; margin-bottom: 15px;"></div>
                 <h2 style="color: #c0a062; font-family: 'Georgia', serif; margin: 0; font-size: 2em; text-transform: uppercase;">
                     ${districtName}
                 </h2>
@@ -2807,20 +2807,20 @@ function viewTerritoryDetails(districtName) {
             </div>
             
             <div style="background: rgba(0, 0, 0, 0.7); padding: 25px; border-radius: 10px; margin: 25px 0; border: 1px solid #555;">
-                <h3 style="color: #c0a062; margin: 0 0 20px 0; font-family: 'Georgia', serif;">🛡️ Defense Forces</h3>
+                <h3 style="color: #c0a062; margin: 0 0 20px 0; font-family: 'Georgia', serif;"> Defense Forces</h3>
                 <div style="display: flex; justify-content: space-around; text-align: center;">
                     <div>
-                        <div style="font-size: 2em; margin-bottom: 5px;">👤</div>
+                        <div style="font-size: 2em; margin-bottom: 5px;"></div>
                         <div style="color: #fff; font-weight: bold; font-size: 1.2em;">${district.assignedMembers}</div>
                         <div style="color: #888; font-size: 0.85em;">Gang Members</div>
                     </div>
                     <div>
-                        <div style="font-size: 2em; margin-bottom: 5px;">🚗</div>
+                        <div style="font-size: 2em; margin-bottom: 5px;"></div>
                         <div style="color: #fff; font-weight: bold; font-size: 1.2em;">${district.assignedCars}</div>
                         <div style="color: #888; font-size: 0.85em;">Vehicles</div>
                     </div>
                     <div>
-                        <div style="font-size: 2em; margin-bottom: 5px;">🔫</div>
+                        <div style="font-size: 2em; margin-bottom: 5px;"></div>
                         <div style="color: #fff; font-weight: bold; font-size: 1.2em;">${district.assignedWeapons}</div>
                         <div style="color: #888; font-size: 0.85em;">Weapons</div>
                     </div>
@@ -2839,11 +2839,11 @@ function viewTerritoryDetails(districtName) {
             <div style="text-align: center; margin-top: 30px;">
                 <button onclick="challengeForTerritory('${districtName}')" 
                         style="background: linear-gradient(180deg, #8b0000 0%, #5a0000 100%); color: #ffffff; padding: 15px 35px; border: 1px solid #ff0000; border-radius: 10px; cursor: pointer; font-family: 'Georgia', serif; font-weight: bold; margin-right: 15px; font-size: 1.1em;">
-                    ⚔️ Attack This Territory
+                     Attack This Territory
                 </button>
                 <button onclick="showOnlineWorld()" 
                         style="background: #333; color: #c0a062; padding: 15px 35px; border: 1px solid #c0a062; border-radius: 10px; cursor: pointer; font-family: 'Georgia', serif; font-weight: bold;">
-                    🏠 Return to Commission
+                     Return to Commission
                 </button>
             </div>
         </div>
@@ -2882,7 +2882,7 @@ function challengeForTerritory(districtName) {
     const challengeHTML = `
         <div style="background: rgba(0, 0, 0, 0.95); padding: 40px; border-radius: 15px; border: 3px solid #8b0000;">
             <div style="text-align: center; margin-bottom: 30px;">
-                <div style="font-size: 3em; margin-bottom: 15px;">⚔️</div>
+                <div style="font-size: 3em; margin-bottom: 15px;"></div>
                 <h2 style="color: #e74c3c; font-family: 'Georgia', serif; margin: 0; font-size: 2em;">CHALLENGE FOR TERRITORY</h2>
                 <div style="color: #aaa; margin-top: 10px; font-size: 1.1em; text-transform: uppercase;">
                     ${districtName}
@@ -2890,38 +2890,38 @@ function challengeForTerritory(districtName) {
             </div>
             
             <div style="background: rgba(0, 0, 0, 0.7); padding: 25px; border-radius: 10px; margin: 25px 0; border: 1px solid #8b0000;">
-                <h3 style="color: #c0a062; margin: 0 0 20px 0; font-family: 'Georgia', serif;">💰 Attack Cost</h3>
+                <h3 style="color: #c0a062; margin: 0 0 20px 0; font-family: 'Georgia', serif;"> Attack Cost</h3>
                 <div style="text-align: center;">
                     <div style="font-size: 2.5em; color: ${canAfford ? '#27ae60' : '#e74c3c'}; font-weight: bold;">
                         $${attackCost.toLocaleString()}
                     </div>
                     <div style="color: #888; margin-top: 5px;">
-                        ${canAfford ? '✓ You can afford this' : '✗ Not enough money'}
+                        ${canAfford ? ' You can afford this' : ' Not enough money'}
                     </div>
                 </div>
             </div>
             
             <div style="background: rgba(0, 0, 0, 0.7); padding: 25px; border-radius: 10px; margin: 25px 0; border: 1px solid #555;">
-                <h3 style="color: #c0a062; margin: 0 0 20px 0; font-family: 'Georgia', serif;">⚡ Assign Attack Force</h3>
+                <h3 style="color: #c0a062; margin: 0 0 20px 0; font-family: 'Georgia', serif;"> Assign Attack Force</h3>
                 <div style="margin-bottom: 15px;">
-                    <label style="color: #ccc; display: block; margin-bottom: 5px;">👤 Gang Members (You have: ${playerGangSize})</label>
+                    <label style="color: #ccc; display: block; margin-bottom: 5px;"> Gang Members (You have: ${playerGangSize})</label>
                     <input type="number" id="attack-members" min="0" max="${playerGangSize}" value="0" 
                            style="width: 100%; padding: 10px; background: #1a1a1a; border: 1px solid #555; color: #fff; border-radius: 5px;">
                 </div>
                 <div style="margin-bottom: 15px;">
-                    <label style="color: #ccc; display: block; margin-bottom: 5px;">🚗 Vehicles (You have: ${playerCars})</label>
+                    <label style="color: #ccc; display: block; margin-bottom: 5px;"> Vehicles (You have: ${playerCars})</label>
                     <input type="number" id="attack-cars" min="0" max="${playerCars}" value="0" 
                            style="width: 100%; padding: 10px; background: #1a1a1a; border: 1px solid #555; color: #fff; border-radius: 5px;">
                 </div>
                 <div style="margin-bottom: 15px;">
-                    <label style="color: #ccc; display: block; margin-bottom: 5px;">🔫 Weapons (You have: ${playerWeapons})</label>
+                    <label style="color: #ccc; display: block; margin-bottom: 5px;"> Weapons (You have: ${playerWeapons})</label>
                     <input type="number" id="attack-weapons" min="0" max="${playerWeapons}" value="0" 
                            style="width: 100%; padding: 10px; background: #1a1a1a; border: 1px solid #555; color: #fff; border-radius: 5px;">
                 </div>
             </div>
             
             <div style="background: rgba(231, 76, 60, 0.1); padding: 20px; border-radius: 8px; border: 2px solid #e74c3c; margin: 25px 0;">
-                <h4 style="color: #e74c3c; margin: 0 0 10px 0;">⚠️ WARNING</h4>
+                <h4 style="color: #e74c3c; margin: 0 0 10px 0;"> WARNING</h4>
                 <p style="color: #ccc; margin: 0; font-size: 0.95em;">
                     Any gang members, cars, or weapons you assign to this attack may be lost if you fail. 
                     The stronger your attack force, the better your chances of victory.
@@ -2941,7 +2941,7 @@ function challengeForTerritory(districtName) {
                                font-weight: bold; 
                                margin-right: 15px; 
                                font-size: 1.1em;">
-                    ⚔️ Launch Attack
+                     Launch Attack
                 </button>
                 <button onclick="viewTerritoryDetails('${districtName}')" 
                         style="background: #333; color: #c0a062; padding: 15px 35px; border: 1px solid #c0a062; border-radius: 10px; cursor: pointer; font-family: 'Georgia', serif; font-weight: bold;">
@@ -3091,7 +3091,7 @@ function showTerritoryBattleResults(success, districtName, district, cost, battl
         resultHTML = `
             <div style="background: rgba(0, 0, 0, 0.95); padding: 40px; border-radius: 15px; border: 3px solid #27ae60;">
                 <div style="text-align: center; margin-bottom: 30px;">
-                    <div style="font-size: 3em; margin-bottom: 15px;">👑</div>
+                    <div style="font-size: 3em; margin-bottom: 15px;"></div>
                     <h2 style="color: #27ae60; font-family: 'Georgia', serif; margin: 0; font-size: 2em;">TERRITORY CONQUERED!</h2>
                     <div style="color: #aaa; margin-top: 10px; font-size: 1.3em; text-transform: uppercase;">
                         ${districtName} is now yours
@@ -3099,7 +3099,7 @@ function showTerritoryBattleResults(success, districtName, district, cost, battl
                 </div>
                 
                 <div style="background: rgba(0, 0, 0, 0.7); padding: 25px; border-radius: 10px; margin: 25px 0; border: 1px solid #27ae60;">
-                    <h3 style="color: #c0a062; margin: 0 0 20px 0; font-family: 'Georgia', serif;">⚔️ Battle Report</h3>
+                    <h3 style="color: #c0a062; margin: 0 0 20px 0; font-family: 'Georgia', serif;"> Battle Report</h3>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                         <div style="text-align: center; padding: 15px; background: rgba(39, 174, 96, 0.1); border-radius: 5px;">
                             <div style="color: #27ae60; font-size: 1.8em; font-weight: bold;">${battleStats.attackForce}</div>
@@ -3116,7 +3116,7 @@ function showTerritoryBattleResults(success, districtName, district, cost, battl
                 </div>
                 
                 <div style="background: rgba(0, 0, 0, 0.7); padding: 25px; border-radius: 10px; margin: 25px 0; border: 1px solid #555;">
-                    <h3 style="color: #c0a062; margin: 0 0 20px 0; font-family: 'Georgia', serif;">💀 Casualties</h3>
+                    <h3 style="color: #c0a062; margin: 0 0 20px 0; font-family: 'Georgia', serif;"> Casualties</h3>
                     <div style="display: flex; justify-content: space-around; text-align: center;">
                         <div>
                             <div style="font-size: 1.8em; color: ${battleStats.membersLost > 0 ? '#e74c3c' : '#27ae60'}; font-weight: bold;">
@@ -3143,7 +3143,7 @@ function showTerritoryBattleResults(success, districtName, district, cost, battl
                 </div>
                 
                 <div style="background: rgba(39, 174, 96, 0.2); padding: 20px; border-radius: 8px; border-left: 4px solid #27ae60; margin: 25px 0;">
-                    <h4 style="color: #27ae60; margin: 0 0 10px 0; font-family: 'Georgia', serif;">💰 Territory Rewards</h4>
+                    <h4 style="color: #27ae60; margin: 0 0 10px 0; font-family: 'Georgia', serif;"> Territory Rewards</h4>
                     <p style="color: #ccc; margin: 0; font-size: 1.1em;">
                         Weekly Income: <span style="color: #27ae60; font-weight: bold; font-size: 1.2em;">$${district.weeklyIncome.toLocaleString()}</span>
                     </p>
@@ -3161,7 +3161,7 @@ function showTerritoryBattleResults(success, districtName, district, cost, battl
                 <div style="text-align: center; margin-top: 30px;">
                     <button onclick="showOnlineWorld()" 
                             style="background: linear-gradient(180deg, #27ae60 0%, #1e8449 100%); color: #ffffff; padding: 15px 35px; border: 1px solid #2ecc71; border-radius: 10px; cursor: pointer; font-family: 'Georgia', serif; font-weight: bold; font-size: 1.1em;">
-                        🏛️ View Your Empire
+                         View Your Empire
                     </button>
                 </div>
             </div>
@@ -3171,7 +3171,7 @@ function showTerritoryBattleResults(success, districtName, district, cost, battl
         resultHTML = `
             <div style="background: rgba(0, 0, 0, 0.95); padding: 40px; border-radius: 15px; border: 3px solid #8b0000;">
                 <div style="text-align: center; margin-bottom: 30px;">
-                    <div style="font-size: 3em; margin-bottom: 15px;">💥</div>
+                    <div style="font-size: 3em; margin-bottom: 15px;"></div>
                     <h2 style="color: #e74c3c; font-family: 'Georgia', serif; margin: 0; font-size: 2em;">ATTACK FAILED</h2>
                     <div style="color: #aaa; margin-top: 10px; font-size: 1.1em;">
                         Your forces were crushed defending ${districtName}
@@ -3179,7 +3179,7 @@ function showTerritoryBattleResults(success, districtName, district, cost, battl
                 </div>
                 
                 <div style="background: rgba(0, 0, 0, 0.7); padding: 25px; border-radius: 10px; margin: 25px 0; border: 1px solid #8b0000;">
-                    <h3 style="color: #c0a062; margin: 0 0 20px 0; font-family: 'Georgia', serif;">⚔️ Battle Report</h3>
+                    <h3 style="color: #c0a062; margin: 0 0 20px 0; font-family: 'Georgia', serif;"> Battle Report</h3>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                         <div style="text-align: center; padding: 15px; background: rgba(231, 76, 60, 0.1); border-radius: 5px;">
                             <div style="color: #e74c3c; font-size: 1.8em; font-weight: bold;">${battleStats.attackForce}</div>
@@ -3196,7 +3196,7 @@ function showTerritoryBattleResults(success, districtName, district, cost, battl
                 </div>
                 
                 <div style="background: rgba(0, 0, 0, 0.7); padding: 25px; border-radius: 10px; margin: 25px 0; border: 1px solid #8b0000;">
-                    <h3 style="color: #e74c3c; margin: 0 0 20px 0; font-family: 'Georgia', serif;">💀 Heavy Losses</h3>
+                    <h3 style="color: #e74c3c; margin: 0 0 20px 0; font-family: 'Georgia', serif;"> Heavy Losses</h3>
                     <div style="display: flex; justify-content: space-around; text-align: center;">
                         <div>
                             <div style="font-size: 1.8em; color: #e74c3c; font-weight: bold;">
@@ -3223,7 +3223,7 @@ function showTerritoryBattleResults(success, districtName, district, cost, battl
                 </div>
                 
                 <div style="background: rgba(139, 0, 0, 0.3); padding: 20px; border-radius: 8px; margin: 25px 0; border: 2px solid #8b0000;">
-                    <h4 style="color: #ff6666; margin: 0 0 10px 0; font-family: 'Georgia', serif;">💸 Total Cost</h4>
+                    <h4 style="color: #ff6666; margin: 0 0 10px 0; font-family: 'Georgia', serif;"> Total Cost</h4>
                     <div style="text-align: center;">
                         <div style="font-size: 2em; color: #e74c3c; font-weight: bold;">-$${cost.toLocaleString()}</div>
                         <div style="color: #888; margin-top: 5px;">Attack cost (not refunded)</div>
@@ -3239,11 +3239,11 @@ function showTerritoryBattleResults(success, districtName, district, cost, battl
                 <div style="text-align: center; margin-top: 30px;">
                     <button onclick="viewTerritoryDetails('${districtName}')" 
                             style="background: linear-gradient(180deg, #8b0000 0%, #5a0000 100%); color: #ffffff; padding: 15px 35px; border: 1px solid #ff0000; border-radius: 10px; cursor: pointer; font-family: 'Georgia', serif; font-weight: bold; margin-right: 15px;">
-                        🔄 Try Again
+                         Try Again
                     </button>
                     <button onclick="showOnlineWorld()" 
                             style="background: #333; color: #c0a062; padding: 15px 35px; border: 1px solid #c0a062; border-radius: 10px; cursor: pointer; font-family: 'Georgia', serif; font-weight: bold;">
-                        🏠 Return to Commission
+                         Return to Commission
                     </button>
                 </div>
             </div>
@@ -3258,9 +3258,9 @@ function showTerritoryBattleResults(success, districtName, district, cost, battl
     // Log the action
     if (typeof logAction === 'function') {
         if (success) {
-            logAction(`👑 Conquered ${districtName}! Lost ${battleStats.membersLost} members, ${battleStats.carsLost} cars, ${battleStats.weaponsLost} weapons. Earning $${district.weeklyIncome.toLocaleString()}/week.`);
+            logAction(` Conquered ${districtName}! Lost ${battleStats.membersLost} members, ${battleStats.carsLost} cars, ${battleStats.weaponsLost} weapons. Earning $${district.weeklyIncome.toLocaleString()}/week.`);
         } else {
-            logAction(`💥 Failed to take ${districtName}. Lost ${battleStats.membersLost} members, ${battleStats.carsLost} cars, ${battleStats.weaponsLost} weapons, and $${cost.toLocaleString()}.`);
+            logAction(` Failed to take ${districtName}. Lost ${battleStats.membersLost} members, ${battleStats.carsLost} cars, ${battleStats.weaponsLost} weapons, and $${cost.toLocaleString()}.`);
         }
     }
 }
@@ -3348,7 +3348,7 @@ function startMultiplayerTerritoryIncomeTimer() {
         if (income > 0) {
             // Add as DIRTY money (territory income is illicit)
             player.dirtyMoney = (player.dirtyMoney || 0) + income;
-            logAction(`🏛️ Territory income collected: $${income.toLocaleString()} (dirty) from controlled districts.`);
+            logAction(` Territory income collected: $${income.toLocaleString()} (dirty) from controlled districts.`);
             if (typeof updateUI === 'function') updateUI();
         }
         territoryIncomeNextCollection = Date.now() + MULTI_TERRITORY_WEEK_MS;

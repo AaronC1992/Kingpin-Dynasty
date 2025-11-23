@@ -176,7 +176,7 @@ export const retirementOutcomes = {
 export const factionEffects = {
     torrino: {
         name: "Torrino Family",
-        icon: "🤵",
+        icon: "",
         positiveEffects: [
             { level: 25, effect: "15% better prices at Italian businesses" },
             { level: 50, effect: "Access to Torrino weapon dealers" },
@@ -192,7 +192,7 @@ export const factionEffects = {
     },
     kozlov: {
         name: "Kozlov Bratva",
-        icon: "🐻",
+        icon: "",
         positiveEffects: [
             { level: 25, effect: "Access to Russian weapons and vehicles" },
             { level: 50, effect: "Bratva backup in gang wars" },
@@ -208,7 +208,7 @@ export const factionEffects = {
     },
     chen: {
         name: "Chen Triad",
-        icon: "🐉",
+        icon: "",
         positiveEffects: [
             { level: 25, effect: "Access to Triad drug networks" },
             { level: 50, effect: "Ancient martial arts training" },
@@ -224,7 +224,7 @@ export const factionEffects = {
     },
     morales: {
         name: "Morales Cartel",
-        icon: "🌮",
+        icon: "",
         positiveEffects: [
             { level: 25, effect: "Cartel drug discounts and access" },
             { level: 50, effect: "Border smuggling routes" },
@@ -240,7 +240,7 @@ export const factionEffects = {
     },
     police: {
         name: "Police Corruption",
-        icon: "👮",
+        icon: "",
         positiveEffects: [
             { level: 25, effect: "10% reduced arrest chance" },
             { level: 50, effect: "Inside information on raids" },
@@ -256,7 +256,7 @@ export const factionEffects = {
     },
     civilians: {
         name: "Public Opinion",
-        icon: "👥",
+        icon: "",
         positiveEffects: [
             { level: 25, effect: "Citizens provide tips and intel" },
             { level: 50, effect: "Public refuses to cooperate with police" },
@@ -272,7 +272,7 @@ export const factionEffects = {
     },
     underground: {
         name: "Criminal Underworld",
-        icon: "🕳️",
+        icon: "",
         positiveEffects: [
             { level: 25, effect: "Access to black market deals" },
             { level: 50, effect: "Criminal contacts provide jobs" },

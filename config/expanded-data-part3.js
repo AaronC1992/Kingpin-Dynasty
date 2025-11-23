@@ -193,7 +193,7 @@ export const GANG_ARCHETYPES = {
         id: "traditional_mafia",
         name: "Traditional Mafia Family",
         description: "Old-school organized crime. Honor, tradition, and the famiglia come first. You build respect through loyalty and calculated moves.",
-        icon: "🤵",
+        icon: "",
         
         startingBonus: {
             respect: 25,
@@ -227,7 +227,7 @@ export const GANG_ARCHETYPES = {
         id: "ruthless_cartel",
         name: "Ruthless Drug Cartel",
         description: "Violence and fear are your tools. You're building an empire on cocaine and blood. Expand fast, hit hard, show no mercy.",
-        icon: "💊",
+        icon: "",
         
         startingBonus: {
             respect: 15,
@@ -262,7 +262,7 @@ export const GANG_ARCHETYPES = {
         id: "tech_syndicate",
         name: "Tech-Savvy Cyber Syndicate",
         description: "The future of crime is digital. You run sophisticated cyber operations, identity theft, and cryptocurrency schemes. Brains over brawn.",
-        icon: "💻",
+        icon: "",
         
         startingBonus: {
             respect: 10,
@@ -297,7 +297,7 @@ export const GANG_ARCHETYPES = {
         id: "street_hustlers",
         name: "Street Hustlers Crew",
         description: "You came from nothing and you're hungry. Small-time hustles, quick profits, and street-level operations. Scrappy and resourceful.",
-        icon: "🏘️",
+        icon: "",
         
         startingBonus: {
             respect: 5,
@@ -331,7 +331,7 @@ export const GANG_ARCHETYPES = {
         id: "international_network",
         name: "International Crime Network",
         description: "Your operation spans continents. Smuggling, arms dealing, human trafficking. You're connected to every major crime family worldwide.",
-        icon: "🌍",
+        icon: "",
         
         startingBonus: {
             respect: 30,
@@ -366,7 +366,7 @@ export const GANG_ARCHETYPES = {
         id: "political_brokers",
         name: "Political Power Brokers",
         description: "Crime and politics are the same game. You control politicians, judges, and cops. The legal system is your weapon.",
-        icon: "🏛️",
+        icon: "",
         
         startingBonus: {
             respect: 35,

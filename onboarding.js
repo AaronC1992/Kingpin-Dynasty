@@ -110,7 +110,7 @@ export function updateTracker() {
                 localStorage.setItem('tutorialStep', step.next);
                 
                 // Flash effect or sound could go here
-                if (window.logAction) window.logAction(`✅ Objective Complete: ${step.text}`);
+                if (window.logAction) window.logAction(` Objective Complete: ${step.text}`);
                 
                 // Recursively update to show new text immediately
                 updateTracker();
@@ -119,7 +119,7 @@ export function updateTracker() {
             // Tutorial finished
             isTutorialActive = false;
             localStorage.setItem('tutorialStep', 'complete');
-            if (window.logAction) window.logAction("🏆 You've learned the basics. Now go run this city!");
+            if (window.logAction) window.logAction(" You've learned the basics. Now go run this city!");
             const tracker = document.getElementById('tutorial-tracker');
             if (tracker) tracker.remove();
         }

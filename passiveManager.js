@@ -32,7 +32,7 @@ export function applyDailyPassives() {
         const interest = Math.floor(player.money * interestRate);
         if (interest > 0) {
             player.money += interest;
-            if (window.logAction) window.logAction(`💰 Torrino "The Books" passive: Earned $${interest} interest on your cash.`);
+            if (window.logAction) window.logAction(` Torrino "The Books" passive: Earned $${interest} interest on your cash.`);
         }
     }
 
@@ -42,7 +42,7 @@ export function applyDailyPassives() {
         if (Math.random() < regenChance) {
             const ammoGain = Math.floor(Math.random() * 5) + 1;
             player.ammo += ammoGain;
-            if (window.logAction) window.logAction(`🔫 Kozlov "Arms Deal" passive: Received a shipment of ${ammoGain} ammo.`);
+            if (window.logAction) window.logAction(` Kozlov "Arms Deal" passive: Received a shipment of ${ammoGain} ammo.`);
         }
     }
 }
