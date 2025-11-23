@@ -16,16 +16,16 @@
   // ==================== CORE PROGRESSION ====================
   
   /**
-   * XP required per level (formula: level * 100)
-   * Modify the multiplier to make leveling faster/slower
+   * XP required per level (formula: level * 150)
+   * Increased multiplier to slow down leveling and make progression more of a grind.
    */
-  const xpPerLevel = (level) => level * 100;
+  const xpPerLevel = (level) => level * 150;
   
   /**
    * Base energy regeneration rate (seconds per 1 energy point)
-   * Lower = faster regeneration
+   * Lower = faster regeneration. Increased to slow down pacing.
    */
-  const energyRegenRate = 60; // 1 energy per 60 seconds
+  const energyRegenRate = 90; // 1 energy per 90 seconds
   
   /**
    * Jail base duration and mechanics
@@ -49,23 +49,25 @@
    * - Reputation gates progression to harder content
    */
   const jobs = {
-    streetSoldier: { payoutMin: 1000, payoutMax: 5000, jailChance: 5, wantedLevelGain: 1, healthLoss: 0, reputation: 0, energyCost: 1 },
-    boostRide: { payoutMin: 0, payoutMax: 0, jailChance: 40, wantedLevelGain: 3, healthLoss: 5, reputation: 0, energyCost: 5 },
-    storeHeist: { payoutMin: 20000, payoutMax: 40000, jailChance: 30, wantedLevelGain: 4, healthLoss: 10, reputation: 10, energyCost: 10 },
-    bootlegRun: { payoutMin: 40000, payoutMax: 80000, jailChance: 25, wantedLevelGain: 3, healthLoss: 5, reputation: 15, energyCost: 12 },
-    speakeasySupply: { payoutMin: 80000, payoutMax: 160000, jailChance: 35, wantedLevelGain: 5, healthLoss: 8, reputation: 25, energyCost: 15 },
-    whitePowder: { payoutMin: 160000, payoutMax: 300000, jailChance: 45, wantedLevelGain: 8, healthLoss: 15, reputation: 40, energyCost: 20 },
-    protectionCollection: { payoutMin: 10000, payoutMax: 25000, jailChance: 20, wantedLevelGain: 3, healthLoss: 8, reputation: 12, energyCost: 8 },
-    bankJob: { payoutMin: 100000, payoutMax: 250000, jailChance: 50, wantedLevelGain: 10, healthLoss: 20, reputation: 35, energyCost: 25 },
-    hitOnRival: { payoutMin: 60000, payoutMax: 120000, jailChance: 40, wantedLevelGain: 6, healthLoss: 25, reputation: 30, energyCost: 18 },
-    luxuryCarRing: { payoutMin: 80000, payoutMax: 160000, jailChance: 30, wantedLevelGain: 4, healthLoss: 5, reputation: 20, energyCost: 15 },
-    crossBorderSmuggling: { payoutMin: 200000, payoutMax: 400000, jailChance: 35, wantedLevelGain: 7, healthLoss: 10, reputation: 50, energyCost: 30 },
-    turfWar: { payoutMin: 40000, payoutMax: 100000, jailChance: 45, wantedLevelGain: 5, healthLoss: 30, reputation: 25, energyCost: 20 },
-    undergroundBoxing: { payoutMin: 30000, payoutMax: 70000, jailChance: 25, wantedLevelGain: 2, healthLoss: 40, reputation: 18, energyCost: 12 },
-    illegalGamblingDen: { payoutMin: 120000, payoutMax: 240000, jailChance: 30, wantedLevelGain: 4, healthLoss: 5, reputation: 35, energyCost: 22 },
-    moneyLaundering: { payoutMin: 1600, payoutMax: 3000, jailChance: 20, wantedLevelGain: 3, healthLoss: 0, reputation: 45, energyCost: 25 },
-    internationalArmsTrade: { payoutMin: 500000, payoutMax: 1000000, jailChance: 60, wantedLevelGain: 12, healthLoss: 10, reputation: 60, energyCost: 35 },
-    takeOverCity: { payoutMin: 2000000, payoutMax: 5000000, jailChance: 70, wantedLevelGain: 15, healthLoss: 20, reputation: 80, energyCost: 40 }
+    // Early game: lower payouts, slightly higher energy to slow snowballing
+    streetSoldier: { payoutMin: 700, payoutMax: 3500, jailChance: 7, wantedLevelGain: 1, healthLoss: 0, reputation: 0, energyCost: 2 },
+    boostRide: { payoutMin: 0, payoutMax: 0, jailChance: 40, wantedLevelGain: 3, healthLoss: 5, reputation: 0, energyCost: 6 },
+    storeHeist: { payoutMin: 14000, payoutMax: 28000, jailChance: 32, wantedLevelGain: 4, healthLoss: 10, reputation: 10, energyCost: 12 },
+    bootlegRun: { payoutMin: 28000, payoutMax: 56000, jailChance: 27, wantedLevelGain: 3, healthLoss: 5, reputation: 15, energyCost: 14 },
+    speakeasySupply: { payoutMin: 56000, payoutMax: 120000, jailChance: 37, wantedLevelGain: 5, healthLoss: 8, reputation: 25, energyCost: 18 },
+    whitePowder: { payoutMin: 120000, payoutMax: 240000, jailChance: 48, wantedLevelGain: 8, healthLoss: 15, reputation: 40, energyCost: 24 },
+    protectionCollection: { payoutMin: 7000, payoutMax: 20000, jailChance: 22, wantedLevelGain: 3, healthLoss: 8, reputation: 12, energyCost: 10 },
+    bankJob: { payoutMin: 75000, payoutMax: 200000, jailChance: 52, wantedLevelGain: 10, healthLoss: 20, reputation: 35, energyCost: 30 },
+    hitOnRival: { payoutMin: 45000, payoutMax: 100000, jailChance: 42, wantedLevelGain: 6, healthLoss: 25, reputation: 30, energyCost: 22 },
+    luxuryCarRing: { payoutMin: 60000, payoutMax: 130000, jailChance: 32, wantedLevelGain: 4, healthLoss: 5, reputation: 20, energyCost: 18 },
+    crossBorderSmuggling: { payoutMin: 150000, payoutMax: 320000, jailChance: 38, wantedLevelGain: 7, healthLoss: 10, reputation: 50, energyCost: 36 },
+    turfWar: { payoutMin: 30000, payoutMax: 80000, jailChance: 48, wantedLevelGain: 5, healthLoss: 30, reputation: 25, energyCost: 24 },
+    undergroundBoxing: { payoutMin: 22000, payoutMax: 55000, jailChance: 28, wantedLevelGain: 2, healthLoss: 40, reputation: 18, energyCost: 14 },
+    illegalGamblingDen: { payoutMin: 90000, payoutMax: 200000, jailChance: 32, wantedLevelGain: 4, healthLoss: 5, reputation: 35, energyCost: 26 },
+    moneyLaundering: { payoutMin: 1200, payoutMax: 2400, jailChance: 22, wantedLevelGain: 3, healthLoss: 0, reputation: 45, energyCost: 30 },
+    // Late game: bigger numbers but more expensive and rarer so players grind longer
+    internationalArmsTrade: { payoutMin: 375000, payoutMax: 800000, jailChance: 62, wantedLevelGain: 12, healthLoss: 10, reputation: 60, energyCost: 45 },
+    takeOverCity: { payoutMin: 1500000, payoutMax: 4000000, jailChance: 72, wantedLevelGain: 15, healthLoss: 20, reputation: 80, energyCost: 55 }
   };
   
   // ==================== FACTION MISSIONS ====================
@@ -93,9 +95,10 @@
    * Territory missions require gang members and provide passive income
    */
   const territoryMissions = {
-    docks_expansion: { requiredGangMembers: 5, energyCost: 25, rewards: { money: 2000000, territory: 1, reputation: 15, passive_income: 100000 }, risks: { jailChance: 35, gangMemberLoss: 15, healthLoss: 20 } },
-    downtown_expansion: { requiredGangMembers: 8, energyCost: 35, rewards: { money: 4000000, territory: 2, reputation: 25, passive_income: 200000 }, risks: { jailChance: 45, gangMemberLoss: 25, healthLoss: 30 } },
-    suburbs_expansion: { requiredGangMembers: 3, energyCost: 15, rewards: { money: 1500000, territory: 1, reputation: 10, passive_income: 75000 }, risks: { jailChance: 25, gangMemberLoss: 10, healthLoss: 15 } }
+    // Reduced passive income to slow long-term snowballing and make territory grindier
+    docks_expansion: { requiredGangMembers: 5, energyCost: 30, rewards: { money: 1600000, territory: 1, reputation: 15, passive_income: 60000 }, risks: { jailChance: 38, gangMemberLoss: 15, healthLoss: 20 } },
+    downtown_expansion: { requiredGangMembers: 8, energyCost: 40, rewards: { money: 3200000, territory: 2, reputation: 25, passive_income: 120000 }, risks: { jailChance: 48, gangMemberLoss: 25, healthLoss: 30 } },
+    suburbs_expansion: { requiredGangMembers: 3, energyCost: 20, rewards: { money: 1200000, territory: 1, reputation: 10, passive_income: 50000 }, risks: { jailChance: 28, gangMemberLoss: 10, healthLoss: 15 } }
   };
   
   // ==================== BOSS BATTLES ====================
