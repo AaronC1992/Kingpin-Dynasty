@@ -11860,8 +11860,8 @@ function showOptions() {
 
 // Function to save the game
 function saveGame() {
-  localStorage.setItem('player', JSON.stringify(player));
-  alert("Game saved successfully!");
+  // Show the save system interface instead of directly saving
+  showSaveSystem();
 }
 
 // Function to load the saved game - now shows a list of saves to choose from
@@ -15894,6 +15894,8 @@ window.showSaveSystem = showSaveSystem;
 window.showOptions = showOptions;
 window.restartGame = restartGame;
 window.forceNewGame = forceNewGame;
+window.saveToSlot = saveToSlot;
+window.exitLoadInterface = exitLoadInterface;
 
 // Intro & Tutorial
 window.showPortraitSelection = showPortraitSelection;
