@@ -9,7 +9,7 @@
 // Job options with risk categories, jail chances, wanted level gains, health loss, required items, and reputation requirements
 export const jobs = [
     // Entry Level Job
-    { name: "Street Soldier", payout: [1000, 5000], risk: "low", jailChance: 5, wantedLevelGain: 1, healthLoss: 0, requiredItems: [], reputation: 0, energyCost: 1 },
+    { name: "Street Soldier", payout: [1000, 5000], risk: "low", jailChance: 20, wantedLevelGain: 1, healthLoss: 0, requiredItems: [], reputation: 0, energyCost: 1 },
     
     // Car Stealing Job (Special mechanic)
     { name: "Boost a Ride", payout: [0, 0], risk: "medium", jailChance: 40, wantedLevelGain: 3, healthLoss: 5, requiredItems: [], reputation: 0, special: "car_theft", energyCost: 5 },

@@ -3865,6 +3865,7 @@ function updateUI() {
   }
   
   // Emit state change events (pub/sub)
+  const dirty = (player.dirtyMoney || 0);
   try {
     if (window.EventBus) {
       if (!window.__lastEventSnapshot) {
@@ -3910,7 +3911,6 @@ function updateUI() {
     }
   } catch (e) { /* no-op */ }
 
-  const dirty = (player.dirtyMoney || 0);
   // Money and wanted level HUD updates handled via EventBus subscribers
   document.getElementById("power-display").innerText = `Power: ${player.power}`;
   
