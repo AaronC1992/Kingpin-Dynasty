@@ -9323,6 +9323,17 @@ function showStore() {
             itemDescription = `(Power: ${item.power})`;
         }
         
+        // Check vehicle requirement
+        let requirementMet = true;
+        let requirementText = "";
+        if (item.requiredVehicle) {
+            const hasVehicle = player.garage && player.garage.some(car => car.name === item.requiredVehicle);
+            requirementMet = hasVehicle;
+            requirementText = `<div style="margin-top: 5px; color: ${hasVehicle ? '#2ecc71' : '#e74c3c'}; font-size: 0.9em;">
+                ${hasVehicle ? '✓' : '🚫'} Requires: ${item.requiredVehicle}
+            </div>`;
+        }
+        
         // Resolve image source with case-safe mapping
         const imageSrc = getItemImage(item.name);
         
@@ -9346,18 +9357,19 @@ function showStore() {
                     <div style="margin-bottom: 8px; color: #bdc3c7;">
                         ${itemDescription}
                     </div>
+                    ${requirementText}
                     <div id="store-price-${index}" data-base-price="${item.price}" style="color: #f1c40f; font-weight: bold; font-size: 1.1em;">
                         $${finalPrice.toLocaleString()}${discountText}
                     </div>
                 </div>
                 <div style="flex-shrink: 0;">
                     <button id="buy-btn-${index}" onclick="buyItem(${index})" 
-                            style="background: ${player.money >= finalPrice ? '#27ae60' : '#7f8c8d'}; 
+                            style="background: ${player.money >= finalPrice && requirementMet ? '#27ae60' : '#7f8c8d'}; 
                                    color: white; padding: 12px 20px; border: none; border-radius: 6px; 
-                                   cursor: ${player.money >= finalPrice ? 'pointer' : 'not-allowed'}; 
+                                   cursor: ${player.money >= finalPrice && requirementMet ? 'pointer' : 'not-allowed'}; 
                                    font-weight: bold; font-size: 14px; min-width: 120px;
                                    transition: all 0.3s ease;"
-                            ${player.money >= finalPrice ? '' : 'disabled'}
+                            ${player.money >= finalPrice && requirementMet ? '' : 'disabled'}
                             onmouseover="if(!this.disabled) this.style.background='#229954'"
                             onmouseout="if(!this.disabled) this.style.background='#27ae60'">
                         ${player.money >= finalPrice ? 'Purchase' : 'Too Expensive'}
@@ -9425,6 +9437,15 @@ function refreshStoreDynamicElements() {
 // Function to buy an item
 async function buyItem(index) {
     let item = storeItems[index];
+    
+    // Check if item requires a specific vehicle
+    if (item.requiredVehicle) {
+        const hasRequiredVehicle = player.garage && player.garage.some(car => car.name === item.requiredVehicle);
+        if (!hasRequiredVehicle) {
+            alert(`You need a ${item.requiredVehicle} to transport this item! Purchase one from the store first.`);
+            return;
+        }
+    }
     
     // Apply charisma discount
     let finalPrice = Math.floor(item.price * (1 - player.skills.charisma * 0.02));

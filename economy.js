@@ -20,9 +20,9 @@ export const storeItems = [
     { name: "Energy Drink", price: 1500, power: 0, type: "energy", energyRestore: 30 },
     { name: "Strong Coffee", price: 800, power: 0, type: "energy", energyRestore: 15 },
     { name: "Steroids", price: 5000, power: 0, type: "energy", energyRestore: 60 },
-    { name: "Crate Moonshine", price: 60000, power: 0, type: "highLevelDrug", maxPayout: 100000 },
-    { name: "Bag of Mary Jane", price: 120000, power: 0, type: "highLevelDrug", maxPayout: 200000 },
-    { name: "Pure Cocaine", price: 200000, power: 0, type: "highLevelDrug", maxPayout: 350000 },
+    { name: "Crate Moonshine", price: 60000, power: 0, type: "highLevelDrug", maxPayout: 100000, requiredVehicle: "Freight Truck" },
+    { name: "Bag of Mary Jane", price: 120000, power: 0, type: "highLevelDrug", maxPayout: 200000, requiredVehicle: "Freight Truck" },
+    { name: "Pure Cocaine", price: 200000, power: 0, type: "highLevelDrug", maxPayout: 350000, requiredVehicle: "Freight Truck" },
     // High-end items
     { name: "Bulletproof Vest", price: 100000, power: 40, type: "armor" },
     { name: "Tommy Gun", price: 150000, power: 100, type: "gun" },
