@@ -559,23 +559,26 @@ export const MobileSystem = {
     // Toggle the tutorial objective tracker visibility (used by mobile Objective buttons)
     toggleObjectiveTracker() {
         const tracker = document.getElementById('tutorial-tracker');
+        const overlay = document.getElementById('tutorial-tracker-overlay');
+        
         if (!tracker) {
             // Tracker not created yet; nothing to toggle
             return;
         }
         
-        const body = tracker.querySelector('.tutorial-tracker-body');
-        const toggleBtn = tracker.querySelector('.tutorial-tracker-toggle');
+        // Toggle visibility
+        const isCurrentlyHidden = tracker.style.display === 'none';
         
-        if (body) {
-            const isHidden = body.style.display === 'none';
-            body.style.display = isHidden ? 'block' : 'none';
-            
-            if (toggleBtn) {
-                toggleBtn.textContent = isHidden ? 'Hide' : 'Show';
-            }
-            
-            this.objectiveTrackerVisible = isHidden;
+        if (isCurrentlyHidden) {
+            // Show the modal
+            tracker.style.display = 'block';
+            if (overlay) overlay.style.display = 'flex';
+            this.objectiveTrackerVisible = true;
+        } else {
+            // Hide the modal
+            tracker.style.display = 'none';
+            if (overlay) overlay.style.display = 'none';
+            this.objectiveTrackerVisible = false;
         }
     },
     
