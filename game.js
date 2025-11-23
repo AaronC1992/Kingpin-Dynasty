@@ -10128,7 +10128,7 @@ function showIntroNarrative() {
         </p>
         
         <p style="margin-bottom: 20px; color: #3498db;">
-          <strong>The game has evolved:</strong> Advanced save systems protect your progress, weekly challenges test your skills, and sophisticated management systems let you build the criminal empire you've always imagined. Master the hotkeys, use the quick actions panel, and watch your statistics grow.
+          <strong>The game has evolved:</strong> Multiple save slots protect your progress, weekly challenges test your skills, and an objective tracker guides your path to power. Use quick actions for instant navigation, track your missions in real-time, and compete in the online criminal underworld. Your empire awaits.
         </p>
         
         <p style="text-align: center; font-style: italic; color: #95a5a6; margin-bottom: 15px;">
@@ -10314,9 +10314,9 @@ const tutorialSteps = [
         <li><strong>⭐ Reputation:</strong> Your standing in the criminal world</li>
         <li><strong>📈 Level & XP:</strong> Your experience and progression</li>
       </ul>
-      <p><strong>🎯 Quick Actions Panel:</strong> On the right side, you'll see quick action buttons for instant access to key features. Use hotkeys (F1-F7) for even faster navigation!</p>
+      <p><strong>🎯 Quick Actions & Objectives:</strong> On the right side, you'll see quick action buttons for instant navigation and an objective tracker showing your current goals. Use hotkeys (F1-F7) for even faster access!</p>
       <p style="background: rgba(231, 76, 60, 0.2); padding: 10px; border-radius: 5px; margin-top: 15px;">
-        <strong>👀 Pro Tip:</strong> The quick actions panel saves time when you need to quickly access jobs, store, or check your statistics!
+        <strong>👀 Pro Tip:</strong> Watch the objective tracker on desktop or tap the Objective button on mobile to see your next steps!
       </p>
     `
   },
@@ -10345,10 +10345,11 @@ const tutorialSteps = [
       <h3>🔫 Your Criminal Career Path</h3>
       <p><strong>This is the Jobs screen!</strong> Your primary source of income and experience:</p>
       <ul>
-        <li><strong>Street Corner Lookout (1 Energy):</strong> Low risk, perfect for beginners</li>
-        <li><strong>Steal Car (5 Energy):</strong> Medium risk - can get you vehicles to sell</li>
-        <li><strong>Armed Robbery (10 Energy):</strong> High risk, high reward - requires reputation</li>
-        <li><strong>Advanced Jobs:</strong> More unlock as you gain reputation and power</li>
+        <li><strong>Street Soldier (1 Energy):</strong> Entry-level work - expect some jail time</li>
+        <li><strong>Boost a Ride (5 Energy):</strong> Car theft - risky but profitable</li>
+        <li><strong>Store Heist (10 Energy):</strong> High risk, high reward - requires reputation</li>
+        <li><strong>Drug Dealing Jobs:</strong> Lucrative but dangerous - need specific items</li>
+        <li><strong>Elite Operations:</strong> Bank jobs, smuggling, and territory wars at high levels</li>
       </ul>
       <p><strong>Energy System:</strong> Energy regenerates automatically (1 per 10 seconds). Your Endurance skill reduces energy costs!</p>
       <p style="background: rgba(52, 152, 219, 0.2); padding: 10px; border-radius: 5px; margin-top: 15px;">
@@ -10496,10 +10497,10 @@ const tutorialSteps = [
       <h3>💾 Protecting Your Criminal Empire</h3>
       <p><strong>Advanced Save System:</strong> Multiple ways to protect your progress:</p>
       <ul>
-        <li><strong>🎰 Multiple Save Slots:</strong> Keep different criminal careers separate</li>
-        <li><strong>⚡ Auto-Save:</strong> Automatic backups prevent data loss</li>
-        <li><strong>📤 Export/Import:</strong> Share saves or back them up externally</li>
-        <li><strong>🔄 Quick Load:</strong> Resume your most recent game from the start screen</li>
+        <li><strong>💾 Multiple Save Slots:</strong> Save up to multiple different criminal careers</li>
+        <li><strong>🔄 Auto-Save:</strong> Automatic backup to slot 0 every 2 minutes</li>
+        <li><strong>📋 Save Management:</strong> View save details, load, overwrite, or delete slots</li>
+        <li><strong>⚡ Quick Access:</strong> Save and load from main menu or options</li>
       </ul>
       <p><strong>Game Management:</strong> Access saves through Options menu, track statistics, and monitor your criminal career progression.</p>
       <p style="background: rgba(46, 204, 113, 0.2); padding: 10px; border-radius: 5px; margin-top: 15px;">
