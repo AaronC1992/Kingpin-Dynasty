@@ -48,11 +48,11 @@ export const jobs = [
 
 // Stolen car types with base values and damage probabilities
 export const stolenCarTypes = [
-    { name: "Rusty Jalopy", baseValue: 5000, damageChance: 60, rarity: 40, image: "Rusty Jalopy.png" },
-    { name: "Old Sedan", baseValue: 15000, damageChance: 45, rarity: 30, image: "Old Sedan.png" },
-    { name: "Old Ford", baseValue: 25000, damageChance: 40, rarity: 25, image: "Old Ford.png" },
-    { name: "Family Wagon", baseValue: 30000, damageChance: 35, rarity: 20, image: "Family Wagon.png" },
-    { name: "Sports Coupe", baseValue: 60000, damageChance: 25, rarity: 7, image: "Sports Coupe.png" },
-    { name: "Luxury Sedan", baseValue: 100000, damageChance: 20, rarity: 5, image: "Luxury Sedan.png" },
-    { name: "Vintage Roadster", baseValue: 150000, damageChance: 15, rarity: 3, image: "Vintage Roadster.png" }
+    { name: "Rusty Jalopy", baseValue: 5000, damageChance: 60, rarity: 40, image: "vehicles/Rusty Jalopy.png" },
+    { name: "Old Sedan", baseValue: 15000, damageChance: 45, rarity: 30, image: "vehicles/Old Sedan.png" },
+    { name: "Old Ford", baseValue: 25000, damageChance: 40, rarity: 25, image: "vehicles/Old Ford.png" },
+    { name: "Family Wagon", baseValue: 30000, damageChance: 35, rarity: 20, image: "vehicles/Family Wagon.png" },
+    { name: "Sports Coupe", baseValue: 60000, damageChance: 25, rarity: 7, image: "vehicles/Sports Coupe.png" },
+    { name: "Luxury Sedan", baseValue: 100000, damageChance: 20, rarity: 5, image: "vehicles/Luxury Sedan.png" },
+    { name: "Vintage Roadster", baseValue: 150000, damageChance: 15, rarity: 3, image: "vehicles/Vintage Roadster.png" }
 ];

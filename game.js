@@ -4930,7 +4930,7 @@ function handleCarTheft(job, actualEnergyCost) {
 
 // Function to show car theft result with sell/store choice
 function showCarTheftChoiceResult(stolenCar, wasHurt = false, healthLoss = 0) {
-    const carImageSrc = `${stolenCar.name}.png`;
+    const carImageSrc = `vehicles/${stolenCar.name}.png`;
     
     const resultHTML = `
         <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); 
@@ -5027,7 +5027,7 @@ function handleStolenCarChoice(choice, carName, baseValue, currentValue, damageP
         currentValue: currentValue,
         damagePercentage: damagePercentage,
         usageCount: 0,
-        image: carType ? carType.image : `${carName}.png`
+        image: carType ? carType.image : `vehicles/${carName}.png`
     };
     
     if (choice === 'sell') {
@@ -5091,7 +5091,7 @@ function closeCarTheftChoiceResult() {
 
 // Function to show car theft result with vehicle photo
 function showCarTheftResult(stolenCar, wasHurt = false, healthLoss = 0) {
-    const carImageSrc = `${stolenCar.name}.png`;
+    const carImageSrc = `vehicles/${stolenCar.name}.png`;
     
     const resultHTML = `
         <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); 
@@ -5218,7 +5218,7 @@ function showStolenCars() {
                                       car.damagePercentage <= 50 ? 'DAMAGED' : 'HEAVILY DAMAGED';
                     let conditionColor = car.damagePercentage <= 15 ? '#2ecc71' : 
                                        car.damagePercentage <= 50 ? '#f39c12' : '#e74c3c';
-                    const carImageSrc = car.image || `${car.name}.png`;
+                    const carImageSrc = car.image || `vehicles/${car.name}.png`;
                     
                     return `
                         <div style="background: rgba(44, 62, 80, 0.8); border-radius: 15px; padding: 25px; border: 2px solid #34495e; box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5); transition: transform 0.3s ease;">
@@ -9856,14 +9856,14 @@ function showPortraitSelection() {
     
     // Create portrait selection HTML
     const portraitOptions = [
-        { file: "White male.png", label: "Option 1" },
-        { file: "White female.png", label: "Option 2" },
-        { file: "Black male.png", label: "Option 3" },
-        { file: "Black female.png", label: "Option 4" },
-        { file: "Asian male.png", label: "Option 5" },
-        { file: "Asian female.png", label: "Option 6" },
-        { file: "Mexican male.png", label: "Option 7" },
-        { file: "Mexican female.png", label: "Option 8" }
+        { file: "profile_pics/White male.png", label: "Option 1" },
+        { file: "profile_pics/White female.png", label: "Option 2" },
+        { file: "profile_pics/Black male.png", label: "Option 3" },
+        { file: "profile_pics/Black female.png", label: "Option 4" },
+        { file: "profile_pics/Asian male.png", label: "Option 5" },
+        { file: "profile_pics/Asian female.png", label: "Option 6" },
+        { file: "profile_pics/Mexican male.png", label: "Option 7" },
+        { file: "profile_pics/Mexican female.png", label: "Option 8" }
     ];
     
     let portraitHTML = `
@@ -13985,6 +13985,45 @@ function showSaveSystem() {
 }
 
 // Helper functions
+// Function to map item names to their image paths in the new folder structure
+function getItemImage(itemName) {
+    // Mapping for weapons and armor
+    const weaponsArmor = {
+        "Brass Knuckles": "weapons&armor/Brass knuckles.png",
+        "Pistol": "weapons&armor/Pistol.png",
+        "Leather Jacket": "weapons&armor/Leather Jacket.png",
+        "Bulletproof Vest": "weapons&armor/Bulletproof Vest.png",
+        "Tommy Gun": "weapons&armor/Tommy gun.png",
+        "Bullets": "weapons&armor/Bullets.png"
+    };
+    
+    // Mapping for vehicles
+    const vehicles = {
+        "Armored Car": "vehicles/Armored car.png",
+        "Luxury Automobile": "vehicles/Luxury Automobile.png",
+        "Private Airplane": "vehicles/Private Airplane.png",
+        "Rusty Jalopy": "vehicles/Rusty Jalopy.png",
+        "Old Sedan": "vehicles/Old Sedan.png",
+        "Old Ford": "vehicles/Old Ford.png",
+        "Family Wagon": "vehicles/Family Wagon.png",
+        "Sports Coupe": "vehicles/Sports Coupe.png",
+        "High-End Roadster": "vehicles/High-End Roadster.png"
+    };
+    
+    // Check if the item is in weapons/armor
+    if (weaponsArmor[itemName]) {
+        return weaponsArmor[itemName];
+    }
+    
+    // Check if the item is a vehicle
+    if (vehicles[itemName]) {
+        return vehicles[itemName];
+    }
+    
+    // Default fallback - return a placeholder or the item name
+    return `missing-item.png`;
+}
+
 function saveToSlot(slotNumber) {
     console.log("saveToSlot called with slot:", slotNumber);
     console.log("Current player object:", player);
