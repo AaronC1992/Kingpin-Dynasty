@@ -12,6 +12,9 @@ export const MobileSystem = {
     mobileNavigationActive: false,
     swipeGesturesConfigured: false,
     
+    // Track whether the objective tracker is visible
+    objectiveTrackerVisible: true,
+    
     // Initialize mobile system
     init() {
         this.detectDevice();
@@ -485,10 +488,10 @@ export const MobileSystem = {
                     Business
                 </button>
                 
-                <button onclick="showGang(); MobileSystem.toggleMobileMenu();" 
+                <button onclick="MobileSystem.toggleObjectiveTracker(); MobileSystem.toggleMobileMenu();" 
                         style="width: 100%; margin: 5px 0; padding: 12px; background: linear-gradient(45deg, #333, #000); 
                                color: #c0a062; border: 1px solid #c0a062; border-radius: 6px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
-                    Family
+                    Objective
                 </button>
                 
                 <button onclick="showSkills(); MobileSystem.toggleMobileMenu();" 
@@ -593,6 +596,29 @@ export const MobileSystem = {
             <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; font-family: 'Georgia', serif;">
                 <button onclick="showStore()" 
                         style="padding: 6px; background: linear-gradient(45deg, #333, #000); color: #c0a062; border: 1px solid #c0a062; border-radius: 5px; 
+    
+    // Toggle the tutorial objective tracker visibility (used by mobile Objective button)
+    toggleObjectiveTracker() {
+        const tracker = document.getElementById('tutorial-tracker');
+        if (!tracker) {
+            // Tracker not created yet; nothing to toggle
+            return;
+        }
+        
+        const body = tracker.querySelector('.tutorial-tracker-body');
+        const toggleBtn = tracker.querySelector('.tutorial-tracker-toggle');
+        
+        if (body) {
+            const isHidden = body.style.display === 'none';
+            body.style.display = isHidden ? 'block' : 'none';
+            
+            if (toggleBtn) {
+                toggleBtn.textContent = isHidden ? 'Hide' : 'Show';
+            }
+            
+            this.objectiveTrackerVisible = isHidden;
+        }
+    },
                                font-size: 11px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
                     Market
                 </button>
