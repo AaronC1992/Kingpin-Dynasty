@@ -136,33 +136,10 @@
                         <input type="text" id="character-name" placeholder="Enter your name..." maxlength="20" />
                     </div>
                     
-                    <div class="gender-section">
-                        <h3>Gender</h3>
-                        <div class="selection-grid">
-                            <button class="selection-btn" data-gender="male" onclick="selectGender('male')">
-                                <span class="selection-label">♂️</span>
-                            </button>
-                            <button class="selection-btn" data-gender="female" onclick="selectGender('female')">
-                                <span class="selection-label">♀️</span>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div class="ethnicity-section">
-                        <h3>Heritage</h3>
-                        <div class="selection-grid ethnicity-grid">
-                            <button class="selection-btn portrait-btn" data-ethnicity="white" onclick="selectEthnicity('white')">
-                                <img class="portrait-preview" id="portrait-white" src="" alt="Portrait Option 1" style="display: none;" />
-                            </button>
-                            <button class="selection-btn portrait-btn" data-ethnicity="black" onclick="selectEthnicity('black')">
-                                <img class="portrait-preview" id="portrait-black" src="" alt="Portrait Option 2" style="display: none;" />
-                            </button>
-                            <button class="selection-btn portrait-btn" data-ethnicity="asian" onclick="selectEthnicity('asian')">
-                                <img class="portrait-preview" id="portrait-asian" src="" alt="Portrait Option 3" style="display: none;" />
-                            </button>
-                            <button class="selection-btn portrait-btn" data-ethnicity="mexican" onclick="selectEthnicity('mexican')">
-                                <img class="portrait-preview" id="portrait-mexican" src="" alt="Portrait Option 4" style="display: none;" />
-                            </button>
+                    <div class="portrait-section">
+                        <h3>Choose Your Portrait</h3>
+                        <div id="portrait-grid" class="portrait-selection-grid">
+                            <!-- Portraits will be loaded dynamically by JavaScript -->
                         </div>
                     </div>
                     

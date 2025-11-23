@@ -9871,41 +9871,23 @@ async function showSimpleCharacterCreation() {
   showPortraitSelection();
 }
 
-// Character creation helper variables
-let selectedGender = '';
-let selectedEthnicity = '';
+// Character creation helper variable
+let selectedPortraitFile = '';
 
-// Function to select gender during character creation
-function selectGender(gender) {
-  selectedGender = gender;
+// Function to select portrait during character creation
+function selectPortraitForCreation(portraitFile) {
+  selectedPortraitFile = portraitFile;
   
   // Update button states
-  document.querySelectorAll('[data-gender]').forEach(btn => {
+  document.querySelectorAll('.portrait-option').forEach(btn => {
     btn.classList.remove('selected');
   });
-  const selectedBtn = document.querySelector(`[data-gender="${gender}"]`);
+  const selectedBtn = document.querySelector(`[data-portrait="${portraitFile}"]`);
   if (selectedBtn) {
     selectedBtn.classList.add('selected');
   }
   
-  // Update preview if both gender and ethnicity are selected
-  updateCharacterPreview();
-}
-
-// Function to select ethnicity during character creation
-function selectEthnicity(ethnicity) {
-  selectedEthnicity = ethnicity;
-  
-  // Update button states
-  document.querySelectorAll('[data-ethnicity]').forEach(btn => {
-    btn.classList.remove('selected');
-  });
-  const selectedBtn = document.querySelector(`[data-ethnicity="${ethnicity}"]`);
-  if (selectedBtn) {
-    selectedBtn.classList.add('selected');
-  }
-  
-  // Update preview if both gender and ethnicity are selected
+  // Update preview
   updateCharacterPreview();
 }
 
@@ -9921,28 +9903,50 @@ function updateCharacterPreview() {
     previewName.textContent = name ? `Name: ${name}` : 'Name: Unknown';
   }
   
-  // Show portrait if both selections made
-  if (selectedGender && selectedEthnicity && selectedPortrait) {
-    const ethnicityMap = {
-      'white': 'White',
-      'black': 'Black',
-      'asian': 'Asian',
-      'mexican': 'Mexican'
-    };
-    const genderMap = {
-      'male': 'male',
-      'female': 'female'
-    };
-    const portraitPath = `profile_pics/${ethnicityMap[selectedEthnicity]} ${genderMap[selectedGender]}.png`;
-    selectedPortrait.src = portraitPath;
+  // Show portrait if selected
+  if (selectedPortraitFile && selectedPortrait) {
+    selectedPortrait.src = selectedPortraitFile;
     selectedPortrait.style.display = 'block';
   }
   
-  // Enable create button if all selections made and name entered
+  // Enable create button if portrait selected and name entered
   if (createBtn && nameInput) {
     const name = nameInput.value.trim();
-    createBtn.disabled = !(selectedGender && selectedEthnicity && name.length > 0);
+    createBtn.disabled = !(selectedPortraitFile && name.length > 0);
   }
+}
+
+// Function to load portrait grid in character creation
+function loadPortraitGrid() {
+  const portraitGrid = document.getElementById('portrait-grid');
+  if (!portraitGrid) return;
+  
+  const portraitOptions = [
+    "profile_pics/White male.png",
+    "profile_pics/White female.png",
+    "profile_pics/Black male.png",
+    "profile_pics/Black female.png",
+    "profile_pics/Asian male.png",
+    "profile_pics/Asian female.png",
+    "profile_pics/Mexican male.png",
+    "profile_pics/Mexican female.png",
+    "profile_pics/Old Male.png",
+    "profile_pics/Old Female.png",
+    "profile_pics/Stylized White Male.png",
+    "profile_pics/Stylized White Female.png",
+    "profile_pics/Stylized Black Male.png",
+    "profile_pics/Stylized Black Female.png",
+    "profile_pics/Stylized Asian Male.png",
+    "profile_pics/Stylized Asian Female.png",
+    "profile_pics/Stylized Hispanic Male.png",
+    "profile_pics/Stylized Hispanic Female.png"
+  ];
+  
+  portraitGrid.innerHTML = portraitOptions.map(portrait => `
+    <button class="portrait-option" data-portrait="${portrait}" onclick="selectPortraitForCreation('${portrait}')">
+      <img src="${portrait}" alt="Portrait" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;" />
+    </button>
+  `).join('');
 }
 
 // Function to create character after all selections made
@@ -9955,28 +9959,14 @@ function createCharacter() {
     return;
   }
   
-  if (!selectedGender) {
-    alert('Select your gender.');
+  if (!selectedPortraitFile) {
+    alert('Select a portrait.');
     return;
   }
-  
-  if (!selectedEthnicity) {
-    alert('Select your heritage.');
-    return;
-  }
-  
-  const ethnicityMap = {
-    'white': 'White',
-    'black': 'Black',
-    'asian': 'Asian',
-    'mexican': 'Mexican'
-  };
   
   // Set player data
   player.name = name;
-  player.gender = selectedGender;
-  player.ethnicity = selectedEthnicity;
-  player.portrait = `profile_pics/${ethnicityMap[selectedEthnicity]} ${selectedGender}.png`;
+  player.portrait = selectedPortraitFile;
   
   // Set default current slot for new character
   SAVE_SYSTEM.currentSlot = 1;
@@ -12494,6 +12484,11 @@ function initGame() {
   if (charNameInput) {
     charNameInput.addEventListener('input', updateCharacterPreview);
   }
+  
+  // Load portrait grid when character creation is available
+  setTimeout(() => {
+    loadPortraitGrid();
+  }, 100);
   
   // Update UI
   updateUI();
@@ -15885,8 +15880,8 @@ window.startTutorial = startTutorial;
 window.updateTutorialDisplay = updateTutorialDisplay;
 window.showTutorialFromMenu = showTutorialFromMenu;
 window.loadGameFromIntro = loadGameFromIntro;
-window.selectGender = selectGender;
-window.selectEthnicity = selectEthnicity;
+window.selectPortraitForCreation = selectPortraitForCreation;
+window.loadPortraitGrid = loadPortraitGrid;
 window.createCharacter = createCharacter;
 window.goBackToIntro = goBackToIntro;
 window.previousTutorialStep = previousTutorialStep;
