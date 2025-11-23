@@ -84,9 +84,30 @@ function createTrackerUI() {
     tracker.style.fontFamily = 'monospace';
     tracker.style.maxWidth = '250px';
     tracker.innerHTML = `
-        <h4 style="margin: 0 0 5px 0; color: #ffd700;">Current Objective</h4>
-        <div id="tutorial-tracker-text">Loading...</div>
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+            <h4 style="margin: 0; color: #ffd700; font-size: 13px;">Current Objective</h4>
+            <button id="tutorial-tracker-toggle" 
+                    style="background: transparent; border: 1px solid #666; color: #fff; border-radius: 3px; 
+                           font-size: 11px; padding: 2px 6px; cursor: pointer;">
+                Hide
+            </button>
+        </div>
+        <div id="tutorial-tracker-body" style="margin-top: 6px; font-size: 12px;">
+            <div id="tutorial-tracker-text">Loading...</div>
+        </div>
     `;
+
+    const toggleButton = tracker.querySelector('#tutorial-tracker-toggle');
+    const body = tracker.querySelector('#tutorial-tracker-body');
+    let collapsed = false;
+
+    if (toggleButton && body) {
+        toggleButton.addEventListener('click', () => {
+            collapsed = !collapsed;
+            body.style.display = collapsed ? 'none' : 'block';
+            toggleButton.textContent = collapsed ? 'Show' : 'Hide';
+        });
+    }
     document.body.appendChild(tracker);
 }
 

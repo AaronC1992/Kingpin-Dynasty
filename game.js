@@ -177,19 +177,19 @@ function completeChapter(campaign, chapter) {
     player.reputation += chapter.rewards.reputation || 0;
     
     // Log completion
-    logAction(`📜 Chapter Complete: "${chapter.title}"! You earned $${chapter.rewards.money || 0}, ${chapter.rewards.experience || 0} XP, and ${chapter.rewards.reputation || 0} reputation.`);
+    logAction(`Chapter Complete: "${chapter.title}"! You earned $${chapter.rewards.money || 0}, ${chapter.rewards.experience || 0} XP, and ${chapter.rewards.reputation || 0} reputation.`);
     
     // Move to next chapter
     if (chapter.nextChapter !== null) {
         player.missions.currentChapter = chapter.nextChapter;
         const nextChapter = campaign.chapters[chapter.nextChapter];
         if (nextChapter) {
-            logAction(`📖 New Chapter: "${nextChapter.title}" - ${nextChapter.description}`);
+            logAction(`New Chapter: "${nextChapter.title}" - ${nextChapter.description}`);
         }
     } else {
         // Campaign completed
         player.missions.completedCampaigns.push(campaign.id);
-        logAction(`🏆 Campaign "${campaign.name}" completed! You've proven yourself as a true criminal mastermind.`);
+        logAction(`Campaign "${campaign.name}" completed! You've proven yourself as a true criminal mastermind.`);
     }
     
     updateUI();
@@ -205,7 +205,7 @@ function updateMissionAvailability() {
             
             if (!mission.unlocked && hasReputation && hasItems) {
                 mission.unlocked = true;
-                logAction(`🎯 New ${crimeFamilies[family].name} mission available: "${mission.name}"`);
+                logAction(`New ${crimeFamilies[family].name} mission available: "${mission.name}"`);
             } else if (mission.unlocked && (!hasReputation || !hasItems)) {
                 mission.unlocked = false;
                 // Only log if it's due to missing items, not reputation loss
@@ -222,7 +222,7 @@ function updateMissionAvailability() {
         if (!player.missions.unlockedTerritoryMissions.includes(missionId)) {
             if (player.gang.members >= mission.requiredGangMembers && player.reputation >= (mission.difficulty === 'easy' ? 15 : mission.difficulty === 'medium' ? 30 : 50)) {
                 player.missions.unlockedTerritoryMissions.push(missionId);
-                logAction(`🏘️ New territory mission available: "${mission.name}"`);
+                logAction(`New territory mission available: "${mission.name}"`);
             }
         }
     });
