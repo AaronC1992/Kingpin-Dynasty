@@ -83,23 +83,28 @@ function createTrackerUI() {
     tracker.style.zIndex = '1000';
     tracker.style.fontFamily = 'monospace';
     tracker.style.maxWidth = '250px';
+    // Check if mobile device to hide tracker by default
+    const isMobileDevice = document.body.classList.contains('mobile-device') || window.innerWidth <= 768;
+    const initialDisplay = isMobileDevice ? 'none' : 'block';
+    const initialButtonText = isMobileDevice ? 'Show' : 'Hide';
+    
     tracker.innerHTML = `
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
             <h4 style="margin: 0; color: #ffd700; font-size: 13px;">Current Objective</h4>
-            <button id="tutorial-tracker-toggle" 
+            <button class="tutorial-tracker-toggle" 
                     style="background: transparent; border: 1px solid #666; color: #fff; border-radius: 3px; 
                            font-size: 11px; padding: 2px 6px; cursor: pointer;">
-                Hide
+                ${initialButtonText}
             </button>
         </div>
-        <div id="tutorial-tracker-body" style="margin-top: 6px; font-size: 12px;">
+        <div class="tutorial-tracker-body" style="margin-top: 6px; font-size: 12px; display: ${initialDisplay};">
             <div id="tutorial-tracker-text">Loading...</div>
         </div>
     `;
 
-    const toggleButton = tracker.querySelector('#tutorial-tracker-toggle');
-    const body = tracker.querySelector('#tutorial-tracker-body');
-    let collapsed = false;
+    const toggleButton = tracker.querySelector('.tutorial-tracker-toggle');
+    const body = tracker.querySelector('.tutorial-tracker-body');
+    let collapsed = isMobileDevice;
 
     if (toggleButton && body) {
         toggleButton.addEventListener('click', () => {
@@ -131,7 +136,7 @@ export function updateTracker() {
                 localStorage.setItem('tutorialStep', step.next);
                 
                 // Flash effect or sound could go here
-                if (window.logAction) window.logAction(` Objective Complete: ${step.text}`);
+                if (window.logAction) window.logAction(`Objective Complete: ${step.text}`);
                 
                 // Recursively update to show new text immediately
                 updateTracker();
@@ -140,7 +145,7 @@ export function updateTracker() {
             // Tutorial finished
             isTutorialActive = false;
             localStorage.setItem('tutorialStep', 'complete');
-            if (window.logAction) window.logAction(" You've learned the basics. Now go run this city!");
+            if (window.logAction) window.logAction("You've learned the basics. Now go run this city!");
             const tracker = document.getElementById('tutorial-tracker');
             if (tracker) tracker.remove();
         }
