@@ -1062,13 +1062,23 @@ p, ul {
         grid-template-columns: 1fr;
         gap: 5px;
         font-size: 9px;
-        padding: 6px;
-        min-height: 70px;
+        padding: 8px 6px;
+        min-height: 75px;
+        overflow: visible;
     }
     
     .player-info {
         justify-self: center;
         margin-bottom: 5px;
+        min-height: 45px;
+        display: flex;
+        align-items: center;
+    }
+    
+    #player-portrait {
+        width: 40px;
+        height: 40px;
+        flex-shrink: 0;
     }
     
     .stats-container {
@@ -1084,14 +1094,16 @@ p, ul {
     
     .menu-grid {
         grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: 10px;
+        gap: 12px;
         padding: 15px;
     }
     
     button {
         font-size: 14px;
-        padding: 10px 15px;
-        min-height: 40px;
+        padding: 12px 15px;
+        min-height: 44px;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: rgba(0,0,0,0.1);
     }
     
     h1, h2 {

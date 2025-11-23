@@ -126,19 +126,63 @@ export const MobileSystem = {
             this.setupSwipeGestures();
             this.swipeGesturesConfigured = true;
         }
-        this.showSwipeHint(); // Show hint on first load
+        this.createMobileMenuButton(); // Create log toggle button
+        this.showLogButtonHint(); // Show hint for log button
         this.createMobileQuickActions();
         this.mobileNavigationActive = true;
     },
     
     // Create mobile menu button (disabled - using swipe gestures instead)
     createMobileMenuButton() {
-        // Swipe gestures replace the menu button
-        // Remove any existing menu button
-        const existingBtn = document.getElementById('mobile-menu-btn');
-        if (existingBtn) {
-            existingBtn.remove();
-        }
+        // Remove existing button if present
+        const existingBtn = document.getElementById('mobile-log-toggle');
+        if (existingBtn) existingBtn.remove();
+        
+        const logToggle = document.createElement('button');
+        logToggle.id = 'mobile-log-toggle';
+        logToggle.innerHTML = '📜';
+        logToggle.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #c0a062 0%, #8b7355 100%);
+            border: 2px solid #d4af37;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), 0 0 20px rgba(192, 160, 98, 0.3);
+            color: white;
+            font-size: 24px;
+            z-index: 998;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            touch-action: manipulation;
+        `;
+        
+        logToggle.onclick = () => {
+            const panel = document.getElementById('mobile-action-panel');
+            if (panel) {
+                if (panel.style.left === '0px') {
+                    this.closeActionPanel();
+                } else {
+                    this.openActionPanel();
+                }
+            }
+        };
+        
+        // Add hover/active effects
+        logToggle.addEventListener('touchstart', () => {
+            logToggle.style.transform = 'scale(0.95)';
+        });
+        
+        logToggle.addEventListener('touchend', () => {
+            logToggle.style.transform = 'scale(1)';
+        });
+        
+        document.body.appendChild(logToggle);
     },
     
     // Setup swipe gestures for mobile action panel
@@ -237,12 +281,12 @@ export const MobileSystem = {
             backdrop-filter: blur(10px);
         `;
         
-        // Add swipe hint and action log content
+        // Add close hint and action log content
         actionPanel.innerHTML = `
             <div style="color: #c0a062; font-family: 'Georgia', serif;">
                 <div style="text-align: center; margin-bottom: 20px;">
-                    <h3 style="color: #c0a062; margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 2px;">📜 The Record</h3>
-                    <small style="color: #95a5a6; font-style: italic;">Swipe left to close →</small>
+                    <h3 style="color: #c0a062; margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 2px;">📜 The Ledger</h3>
+                    <small style="color: #95a5a6; font-style: italic;">Tap 📜 button or swipe left to close</small>
                 </div>
                 
                 <div id="mobile-action-list" style="max-height: calc(100vh - 120px); overflow-y: auto; 
@@ -377,52 +421,54 @@ export const MobileSystem = {
     },
     
     // Show swipe hint to help users discover the gesture
-    showSwipeHint() {
+    showLogButtonHint() {
         // Only show once per session
-        if (sessionStorage.getItem('swipeHintShown')) {
+        if (sessionStorage.getItem('logButtonHintShown')) {
             return;
         }
         
-        const swipeHint = document.createElement('div');
-        swipeHint.style.cssText = `
+        const buttonHint = document.createElement('div');
+        buttonHint.style.cssText = `
             position: fixed;
-            top: 50%;
-            left: 10px;
-            transform: translateY(-50%);
-            background: rgba(192, 160, 98, 0.9);
+            bottom: 85px;
+            right: 15px;
+            background: rgba(192, 160, 98, 0.95);
             color: #000;
-            padding: 10px 15px;
+            padding: 12px 18px;
             border-radius: 20px;
-            font-size: 12px;
+            font-size: 13px;
             z-index: 1000;
-            animation: swipeHintPulse 2s infinite;
+            animation: buttonHintPulse 2s infinite;
             pointer-events: none;
             font-family: 'Georgia', serif;
             font-weight: bold;
-            border: 1px solid #000;
+            border: 2px solid #d4af37;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            max-width: 150px;
+            text-align: center;
         `;
         
-        swipeHint.innerHTML = 'Swipe right →<br>for The Record';
+        buttonHint.innerHTML = 'Tap 📜 to view<br>The Ledger';
         
         // Add animation keyframes
         const style = document.createElement('style');
         style.textContent = `
-            @keyframes swipeHintPulse {
-                0%, 100% { opacity: 0.7; transform: translateY(-50%) scale(1); }
-                50% { opacity: 1; transform: translateY(-50%) scale(1.05); }
+            @keyframes buttonHintPulse {
+                0%, 100% { opacity: 0.8; transform: scale(1); }
+                50% { opacity: 1; transform: scale(1.05); }
             }
         `;
         document.head.appendChild(style);
         
-        document.body.appendChild(swipeHint);
+        document.body.appendChild(buttonHint);
         
-        // Remove hint after 5 seconds
+        // Remove hint after 6 seconds
         setTimeout(() => {
-            if (swipeHint && swipeHint.parentNode) {
-                swipeHint.remove();
+            if (buttonHint && buttonHint.parentNode) {
+                buttonHint.remove();
             }
-            sessionStorage.setItem('swipeHintShown', 'true');
-        }, 5000);
+            sessionStorage.setItem('logButtonHintShown', 'true');
+        }, 6000);
     },
     
     // Emergency cleanup function to remove any stuck overlays
