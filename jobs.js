@@ -48,11 +48,31 @@ export const jobs = [
 
 // Stolen car types with base values and damage probabilities
 export const stolenCarTypes = [
+    // Common vehicles
     { name: "Rusty Jalopy", baseValue: 5000, damageChance: 60, rarity: 40, image: "vehicles/Rusty Jalopy.png" },
     { name: "Old Sedan", baseValue: 15000, damageChance: 45, rarity: 30, image: "vehicles/Old Sedan.png" },
     { name: "Old Ford", baseValue: 25000, damageChance: 40, rarity: 25, image: "vehicles/Old Ford.png" },
+    { name: "Taxi", baseValue: 28000, damageChance: 38, rarity: 22, image: "vehicles/Taxi.png" },
     { name: "Family Wagon", baseValue: 30000, damageChance: 35, rarity: 20, image: "vehicles/Family Wagon.png" },
-    { name: "Sports Coupe", baseValue: 60000, damageChance: 25, rarity: 7, image: "vehicles/Sports Coupe.png" },
-    { name: "Luxury Sedan", baseValue: 100000, damageChance: 20, rarity: 5, image: "vehicles/Luxury Sedan.png" },
-    { name: "Vintage Roadster", baseValue: 150000, damageChance: 15, rarity: 3, image: "vehicles/Vintage Roadster.png" }
+    { name: "Hearse", baseValue: 35000, damageChance: 33, rarity: 18, image: "vehicles/Hearse.png" },
+    
+    // Uncommon vehicles
+    { name: "Motorcycle", baseValue: 45000, damageChance: 50, rarity: 15, image: "vehicles/Motorcycle.png" },
+    { name: "Pickup Truck", baseValue: 50000, damageChance: 30, rarity: 12, image: "vehicles/Pickup Truck.png" },
+    { name: "Sports Coupe", baseValue: 60000, damageChance: 25, rarity: 10, image: "vehicles/Sports Coupe.png" },
+    
+    // Rare vehicles
+    { name: "Delivery Truck", baseValue: 75000, damageChance: 28, rarity: 8, image: "vehicles/Delivery Truck.png" },
+    { name: "Freight Truck", baseValue: 85000, damageChance: 32, rarity: 6, image: "vehicles/Freight Truck.png" },
+    { name: "Luxury Sedan", baseValue: 100000, damageChance: 20, rarity: 5, image: "vehicles/luxury sedan.png" },
+    { name: "Luxury Town Car", baseValue: 120000, damageChance: 18, rarity: 4, image: "vehicles/Luxury Town Car.png" },
+    
+    // Very rare vehicles
+    { name: "Speedboat", baseValue: 140000, damageChance: 22, rarity: 3, image: "vehicles/Speedboat.png" },
+    { name: "High-End Roadster", baseValue: 150000, damageChance: 15, rarity: 3, image: "vehicles/High-End Roadster.png" },
+    { name: "Limousine", baseValue: 180000, damageChance: 16, rarity: 2, image: "vehicles/Limousine.png" },
+    { name: "Party Bus", baseValue: 200000, damageChance: 25, rarity: 2, image: "vehicles/Party Bus.png" },
+    
+    // Super rare vehicles
+    { name: "Police Cruiser", baseValue: 250000, damageChance: 10, rarity: 0.5, image: "vehicles/Police Cruiser.png" }
 ];

@@ -14017,7 +14017,19 @@ function getItemImage(itemName) {
         "Old Ford": "vehicles/Old Ford.png",
         "Family Wagon": "vehicles/Family Wagon.png",
         "Sports Coupe": "vehicles/Sports Coupe.png",
-        "High-End Roadster": "vehicles/High-End Roadster.png"
+        "High-End Roadster": "vehicles/High-End Roadster.png",
+        "Taxi": "vehicles/Taxi.png",
+        "Hearse": "vehicles/Hearse.png",
+        "Motorcycle": "vehicles/Motorcycle.png",
+        "Pickup Truck": "vehicles/Pickup Truck.png",
+        "Delivery Truck": "vehicles/Delivery Truck.png",
+        "Freight Truck": "vehicles/Freight Truck.png",
+        "Luxury Sedan": "vehicles/luxury sedan.png",
+        "Luxury Town Car": "vehicles/Luxury Town Car.png",
+        "Speedboat": "vehicles/Speedboat.png",
+        "Limousine": "vehicles/Limousine.png",
+        "Party Bus": "vehicles/Party Bus.png",
+        "Police Cruiser": "vehicles/Police Cruiser.png"
     };
     
     // Check if the item is in weapons/armor
