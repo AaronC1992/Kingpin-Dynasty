@@ -15651,6 +15651,8 @@ function showPVP() {
 // This is required because this file is now a module, but the HTML onclick handlers
 // expect these functions to be available on the window object.
 
+console.log("🔧 Starting window exports...");
+
 // Core Game Loop & Initialization
 window.startGame = startGame;
 window.loadMultiplayerScript = loadMultiplayerScript;
@@ -15926,3 +15928,5 @@ window.showCompetition = showCompetition; // Legacy support
 window.showHospital = showHospital;
 window.showCasino = showCasino;
 window.healAtHospital = healAtHospital;
+
+console.log("✅ Window exports complete! All functions available globally.");
