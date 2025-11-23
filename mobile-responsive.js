@@ -556,6 +556,29 @@ export const MobileSystem = {
         }
     },
     
+    // Toggle the tutorial objective tracker visibility (used by mobile Objective buttons)
+    toggleObjectiveTracker() {
+        const tracker = document.getElementById('tutorial-tracker');
+        if (!tracker) {
+            // Tracker not created yet; nothing to toggle
+            return;
+        }
+        
+        const body = tracker.querySelector('.tutorial-tracker-body');
+        const toggleBtn = tracker.querySelector('.tutorial-tracker-toggle');
+        
+        if (body) {
+            const isHidden = body.style.display === 'none';
+            body.style.display = isHidden ? 'block' : 'none';
+            
+            if (toggleBtn) {
+                toggleBtn.textContent = isHidden ? 'Hide' : 'Show';
+            }
+            
+            this.objectiveTrackerVisible = isHidden;
+        }
+    },
+    
     // Scroll to action log in mobile menu
     scrollToActionLog() {
         const actionLogSection = document.getElementById('mobile-action-log');
@@ -596,29 +619,6 @@ export const MobileSystem = {
             <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; font-family: 'Georgia', serif;">
                 <button onclick="showStore()" 
                         style="padding: 6px; background: linear-gradient(45deg, #333, #000); color: #c0a062; border: 1px solid #c0a062; border-radius: 5px; 
-    
-    // Toggle the tutorial objective tracker visibility (used by mobile Objective button)
-    toggleObjectiveTracker() {
-        const tracker = document.getElementById('tutorial-tracker');
-        if (!tracker) {
-            // Tracker not created yet; nothing to toggle
-            return;
-        }
-        
-        const body = tracker.querySelector('.tutorial-tracker-body');
-        const toggleBtn = tracker.querySelector('.tutorial-tracker-toggle');
-        
-        if (body) {
-            const isHidden = body.style.display === 'none';
-            body.style.display = isHidden ? 'block' : 'none';
-            
-            if (toggleBtn) {
-                toggleBtn.textContent = isHidden ? 'Hide' : 'Show';
-            }
-            
-            this.objectiveTrackerVisible = isHidden;
-        }
-    },
                                font-size: 11px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
                     Market
                 </button>
@@ -632,10 +632,10 @@ export const MobileSystem = {
                                font-size: 11px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
                     Wire
                 </button>
-                <button onclick="showGang()" 
+                <button onclick="MobileSystem.toggleObjectiveTracker()" 
                         style="padding: 6px; background: linear-gradient(45deg, #333, #000); color: #c0a062; border: 1px solid #c0a062; border-radius: 5px; 
                                font-size: 11px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
-                    Fam
+                    Objective
                 </button>
                 <button onclick="goBackToMainMenu()" 
                         style="padding: 6px; background: linear-gradient(45deg, #8b0000, #5a0000); color: white; border: 1px solid #ff0000; border-radius: 5px; 
