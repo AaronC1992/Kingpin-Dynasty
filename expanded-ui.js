@@ -584,80 +584,6 @@ window.purchaseLegacyPerk = function(perkId) {
 
 // ==================== THE DON'S VAULT UI ====================
 
-export function showDonsVault() {
-  const vault = player.vault || {
-    rare_cars: [],
-    exotic_weapons: [],
-    artwork: [],
-    luxury_items: []
-  };
-  
-  const completion = calculateVaultCompletion(vault);
-  
-  let html = `
-    <div class="expanded-screen vault-screen">
-      <h2> The Don's Vault</h2>
-      <p class="subtitle">Your collection of rare and exotic items</p>
-      
-      <div class="vault-completion">
-        <h3>Collection Progress: ${completion.collected}/${completion.total} (${completion.percentage}%)</h3>
-        <div class="progress-bar">
-          <div class="progress-fill" style="width: ${completion.percentage}%"></div>
-        </div>
-      </div>
-      
-      ${Object.keys(ExpandedSystems.COLLECTIBLE_CATEGORIES).map(categoryKey => {
-        const category = ExpandedSystems.COLLECTIBLE_CATEGORIES[categoryKey];
-        const collected = vault[categoryKey] || [];
-        
-        return `
-          <div class="vault-category">
-            <h3>${category.icon} ${category.name}</h3>
-            <div class="collectibles-grid">
-              ${category.items.map(item => {
-                const isCollected = collected.includes(item.id);
-                
-                return `
-                  <div class="collectible-card ${isCollected ? 'collected' : 'locked'} rarity-${item.rarity}">
-                    ${isCollected ? `
-                      <h4>${item.name}</h4>
-                      <div class="rarity">${item.rarity.toUpperCase()}</div>
-                      <div class="value"> $${item.value.toLocaleString()}</div>
-                    ` : `
-                      <h4>???</h4>
-                      <div class="locked-message"> Not yet discovered</div>
-                    `}
-                  </div>
-                `;
-              }).join('')}
-            </div>
-          </div>
-        `;
-      }).join('')}
-      
-      <button onclick="closeScreen()">← Back</button>
-    </div>
-  `;
-  
-  showCustomScreen(html);
-}
-
-function calculateVaultCompletion(vault) {
-  let collected = 0;
-  let total = 0;
-  
-  Object.keys(ExpandedSystems.COLLECTIBLE_CATEGORIES).forEach(category => {
-    total += ExpandedSystems.COLLECTIBLE_CATEGORIES[category].items.length;
-    collected += vault[category] ? vault[category].length : 0;
-  });
-  
-  return {
-    collected: collected,
-    total: total,
-    percentage: Math.floor((collected / total) * 100)
-  };
-}
-
 // ==================== RESPECT/RELATIONSHIPS UI ====================
 
 export function showRelationshipsScreen() {
@@ -809,7 +735,6 @@ export default {
   checkAndTriggerInteractiveEvent,
   showRivalActivityScreen,
   showLegacyPerkShop,
-  showDonsVault,
   showRelationshipsScreen,
   startRivalAISystem
 };
@@ -819,5 +744,4 @@ window.showGangManagementScreen = showGangManagementScreen;
 window.showTerritoryMapScreen = showTerritoryMapScreen;
 window.showRivalActivityScreen = showRivalActivityScreen;
 window.showLegacyPerkShop = showLegacyPerkShop;
-window.showDonsVault = showDonsVault;
 window.showRelationshipsScreen = showRelationshipsScreen;
