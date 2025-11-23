@@ -126,63 +126,16 @@ export const MobileSystem = {
             this.setupSwipeGestures();
             this.swipeGesturesConfigured = true;
         }
-        this.createMobileMenuButton(); // Create log toggle button
-        this.showLogButtonHint(); // Show hint for log button
+        // Floating ledger button removed - now in quick bar
         this.createMobileQuickActions();
         this.mobileNavigationActive = true;
     },
     
-    // Create mobile menu button (disabled - using swipe gestures instead)
+    // Create mobile menu button (disabled - ledger now in quick bar)
     createMobileMenuButton() {
-        // Remove existing button if present
-        const existingBtn = document.getElementById('mobile-log-toggle');
-        if (existingBtn) existingBtn.remove();
-        
-        const logToggle = document.createElement('button');
-        logToggle.id = 'mobile-log-toggle';
-        logToggle.innerHTML = '📜';
-        logToggle.style.cssText = `
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 56px;
-            height: 56px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #c0a062 0%, #8b7355 100%);
-            border: 2px solid #d4af37;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), 0 0 20px rgba(192, 160, 98, 0.3);
-            color: white;
-            font-size: 24px;
-            z-index: 998;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-            touch-action: manipulation;
-        `;
-        
-        logToggle.onclick = () => {
-            const panel = document.getElementById('mobile-action-panel');
-            if (panel) {
-                if (panel.style.left === '0px') {
-                    this.closeActionPanel();
-                } else {
-                    this.openActionPanel();
-                }
-            }
-        };
-        
-        // Add hover/active effects
-        logToggle.addEventListener('touchstart', () => {
-            logToggle.style.transform = 'scale(0.95)';
-        });
-        
-        logToggle.addEventListener('touchend', () => {
-            logToggle.style.transform = 'scale(1)';
-        });
-        
-        document.body.appendChild(logToggle);
+        // Ledger button moved to quick actions bar
+        // No floating button needed
+        return;
     },
     
     // Setup swipe gestures for mobile action panel
@@ -421,54 +374,10 @@ export const MobileSystem = {
     },
     
     // Show swipe hint to help users discover the gesture
+    // Show hint removed - ledger now in quick bar
     showLogButtonHint() {
-        // Only show once per session
-        if (sessionStorage.getItem('logButtonHintShown')) {
-            return;
-        }
-        
-        const buttonHint = document.createElement('div');
-        buttonHint.style.cssText = `
-            position: fixed;
-            bottom: 85px;
-            right: 15px;
-            background: rgba(192, 160, 98, 0.95);
-            color: #000;
-            padding: 12px 18px;
-            border-radius: 20px;
-            font-size: 13px;
-            z-index: 1000;
-            animation: buttonHintPulse 2s infinite;
-            pointer-events: none;
-            font-family: 'Georgia', serif;
-            font-weight: bold;
-            border: 2px solid #d4af37;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-            max-width: 150px;
-            text-align: center;
-        `;
-        
-        buttonHint.innerHTML = 'Tap 📜 to view<br>The Ledger';
-        
-        // Add animation keyframes
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes buttonHintPulse {
-                0%, 100% { opacity: 0.8; transform: scale(1); }
-                50% { opacity: 1; transform: scale(1.05); }
-            }
-        `;
-        document.head.appendChild(style);
-        
-        document.body.appendChild(buttonHint);
-        
-        // Remove hint after 6 seconds
-        setTimeout(() => {
-            if (buttonHint && buttonHint.parentNode) {
-                buttonHint.remove();
-            }
-            sessionStorage.setItem('logButtonHintShown', 'true');
-        }, 6000);
+        // No longer needed
+        return;
     },
     
     // Emergency cleanup function to remove any stuck overlays
@@ -674,7 +583,7 @@ export const MobileSystem = {
                 <button onclick="MobileSystem.openActionPanel()" 
                         style="padding: 6px; background: linear-gradient(45deg, #333, #000); color: #c0a062; border: 1px solid #c0a062; border-radius: 5px; 
                                font-size: 11px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
-                    📜 Ledger
+                    Ledger
                 </button>
                 <button onclick="showGlobalChat()" 
                         style="padding: 6px; background: linear-gradient(45deg, #333, #000); color: #c0a062; border: 1px solid #c0a062; border-radius: 5px; 
