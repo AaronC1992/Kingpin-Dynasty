@@ -671,10 +671,10 @@ export const MobileSystem = {
                                font-size: 11px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
                     Market
                 </button>
-                <button onclick="showJobs()" 
+                <button onclick="MobileSystem.openActionPanel()" 
                         style="padding: 6px; background: linear-gradient(45deg, #333, #000); color: #c0a062; border: 1px solid #c0a062; border-radius: 5px; 
                                font-size: 11px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
-                    Biz
+                    📜 Ledger
                 </button>
                 <button onclick="showGlobalChat()" 
                         style="padding: 6px; background: linear-gradient(45deg, #333, #000); color: #c0a062; border: 1px solid #c0a062; border-radius: 5px; 

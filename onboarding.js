@@ -133,26 +133,28 @@ function createTrackerUI() {
     tracker.innerHTML = `
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px;">
             <h4 style="margin: 0; color: #ffd700; font-size: 14px;">Current Objective</h4>
-            ${isMobileDevice ? '<button class="tutorial-tracker-close" style="background: #8b0000; border: 1px solid #ff0000; color: #fff; border-radius: 4px; font-size: 12px; padding: 4px 8px; cursor: pointer; font-weight: bold;">Close</button>' : ''}
+            ${isMobileDevice ? '<button class="tutorial-tracker-close" style="background: #8b0000; border: 1px solid #ff0000; color: #fff; border-radius: 4px; font-size: 12px; padding: 4px 8px; cursor: pointer; font-weight: bold; touch-action: manipulation;">Close</button>' : ''}
         </div>
         <div class="tutorial-tracker-body" style="font-size: 13px; line-height: 1.4;">
             <div id="tutorial-tracker-text">Loading...</div>
         </div>
     `;
+    
+    document.body.appendChild(tracker);
 
-    // Mobile close button
+    // Mobile close button - setup AFTER adding to DOM
     if (isMobileDevice) {
         const closeButton = tracker.querySelector('.tutorial-tracker-close');
         if (closeButton) {
-            closeButton.addEventListener('click', () => {
+            closeButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 tracker.style.display = 'none';
                 const overlay = document.getElementById('tutorial-tracker-overlay');
                 if (overlay) overlay.style.display = 'none';
             });
         }
     }
-    
-    document.body.appendChild(tracker);
 }
 
 export function updateTracker() {
