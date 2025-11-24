@@ -10035,9 +10035,10 @@ function showPortraitSelection() {
   
   let portraitHTML = `
     <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); 
-          display: flex; align-items: center; justify-content: center; z-index: 1000; overflow-y: auto; padding: 20px; box-sizing: border-box;">
+          display: flex; align-items: flex-start; justify-content: center; z-index: 1000; overflow-y: auto; -webkit-overflow-scrolling: touch; 
+          padding: 20px; padding-top: max(150px, calc(env(safe-area-inset-top, 100px) + 50px)); box-sizing: border-box;">
       <div style="max-width: 900px; width: 100%; background: linear-gradient(135deg, rgba(44, 62, 80, 0.98) 0%, rgba(52, 73, 94, 0.98) 100%); 
-            padding: 40px; border-radius: 20px; border: 2px solid #e74c3c; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8); text-align: center; color: white;">
+            padding: 40px; border-radius: 20px; border: 2px solid #e74c3c; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8); text-align: center; color: white; margin-bottom: 40px;">
         <h1 style="color: #e74c3c; font-size: 3em; margin-bottom: 15px; text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);">
           Choose Your Identity, ${player.name}
         </h1>
