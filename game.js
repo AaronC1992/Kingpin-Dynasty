@@ -9944,7 +9944,7 @@ function loadPortraitGrid() {
   
   portraitGrid.innerHTML = portraitOptions.map(portrait => `
     <button class="portrait-option" data-portrait="${portrait}" onclick="selectPortraitForCreation('${portrait}')">
-      <img src="${portrait}" alt="Portrait" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;" />
+      <img src="${portrait}" alt="Portrait" />
     </button>
   `).join('');
 }
