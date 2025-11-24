@@ -565,7 +565,7 @@ export const MobileSystem = {
             left: 0;
             width: 100%;
             background: linear-gradient(90deg, #000 0%, #1a1a1a 100%);
-            padding: 10px;
+            padding: 8px 5px;
             box-sizing: border-box;
             z-index: 900;
             border-top: 2px solid #c0a062;
@@ -574,30 +574,30 @@ export const MobileSystem = {
         `;
         
         quickActionsBar.innerHTML = `
-            <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; font-family: 'Georgia', serif;">
+            <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; font-family: 'Georgia', serif; max-width: 100%;">
                 <button onclick="showStore()" 
-                        style="padding: 6px; background: linear-gradient(45deg, #333, #000); color: #c0a062; border: 1px solid #c0a062; border-radius: 5px; 
-                               font-size: 11px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
+                        style="padding: 8px 4px; background: linear-gradient(45deg, #333, #000); color: #c0a062; border: 1px solid #c0a062; border-radius: 5px; 
+                               font-size: 10px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 44px; display: flex; align-items: center; justify-content: center;">
                     Market
                 </button>
                 <button onclick="MobileSystem.openActionPanel()" 
-                        style="padding: 6px; background: linear-gradient(45deg, #333, #000); color: #c0a062; border: 1px solid #c0a062; border-radius: 5px; 
-                               font-size: 11px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
+                        style="padding: 8px 4px; background: linear-gradient(45deg, #333, #000); color: #c0a062; border: 1px solid #c0a062; border-radius: 5px; 
+                               font-size: 10px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 44px; display: flex; align-items: center; justify-content: center;">
                     Ledger
                 </button>
                 <button onclick="showGlobalChat()" 
-                        style="padding: 6px; background: linear-gradient(45deg, #333, #000); color: #c0a062; border: 1px solid #c0a062; border-radius: 5px; 
-                               font-size: 11px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
+                        style="padding: 8px 4px; background: linear-gradient(45deg, #333, #000); color: #c0a062; border: 1px solid #c0a062; border-radius: 5px; 
+                               font-size: 10px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 44px; display: flex; align-items: center; justify-content: center;">
                     Wire
                 </button>
                 <button onclick="MobileSystem.toggleObjectiveTracker()" 
-                        style="padding: 6px; background: linear-gradient(45deg, #333, #000); color: #c0a062; border: 1px solid #c0a062; border-radius: 5px; 
-                               font-size: 11px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
+                        style="padding: 8px 4px; background: linear-gradient(45deg, #333, #000); color: #c0a062; border: 1px solid #c0a062; border-radius: 5px; 
+                               font-size: 9px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 44px; display: flex; align-items: center; justify-content: center;">
                     Objective
                 </button>
                 <button onclick="goBackToMainMenu()" 
-                        style="padding: 6px; background: linear-gradient(45deg, #8b0000, #5a0000); color: white; border: 1px solid #ff0000; border-radius: 5px; 
-                               font-size: 11px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
+                        style="padding: 8px 4px; background: linear-gradient(45deg, #8b0000, #5a0000); color: white; border: 1px solid #ff0000; border-radius: 5px; 
+                               font-size: 9px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 44px; display: flex; align-items: center; justify-content: center;">
                     Safehouse
                 </button>
             </div>

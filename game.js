@@ -10358,6 +10358,9 @@ function showVersionUpdateNotification() {
       <h3 style="color: #3498db; font-size: 1.5em; margin: 0;">
         ${updateInfo.title}
       </h3>
+      <p style="color: #c0a062; font-weight: bold; font-size: 1.1em; margin: 5px 0;">
+        Version ${CURRENT_VERSION}
+      </p>
       <p style="color: #95a5a6; font-size: 0.9em; margin: 10px 0 0 0;">
         Released: ${updateInfo.date}
       </p>
@@ -12003,6 +12006,12 @@ function playRoulette() {
 function showOptions() {
   hideAllScreens();
   document.getElementById("options-screen").style.display = "block";
+  
+  // Display version on settings screen
+  const settingsVersion = document.getElementById('settings-version');
+  if (settingsVersion) {
+    settingsVersion.textContent = `Version ${CURRENT_VERSION}`;
+  }
 }
 
 // Function to save the game
@@ -12646,6 +12655,12 @@ function initGame() {
   // Always show intro screen with Start Game and Load Game buttons
   document.getElementById("intro-screen").style.display = "block";
   document.getElementById("menu").style.display = "none";
+  
+  // Display version on intro screen
+  const introVersion = document.getElementById('intro-version');
+  if (introVersion) {
+    introVersion.textContent = `v${CURRENT_VERSION}`;
+  }
   
   // Add event listener for character name input
   const charNameInput = document.getElementById('character-name');

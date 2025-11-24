@@ -1683,7 +1683,9 @@ p, ul {
 .mobile-device #recruitment-screen,
 .mobile-device #stolen-cars-screen,
 .mobile-device #pharmacy-screen {
-    padding: 100px 15px 100px 15px !important; /* Increased top padding for larger stats bar */
+    padding: 100px 15px 80px 15px !important; /* Top padding for stats bar, bottom for quick actions */
+    overflow-y: auto !important;
+    max-height: 100vh !important;
 }
 
 .mobile-device .menu-grid {
@@ -1788,7 +1790,7 @@ p, ul {
     left: 0;
     width: 100%;
     background: linear-gradient(90deg, #000000 0%, #1a1a1a 100%);
-    padding: 10px;
+    padding: 8px 5px;
     box-sizing: border-box;
     z-index: 900;
     border-top: 2px solid #d4af37;
@@ -1796,14 +1798,17 @@ p, ul {
 }
 
 #mobile-quick-actions button {
-    padding: 8px !important;
-    font-size: 12px !important;
+    padding: 8px 4px !important;
+    font-size: 10px !important;
     text-align: center !important;
-    min-height: 50px !important;
+    min-height: 44px !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
     justify-content: center !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
 }
 
 /* Style the main menu button differently in the quick actions */
@@ -1869,13 +1874,13 @@ p, ul {
 }
 
 .mobile-device.landscape-mode #mobile-quick-actions {
-    padding: 5px !important;
+    padding: 5px 3px !important;
 }
 
 .mobile-device.landscape-mode #mobile-quick-actions button {
-    font-size: 11px !important;
+    font-size: 9px !important;
     min-height: 40px !important;
-    padding: 6px !important;
+    padding: 6px 2px !important;
 }
 
 /* Portrait mode optimizations */
@@ -1973,14 +1978,26 @@ p, ul {
         font-size: 1.8em;
     }
     
-    .game-screen {
-        padding: 100px 220px 20px 240px !important; /* Adjusted for smaller side panels with better spacing */
+    /* Note: Mobile devices use .mobile-device class for proper padding (100px 15px 100px 15px) */
+    /* Desktop/tablet at this breakpoint can keep side panel padding */
+    .desktop-device .game-screen,
+    .tablet-device .game-screen {
+        padding: 100px 220px 20px 240px !important;
     }
     
-    #menu, #store-screen, #jobs-screen, #jail-screen, #court-house-screen,
-    #skills-screen, #gang-screen, #achievements-screen, #casino-screen, #options-screen,
-    #pharmacy-screen, #jailbreak-screen, #stolen-cars-screen {
-        padding: 100px 220px 20px 240px !important; /* Adjusted for smaller side panels with better spacing */
+    .desktop-device #menu, .desktop-device #store-screen, .desktop-device #jobs-screen, 
+    .desktop-device #jail-screen, .desktop-device #court-house-screen,
+    .desktop-device #skills-screen, .desktop-device #gang-screen, 
+    .desktop-device #achievements-screen, .desktop-device #casino-screen, 
+    .desktop-device #options-screen, .desktop-device #pharmacy-screen, 
+    .desktop-device #jailbreak-screen, .desktop-device #stolen-cars-screen,
+    .tablet-device #menu, .tablet-device #store-screen, .tablet-device #jobs-screen, 
+    .tablet-device #jail-screen, .tablet-device #court-house-screen,
+    .tablet-device #skills-screen, .tablet-device #gang-screen, 
+    .tablet-device #achievements-screen, .tablet-device #casino-screen, 
+    .tablet-device #options-screen, .tablet-device #pharmacy-screen, 
+    .tablet-device #jailbreak-screen, .tablet-device #stolen-cars-screen {
+        padding: 80px 200px 20px 200px !important;
     }
     
     #action-log {
@@ -2096,15 +2113,8 @@ p, ul {
         grid-template-columns: 1fr;
     }
     
-    .game-screen {
-        padding: 130px 180px 20px 200px !important; /* Adjusted for very small screens with better spacing */
-    }
-    
-    #menu, #store-screen, #jobs-screen, #jail-screen, #court-house-screen,
-    #skills-screen, #gang-screen, #achievements-screen, #casino-screen, #options-screen,
-    #pharmacy-screen, #stolen-cars-screen {
-        padding: 130px 180px 20px 200px !important; /* Adjusted for very small screens with better spacing */
-    }
+    /* Mobile devices use .mobile-device class padding (100px 15px 100px 15px) */
+    /* These rules only apply to non-mobile devices at small screen sizes */
     
     #action-log {
         top: 130px;
