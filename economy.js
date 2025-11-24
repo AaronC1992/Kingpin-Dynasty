@@ -12,7 +12,9 @@
 // Store items
 export const storeItems = [
     { name: "Brass Knuckles", price: 7500, power: 10, type: "weapon" },
+    { name: "Switchblade", price: 12000, power: 20, type: "weapon" },
     { name: "Pistol", price: 30000, power: 50, type: "gun" },
+    { name: "Revolver", price: 45000, power: 70, type: "gun" },
     { name: "Leather Jacket", price: 15000, power: 15, type: "armor" },
     { name: "Armored Car", price: 120000, power: 25, type: "car" },
     { name: "Bullets", price: 2500, power: 0, type: "ammo" },
@@ -25,6 +27,7 @@ export const storeItems = [
     { name: "Pure Cocaine", price: 200000, power: 0, type: "highLevelDrug", maxPayout: 350000, requiredVehicle: "Freight Truck" },
     // High-end items
     { name: "Bulletproof Vest", price: 100000, power: 40, type: "armor" },
+    { name: "Sawed-Off Shotgun", price: 125000, power: 90, type: "gun" },
     { name: "Tommy Gun", price: 150000, power: 100, type: "gun" },
     { name: "Luxury Automobile", price: 400000, power: 50, type: "car" },
     { name: "Private Airplane", price: 1500000, power: 200, type: "vehicle" }

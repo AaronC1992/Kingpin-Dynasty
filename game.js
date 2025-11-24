@@ -14169,7 +14169,10 @@ function getItemImage(itemName) {
   // Mapping for weapons and armor
   const weaponsArmor = {
     "Brass Knuckles": "weapons&armor/Brass knuckles.png",
+    "Switchblade": "weapons&armor/Switchblade.png",
     "Pistol": "weapons&armor/Pistol.png",
+    "Revolver": "weapons&armor/Revolver.png",
+    "Sawed-Off Shotgun": "weapons&armor/Sawed-Off Shotgun.png",
     "Leather Jacket": "weapons&armor/Leather Jacket.png",
     "Bulletproof Vest": "weapons&armor/Bulletproof Vest.png",
     "Tommy Gun": "weapons&armor/Tommy gun.png",
