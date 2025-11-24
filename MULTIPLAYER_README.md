@@ -1,6 +1,73 @@
 # Kingpin Dynasty - Multiplayer Setup Guide
 
-## 🎮 Quick Start (Local Testing)
+## 🌐 **PRODUCTION DEPLOYMENT (embracedcreation.com)**
+
+### Server Requirements
+- **Node.js** (version 14 or higher)
+- **WebSocket support** (wss:// on port 443 or custom port)
+- **SSL certificate** (required for wss:// - use Let's Encrypt for free)
+- **Firewall configuration** to allow WebSocket connections
+
+### Production Setup Steps
+
+1. **Upload server files to your hosting:**
+   - `server.js`
+   - `worldPersistence.js`
+   - `package.json`
+
+2. **Install dependencies on server:**
+   ```bash
+   npm install --production
+   ```
+
+3. **Configure WebSocket endpoint:**
+   - The game is configured to connect to `wss://www.embracedcreation.com`
+   - Ensure your server is listening on the correct port (default: 3000)
+   - Configure reverse proxy (nginx/Apache) to forward WebSocket traffic
+
+4. **Start the server:**
+   ```bash
+   npm start
+   # Or for persistent running:
+   pm2 start server.js --name kingpin-dynasty
+   ```
+
+5. **Upload game files:**
+   - Upload ALL game files (HTML, JS, CSS) to your web hosting
+   - Ensure `multiplayer.js` is included
+
+6. **Test the connection:**
+   - Visit https://www.embracedcreation.com
+   - Check browser console for WebSocket connection status
+   - Look for "✅ Connected to Online World"
+
+### Nginx Configuration Example
+```nginx
+server {
+    listen 443 ssl;
+    server_name www.embracedcreation.com;
+    
+    # SSL configuration
+    ssl_certificate /path/to/ssl/cert.pem;
+    ssl_certificate_key /path/to/ssl/key.pem;
+    
+    # WebSocket upgrade headers
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+---
+
+## 🎮 Local Development Testing
 
 ### Prerequisites
 - **Node.js** (version 14 or higher) - [Download here](https://nodejs.org)
@@ -8,41 +75,38 @@
 
 ### Step 1: Start the Server
 1. Double-click `start-server.bat` 
-2. Wait for the server to start (you'll see "🎮 Ready for players to connect!")
+2. Wait for the server to start (you'll see "Server started on port 3000")
 3. **Keep this window open** while testing
 
 ### Step 2: Test Locally
-1. Open your game by double-clicking `index.html`
-2. Click "🌐 Online World" in the main menu
-3. You should see "✅ Connected to Online World" 
+1. Open your game by visiting `http://localhost:3000` in your browser
+2. Click "🌐 The Commission" in the main menu
+3. You should see "✅ Connected to The Commission" 
 
-## 🌐 Online Testing (Cross-PC with Ngrok)
+## 🌐 Development Testing (Cross-PC with Ngrok)
 
-### Step 1: Install Ngrok
+**Note:** Ngrok is only for development testing. Production uses embracedcreation.com
+
+### Step 1: Install Ngrok (Development Only)
 1. Go to [ngrok.com](https://ngrok.com) and create a free account
 2. Download ngrok and extract to a folder
 3. Run: `ngrok config add-authtoken YOUR_TOKEN` (get token from ngrok dashboard)
 
-### Step 2: Expose Your Server
+### Step 2: Expose Your Server (Development Only)
 1. Start your game server first (run `start-server.bat`)
 2. In a new terminal/command prompt, run: `ngrok http 3000`
 3. Copy the **https** URL (looks like: `https://abc123.ngrok.io`)
 
-### Step 3: Update Your Game
+### Step 3: Update serverUrl for Testing
 1. Open `multiplayer.js` in a text editor
-2. Find this line: `serverUrl: 'ws://localhost:8080',`
-3. Change it to: `serverUrl: 'wss://YOUR_NGROK_URL',` (replace YOUR_NGROK_URL)
-4. Remove the `https://` and add `wss://` instead
+2. Find line 6: `serverUrl: window.location.hostname === ...`
+3. **Temporarily** change to: `serverUrl: 'wss://abc123.ngrok.io',`
+4. **IMPORTANT:** Change it back before deploying to production!
 
-Example:
-```javascript
-serverUrl: 'wss://abc123.ngrok.io', // Your ngrok URL
-```
-
-### Step 4: Share with Friends
+### Step 4: Share with Friends (Testing Only)
 1. Send your friends the ngrok URL (like `https://abc123.ngrok.io`)
 2. They can open that URL in their browser to play
-3. Or they can download your game files and update the serverUrl
+3. **Remember:** Ngrok URLs expire and are only for testing
 
 ## 🔧 Troubleshooting
 

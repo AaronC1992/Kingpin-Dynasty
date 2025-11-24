@@ -3,8 +3,10 @@
 // Online world configuration
 const onlineWorld = {
     maxPlayersPerServer: 100,
-    serverUrl: 'wss://c8da9398376a.ngrok-free.app', // Updated ngrok tunnel for online testing
-    productionServerUrl: 'wss://your-server-domain.com', // Replace with your deployed server URL
+    // Production WebSocket URL - Update this to your actual WebSocket server endpoint
+    serverUrl: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? 'ws://localhost:3000' // Local development
+        : 'wss://www.embracedcreation.com', // Production - IMPORTANT: Configure your server to handle WSS on this domain
     updateInterval: 3000, // 3 second update interval for world state
     reconnectInterval: 5000, // 5 seconds between reconnect attempts
     events: {

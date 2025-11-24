@@ -1,7 +1,7 @@
 {
   "name": "kingpin-dynasty-multiplayer",
-  "version": "0.2.0",
-  "description": "From Dusk To Don - Multiplayer criminal empire building game",
+  "version": "1.0.0",
+  "description": "Kingpin Dynasty - Multiplayer criminal empire building game",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
