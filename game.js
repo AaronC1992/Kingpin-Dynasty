@@ -9843,30 +9843,8 @@ function checkAchievements() {
   }
 }
 
-// Function to start the game
-function startGame() {
-  // Check if player already exists (from loaded save)
-  if (player.name && player.name.trim() !== "") {
-    // Player already exists, go directly to main game
-    document.getElementById("intro-screen").style.display = "none";
-    document.getElementById("menu").style.display = "block";
-    updateUI();
-    logAction(`🎮 Welcome back, ${player.name}! Your criminal empire continues.`);
-    return;
-  }
-  
-  // No existing player, show character creation for new game
-  showSimpleCharacterCreation();
-}
-
-// Simplified character creation system
-async function showSimpleCharacterCreation() {
-  // Hide main menu and intro screen during character creation
-  document.getElementById("menu").style.display = "none";
-  document.getElementById("intro-screen").style.display = "none";
-  
-  // Reset ALL player stats to defaults for new game
-  // This prevents stats from previous games persisting
+// Fully reset the player object for a brand-new profile
+function resetPlayerForNewGame() {
   Object.assign(player, {
     name: "",
     gender: "",
@@ -9979,6 +9957,26 @@ async function showSimpleCharacterCreation() {
     territoryPower: 100,
     territoryReputation: 0
   });
+}
+
+// Function to start the game (always creates a NEW profile)
+function startGame() {
+  // Whenever the player clicks "Join the Family", we treat it as
+  // creating a brand-new profile, regardless of any loaded state.
+  resetPlayerForNewGame();
+  showSimpleCharacterCreation();
+}
+
+// Simplified character creation system
+async function showSimpleCharacterCreation() {
+  // Hide main menu and intro screen during character creation
+  document.getElementById("menu").style.display = "none";
+  document.getElementById("intro-screen").style.display = "none";
+  
+  // Ensure player is in a clean state for character creation
+  if (player.name && player.name.trim() !== "") {
+    resetPlayerForNewGame();
+  }
   
   // First ask for name
   const playerName = await ui.prompt("What's your name, tough guy?");
