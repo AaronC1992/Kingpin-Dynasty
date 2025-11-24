@@ -57,6 +57,11 @@ window.initUIEvents = initUIEvents;
 window.ExpandedSystems = ExpandedSystems;
 window.ExpandedUI = ExpandedUI;
 
+// Save / load related functions that are used via inline onclick handlers
+// (defined later in this file, but hoisted onto window here for safety)
+window.loadGameFromIntroSlot = undefined;
+window.cancelLoadFromIntro = undefined;
+
 
 
 
@@ -12377,6 +12382,10 @@ function loadGameFromIntroSlot(slotNumber) {
 function cancelLoadFromIntro() {
   exitLoadInterface('intro');
 }
+
+// Expose intro load helpers for inline onclick handlers
+window.loadGameFromIntroSlot = loadGameFromIntroSlot;
+window.cancelLoadFromIntro = cancelLoadFromIntro;
 
 // Helper function to check for slot saves
 function checkForSlotSaves() {
