@@ -1391,6 +1391,7 @@ p, ul {
     justify-content: center;
     z-index: 1000;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     padding: 20px;
     box-sizing: border-box;
 }
@@ -2067,13 +2068,15 @@ p, ul {
     
     #character-creation-screen {
         overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
         max-height: 100vh;
-        padding: 100px 15px 20px 15px;
+        padding: max(100px, env(safe-area-inset-top, 100px)) 15px 20px 15px;
         align-items: flex-start;
+        justify-content: flex-start;
     }
     
     #character-creation-content {
-        margin-top: 20px;
+        margin-top: 40px;
         padding: 25px 15px;
     }
     
@@ -2096,7 +2099,11 @@ p, ul {
     }
     
     #character-creation-screen {
-        padding: 120px 10px 40px 10px;
+        padding: max(150px, calc(env(safe-area-inset-top, 100px) + 50px)) 10px 40px 10px;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        align-items: flex-start;
+        justify-content: flex-start;
     }
     
     #character-creation-content {
