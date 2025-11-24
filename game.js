@@ -11897,7 +11897,7 @@ function showSaveSelectionInterface(saves) {
       <div style="display: grid; gap: 15px; margin-bottom: 30px;">
         ${saves.map(save => `
           <div style="background: rgba(52, 73, 94, 0.8); border: 2px solid #3498db; border-radius: 15px; padding: 20px; cursor: pointer; transition: all 0.3s ease;" 
-             onclick="loadGameFromSlot(${save.slotNumber}); hideAllScreens(); document.getElementById('menu').style.display = 'block';"
+             onclick="if(loadGameFromSlot(${save.slotNumber})) { hideAllScreens(); document.getElementById('menu').style.display = 'block'; }"
              onmouseover="this.style.background='rgba(52, 152, 219, 0.3)'; this.style.borderColor='#2ecc71';"
              onmouseout="this.style.background='rgba(52, 73, 94, 0.8)'; this.style.borderColor='#3498db';">
             
@@ -13830,10 +13830,7 @@ function loadGameFromSlot(slotNumber) {
     // Update UI
     updateUI();
     
-    // Only show statistics if player is not in jail
-    if (!player.inJail) {
-      showStatistics(); // Refresh any open screens
-    }
+    // Don't automatically navigate to any screen - let the caller handle that
     // Note: If player is in jail, applySaveData() already showed the jail screen
     
     logAction(`💾 Game loaded from slot ${slotNumber}: ${saveEntry.saveName}`);
