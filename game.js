@@ -12374,6 +12374,9 @@ function loadGameFromIntroSlot(slotNumber) {
     
     // Show brief notification
     showBriefNotification(`✅ Loaded: ${playerName}'s saved game`, 2000);
+  } else {
+    // Load failed - show error to user
+    alert("Failed to load save data! The save may be corrupted or incompatible with the current version.");
   }
 }
 
@@ -14220,13 +14223,20 @@ function applySaveData(saveData) {
     });
   }
   
-  // Apply events state
+  // Apply events state (initialize globals if they don't exist)
+  if (typeof window.currentEvents === 'undefined') {
+    window.currentEvents = [];
+  }
+  if (typeof window.eventHistory === 'undefined') {
+    window.eventHistory = [];
+  }
+  
   if (saveData.currentEvents) {
-    currentEvents = saveData.currentEvents;
+    window.currentEvents = saveData.currentEvents;
   }
   
   if (saveData.eventHistory) {
-    eventHistory = saveData.eventHistory;
+    window.eventHistory = saveData.eventHistory;
   }
   
   // Handle jail state restoration
