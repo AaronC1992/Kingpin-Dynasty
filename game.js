@@ -10277,6 +10277,152 @@ function startGameAfterIntro() {
   
   // Log the beginning of the journey
   logAction(`🌆 ${player.name} steps into the shadows of the city. The streets whisper promises of power and wealth, but first... survival.`);
+  
+  // Show version update notification
+  checkAndShowVersionUpdate();
+}
+
+// ==================== VERSION UPDATE SYSTEM ====================
+
+const CURRENT_VERSION = "1.2.0";
+const VERSION_UPDATES = {
+  "1.2.0": {
+    title: "November 2025 Update - Quality of Life Improvements",
+    date: "November 23, 2025",
+    changes: [
+      "🎨 Fixed mobile portrait selection - no more cut-off images!",
+      "💾 Fixed load game system - loading slots now properly starts your game",
+      "🔧 Fixed back button in load screen",
+      "🚗 Added 35+ vehicle variants to car theft (broken, rusty, and pristine conditions)",
+      "🔫 Added new weapons: Switchblade, Revolver, and Sawed-Off Shotgun",
+      "📝 Updated tutorial content to reflect current game features",
+      "🎯 Added objective tracker to help guide your criminal career",
+      "💰 Improved money display and stat tracking",
+      "⚖️ Increased Street Soldier job risk (20% jail chance)",
+      "📱 Enhanced mobile UI with better quick access bar"
+    ]
+  }
+};
+
+function checkAndShowVersionUpdate() {
+  const lastSeenVersion = localStorage.getItem('lastSeenVersion');
+  
+  // Show update if it's a new version or first time playing
+  if (lastSeenVersion !== CURRENT_VERSION) {
+    showVersionUpdateNotification();
+    localStorage.setItem('lastSeenVersion', CURRENT_VERSION);
+  }
+}
+
+function showVersionUpdateNotification() {
+  const updateInfo = VERSION_UPDATES[CURRENT_VERSION];
+  if (!updateInfo) return;
+  
+  const overlay = document.createElement('div');
+  overlay.id = 'version-update-overlay';
+  overlay.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    padding: 20px;
+    box-sizing: border-box;
+    animation: fadeIn 0.3s ease;
+  `;
+  
+  const content = document.createElement('div');
+  content.style.cssText = `
+    max-width: 700px;
+    width: 100%;
+    background: linear-gradient(135deg, rgba(44, 62, 80, 0.98) 0%, rgba(52, 73, 94, 0.98) 100%);
+    padding: 40px;
+    border-radius: 20px;
+    border: 3px solid #c0a062;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9);
+    color: white;
+    max-height: 90vh;
+    overflow-y: auto;
+  `;
+  
+  content.innerHTML = `
+    <div style="text-align: center; margin-bottom: 30px;">
+      <h2 style="color: #c0a062; font-size: 2.5em; margin: 0 0 10px 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">
+        🎉 What's New in Kingpin Dynasty
+      </h2>
+      <h3 style="color: #3498db; font-size: 1.5em; margin: 0;">
+        ${updateInfo.title}
+      </h3>
+      <p style="color: #95a5a6; font-size: 0.9em; margin: 10px 0 0 0;">
+        Released: ${updateInfo.date}
+      </p>
+    </div>
+    
+    <div style="background: rgba(0, 0, 0, 0.3); padding: 25px; border-radius: 15px; margin-bottom: 30px;">
+      <h4 style="color: #2ecc71; font-size: 1.3em; margin: 0 0 15px 0; text-align: center;">
+        📋 Update Highlights
+      </h4>
+      <ul style="list-style: none; padding: 0; margin: 0;">
+        ${updateInfo.changes.map(change => `
+          <li style="
+            background: rgba(52, 152, 219, 0.1);
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+            font-size: 1.05em;
+            line-height: 1.5;
+          ">
+            ${change}
+          </li>
+        `).join('')}
+      </ul>
+    </div>
+    
+    <div style="text-align: center;">
+      <button 
+        onclick="closeVersionUpdate()" 
+        style="
+          background: linear-gradient(to bottom, #c0a062, #8b7545);
+          color: #1a1a1a;
+          font-weight: bold;
+          padding: 15px 40px;
+          border: none;
+          border-radius: 10px;
+          cursor: pointer;
+          font-size: 1.2em;
+          box-shadow: 0 4px 15px rgba(192, 160, 98, 0.4);
+          transition: all 0.3s ease;
+        "
+        onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 6px 20px rgba(192, 160, 98, 0.6)';"
+        onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 4px 15px rgba(192, 160, 98, 0.4)';"
+      >
+        Let's Get Started! 🚀
+      </button>
+    </div>
+    
+    <div style="text-align: center; margin-top: 20px;">
+      <p style="color: #95a5a6; font-size: 0.85em;">
+        💡 Tip: You can always check the latest updates in the game menu
+      </p>
+    </div>
+  `;
+  
+  overlay.appendChild(content);
+  document.body.appendChild(overlay);
+}
+
+function closeVersionUpdate() {
+  const overlay = document.getElementById('version-update-overlay');
+  if (overlay) {
+    overlay.style.animation = 'fadeOut 0.3s ease';
+    setTimeout(() => overlay.remove(), 300);
+  }
 }
 
 // Tutorial system
@@ -15898,6 +16044,9 @@ window.forceNewGame = forceNewGame;
 window.saveToSlot = saveToSlot;
 window.loadGameFromSlot = loadGameFromSlot;
 window.exitLoadInterface = exitLoadInterface;
+
+// Version Updates
+window.closeVersionUpdate = closeVersionUpdate;
 
 // Intro & Tutorial
 window.showPortraitSelection = showPortraitSelection;
