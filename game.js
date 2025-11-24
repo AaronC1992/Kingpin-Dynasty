@@ -16190,6 +16190,9 @@ window.forceNewGame = forceNewGame;
 window.saveToSlot = saveToSlot;
 window.loadGameFromSlot = loadGameFromSlot;
 window.exitLoadInterface = exitLoadInterface;
+window.confirmDeleteSave = confirmDeleteSave;
+window.cancelDeleteSave = cancelDeleteSave;
+window.showDeleteSelectionInterface = showDeleteSelectionInterface;
 
 // Version Updates
 window.closeVersionUpdate = closeVersionUpdate;
