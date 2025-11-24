@@ -1,14 +1,4 @@
-/**
- * server-sanity-test.js - Basic sanity tests for server message handling
- * 
- * Runs simple tests to ensure server handlers don't crash on basic messages.
- * Not a comprehensive test suite, just a smoke test to catch obvious regressions.
- * 
- * Run with: node server-sanity-test.js
- */
-
-console.log('🧪 Running server sanity tests...\n');
-
+tato
 let passed = 0;
 let failed = 0;
 
