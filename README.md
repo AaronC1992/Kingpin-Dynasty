@@ -1,6 +1,6 @@
-# From Dusk To Don - Kingpin Dynasty
+# Kingpin Dynasty
 
-**Version 0.2.0** | A criminal empire building game with both local and online multiplayer functionality!
+A criminal empire building game with both local and online multiplayer functionality!
 
 ## 🎮 **[PLAY NOW - Live Demo](https://aaronc1992.github.io/Kingpin-Dynasty/)**
 
@@ -158,7 +158,7 @@ GameLogging.showDebugPanel();
 - Graceful disconnect handling
 - Server-authoritative validation (in progress)
 
-## 📝 Version History
+## 📝 Recent Updates
 
 See [CHANGELOG.md](CHANGELOG.md) for detailed version history and changes.
 
@@ -170,4 +170,4 @@ Build your legacy, expand your territory, and prove who's the ultimate Don!
 
 ---
 
-**From Dusk To Don v0.2.0** | Made with ❤️ for the criminal in all of us
+**Kingpin Dynasty** | Made with ❤️ for the criminal in all of us
