@@ -9860,6 +9860,121 @@ async function showSimpleCharacterCreation() {
   document.getElementById("menu").style.display = "none";
   document.getElementById("intro-screen").style.display = "none";
   
+  // Reset ALL player stats to defaults for new game
+  // This prevents stats from previous games persisting
+  Object.assign(player, {
+    name: "",
+    gender: "",
+    ethnicity: "",
+    portrait: "",
+    money: 0,
+    inventory: [],
+    stolenCars: [],
+    selectedCar: null,
+    energy: 100,
+    maxEnergy: 100,
+    energyRegenTimer: 0,
+    ammo: 0,
+    gas: 0,
+    health: 100,
+    inJail: false,
+    jailTime: 0,
+    breakoutChance: 45,
+    breakoutAttempts: 3,
+    power: 0,
+    wantedLevel: 0,
+    reputation: 0,
+    level: 1,
+    experience: 0,
+    skillPoints: 0,
+    skills: {
+      stealth: 0,
+      violence: 0,
+      charisma: 0,
+      intelligence: 0,
+      luck: 0,
+      endurance: 0
+    },
+    skillTrees: {
+      stealth: { infiltration: 0, escape: 0, surveillance: 0 },
+      violence: { firearms: 0, melee: 0, intimidation: 0 },
+      charisma: { negotiation: 0, leadership: 0, manipulation: 0 },
+      intelligence: { hacking: 0, planning: 0, forensics: 0 },
+      luck: { gambling: 0, fortune: 0, serendipity: 0 },
+      endurance: { stamina: 0, recovery: 0, resistance: 0 }
+    },
+    mentors: [],
+    streetReputation: {
+      torrino: 0,
+      kozlov: 0,
+      chen: 0,
+      morales: 0,
+      police: 0,
+      civilians: 0,
+      underground: 0
+    },
+    unlockedPerks: [],
+    playstyleStats: {
+      stealthyJobs: 0,
+      violentJobs: 0,
+      diplomaticActions: 0,
+      hackingAttempts: 0,
+      gamblingWins: 0,
+      mentoringSessions: 0
+    },
+    territory: 0,
+    gang: {
+      members: 0,
+      loyalty: 100,
+      lastTributeTime: 0,
+      gangMembers: [],
+      activeOperations: [],
+      trainingQueue: [],
+      betrayalHistory: [],
+      lastBetrayalCheck: 0
+    },
+    realEstate: {
+      ownedProperties: [],
+      maxGangMembers: 5
+    },
+    missions: {
+      activeCampaign: "risingThroughRanks",
+      currentChapter: 0,
+      completedMissions: [],
+      completedCampaigns: [],
+      factionReputation: {
+        torrino: 0,
+        kozlov: 0,
+        chen: 0,
+        morales: 0
+      },
+      unlockedTerritoryMissions: ["suburbs_expansion"],
+      unlockedBossBattles: [],
+      missionStats: {
+        jobsCompleted: 0,
+        moneyEarned: 0,
+        gangMembersRecruited: 0,
+        territoriesControlled: 0,
+        bossesDefeated: 0,
+        factionMissionsCompleted: 0
+      }
+    },
+    businesses: [],
+    activeLoans: [],
+    dirtyMoney: 0,
+    suspicionLevel: 0,
+    launderingSetups: [],
+    businessLastCollected: {},
+    territories: [],
+    protectionRackets: [],
+    territoryIncome: 0,
+    corruptedOfficials: [],
+    territoryEvents: [],
+    territoryHeat: {},
+    territoryPower: 100,
+    territoryReputation: 0
+  });
+  
   // First ask for name
   const playerName = await ui.prompt("What's your name, tough guy?");
   

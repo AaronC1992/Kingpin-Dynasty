@@ -374,6 +374,8 @@ function showInteractiveEvent(event) {
           `;
         }).join('')}
       </div>
+      
+      <button onclick="closeScreen(); updateUI();" style="margin-top: 20px; padding: 12px 25px; background: #95a5a6; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1em;">Close</button>
     </div>
   `;
   
