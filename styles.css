@@ -1474,6 +1474,16 @@ p, ul {
     cursor: pointer;
     transition: all 0.3s ease;
     overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.portrait-option img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
 }
 
 .portrait-option:hover {
@@ -2017,6 +2027,27 @@ p, ul {
         margin-right: 200px;
         width: calc(100% - 420px);
     }
+    
+    /* Portrait selection mobile adjustments */
+    .portrait-selection-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        max-height: 60vh;
+        padding: 8px;
+    }
+    
+    .portrait-option {
+        border-width: 2px;
+    }
+    
+    #character-creation-screen {
+        overflow-y: auto;
+        max-height: 100vh;
+    }
+    
+    .character-form {
+        padding: 10px;
+    }
 }
 
 @media (max-width: 480px) {
@@ -2070,6 +2101,17 @@ p, ul {
         padding: 5px 6px;
         min-height: 28px;
         margin: 2px 0;
+    }
+    
+    /* Portrait selection for very small screens */
+    .portrait-selection-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 6px;
+        max-height: 50vh;
+    }
+    
+    .portrait-section h3 {
+        font-size: 1.1em;
     }
     
     .main-menu-btn {
