@@ -4891,9 +4891,19 @@ function handleCarTheft(job, actualEnergyCost) {
     }
   }
 
-  // Calculate initial damage percentage
+  // Calculate initial damage percentage based on vehicle type
   let damagePercentage = 0;
-  if (Math.random() * 100 < selectedCar.damageChance) {
+  
+  // Broken vehicles: 95-100% damage (0-5% health left)
+  if (selectedCar.name.toLowerCase().includes('broken')) {
+    damagePercentage = Math.floor(Math.random() * 6) + 95; // 95-100% damage
+  }
+  // Rusted/Rusty vehicles: 50-94% damage (6-50% health left)  
+  else if (selectedCar.name.toLowerCase().includes('rust')) {
+    damagePercentage = Math.floor(Math.random() * 45) + 50; // 50-94% damage
+  }
+  // All other vehicles: random damage based on damageChance
+  else if (Math.random() * 100 < selectedCar.damageChance) {
     damagePercentage = Math.floor(Math.random() * 40) + 10; // 10-50% initial damage
   } else {
     damagePercentage = Math.floor(Math.random() * 15); // 0-15% minimal damage for "pristine" cars
@@ -15855,6 +15865,7 @@ window.showMoneyLaundering = showMoneyLaundering;
 window.checkLaunderingEligibility = checkLaunderingEligibility;
 window.startLaundering = startLaundering;
 window.showStore = showStore;
+window.buyItem = buyItem;
 window.refreshStoreDynamicElements = refreshStoreDynamicElements;
 window.buyEnergyDrink = buyEnergyDrink;
 window.buyCoffee = buyCoffee;
