@@ -1,0 +1,20 @@
+# Example systemd unit for Kingpin Dynasty multiplayer server
+# Copy this file to /etc/systemd/system/kingpin-server.service and edit WorkingDirectory/User as needed.
+[Unit]
+Description=Kingpin Dynasty multiplayer server
+After=network.target
+
+[Service]
+Type=simple
+# Change this to the account you want the service to run as
+User=www-data
+# Change this to the absolute path where you placed the repo on the server
+WorkingDirectory=/var/www/kingpin
+# Export PORT environment variable if you want a non-default port
+Environment=PORT=3000
+ExecStart=/usr/bin/node server.js
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

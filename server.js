@@ -9,6 +9,24 @@ const { loadWorldState, saveWorldState, flushWorldState } = require('./worldPers
 // Server configuration
 const PORT = process.env.PORT || 3000;
 const server = http.createServer((req, res) => {
+    // Quick health route for monitoring
+    try {
+        const urlPath = req.url.split('?')[0];
+        if (urlPath === '/health' || urlPath === '/status') {
+            const status = {
+                status: 'ok',
+                serverTime: Date.now(),
+                playersConnected: clients ? clients.size : 0,
+                serverName: 'Kingpin Dynasty - Multiplayer Server'
+            };
+            res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+            res.end(JSON.stringify(status));
+            return;
+        }
+    } catch (e) {
+        // fall through to normal handling
+    }
+
     // Handle HTTP requests to serve game files
     let reqPath = decodeURIComponent(req.url); // Decode URL to handle spaces
     if (reqPath.includes('\0')) reqPath = reqPath.replace(/\0/g, '');
