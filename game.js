@@ -1700,9 +1700,33 @@ async function showBusinesses() {
           const upgradePrice = business.level < businessType.maxLevel ? 
             Math.floor(businessType.basePrice * Math.pow(businessType.upgradeMultiplier, business.level)) : null;
           
+          // Unique upgrade flavor text for illegal businesses
+          const upgradeFlavorText = {
+            counterfeiting: ['Better printing plates', 'UV-resistant ink', 'Distribution network', 'Master engraver hired'],
+            druglab: ['Better equipment', 'Chemist recruited', 'Hidden ventilation', 'Industrial-scale production'],
+            chopshop: ['Better tools', 'Expert mechanic hired', 'VIN removal tech', 'International buyer network']
+          };
+          const flavorTexts = upgradeFlavorText[business.type] || [];
+          const nextUpgradeText = business.level < businessType.maxLevel && flavorTexts[business.level - 1] 
+            ? `<p style="margin: 5px 0; color: #f39c12; font-style: italic;">Next: ${flavorTexts[business.level - 1]}</p>` : '';
+          
+          // Max level perk display for illegal businesses
+          const maxLevelPerks = {
+            counterfeiting: '🏆 MAX LEVEL PERK: +5% laundering conversion rate on all methods',
+            druglab: '🏆 MAX LEVEL PERK: Drug trade goods cost 35% less in the store',
+            chopshop: '🏆 MAX LEVEL PERK: +55% bonus on all stolen car sales'
+          };
+          const isMaxLevel = business.level >= businessType.maxLevel;
+          const maxPerkText = isMaxLevel && maxLevelPerks[business.type] 
+            ? `<p style="margin: 8px 0; padding: 8px; background: rgba(241, 196, 15, 0.2); border: 1px solid #f1c40f; border-radius: 5px; color: #f1c40f; font-weight: bold;">${maxLevelPerks[business.type]}</p>` : '';
+          
+          // Color coding for illegal vs legitimate businesses
+          const borderColor = businessType.paysDirty ? '#e74c3c' : '#3498db';
+          const headerColor = businessType.paysDirty ? '#e74c3c' : '#3498db';
+          
           return `
-            <div style="background: rgba(44, 62, 80, 0.8); border-radius: 15px; padding: 20px; border: 2px solid #3498db;">
-              <h4 style="color: #3498db; margin-bottom: 10px;">${business.name}</h4>
+            <div style="background: rgba(44, 62, 80, 0.8); border-radius: 15px; padding: 20px; border: 2px solid ${borderColor};">
+              <h4 style="color: ${headerColor}; margin-bottom: 10px;">${business.name}${businessType.paysDirty ? ' ⚠️' : ''}</h4>
               <p style="color: #ecf0f1; margin-bottom: 15px;">${businessType.description}</p>
               
               <div style="background: rgba(0, 0, 0, 0.3); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
@@ -1710,6 +1734,9 @@ async function showBusinesses() {
                 <p style="margin: 5px 0;"><strong>Daily Income:</strong> $${currentIncome.toLocaleString()}${businessType.paysDirty ? ' <span style="color:#e74c3c;">(DIRTY MONEY)</span>' : ''}</p>
                 <p style="margin: 5px 0;"><strong>Laundering Capacity:</strong> $${(businessType.launderingCapacity * business.level).toLocaleString()}</p>
                 <p style="margin: 5px 0;"><strong>Legitimacy:</strong> ${businessType.legitimacy}%</p>
+                ${businessType.paysDirty ? `<p style="margin: 5px 0; color: #e67e22;"><strong>Synergy:</strong> ${business.type === 'counterfeiting' ? '+3% laundering rate' : business.type === 'druglab' ? 'Drug trade goods discount + payout boost' : 'Stolen car sale bonus'}</p>` : ''}
+                ${nextUpgradeText}
+                ${maxPerkText}
               </div>
               
               <div style="display: flex; gap: 10px; flex-wrap: wrap;">
@@ -1845,7 +1872,51 @@ async function upgradeBusiness(businessIndex) {
   const newIncome = Math.floor(businessType.baseIncome * Math.pow(businessType.incomeMultiplier, business.level - 1));
   
   showBriefNotification(`${business.name} upgraded to Lv${business.level}! Income: $${newIncome.toLocaleString()}/day`, 'success');
-  logAction(`You invest in improvements for ${business.name}. New equipment, better staff, higher profits - the empire grows stronger (Level ${business.level}).`);
+  
+  // Unique upgrade narration for illegal businesses
+  const upgradeNarrations = {
+    counterfeiting: [
+      'New printing plates installed — the bills look even more authentic now.',
+      'UV-resistant ink sourced from overseas. These fakes will pass any scanner.',
+      'You expand the distribution network. More channels, more money.',
+      'A master engraver joins your operation. The counterfeits are indistinguishable from the real thing.',
+      'Your Counterfeiting Operation is now a world-class printing press. Even banks can\'t tell the difference.'
+    ],
+    druglab: [
+      'Better cooking equipment means purer product and higher margins.',
+      'A chemistry PhD dropout joins your team. Product quality skyrockets.',
+      'Hidden ventilation installed — no more suspicious chemical smells.',
+      'Industrial-scale production begins. You\'re now a major supplier.',
+      'Your Drug Lab is a state-of-the-art production facility. The cartel is impressed.'
+    ],
+    chopshop: [
+      'Professional-grade tools speed up the dismantling process.',
+      'An expert mechanic joins — parts are now stripped with surgical precision.',
+      'Advanced VIN removal technology makes every car untraceable.',
+      'International buyer network established — premium prices for premium parts.',
+      'Your Chop Shop is the most efficient in the city. Cars disappear without a trace.'
+    ]
+  };
+  
+  const narrations = upgradeNarrations[business.type];
+  if (narrations && narrations[business.level - 1]) {
+    logAction(`🔧 ${narrations[business.level - 1]} (${business.name} Level ${business.level})`);
+  } else {
+    logAction(`You invest in improvements for ${business.name}. New equipment, better staff, higher profits - the empire grows stronger (Level ${business.level}).`);
+  }
+  
+  // Max level perk activation notification
+  if (business.level >= businessType.maxLevel && businessType.paysDirty) {
+    const perkMessages = {
+      counterfeiting: '🏆 MAX LEVEL REACHED! Your Counterfeiting Operation now provides +5% laundering conversion rate!',
+      druglab: '🏆 MAX LEVEL REACHED! Your Drug Lab now provides a massive 35% discount on drug trade goods!',
+      chopshop: '🏆 MAX LEVEL REACHED! Your Chop Shop now gives +55% bonus on all stolen car sales!'
+    };
+    if (perkMessages[business.type]) {
+      logAction(perkMessages[business.type]);
+      alert(perkMessages[business.type]);
+    }
+  }
   
   updateUI();
   showBusinesses();
@@ -4339,6 +4410,33 @@ function updateUI() {
   } catch (e) { /* no-op */ }
 
   // Money and wanted level HUD updates handled via EventBus subscribers
+  
+  // Update dirty money display in stats bar
+  const dirtyMoneyDisplay = document.getElementById("dirty-money-display");
+  if (dirtyMoneyDisplay) {
+    const dirtyAmount = player.dirtyMoney || 0;
+    dirtyMoneyDisplay.innerText = `Dirty: $${dirtyAmount.toLocaleString()}`;
+    dirtyMoneyDisplay.style.display = dirtyAmount > 0 ? 'block' : 'none';
+  }
+  
+  // Update suspicion display in stats bar
+  const suspicionDisplay = document.getElementById("suspicion-display");
+  if (suspicionDisplay) {
+    const suspicion = player.suspicionLevel || 0;
+    suspicionDisplay.innerText = `Suspicion: ${suspicion}%`;
+    // Color-code based on danger thresholds
+    if (suspicion >= 75) {
+      suspicionDisplay.style.color = '#e74c3c'; // Red - critical
+    } else if (suspicion >= 50) {
+      suspicionDisplay.style.color = '#e67e22'; // Orange - high
+    } else if (suspicion >= 25) {
+      suspicionDisplay.style.color = '#f1c40f'; // Yellow - moderate
+    } else {
+      suspicionDisplay.style.color = '#2ecc71'; // Green - safe
+    }
+    suspicionDisplay.style.display = suspicion > 0 ? 'block' : 'none';
+  }
+  
   document.getElementById("power-display").innerText = `Power: ${player.power}`;
   
   // Add territory display if player has territories
@@ -4752,6 +4850,8 @@ function hideAllScreens() {
   document.getElementById("business-screen").style.display = "none";
   document.getElementById("loan-shark-screen").style.display = "none";
   document.getElementById("money-laundering-screen").style.display = "none";
+  const fenceScreen = document.getElementById("fence-screen");
+  if (fenceScreen) fenceScreen.style.display = "none";
   document.getElementById("territory-control-screen").style.display = "none";
   document.getElementById("events-screen").style.display = "none";
   document.getElementById("map-screen").style.display = "none";
@@ -5277,6 +5377,17 @@ async function startJob(index) {
       logAction(`🐉 Chen Triad smuggling routes boost your earnings by $${bonus.toLocaleString()}.`);
     }
   }
+  
+  // Drug Lab synergy: owning a Drug Lab boosts drug job payouts by 10-25%
+  if (jn.includes('bootleg') || jn.includes('speakeasy') || jn.includes('powder') || jn.includes('drug') || jn.includes('distribution')) {
+    if (player.businesses && player.businesses.some(b => b.type === 'druglab')) {
+      const drugLab = player.businesses.find(b => b.type === 'druglab');
+      const boostPercent = 0.08 + (drugLab.level * 0.035); // 11.5% at Lv1, up to 25.5% at Lv5
+      const drugLabBonus = Math.floor(earnings * boostPercent);
+      earnings += drugLabBonus;
+      logAction(`🧪 Your Drug Lab provides better product for distribution — payout boosted by $${drugLabBonus.toLocaleString()}.`);
+    }
+  }
 
   // Calculate jail chance with stealth skill reducing it
   let stealthBonus = player.skills.stealth * 2;
@@ -5592,6 +5703,14 @@ function handleLaunderMoneyJob(job, approachLabel) {
     launderCapacity = job.payout;
   }
 
+  // Approach modifies launder capacity BEFORE capping
+  if (approachLabel === 'Loud') {
+    launderCapacity = Math.floor(launderCapacity * 1.40); // Loud: +40% capacity (bulk laundering)
+  } else if (approachLabel === 'Stealth') {
+    launderCapacity = Math.floor(launderCapacity * 0.75); // Stealth: -25% capacity (smaller batches, less risky)
+  }
+  // Smart: no capacity change (balanced)
+
   // Can't launder more than you have
   const amountToLaunder = Math.min(launderCapacity, player.dirtyMoney);
 
@@ -5600,6 +5719,13 @@ function handleLaunderMoneyJob(job, approachLabel) {
   stealthBonus += player.skillTrees.stealth.escape * 3;
   stealthBonus += player.skillTrees.stealth.infiltration * 2;
   let adjustedJailChance = Math.max(1, job.jailChance - stealthBonus);
+  
+  // Approach modifies jail chance
+  if (approachLabel === 'Stealth') {
+    adjustedJailChance = Math.max(1, Math.floor(adjustedJailChance * 0.5)); // Stealth: 50% less jail chance
+  } else if (approachLabel === 'Loud') {
+    adjustedJailChance = Math.floor(adjustedJailChance * 1.3); // Loud: 30% more jail chance
+  }
 
   if (Math.random() * 100 <= adjustedJailChance) {
     // Caught! Lose the dirty money being laundered and go to jail
@@ -5619,13 +5745,19 @@ function handleLaunderMoneyJob(job, approachLabel) {
   conversionRate += player.skills.intelligence * 0.005; // +0.5% per level
   conversionRate += (player.skillTrees.intelligence.forensics || 0) * 0.01; // +1% per forensics level
 
-  // Approach bonus: "Smart" approach gives better conversion rate
+  // Approach bonus: each approach has distinct trade-offs
   if (approachLabel === 'Smart') {
-    conversionRate += 0.05; // +5% for smart approach
+    conversionRate += 0.07; // Smart: +7% conversion rate (expert financial maneuvers)
+    // Smart approach also reduces suspicion gain
   }
-  // "Loud" approach increases suspicion more
   if (approachLabel === 'Loud') {
-    player.suspicionLevel = Math.min(100, (player.suspicionLevel || 0) + 5);
+    conversionRate -= 0.03; // Loud: -3% conversion (sloppy but fast)
+    player.suspicionLevel = Math.min(100, (player.suspicionLevel || 0) + 8); // +8 suspicion
+    logAction(`📢 Going loud draws attention — the feds notice the large cash movements.`);
+  }
+  if (approachLabel === 'Stealth') {
+    conversionRate += 0.02; // Stealth: +2% conversion (careful handling)
+    // Stealth approach reduces suspicion gain later
   }
 
   // Owning a Counterfeiting Operation improves conversion (mixing fake with real bills)
@@ -5660,9 +5792,15 @@ function handleLaunderMoneyJob(job, approachLabel) {
   }
   player.wantedLevel += wantedLevelGain;
 
-  // Small suspicion gain even on success
-  const suspicionGain = 2 + Math.floor(Math.random() * 4); // 2-5 suspicion
-  player.suspicionLevel = Math.min(100, (player.suspicionLevel || 0) + suspicionGain);
+  // Small suspicion gain even on success (modified by approach)
+  let baseSuspicionGain = 2 + Math.floor(Math.random() * 4); // 2-5 suspicion
+  if (approachLabel === 'Smart') {
+    baseSuspicionGain = Math.max(0, baseSuspicionGain - 2); // Smart: reduced suspicion
+  } else if (approachLabel === 'Stealth') {
+    baseSuspicionGain = Math.max(0, Math.floor(baseSuspicionGain * 0.3)); // Stealth: minimal suspicion
+  }
+  // Loud suspicion already added above
+  player.suspicionLevel = Math.min(100, (player.suspicionLevel || 0) + baseSuspicionGain);
 
   // Reputation and XP based on risk level
   player.reputation += 3;
@@ -5808,16 +5946,31 @@ function handleStolenCarChoice(choice, carName, baseValue, currentValue, damageP
   };
   
   if (choice === 'sell') {
+    // Chop Shop synergy: owning a Chop Shop gives +35% sell price for stolen cars
+    let sellPrice = currentValue;
+    let chopShopBonus = 0;
+    if (player.businesses && player.businesses.some(b => b.type === 'chopshop')) {
+      const chopShop = player.businesses.find(b => b.type === 'chopshop');
+      const bonusPercent = 0.25 + (chopShop.level * 0.05); // 30% at Lv1, up to 50% at Lv5
+      chopShopBonus = Math.floor(sellPrice * bonusPercent);
+      sellPrice += chopShopBonus;
+    }
+    
     // Sell the car immediately
-    player.money += currentValue;
+    player.money += sellPrice;
     
     // Track statistics
     updateStatistic('carsStolen');
     updateStatistic('carsSold');
-    updateStatistic('totalMoneyEarned', currentValue);
+    updateStatistic('totalMoneyEarned', sellPrice);
     
-    alert(`You sold the ${carName} immediately for $${currentValue.toLocaleString()}!`);
-    logAction(`💸 Quick cash! You find a buyer in the shadows and hand over the keys on the spot. The ${carName} disappears into the black market (+$${currentValue.toLocaleString()}).`);
+    if (chopShopBonus > 0) {
+      alert(`You sold the ${carName} for $${sellPrice.toLocaleString()}! (Chop Shop bonus: +$${chopShopBonus.toLocaleString()})`);
+      logAction(`💸🔧 Your Chop Shop strips the ${carName} for premium parts before the sale. Black market buyers pay top dollar (+$${sellPrice.toLocaleString()}, Chop Shop bonus: +$${chopShopBonus.toLocaleString()}).`);
+    } else {
+      alert(`You sold the ${carName} immediately for $${sellPrice.toLocaleString()}!`);
+      logAction(`💸 Quick cash! You find a buyer in the shadows and hand over the keys on the spot. The ${carName} disappears into the black market (+$${sellPrice.toLocaleString()}).`);
+    }
   } else if (choice === 'store') {
     // Store the car in garage
     player.stolenCars.push(stolenCar);
@@ -8193,6 +8346,425 @@ const newsEvents = [
   }
 ];
 
+// ==================== SUSPICION CONSEQUENCES SYSTEM ====================
+// Checks player.suspicionLevel thresholds and triggers escalating consequences
+// Called periodically from the energy regeneration loop
+
+let lastSuspicionCheck = 0; // Timestamp of last check to throttle frequency
+
+function checkSuspicionConsequences() {
+  const suspicion = player.suspicionLevel || 0;
+  const now = Date.now();
+  
+  // Only check every 60 seconds to prevent spam
+  if (now - lastSuspicionCheck < 60000) return;
+  lastSuspicionCheck = now;
+  
+  if (suspicion < 25) return; // No consequences below 25
+  
+  // Threshold 1: 25+ Suspicion — Minor consequences (random spot checks)
+  if (suspicion >= 25 && suspicion < 50) {
+    if (Math.random() < 0.08) { // 8% chance per check
+      const events = [
+        { msg: "🔍 An unmarked car has been spotted watching your businesses. The feds are taking notice.", moneyLoss: 0, wantedGain: 2 },
+        { msg: "📱 Your burner phone intercepted a police radio call mentioning your name. Stay careful.", moneyLoss: 0, wantedGain: 1 },
+        { msg: "🕵️ A suspicious person was asking questions about you in the neighborhood. Word is getting around.", moneyLoss: 0, wantedGain: 3 }
+      ];
+      const event = events[Math.floor(Math.random() * events.length)];
+      player.wantedLevel += event.wantedGain;
+      logAction(event.msg);
+    }
+  }
+  
+  // Threshold 2: 50+ Suspicion — Business raids (temporary income loss)
+  if (suspicion >= 50 && suspicion < 75) {
+    if (Math.random() < 0.06) { // 6% chance per check
+      if (player.businesses && player.businesses.length > 0) {
+        // Raid a random business — reset its collection timer (losing income)
+        const raidedIndex = Math.floor(Math.random() * player.businesses.length);
+        const raidedBusiness = player.businesses[raidedIndex];
+        raidedBusiness.lastCollection = Date.now(); // Reset timer, losing accumulated income
+        
+        const dirtyLoss = Math.floor((player.dirtyMoney || 0) * (0.05 + Math.random() * 0.10)); // Seize 5-15% dirty money
+        player.dirtyMoney = Math.max(0, (player.dirtyMoney || 0) - dirtyLoss);
+        player.wantedLevel += 5;
+        
+        const lossMsg = dirtyLoss > 0 ? ` They seize $${dirtyLoss.toLocaleString()} in suspicious cash.` : '';
+        logAction(`🚨 POLICE RAID! Officers descend on your ${raidedBusiness.name} with a search warrant.${lossMsg} Business income reset while they investigate.`);
+        alert(`🚨 POLICE RAID!\n\nYour ${raidedBusiness.name} was raided by law enforcement!\n${dirtyLoss > 0 ? `$${dirtyLoss.toLocaleString()} in dirty money seized.\n` : ''}Business income timer has been reset.\n\nYour suspicion level is too high — lay low!`);
+      } else {
+        // No businesses to raid — just seize some dirty money
+        const dirtyLoss = Math.floor((player.dirtyMoney || 0) * (0.10 + Math.random() * 0.15)); // 10-25%
+        player.dirtyMoney = Math.max(0, (player.dirtyMoney || 0) - dirtyLoss);
+        if (dirtyLoss > 0) {
+          player.wantedLevel += 3;
+          logAction(`🚔 Police search your vehicle at a checkpoint and confiscate $${dirtyLoss.toLocaleString()} in dirty cash.`);
+        }
+      }
+    }
+  }
+  
+  // Threshold 3: 75+ Suspicion — Severe consequences (asset seizure, business shutdown)
+  if (suspicion >= 75 && suspicion < 100) {
+    if (Math.random() < 0.05) { // 5% chance per check
+      const severity = Math.random();
+      
+      if (severity < 0.4 && player.businesses && player.businesses.length > 0) {
+        // Business temporarily shut down (force sell at reduced price)
+        const targetIndex = Math.floor(Math.random() * player.businesses.length);
+        const targetBusiness = player.businesses[targetIndex];
+        const businessType = businessTypes.find(bt => bt.id === targetBusiness.type);
+        
+        // Seize the business — player loses it but gets partial refund (30-50% of base price)
+        const refund = Math.floor(businessType.basePrice * (0.3 + Math.random() * 0.2));
+        player.money += refund;
+        const businessName = targetBusiness.name;
+        player.businesses.splice(targetIndex, 1);
+        
+        logAction(`⚖️ ASSET SEIZURE! The government seizes your ${businessName} under RICO statutes! You recover $${refund.toLocaleString()} through your lawyer.`);
+        alert(`⚖️ ASSET SEIZURE!\n\nThe federal government has seized your ${businessName}!\n\nYour lawyer negotiates a partial recovery of $${refund.toLocaleString()}.\n\nSuspicion at ${suspicion}% — the feds are closing in!`);
+        
+      } else if (severity < 0.7) {
+        // Major dirty money seizure (25-40%)
+        const seizureRate = 0.25 + Math.random() * 0.15;
+        const seized = Math.floor((player.dirtyMoney || 0) * seizureRate);
+        if (seized > 0) {
+          player.dirtyMoney = Math.max(0, (player.dirtyMoney || 0) - seized);
+          player.wantedLevel += 8;
+          logAction(`🏦 Federal agents freeze your accounts and seize $${seized.toLocaleString()} in dirty money! Your lawyer is working overtime.`);
+          alert(`🏦 ACCOUNT FREEZE!\n\n$${seized.toLocaleString()} in dirty money has been seized by federal agents!\n\nWanted level increased significantly.`);
+        }
+      } else {
+        // Forced arrest — go directly to jail
+        player.wantedLevel += 10;
+        const suspicionJailTime = 15 + Math.floor(suspicion / 5); // 15-35 seconds
+        logAction(`🚔 FBI ARREST! A tactical team ambushes you — there's no escape. You're taken into federal custody.`);
+        alert(`🚔 FBI ARREST!\n\nA federal tactical team takes you down!\nYou're being held on suspicion of racketeering.\n\nJail time: ${suspicionJailTime} seconds`);
+        sendToJail(10);
+      }
+      
+      // Reduce suspicion after major consequences (they "got" something)
+      player.suspicionLevel = Math.max(0, player.suspicionLevel - 15);
+    }
+  }
+  
+  // Threshold 4: 100 Suspicion — Guaranteed arrest
+  if (suspicion >= 100) {
+    // Massive crackdown — lose everything dirty and go to jail
+    const allDirty = player.dirtyMoney || 0;
+    player.dirtyMoney = 0;
+    player.wantedLevel += 20;
+    
+    logAction(`🚨🚨🚨 FULL FEDERAL CRACKDOWN! The FBI, DEA, and local police coordinate a massive operation against your empire. All $${allDirty.toLocaleString()} in dirty money is seized as evidence!`);
+    alert(`🚨 FULL FEDERAL CRACKDOWN! 🚨\n\nYour suspicion hit 100% — the feds bring the hammer down!\n\nAll dirty money ($${allDirty.toLocaleString()}) SEIZED!\nWanted level massively increased!\n\nYou're going away for a long time...`);
+    
+    // Reduce suspicion significantly after the crackdown
+    player.suspicionLevel = 30; // Reset to moderate, they'll still be watching
+    
+    sendToJail(20);
+  }
+  
+  updateUI();
+}
+
+// ==================== FBI INVESTIGATION EVENT CHAIN ====================
+// Multi-step investigation that escalates through stages when suspicion is high
+// Stages: 0 = None, 1 = Surveillance, 2 = Evidence Gathering, 3 = Grand Jury, 4 = Raid
+
+function checkFBIInvestigation() {
+  const suspicion = player.suspicionLevel || 0;
+  
+  // Initialize FBI investigation tracker
+  if (!player.fbiInvestigation) {
+    player.fbiInvestigation = { stage: 0, progress: 0, lastEscalation: 0 };
+  }
+  
+  const fbi = player.fbiInvestigation;
+  const now = Date.now();
+  
+  // Don't escalate if already at max or recently escalated (5 min cooldown)
+  if (now - fbi.lastEscalation < 300000) return;
+  
+  // Investigation starts at suspicion 60+
+  if (suspicion >= 60 && fbi.stage === 0) {
+    fbi.stage = 1;
+    fbi.progress = 0;
+    fbi.lastEscalation = now;
+    
+    showFBIEventOverlay(
+      '🔍 FBI SURVEILLANCE DETECTED',
+      'Your contacts in law enforcement tip you off — the FBI has opened a file on your operations. Agents have been spotted photographing your businesses and associates.',
+      [
+        { label: '🕵️ Lay Low (costs $50K)', action: 'laylow', cost: 50000 },
+        { label: '🔥 Destroy Evidence (costs 15 energy)', action: 'destroy', energyCost: 15 },
+        { label: '😤 Ignore It', action: 'ignore' }
+      ],
+      1
+    );
+    return;
+  }
+  
+  // Escalate investigation if suspicion stays high
+  if (suspicion >= 70 && fbi.stage === 1) {
+    // Progress builds over time
+    fbi.progress += 10 + Math.floor(suspicion / 10);
+    if (fbi.progress >= 100) {
+      fbi.stage = 2;
+      fbi.progress = 0;
+      fbi.lastEscalation = now;
+      
+      showFBIEventOverlay(
+        '📋 FBI EVIDENCE GATHERING',
+        'The investigation has escalated. Federal agents are interviewing your associates and subpoenaing financial records. They\'re building a RICO case against you.',
+        [
+          { label: '💰 Bribe a Contact ($200K)', action: 'bribe', cost: 200000 },
+          { label: '🔥 Burn the Books (costs 25 energy)', action: 'burn', energyCost: 25 },
+          { label: '⚖️ Hire a Lawyer ($100K)', action: 'lawyer', cost: 100000 },
+          { label: '😤 Let Them Try', action: 'ignore' }
+        ],
+        2
+      );
+    }
+    return;
+  }
+  
+  if (suspicion >= 80 && fbi.stage === 2) {
+    fbi.progress += 15 + Math.floor(suspicion / 8);
+    if (fbi.progress >= 100) {
+      fbi.stage = 3;
+      fbi.progress = 0;
+      fbi.lastEscalation = now;
+      
+      showFBIEventOverlay(
+        '⚖️ GRAND JURY CONVENED',
+        'A federal grand jury has been convened to hear evidence against you. Indictments are imminent. Your lawyer says you have one last chance to act before they move in.',
+        [
+          { label: '✈️ Flee the Country ($500K)', action: 'flee', cost: 500000 },
+          { label: '🤝 Cut a Deal (lose 50% dirty money)', action: 'deal' },
+          { label: '💰 Bribe the Jury ($350K)', action: 'bribejury', cost: 350000 },
+          { label: '⚔️ Go to War', action: 'war' }
+        ],
+        3
+      );
+    }
+    return;
+  }
+  
+  if (fbi.stage === 3 && suspicion >= 85) {
+    fbi.progress += 20;
+    if (fbi.progress >= 80) {
+      // Stage 4: The Raid — automatic, no choices
+      fbi.stage = 4;
+      fbi.lastEscalation = now;
+      executeFBIRaid();
+    }
+  }
+}
+
+function showFBIEventOverlay(title, description, choices, stage) {
+  // Remove existing overlay if any
+  const existing = document.getElementById('fbi-event-overlay');
+  if (existing) existing.remove();
+  
+  const stageColors = { 1: '#f39c12', 2: '#e67e22', 3: '#e74c3c', 4: '#c0392b' };
+  const color = stageColors[stage] || '#e74c3c';
+  
+  let choiceHTML = choices.map(c => {
+    let disabled = '';
+    let tooltip = '';
+    if (c.cost && player.money < c.cost) { disabled = 'disabled'; tooltip = `title="Need $${c.cost.toLocaleString()}"`; }
+    if (c.energyCost && player.energy < c.energyCost) { disabled = 'disabled'; tooltip = `title="Need ${c.energyCost} energy"`; }
+    return `<button onclick="handleFBIChoice('${c.action}', ${c.cost || 0}, ${c.energyCost || 0})" 
+              style="background: ${disabled ? '#7f8c8d' : color}; color: white; padding: 12px 20px; border: none; border-radius: 8px; cursor: ${disabled ? 'not-allowed' : 'pointer'}; font-size: 1em; min-width: 200px;"
+              ${disabled} ${tooltip}>
+      ${c.label}
+    </button>`;
+  }).join('');
+  
+  const overlay = document.createElement('div');
+  overlay.id = 'fbi-event-overlay';
+  overlay.innerHTML = `
+    <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); 
+          display: flex; align-items: center; justify-content: center; z-index: 2000; padding: 20px; box-sizing: border-box;">
+      <div style="max-width: 550px; width: 100%; background: linear-gradient(135deg, rgba(44, 62, 80, 0.98) 0%, rgba(52, 73, 94, 0.98) 100%); 
+            padding: 30px; border-radius: 20px; border: 3px solid ${color}; box-shadow: 0 0 40px ${color}40; text-align: center; color: white;">
+        <h2 style="color: ${color}; margin-bottom: 15px; font-size: 1.5em;">${title}</h2>
+        <p style="color: #bdc3c7; margin-bottom: 8px; font-size: 0.9em;">Investigation Stage: ${stage}/4</p>
+        <div style="width: 100%; background: rgba(0,0,0,0.3); border-radius: 10px; height: 8px; margin-bottom: 20px;">
+          <div style="width: ${stage * 25}%; background: ${color}; border-radius: 10px; height: 100%; transition: width 0.5s;"></div>
+        </div>
+        <p style="color: #ecf0f1; margin-bottom: 25px; line-height: 1.6;">${description}</p>
+        <div style="display: flex; flex-direction: column; gap: 10px; align-items: center;">
+          ${choiceHTML}
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+}
+
+function handleFBIChoice(action, cost, energyCost) {
+  const fbi = player.fbiInvestigation;
+  const overlay = document.getElementById('fbi-event-overlay');
+  if (overlay) overlay.remove();
+  
+  switch (action) {
+    case 'laylow':
+      if (player.money >= cost) {
+        player.money -= cost;
+        player.suspicionLevel = Math.max(0, player.suspicionLevel - 10);
+        fbi.progress = Math.max(0, fbi.progress - 30);
+        logAction(`🕵️ You pay $${cost.toLocaleString()} to your contacts and lay low. The FBI loses some interest (-10 suspicion).`);
+      }
+      break;
+      
+    case 'destroy':
+      if (player.energy >= energyCost) {
+        player.energy -= energyCost;
+        player.suspicionLevel = Math.max(0, player.suspicionLevel - 15);
+        fbi.progress = Math.max(0, fbi.progress - 50);
+        logAction(`🔥 You destroy financial records and evidence. The paper trail goes cold (-15 suspicion).`);
+      }
+      break;
+      
+    case 'bribe':
+      if (player.money >= cost) {
+        player.money -= cost;
+        player.suspicionLevel = Math.max(0, player.suspicionLevel - 20);
+        fbi.stage = Math.max(0, fbi.stage - 1);
+        fbi.progress = 0;
+        logAction(`💰 Your $${cost.toLocaleString()} bribe reaches the right person. The investigation is downgraded (-20 suspicion, stage reduced).`);
+      }
+      break;
+      
+    case 'burn':
+      if (player.energy >= energyCost) {
+        player.energy -= energyCost;
+        player.suspicionLevel = Math.max(0, player.suspicionLevel - 12);
+        fbi.progress = Math.max(0, fbi.progress - 40);
+        logAction(`🔥 You spend the night burning books and destroying hard drives. Key evidence disappears (-12 suspicion).`);
+      }
+      break;
+      
+    case 'lawyer':
+      if (player.money >= cost) {
+        player.money -= cost;
+        fbi.progress = Math.max(0, fbi.progress - 60);
+        player.suspicionLevel = Math.max(0, player.suspicionLevel - 8);
+        logAction(`⚖️ Your high-powered lawyer files motions to suppress evidence and delay proceedings. It buys you time.`);
+      }
+      break;
+      
+    case 'flee':
+      if (player.money >= cost) {
+        player.money -= cost;
+        fbi.stage = 0;
+        fbi.progress = 0;
+        player.suspicionLevel = Math.max(10, player.suspicionLevel - 40);
+        // Lose some businesses during absence
+        if (player.businesses && player.businesses.length > 1) {
+          const lostBusiness = player.businesses.pop();
+          logAction(`📦 While you were gone, your ${lostBusiness.name} was seized.`);
+        }
+        logAction(`✈️ You spend $${cost.toLocaleString()} to flee the country. After weeks abroad, you return when things cool down. Investigation dropped (-40 suspicion, lost a business).`);
+      }
+      break;
+      
+    case 'deal':
+      // Lose 50% dirty money, suspicion drops significantly, investigation ends
+      const dealCost = Math.floor((player.dirtyMoney || 0) * 0.5);
+      player.dirtyMoney = Math.max(0, (player.dirtyMoney || 0) - dealCost);
+      fbi.stage = 0;
+      fbi.progress = 0;
+      player.suspicionLevel = Math.max(5, player.suspicionLevel - 50);
+      logAction(`🤝 You cooperate with the feds, surrendering $${dealCost.toLocaleString()} in dirty money. The investigation is closed in exchange for your "cooperation." (-50 suspicion)`);
+      break;
+      
+    case 'bribejury':
+      if (player.money >= cost) {
+        player.money -= cost;
+        if (Math.random() < 0.65) { // 65% chance of success
+          fbi.stage = 1;
+          fbi.progress = 0;
+          player.suspicionLevel = Math.max(10, player.suspicionLevel - 25);
+          logAction(`💰 Your jury bribe works! Key jurors refuse to indict. The investigation is set back to surveillance (-25 suspicion).`);
+        } else {
+          // Bribe discovered — makes things worse
+          player.suspicionLevel = Math.min(100, player.suspicionLevel + 15);
+          fbi.progress += 30;
+          player.wantedLevel += 10;
+          logAction(`💰🚨 The jury bribe is DISCOVERED! An honest juror reports the attempt. Obstruction of justice charges added (+15 suspicion, +10 wanted).`);
+        }
+      }
+      break;
+      
+    case 'war':
+      // Violent resistance — high risk, high reward
+      player.wantedLevel += 15;
+      player.suspicionLevel = Math.min(100, player.suspicionLevel + 10);
+      if (player.power > 300 && Math.random() < 0.4) {
+        fbi.stage = 0;
+        fbi.progress = 0;
+        player.suspicionLevel = Math.max(20, player.suspicionLevel - 30);
+        logAction(`⚔️ Your organization wages a shadow war against the investigation. Witnesses recant, evidence disappears, agents are reassigned. The investigation collapses — for now.`);
+      } else {
+        executeFBIRaid();
+        return;
+      }
+      break;
+      
+    case 'ignore':
+    default:
+      fbi.progress += 20;
+      logAction(`😤 You ignore the FBI's investigation. Risky move — they're not going away.`);
+      break;
+  }
+  
+  updateUI();
+}
+
+function executeFBIRaid() {
+  const fbi = player.fbiInvestigation;
+  
+  // Full FBI raid — severe consequences
+  const dirtySeized = player.dirtyMoney || 0;
+  player.dirtyMoney = 0;
+  
+  // Seize 10-20% of clean money too
+  const cleanSeized = Math.floor(player.money * (0.10 + Math.random() * 0.10));
+  player.money = Math.max(0, player.money - cleanSeized);
+  
+  // Possibly lose a business
+  let lostBusinessName = 'none';
+  if (player.businesses && player.businesses.length > 0) {
+    // Target illegal businesses first
+    const illegalIdx = player.businesses.findIndex(b => {
+      const bt = businessTypes.find(t => t.id === b.type);
+      return bt && bt.paysDirty;
+    });
+    if (illegalIdx >= 0) {
+      lostBusinessName = player.businesses[illegalIdx].name;
+      player.businesses.splice(illegalIdx, 1);
+    } else if (Math.random() < 0.3) {
+      const idx = Math.floor(Math.random() * player.businesses.length);
+      lostBusinessName = player.businesses[idx].name;
+      player.businesses.splice(idx, 1);
+    }
+  }
+  
+  player.wantedLevel += 20;
+  player.suspicionLevel = 25; // Reset after the crackdown
+  fbi.stage = 0;
+  fbi.progress = 0;
+  
+  const businessMsg = lostBusinessName !== 'none' ? `\n🏢 ${lostBusinessName} SEIZED by the feds!` : '';
+  logAction(`🚨🚨 FBI RAID! Tactical teams swarm your operations! $${dirtySeized.toLocaleString()} dirty money confiscated, $${cleanSeized.toLocaleString()} in assets frozen.${businessMsg}`);
+  alert(`🚨 FBI RAID! 🚨\n\nThe feds bring the full weight of the law!\n\n💰 Dirty money seized: $${dirtySeized.toLocaleString()}\n💵 Assets frozen: $${cleanSeized.toLocaleString()}${businessMsg}\n\nYou're going to federal prison...`);
+  
+  sendToJail(25);
+  updateUI();
+}
+
 // Police Crackdown System
 const crackdownTypes = [
   {
@@ -8524,6 +9096,16 @@ function startEventTimers() {
   setInterval(() => {
     cleanupExpiredEvents();
   }, 5 * 60 * 1000);
+  
+  // Suspicion consequences check every 60 seconds
+  setInterval(() => {
+    checkSuspicionConsequences();
+  }, 60 * 1000);
+  
+  // FBI investigation escalation check every 90 seconds
+  setInterval(() => {
+    checkFBIInvestigation();
+  }, 90 * 1000);
 }
 
 // Function to show current events and weather status
@@ -10353,6 +10935,15 @@ async function buyItem(index) {
   // Kozlov Bratva passive: weapons cost 10% less
   if (item.type === 'weapon' || item.type === 'armor' || item.type === 'ammo') {
     finalPrice = Math.floor(finalPrice * getWeaponPriceMultiplier());
+  }
+  
+  // Drug Lab synergy: owning a Drug Lab reduces trade goods purchase price by 15-30%
+  if (item.type === 'highLevelDrug' && player.businesses && player.businesses.some(b => b.type === 'druglab')) {
+    const drugLab = player.businesses.find(b => b.type === 'druglab');
+    const discount = 0.10 + (drugLab.level * 0.04); // 14% at Lv1, up to 30% at Lv5
+    const savings = Math.floor(finalPrice * discount);
+    finalPrice = Math.floor(finalPrice * (1 - discount));
+    logAction(`🧪 Your Drug Lab provides a supply chain discount — saved $${savings.toLocaleString()} on ${item.name}.`);
   }
   
   if (player.money >= finalPrice) {
@@ -12648,6 +13239,269 @@ function sellStolenCar(index) {
   logAction(`🏎️ Sold ${car.name} for $${sellPrice.toLocaleString()}.`);
   updateUI();
   showInventory();
+}
+
+// ==================== THE FENCE — BLACK MARKET SELL SCREEN ====================
+// Dedicated screen for selling stolen goods, contraband, and inventory at premium rates
+
+// Fence price multiplier fluctuates based on various factors
+function getFenceMultiplier() {
+  const baseRate = 0.55; // Base 55% of item value (vs 40% at regular sell)
+  let bonus = 0;
+  
+  // Negotiation skill equivalent — charisma-like bonus from reputation
+  bonus += Math.min(0.15, player.reputation / 10000 * 0.15); // Up to +15% at 10K rep
+  
+  // Chop Shop synergy — better rates for cars
+  const chopShop = (player.businesses || []).find(b => b.type === 'chopshop');
+  const chopBonus = chopShop ? 0.05 + (chopShop.level * 0.03) : 0; // 8-20%
+  
+  // Heat penalty — suspicious sellers get worse deals
+  const heatPenalty = Math.min(0.15, (player.suspicionLevel || 0) / 100 * 0.15);
+  
+  // Random market fluctuation (-5% to +10%)
+  const marketFlux = -0.05 + Math.random() * 0.15;
+  
+  return {
+    items: Math.max(0.35, baseRate + bonus - heatPenalty + marketFlux),
+    cars: Math.max(0.45, baseRate + bonus + chopBonus - heatPenalty + marketFlux),
+    drugs: Math.max(0.50, 0.65 + bonus - heatPenalty + marketFlux), // Drugs sell at premium
+    chopBonus: chopBonus,
+    heatPenalty: heatPenalty,
+    marketCondition: marketFlux > 0.05 ? 'Hot' : marketFlux > -0.02 ? 'Normal' : 'Cold'
+  };
+}
+
+function showFence() {
+  hideAllScreens();
+  const fenceScreen = document.getElementById("fence-screen");
+  if (!fenceScreen) return;
+  fenceScreen.style.display = "block";
+  
+  const rates = getFenceMultiplier();
+  const container = document.getElementById("fence-content");
+  if (!container) return;
+  
+  // Market condition colors
+  const condColor = rates.marketCondition === 'Hot' ? '#2ecc71' : rates.marketCondition === 'Cold' ? '#e74c3c' : '#f39c12';
+  
+  let html = `
+    <div style="background: linear-gradient(135deg, rgba(44, 62, 80, 0.9), rgba(52, 73, 94, 0.9)); padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #8e44ad;">
+      <h3 style="color: #8e44ad; margin-bottom: 10px;">📊 Today's Fence Rates</h3>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px;">
+        <div style="padding: 8px; background: rgba(0,0,0,0.3); border-radius: 8px; text-align: center;">
+          <div style="color: #bdc3c7; font-size: 0.8em;">Items</div>
+          <div style="color: #ecf0f1; font-size: 1.2em; font-weight: bold;">${Math.round(rates.items * 100)}%</div>
+        </div>
+        <div style="padding: 8px; background: rgba(0,0,0,0.3); border-radius: 8px; text-align: center;">
+          <div style="color: #bdc3c7; font-size: 0.8em;">Vehicles</div>
+          <div style="color: #ecf0f1; font-size: 1.2em; font-weight: bold;">${Math.round(rates.cars * 100)}%</div>
+        </div>
+        <div style="padding: 8px; background: rgba(0,0,0,0.3); border-radius: 8px; text-align: center;">
+          <div style="color: #bdc3c7; font-size: 0.8em;">Contraband</div>
+          <div style="color: #ecf0f1; font-size: 1.2em; font-weight: bold;">${Math.round(rates.drugs * 100)}%</div>
+        </div>
+        <div style="padding: 8px; background: rgba(0,0,0,0.3); border-radius: 8px; text-align: center;">
+          <div style="color: #bdc3c7; font-size: 0.8em;">Market</div>
+          <div style="color: ${condColor}; font-size: 1.2em; font-weight: bold;">${rates.marketCondition}</div>
+        </div>
+      </div>
+      ${rates.heatPenalty > 0.03 ? `<p style="color: #e74c3c; font-size: 0.85em; margin-top: 8px;">⚠️ Your heat is bringing down prices. Lay low to get better deals.</p>` : ''}
+      ${rates.chopBonus > 0 ? `<p style="color: #2ecc71; font-size: 0.85em; margin-top: 4px;">🔧 Chop Shop connection: +${Math.round(rates.chopBonus * 100)}% on vehicle sales</p>` : ''}
+    </div>`;
+  
+  // === STOLEN CARS SECTION ===
+  const stolenCars = player.stolenCars || [];
+  html += `<div style="margin-bottom: 20px;">
+    <h3 style="color: #e67e22; margin-bottom: 10px;">🏎️ Hot Wheels (${stolenCars.length})</h3>`;
+  
+  if (stolenCars.length === 0) {
+    html += `<div style="padding: 15px; background: rgba(0,0,0,0.3); border-radius: 10px; text-align: center; color: #7f8c8d;">
+      <p>No stolen vehicles to move. Boost some rides first.</p>
+    </div>`;
+  } else {
+    html += `<div style="display: grid; gap: 8px;">`;
+    stolenCars.forEach((car, idx) => {
+      const condition = 100 - car.damagePercentage;
+      const fencePrice = Math.floor(car.baseValue * (condition / 100) * rates.cars);
+      const regularPrice = Math.floor(car.baseValue * (condition / 100) * 0.6);
+      const premium = fencePrice - regularPrice;
+      const condColor = condition > 70 ? '#2ecc71' : condition > 40 ? '#f39c12' : '#e74c3c';
+      
+      html += `<div style="padding: 12px; background: rgba(0,0,0,0.4); border-radius: 10px; border: 1px solid #34495e; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+        <div>
+          <strong style="color: #ecf0f1;">${car.name}</strong><br>
+          <small style="color: #bdc3c7;">
+            Base: $${car.baseValue.toLocaleString()} | Condition: <span style="color: ${condColor};">${condition.toFixed(0)}%</span>
+          </small><br>
+          <small style="color: #8e44ad;">Fence price: $${fencePrice.toLocaleString()} <span style="color: #2ecc71;">(+$${premium.toLocaleString()} vs street)</span></small>
+        </div>
+        <button onclick="fenceSellCar(${idx})" style="background: #8e44ad; color: white; border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: bold; white-space: nowrap;">
+          Sell $${fencePrice.toLocaleString()}
+        </button>
+      </div>`;
+    });
+    html += `</div>`;
+    if (stolenCars.length > 1) {
+      html += `<button onclick="fenceSellAllCars()" style="background: #c0392b; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; margin-top: 10px; width: 100%; font-weight: bold;">
+        🏎️ Sell All Vehicles ($${stolenCars.reduce((sum, car) => sum + Math.floor(car.baseValue * ((100 - car.damagePercentage) / 100) * rates.cars), 0).toLocaleString()})
+      </button>`;
+    }
+  }
+  html += `</div>`;
+  
+  // === SELLABLE INVENTORY ITEMS ===
+  const sellableItems = (player.inventory || []).filter(item => {
+    return item.price && item.price > 0 && item.name !== player.equippedWeapon && item.name !== player.equippedArmor;
+  });
+  
+  // Separate drugs from regular items
+  const drugItems = sellableItems.filter(i => i.type === 'highLevelDrug');
+  const regularItems = sellableItems.filter(i => i.type !== 'highLevelDrug');
+  
+  // Drug contraband section
+  html += `<div style="margin-bottom: 20px;">
+    <h3 style="color: #e74c3c; margin-bottom: 10px;">💊 Contraband (${drugItems.length})</h3>`;
+  if (drugItems.length === 0) {
+    html += `<div style="padding: 15px; background: rgba(0,0,0,0.3); border-radius: 10px; text-align: center; color: #7f8c8d;">
+      <p>No contraband to move. Buy from the Black Market or cook in your Drug Lab.</p>
+    </div>`;
+  } else {
+    html += `<div style="display: grid; gap: 8px;">`;
+    drugItems.forEach(item => {
+      const globalIdx = player.inventory.indexOf(item);
+      const fencePrice = Math.floor(item.price * rates.drugs);
+      const maxPayout = item.maxPayout || Math.floor(item.price * 1.5);
+      
+      html += `<div style="padding: 12px; background: rgba(0,0,0,0.4); border-radius: 10px; border: 1px solid #e74c3c40; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+        <div>
+          <strong style="color: #ecf0f1;">${item.name}</strong><br>
+          <small style="color: #bdc3c7;">Bought at: $${item.price.toLocaleString()} | Max street value: $${maxPayout.toLocaleString()}</small><br>
+          <small style="color: #8e44ad;">Fence price: $${fencePrice.toLocaleString()}</small>
+        </div>
+        <button onclick="fenceSellItem(${globalIdx}, 'drug')" style="background: #e74c3c; color: white; border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: bold; white-space: nowrap;">
+          Sell $${fencePrice.toLocaleString()}
+        </button>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+  html += `</div>`;
+  
+  // Regular items section
+  html += `<div style="margin-bottom: 20px;">
+    <h3 style="color: #3498db; margin-bottom: 10px;">📦 Merchandise (${regularItems.length})</h3>`;
+  if (regularItems.length === 0) {
+    html += `<div style="padding: 15px; background: rgba(0,0,0,0.3); border-radius: 10px; text-align: center; color: #7f8c8d;">
+      <p>No merchandise to fence. Equipped items can't be sold here — unequip first.</p>
+    </div>`;
+  } else {
+    html += `<div style="display: grid; gap: 8px;">`;
+    regularItems.forEach(item => {
+      const globalIdx = player.inventory.indexOf(item);
+      const fencePrice = Math.floor(item.price * rates.items);
+      const regularSellPrice = Math.floor(item.price * 0.4);
+      const premium = fencePrice - regularSellPrice;
+      
+      html += `<div style="padding: 12px; background: rgba(0,0,0,0.4); border-radius: 10px; border: 1px solid #34495e; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+        <div>
+          <strong style="color: #ecf0f1;">${item.name}</strong> ${item.power ? `<small style="color: #bdc3c7;">(+${item.power} Power)</small>` : ''}<br>
+          <small style="color: #bdc3c7;">Value: $${item.price.toLocaleString()} | Regular sell: $${regularSellPrice.toLocaleString()}</small><br>
+          <small style="color: #8e44ad;">Fence price: $${fencePrice.toLocaleString()} <span style="color: #2ecc71;">(+$${premium.toLocaleString()})</span></small>
+        </div>
+        <button onclick="fenceSellItem(${globalIdx}, 'item')" style="background: #8e44ad; color: white; border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: bold; white-space: nowrap;">
+          Sell $${fencePrice.toLocaleString()}
+        </button>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+  html += `</div>`;
+  
+  // Suspicion warning
+  html += `<div style="padding: 12px; background: rgba(142, 68, 173, 0.15); border-radius: 10px; border: 1px solid #8e44ad40; margin-bottom: 15px; text-align: center;">
+    <small style="color: #bdc3c7;">⚠️ Selling through the fence adds +1 suspicion per transaction. Move product carefully.</small>
+  </div>`;
+  
+  html += `<div style="text-align: center;">
+    <button onclick="goBackToMainMenu()" style="background: #95a5a6; color: white; padding: 12px 25px; border: none; border-radius: 8px; cursor: pointer;">🏠 Back to Menu</button>
+  </div>`;
+  
+  container.innerHTML = html;
+}
+
+function fenceSellItem(index, type) {
+  const item = player.inventory[index];
+  if (!item) return;
+  
+  const rates = getFenceMultiplier();
+  const rate = type === 'drug' ? rates.drugs : rates.items;
+  const fencePrice = Math.floor(item.price * rate);
+  
+  // Unequip if equipped
+  if (player.equippedWeapon === item.name) player.equippedWeapon = null;
+  if (player.equippedArmor === item.name) player.equippedArmor = null;
+  
+  player.money += fencePrice;
+  player.power -= (item.power || 0);
+  player.inventory.splice(index, 1);
+  player.suspicionLevel = Math.min(100, (player.suspicionLevel || 0) + 1);
+  
+  if (player.statistics) {
+    player.statistics.totalEarnings = (player.statistics.totalEarnings || 0) + fencePrice;
+  }
+  
+  logAction(`🤫 Fenced ${item.name} for $${fencePrice.toLocaleString()} (${Math.round(rate * 100)}% rate). +1 suspicion.`);
+  updateUI();
+  showFence();
+}
+
+function fenceSellCar(index) {
+  const car = player.stolenCars[index];
+  if (!car) return;
+  
+  const rates = getFenceMultiplier();
+  const condition = 100 - car.damagePercentage;
+  const fencePrice = Math.floor(car.baseValue * (condition / 100) * rates.cars);
+  
+  player.money += fencePrice;
+  if (player.selectedCar === index) player.selectedCar = null;
+  else if (player.selectedCar > index) player.selectedCar--;
+  player.stolenCars.splice(index, 1);
+  player.suspicionLevel = Math.min(100, (player.suspicionLevel || 0) + 1);
+  
+  if (player.statistics) {
+    player.statistics.totalEarnings = (player.statistics.totalEarnings || 0) + fencePrice;
+    player.statistics.carsStolen = (player.statistics.carsStolen || 0); // Already tracked
+  }
+  
+  logAction(`🤫 Fenced ${car.name} for $${fencePrice.toLocaleString()} through the Fence. +1 suspicion.`);
+  updateUI();
+  showFence();
+}
+
+function fenceSellAllCars() {
+  const rates = getFenceMultiplier();
+  let totalEarned = 0;
+  let count = player.stolenCars.length;
+  
+  player.stolenCars.forEach(car => {
+    const condition = 100 - car.damagePercentage;
+    totalEarned += Math.floor(car.baseValue * (condition / 100) * rates.cars);
+  });
+  
+  player.money += totalEarned;
+  player.stolenCars = [];
+  player.selectedCar = null;
+  player.suspicionLevel = Math.min(100, (player.suspicionLevel || 0) + Math.ceil(count * 0.5));
+  
+  if (player.statistics) {
+    player.statistics.totalEarnings = (player.statistics.totalEarnings || 0) + totalEarned;
+  }
+  
+  logAction(`🤫 Bulk fenced ${count} vehicles for $${totalEarned.toLocaleString()} through the Fence. +${Math.ceil(count * 0.5)} suspicion.`);
+  updateUI();
+  showFence();
 }
 
 // Function to show the hospital screen
@@ -16019,6 +16873,9 @@ function initializeMissingData() {
   if (!player.launderingSetups) {
     player.launderingSetups = [];
   }
+  if (!player.fbiInvestigation) {
+    player.fbiInvestigation = { stage: 0, progress: 0, lastEscalation: 0 };
+  }
 }
 
 // Save slots management
@@ -17791,6 +18648,15 @@ window.closeNarrativeOverlay = closeNarrativeOverlay;
 window.closeLevelUpOverlay = closeLevelUpOverlay;
 window.unlockAchievement = unlockAchievement;
 window.checkAchievements = checkAchievements;
+
+// FBI Investigation
+window.handleFBIChoice = handleFBIChoice;
+
+// The Fence
+window.showFence = showFence;
+window.fenceSellItem = fenceSellItem;
+window.fenceSellCar = fenceSellCar;
+window.fenceSellAllCars = fenceSellAllCars;
 
 // Car Theft
 window.handleCarTheft = handleCarTheft;

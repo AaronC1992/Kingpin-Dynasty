@@ -254,6 +254,24 @@ export function regenerateEnergy() {
           }
         }
       }
+      
+      // Suspicion decay: suspicion slowly decreases when not doing dirty jobs
+      // Base 15% chance per energy tick to lose 1 suspicion, boosted by forensics and stealth
+      if (player.suspicionLevel && player.suspicionLevel > 0) {
+        let decayChance = 15; // 15% base chance per energy tick
+        const forensicsLevel = (player.skillTrees && player.skillTrees.intelligence && player.skillTrees.intelligence.forensics) || 0;
+        const stealthLevel = (player.skills && player.skills.stealth) || 0;
+        decayChance += forensicsLevel * 3; // +3% per forensics level
+        decayChance += stealthLevel * 1; // +1% per stealth level
+        
+        if (Math.random() * 100 < decayChance) {
+          const decayAmount = 1 + Math.floor(forensicsLevel / 4); // 1 base, +1 per 4 forensics levels
+          player.suspicionLevel = Math.max(0, player.suspicionLevel - decayAmount);
+          if (typeof logAction === 'function' && decayAmount > 0 && player.suspicionLevel > 0) {
+            logAction(`🕵️ Time passes and the feds lose interest... suspicion decreased by ${decayAmount}.`);
+          }
+        }
+      }
     }
     
     if (typeof updateUI === 'function') {
