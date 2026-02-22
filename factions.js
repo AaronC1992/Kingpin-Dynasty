@@ -27,7 +27,7 @@ export const crimeFamilies = {
             name: "Union Shake-down",
             type: "charisma",
             description: "Force the local union boss to pay up protection money.",
-            baseReward: 2000,
+            baseReward: 800,
             xpReward: 60,
             cooldown: 24 // hours
         }
@@ -52,7 +52,7 @@ export const crimeFamilies = {
             name: "Military Convoy Heist",
             type: "violence",
             description: "Ambush a military transport for high-grade weapons.",
-            baseReward: 1200, // Plus weapons
+            baseReward: 500, // Plus weapons
             xpReward: 80,
             cooldown: 24
         }
@@ -76,7 +76,7 @@ export const crimeFamilies = {
             name: "Cyber-Bank Raid",
             type: "intelligence",
             description: "Hack into a major bank's server farm for a massive transfer.",
-            baseReward: 3000,
+            baseReward: 1200,
             xpReward: 70,
             cooldown: 24
         }
@@ -100,7 +100,7 @@ export const crimeFamilies = {
             name: "Border Crossing Run",
             type: "stealth",
             description: "Smuggle a major shipment across the border undetected.",
-            baseReward: 2500,
+            baseReward: 1000,
             xpReward: 65,
             cooldown: 24
         }

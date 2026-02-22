@@ -14340,7 +14340,7 @@ function randomSale() {
 
 function luckyFind() {
   // Scale lucky find with player level so it stays relevant
-  const base = 150 + player.level * 60;
+  const base = 75 + player.level * 25;
   let found = Math.floor(Math.random() * base) + base;
   found += Math.floor(found * (player.skills.luck * 0.05));
   player.money += found;
@@ -14353,7 +14353,7 @@ function luckyFind() {
 
 function mysteriousTip() {
   // Gives the player a small XP boost and a bit of reputation
-  const xpGain = 8 + player.level * 2;
+  const xpGain = 4 + player.level * 1;
   const repGain = Math.floor(Math.random() * 2) + 1;
   gainExperience(xpGain);
   player.reputation += repGain;
