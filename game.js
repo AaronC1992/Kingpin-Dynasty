@@ -5084,6 +5084,8 @@ function hideAllScreens() {
   if (playerStatsScreen) playerStatsScreen.style.display = "none";
   const cmdCenter = document.getElementById("safehouse");
   if (cmdCenter) cmdCenter.style.display = "none";
+  const multiplayerScreen = document.getElementById("multiplayer-screen");
+  if (multiplayerScreen) multiplayerScreen.style.display = "none";
 }
 
 // Function to show jobs
