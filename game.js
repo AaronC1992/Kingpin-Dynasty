@@ -4552,8 +4552,6 @@ function updateUI() {
   }
   document.getElementById("energy-display").innerText = energyText;
   
-  document.getElementById("reputation-display").innerText = `Reputation: ${Math.floor(player.reputation)}`;
-  
   // Update Empire Rating (passive calculation)
   calculateEmpireRating();
   
