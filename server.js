@@ -8,7 +8,34 @@ const { loadWorldState, saveWorldState, flushWorldState } = require('./worldPers
 
 // Server configuration
 const PORT = process.env.PORT || 3000;
+// Allowed origins for CORS (game website)
+const ALLOWED_ORIGINS = [
+    'https://mafiaborn.com',
+    'http://mafiaborn.com',
+    'https://www.mafiaborn.com',
+    'http://www.mafiaborn.com',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000'
+];
+
+function getCorsHeaders(req) {
+    const origin = req.headers.origin || '*';
+    return {
+        'Access-Control-Allow-Origin': ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0],
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Max-Age': '86400'
+    };
+}
+
 const server = http.createServer((req, res) => {
+    // Handle CORS preflight
+    if (req.method === 'OPTIONS') {
+        res.writeHead(204, getCorsHeaders(req));
+        res.end();
+        return;
+    }
+
     // Quick health route for monitoring
     try {
         const urlPath = req.url.split('?')[0];
@@ -19,7 +46,7 @@ const server = http.createServer((req, res) => {
                 playersConnected: clients ? clients.size : 0,
                 serverName: 'Mafia Born - Multiplayer Server'
             };
-            res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+            res.writeHead(200, { 'Content-Type': 'application/json', ...getCorsHeaders(req) });
             res.end(JSON.stringify(status));
             return;
         }
@@ -113,7 +140,16 @@ const server = http.createServer((req, res) => {
     });
 });
 
-const wss = new WebSocket.Server({ server });
+const wss = new WebSocket.Server({
+    server,
+    // Accept WebSocket connections from allowed origins
+    verifyClient: (info) => {
+        const origin = info.origin || info.req.headers.origin || '';
+        // Allow all origins in development, check in production
+        if (!origin || origin === 'null') return true; // file:// or direct
+        return ALLOWED_ORIGINS.some(allowed => origin.startsWith(allowed)) || origin.includes('localhost');
+    }
+});
 
 // Heartbeat & Security Configuration
 const HEARTBEAT_INTERVAL = 30000;
