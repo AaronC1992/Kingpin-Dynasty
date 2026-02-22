@@ -2,6 +2,10 @@
 
 A deep criminal empire-building game where you rise from street thug to legendary kingpin. Features a full progression system with jobs, gangs, territories, businesses, skill trees, boss battles, faction politics, mini-games, and both local and online multiplayer.
 
+## 🎮 **[PLAY NOW - Live Demo](https://aaronc1992.github.io/Kingpin-Dynasty/)**
+
+Click the link above to play the game instantly in your browser — no installation required!
+
 ---
 
 ## 🎮 Core Gameplay
