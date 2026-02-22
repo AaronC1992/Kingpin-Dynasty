@@ -97,8 +97,6 @@ export function generateAvailableRecruits() {
     availableRecruits = [];
     const numRecruits = Math.floor(Math.random() * 4) + 2; // 2-5 recruits
     
-    console.log("Generating", numRecruits, "recruits for recruitment screen");
-    
     for (let i = 0; i < numRecruits; i++) {
         const name = recruitNames[Math.floor(Math.random() * recruitNames.length)];
         
@@ -142,10 +140,8 @@ export function generateAvailableRecruits() {
         };
         
         availableRecruits.push(recruit);
-        console.log("Generated recruit:", recruit.name, "Level:", recruit.experienceLevel, "Cost:", recruit.cost);
     }
     
-    console.log("Total available recruits:", availableRecruits.length);
     return availableRecruits;
 }
 
@@ -196,7 +192,4 @@ export function generateRandomEncounter() {
     return false;
 }
 
-// Helper to set random encounter recruit (for testing or manual events)
-export function setRandomEncounterRecruit(recruit) {
-    randomEncounterRecruit = recruit;
-}
+

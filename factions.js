@@ -117,7 +117,7 @@ export const retirementOutcomes = {
         description: "Clean up your act and start fresh",
         requirements: {
             cleanMoney: 1000000,
-            businessEmpire: 10,
+            businessEmpire: 5,
             lowHeat: true
         },
         legacyBonus: {

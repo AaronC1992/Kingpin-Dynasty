@@ -22,7 +22,7 @@ export const storyCampaigns = {
                     { type: "complete_jobs", target: 5, current: 0, text: "Complete 5 jobs" },
                     { type: "earn_money", target: 500, current: 0, text: "Earn $500" }
                 ],
-                rewards: { money: 250, experience: 40, reputation: 5 },
+                rewards: { money: 5000, experience: 100, reputation: 5 },
                 nextChapter: 1
             },
             {
@@ -32,7 +32,7 @@ export const storyCampaigns = {
                     { type: "recruit_members", target: 3, current: 0, text: "Recruit 3 gang members" },
                     { type: "complete_faction_mission", target: 1, current: 0, text: "Complete 1 faction mission" }
                 ],
-                rewards: { money: 900, experience: 80, reputation: 10 },
+                rewards: { money: 25000, experience: 200, reputation: 15 },
                 nextChapter: 2
             },
             {
@@ -42,7 +42,7 @@ export const storyCampaigns = {
                     { type: "control_territory", target: 3, current: 0, text: "Control 3 territories" },
                     { type: "win_boss_battle", target: 1, current: 0, text: "Defeat a rival boss" }
                 ],
-                rewards: { money: 2000, experience: 180, reputation: 25 },
+                rewards: { money: 100000, experience: 500, reputation: 30 },
                 nextChapter: 3
             },
             {
@@ -52,7 +52,7 @@ export const storyCampaigns = {
                     { type: "reach_reputation", target: 75, current: 0, text: "Reach 75 reputation" },
                     { type: "own_properties", target: 3, current: 0, text: "Own 3 properties" }
                 ],
-                rewards: { money: 4000, experience: 350, reputation: 50 },
+                rewards: { money: 500000, experience: 1000, reputation: 50 },
                 nextChapter: null // Final chapter
             }
         ]

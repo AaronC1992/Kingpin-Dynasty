@@ -23,13 +23,6 @@ export const MobileSystem = {
         this.setupResponsiveHandling();
         this.setupOrientationHandling();
         this.optimizeTouch(); // Touch-specific enhancements
-        
-        console.log('Mobile System initialized:', {
-            isMobile: this.isMobile,
-            isTablet: this.isTablet,
-            orientation: this.screenOrientation,
-            dimensions: `${this.screenWidth}x${this.screenHeight}`
-        });
     },
     
     // Detect if device is mobile or tablet
@@ -425,12 +418,6 @@ export const MobileSystem = {
                     Safehouse
                 </button>
                 
-                <button onclick="showGlobalChat(); MobileSystem.toggleMobileMenu();" 
-                        style="width: 100%; margin: 5px 0; padding: 12px; background: linear-gradient(45deg, #333, #000); 
-                               color: #c0a062; border: 1px solid #c0a062; border-radius: 6px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
-                    The Wire
-                </button>
-                
                 <button onclick="showStore(); MobileSystem.toggleMobileMenu();" 
                         style="width: 100%; margin: 5px 0; padding: 12px; background: linear-gradient(45deg, #333, #000); 
                                color: #c0a062; border: 1px solid #c0a062; border-radius: 6px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
@@ -584,11 +571,6 @@ export const MobileSystem = {
                         style="padding: 8px 4px; background: linear-gradient(45deg, #333, #000); color: #c0a062; border: 1px solid #c0a062; border-radius: 5px; 
                                font-size: 10px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 44px; display: flex; align-items: center; justify-content: center;">
                     Ledger
-                </button>
-                <button onclick="showGlobalChat()" 
-                        style="padding: 8px 4px; background: linear-gradient(45deg, #333, #000); color: #c0a062; border: 1px solid #c0a062; border-radius: 5px; 
-                               font-size: 10px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 44px; display: flex; align-items: center; justify-content: center;">
-                    Wire
                 </button>
                 <button onclick="MobileSystem.toggleObjectiveTracker()" 
                         style="padding: 8px 4px; background: linear-gradient(45deg, #333, #000); color: #c0a062; border: 1px solid #c0a062; border-radius: 5px; 

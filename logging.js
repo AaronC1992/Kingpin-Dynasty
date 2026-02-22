@@ -154,6 +154,5 @@ export const GameLogging = {
   set enabled(value) { setEnabled(value); }
 };
 
-// Log initialization
-console.log('[Logging] System initialized. Use GameLogging.setEnabled(true) to enable.');
+
 

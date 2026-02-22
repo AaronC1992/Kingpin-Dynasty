@@ -39,7 +39,7 @@ export const jobs = [
     
     // Property-based jobs
     { name: "Illegal Gambling Den", payout: [120000, 240000], risk: "very high", jailChance: 30, wantedLevelGain: 4, healthLoss: 5, requiredItems: ["Criminal Safehouse"], reputation: 35, energyCost: 22 },
-    { name: "Money Laundering", payout: [1600, 3000], risk: "high", jailChance: 20, wantedLevelGain: 3, healthLoss: 0, requiredItems: ["Basement Hideout", "Luxury Automobile"], reputation: 45, energyCost: 25 },
+    { name: "Money Laundering", payout: [150000, 350000], risk: "high", jailChance: 20, wantedLevelGain: 3, healthLoss: 0, requiredItems: ["Basement Hideout", "Luxury Automobile"], reputation: 45, energyCost: 25 },
     
     // Elite endgame jobs
     { name: "International Arms Trade", payout: [500000, 1000000], risk: "legendary", jailChance: 60, wantedLevelGain: 12, healthLoss: 10, requiredItems: ["Private Airplane", "Tommy Gun", "Bulletproof Vest"], reputation: 60, energyCost: 35 },

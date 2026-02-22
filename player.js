@@ -200,6 +200,11 @@ export function checkLevelUp() {
     player.experience -= requiredXP;
     player.skillPoints += 2; // Gain 2 skill points per level (slower progression)
     
+    // Bonus skill point at milestone levels (every 5 levels)
+    if (player.level % 5 === 0) {
+      player.skillPoints += 1; // Extra point at milestones
+    }
+    
     // Show dramatic level up screen effects
     if (typeof showLevelUpEffects === 'function') {
       showLevelUpEffects();
@@ -222,10 +227,18 @@ export function regenerateEnergy() {
     if (player.energyRegenTimer <= 0) {
       // Base 1 energy per tick; Recovery skill increases energy gained per tick
       const recoveryLevel = (player.skillTrees && player.skillTrees.endurance && player.skillTrees.endurance.recovery) || 0;
-      const extraPerTick = Math.floor(recoveryLevel / 5); // +1 energy per 5 recovery levels
+      const extraPerTick = Math.floor(recoveryLevel / 3); // +1 energy per 3 recovery levels (was 5)
       const energyGain = Math.max(1, 1 + extraPerTick);
+      
+      // Max energy scales with stamina skill tree (base 100 + 3 per stamina level)
+      const staminaLevel = (player.skillTrees && player.skillTrees.endurance && player.skillTrees.endurance.stamina) || 0;
+      player.maxEnergy = 100 + staminaLevel * 3;
+      
       player.energy = Math.min(player.energy + energyGain, player.maxEnergy);
-      player.energyRegenTimer = 30; // Reset timer to 30 seconds
+      
+      // Regen interval: 20s base, reduced by 1s per 2 recovery levels (min 10s)
+      const regenInterval = Math.max(10, 20 - Math.floor(recoveryLevel / 2));
+      player.energyRegenTimer = regenInterval;
       
       if (typeof logAction === 'function') {
         logAction(` You catch your breath in the shadows. The adrenaline fades and your strength slowly returns. (+${energyGain} energy)`);
@@ -254,7 +267,9 @@ export function regenerateEnergy() {
  */
 export function startEnergyRegenTimer() {
   if (player.energyRegenTimer === 0 && player.energy < player.maxEnergy) {
-    player.energyRegenTimer = 30; // Start 30-second countdown
+    const recoveryLevel = (player.skillTrees && player.skillTrees.endurance && player.skillTrees.endurance.recovery) || 0;
+    const regenInterval = Math.max(10, 20 - Math.floor(recoveryLevel / 2));
+    player.energyRegenTimer = regenInterval;
   }
 }
 
@@ -538,10 +553,45 @@ export const availablePerks = {
 
 // Achievements system
 export const achievements = [
-  { id: "first_job", name: "First Day on the Job", description: "Complete your first job", unlocked: false },
-  { id: "millionaire", name: "Big Shot", description: "Earn $100,000", unlocked: false },
-  { id: "jail_break", name: "Great Escape", description: "Successfully break out of jail", unlocked: false },
-  { id: "gang_leader", name: "Gang Leader", description: "Recruit 10 gang members", unlocked: false },
-  { id: "most_wanted", name: "Most Wanted", description: "Reach wanted level 50", unlocked: false },
-  { id: "reputation_max", name: "Legendary Criminal", description: "Reach 100 reputation", unlocked: false }
+  // === Early Game ===
+  { id: "first_job", name: "First Day on the Job", description: "Complete your first job", unlocked: false, reward: { money: 500, xp: 25 } },
+  { id: "first_blood", name: "First Blood", description: "Win your first fight or heist", unlocked: false, reward: { money: 1000, xp: 50 } },
+  { id: "wheels", name: "Hot Wheels", description: "Steal your first car", unlocked: false, reward: { money: 2000, xp: 50 } },
+  { id: "armed_dangerous", name: "Armed & Dangerous", description: "Buy your first weapon", unlocked: false, reward: { money: 1000, xp: 30 } },
+  { id: "property_owner", name: "Property Mogul", description: "Buy your first property", unlocked: false, reward: { money: 5000, xp: 100 } },
+  // === Money Milestones ===
+  { id: "millionaire", name: "Big Shot", description: "Have $100,000", unlocked: false, reward: { money: 10000, xp: 100 } },
+  { id: "half_mil", name: "High Roller", description: "Have $500,000", unlocked: false, reward: { money: 25000, xp: 200 } },
+  { id: "true_millionaire", name: "Millionaire", description: "Have $1,000,000", unlocked: false, reward: { money: 50000, xp: 500 } },
+  { id: "multi_millionaire", name: "Multi-Millionaire", description: "Have $10,000,000", unlocked: false, reward: { money: 500000, xp: 1000 } },
+  { id: "billionaire", name: "Criminal Tycoon", description: "Have $100,000,000", unlocked: false, reward: { money: 5000000, xp: 5000 } },
+  // === Gang & Social ===
+  { id: "first_recruit", name: "Right Hand Man", description: "Recruit your first gang member", unlocked: false, reward: { money: 2000, xp: 75 } },
+  { id: "gang_leader", name: "Gang Leader", description: "Have 10 gang members", unlocked: false, reward: { money: 15000, xp: 200 } },
+  { id: "crime_family", name: "Crime Family", description: "Have 25 gang members", unlocked: false, reward: { money: 50000, xp: 500 } },
+  { id: "army", name: "Criminal Army", description: "Have 50 gang members", unlocked: false, reward: { money: 200000, xp: 1000 } },
+  { id: "faction_friend", name: "Friend of the Family", description: "Reach 25 reputation with any faction", unlocked: false, reward: { money: 10000, xp: 150 } },
+  { id: "faction_ally", name: "Made Man", description: "Reach 50 reputation with any faction", unlocked: false, reward: { money: 50000, xp: 300 } },
+  // === Combat & Crime ===
+  { id: "jail_break", name: "Great Escape", description: "Successfully break out of jail", unlocked: false, reward: { money: 5000, xp: 100 } },
+  { id: "most_wanted", name: "Most Wanted", description: "Reach wanted level 50", unlocked: false, reward: { money: 25000, xp: 300 } },
+  { id: "ghost", name: "Ghost", description: "Complete 10 jobs without getting arrested", unlocked: false, reward: { money: 20000, xp: 250 } },
+  { id: "boss_slayer", name: "Boss Slayer", description: "Defeat your first rival boss", unlocked: false, reward: { money: 100000, xp: 500 } },
+  // === Progression ===
+  { id: "reputation_max", name: "Legendary Criminal", description: "Reach 100 reputation", unlocked: false, reward: { money: 100000, xp: 500 } },
+  { id: "level_10", name: "Rising Star", description: "Reach level 10", unlocked: false, reward: { money: 15000, xp: 200 } },
+  { id: "level_25", name: "Veteran", description: "Reach level 25", unlocked: false, reward: { money: 100000, xp: 500 } },
+  { id: "level_50", name: "Kingpin", description: "Reach level 50", unlocked: false, reward: { money: 500000, xp: 2000 } },
+  { id: "skill_master", name: "Skill Master", description: "Max out any base skill (20+)", unlocked: false, reward: { money: 25000, xp: 300 } },
+  // === Empire ===
+  { id: "territory_3", name: "Neighborhood Boss", description: "Control 3 territories", unlocked: false, reward: { money: 30000, xp: 200 } },
+  { id: "territory_10", name: "District King", description: "Control 10 territories", unlocked: false, reward: { money: 200000, xp: 500 } },
+  { id: "business_owner", name: "Legitimate Businessman", description: "Own your first business front", unlocked: false, reward: { money: 50000, xp: 200 } },
+  { id: "jobs_50", name: "Workhorse", description: "Complete 50 jobs", unlocked: false, reward: { money: 25000, xp: 300 } },
+  { id: "jobs_200", name: "Professional", description: "Complete 200 jobs", unlocked: false, reward: { money: 100000, xp: 500 } },
+  // === Mini-games ===
+  { id: "lucky_streak", name: "Lucky Streak", description: "Win at the casino 3 times", unlocked: false, reward: { money: 10000, xp: 100 } },
+  { id: "gambler", name: "High Stakes Gambler", description: "Win at the casino 10 times", unlocked: false, reward: { money: 50000, xp: 250 } },
+  { id: "snake_king", name: "Snake King", description: "Score 20+ in Snake mini-game", unlocked: false, reward: { money: 15000, xp: 150 } },
+  { id: "quick_draw", name: "Fastest Gun", description: "React under 200ms in Quick Draw", unlocked: false, reward: { money: 20000, xp: 200 } }
 ];
