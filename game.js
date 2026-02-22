@@ -11211,8 +11211,21 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = "1.2.0";
+const CURRENT_VERSION = "1.3.0";
 const VERSION_UPDATES = {
+  "1.3.0": {
+    title: "February 2026 Update - Dirty Money Overhaul",
+    date: "February 21, 2026",
+    changes: [
+      "💰 Dirty Money rework — only Bank Job and Counterfeiting Money produce dirty money; all other jobs now pay clean cash",
+      "🏭 New Business: Counterfeiting Operation — generates high passive income as dirty money that must be laundered",
+      "🆕 New Job: Counterfeiting Money — extreme risk, $200K–$500K payout (dirty), requires Basement Hideout & Fake ID Kit",
+      "🏷️ Jobs and businesses that pay dirty money are now clearly labeled in red (DIRTY MONEY)",
+      "📝 Comprehensive 16-step tutorial rewritten to match all current game mechanics",
+      "📖 Complete README overhaul with full game mechanics documentation",
+      "🔗 Play Now button restored to project page"
+    ]
+  },
   "1.2.0": {
     title: "November 2025 Update - Quality of Life Improvements",
     date: "November 23, 2025",
