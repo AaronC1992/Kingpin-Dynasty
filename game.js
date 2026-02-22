@@ -32,6 +32,10 @@ window.missionProgress = missionProgress;
 window.narrationVariations = narrationVariations;
 window.getRandomNarration = getRandomNarration;
 window.storeItems = storeItems;
+
+// Expose weather/season globals so narration.js can read them
+Object.defineProperty(window, 'currentWeather', { get() { return currentWeather; } });
+Object.defineProperty(window, 'currentSeason', { get() { return currentSeason; } });
 window.realEstateProperties = realEstateProperties;
 window.businessTypes = businessTypes;
 window.loanOptions = loanOptions;
