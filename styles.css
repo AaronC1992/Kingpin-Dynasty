@@ -317,6 +317,124 @@ button:disabled {
     box-shadow: none;
 }
 
+/* ==================== COMMAND CENTER PROGRESSIVE UNLOCK STYLES ==================== */
+
+/* Unlocked menu button with tooltip subtitle */
+.menu-btn-unlocked {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 14px 12px;
+    min-height: 68px;
+    text-transform: uppercase;
+}
+
+.menu-btn-unlocked .menu-btn-label {
+    font-size: 15px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    color: #d4af37;
+}
+
+.menu-btn-unlocked .menu-btn-tip {
+    font-size: 10px;
+    font-weight: normal;
+    color: #95a5a6;
+    text-transform: none;
+    letter-spacing: 0;
+    line-height: 1.2;
+    opacity: 0.85;
+}
+
+.menu-btn-unlocked:hover .menu-btn-tip {
+    color: #bdc3c7;
+    opacity: 1;
+}
+
+/* Locked menu button */
+.menu-btn-locked {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 14px 12px;
+    min-height: 68px;
+    background: linear-gradient(to bottom, #1a1a1a, #111) !important;
+    border-color: #444 !important;
+    opacity: 0.5;
+    cursor: not-allowed !important;
+    text-transform: uppercase;
+}
+
+.menu-btn-locked .menu-btn-label {
+    font-size: 14px;
+    font-weight: bold;
+    color: #666;
+    letter-spacing: 1px;
+}
+
+.menu-btn-locked .menu-btn-tip {
+    font-size: 10px;
+    font-weight: normal;
+    color: #555;
+    text-transform: none;
+    letter-spacing: 0;
+    line-height: 1.2;
+}
+
+/* Locked section header */
+.menu-locked-section {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-top: 5px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(102, 102, 102, 0.3);
+}
+
+.menu-locked-header {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: #7f8c8d;
+    font-size: 13px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-family: 'Georgia', serif;
+    padding-bottom: 5px;
+}
+
+/* Remaining locked count */
+.menu-locked-remaining {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: #555;
+    font-size: 12px;
+    font-style: italic;
+    padding: 10px 0 5px;
+    font-family: 'Georgia', serif;
+}
+
+/* Unlock toast animation */
+@keyframes slideInRight {
+    from {
+        transform: translateX(120%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+#unlock-toast > div {
+    transition: opacity 0.5s ease-out;
+}
+
 .skills-container {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));

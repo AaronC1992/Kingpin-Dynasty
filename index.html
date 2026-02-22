@@ -200,10 +200,22 @@
                 </div>
             </div>
             <div class="menu-grid">
-                <button onclick="showJobs()">Jobs</button>
-                <button onclick="showMissions()">Operations</button>
-                <button onclick="showStolenCars()">Motor Pool</button>
-                <button onclick="showCommandCenter()">Command Center</button>
+                <button class="menu-btn-unlocked" onclick="showJobs()">
+                    <span class="menu-btn-label">Jobs</span>
+                    <span class="menu-btn-tip">Complete tasks for cash & XP</span>
+                </button>
+                <button class="menu-btn-unlocked" onclick="showMissions()">
+                    <span class="menu-btn-label">Operations</span>
+                    <span class="menu-btn-tip">Story missions & special ops</span>
+                </button>
+                <button class="menu-btn-unlocked" onclick="showStolenCars()">
+                    <span class="menu-btn-label">Motor Pool</span>
+                    <span class="menu-btn-tip">Manage your stolen vehicles</span>
+                </button>
+                <button class="menu-btn-unlocked" onclick="showCommandCenter()">
+                    <span class="menu-btn-label">Command Center</span>
+                    <span class="menu-btn-tip">All features & game systems</span>
+                </button>
             </div>
         </div>
 
@@ -217,34 +229,8 @@
                     <span class="current">Command Center</span>
                 </div>
             </div>
-            <div class="menu-grid">
-                <button onclick="showJobs()">Jobs</button>
-                <button onclick="showMissions()">Operations</button>
-                <button onclick="showFence()">The Fence</button>
-                <button onclick="showStore()">Black Market</button>
-                <button onclick="showRealEstate()">Properties</button>
-                <button onclick="showInventory()">Stash</button>
-                <button onclick="showStolenCars()">Motor Pool</button>
-                <button onclick="showSkills()">Expertise</button>
-                <button onclick="showGang()">The Family</button>
-                <button onclick="showGangManagementScreen()">Crew Details</button>
-                <button onclick="showBusinesses()">Fronts</button>
-                <button onclick="showLoanShark()">Shylock</button>
-                <button onclick="showMoneyLaundering()">The Wash</button>
-                <button onclick="showTerritoryControl()">Turf Wars</button>
-                <button onclick="showTerritoryMapScreen()">Territory Map</button>
-                <button onclick="showEventsStatus()">Events</button>
-                <button onclick="showJailbreak()">Breakout</button>
-                <button onclick="showMiniGames()">Pastimes</button>
-                <button onclick="showEmpireRating()">Empire Rating</button>
-                <button onclick="showRelationshipsScreen()">Relationships</button>
-                <button onclick="showHallOfFame()">Made Men</button>
-                <button onclick="showRivalsScreen()">Rivals</button>
-                <button onclick="showCourtHouse()">Legal Aid</button>
-                <button onclick="showHospital()">The Doctor</button>
-                <button onclick="showCasino()">Gambling</button>
-                <button onclick="showLegacyPerkShop()">Legacy Perks</button>
-                <button onclick="showOptions()">Settings</button>
+            <div id="command-center-grid" class="menu-grid">
+                <!-- Dynamically populated by showCommandCenter() -->
             </div>
         </div>
 

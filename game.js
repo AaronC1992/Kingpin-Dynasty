@@ -4409,6 +4409,9 @@ function updateUI() {
     }
   } catch (e) { /* no-op */ }
 
+  // Check for newly unlocked menu items
+  checkForNewUnlocks();
+
   // Money and wanted level HUD updates handled via EventBus subscribers
   
   // Update dirty money display in stats bar
@@ -10274,10 +10277,177 @@ function handleReactionClick() {
   }
 }
 
+// ==================== PROGRESSIVE UNLOCK SYSTEM ====================
+// Menu items unlock as the player progresses, reducing initial overwhelm
+
+const menuUnlockConfig = [
+  // === ALWAYS AVAILABLE (Level 0) ===
+  { id: 'jobs',        fn: 'showJobs()',              label: 'Jobs',           tip: 'Complete tasks for cash & XP',     level: 0 },
+  { id: 'store',       fn: 'showStore()',             label: 'Black Market',   tip: 'Buy weapons, armor & supplies',    level: 0 },
+  { id: 'inventory',   fn: 'showInventory()',         label: 'Stash',          tip: 'View & equip your items',          level: 0 },
+  { id: 'hospital',    fn: 'showHospital()',          label: 'The Doctor',     tip: 'Heal your injuries',               level: 0 },
+  { id: 'options',     fn: 'showOptions()',           label: 'Settings',       tip: 'Save, load & game options',        level: 0 },
+
+  // === EARLY GAME (Level 2-3) ===
+  { id: 'skills',      fn: 'showSkills()',            label: 'Expertise',      tip: 'Spend skill points & upgrade',     level: 2 },
+  { id: 'cars',        fn: 'showStolenCars()',        label: 'Motor Pool',     tip: 'Manage your stolen vehicles',      level: 2 },
+  { id: 'realestate',  fn: 'showRealEstate()',        label: 'Properties',     tip: 'Buy hideouts & safe houses',       level: 3 },
+  { id: 'missions',    fn: 'showMissions()',          label: 'Operations',     tip: 'Story missions & special ops',     level: 3 },
+
+  // === MID GAME (Level 5-8) ===
+  { id: 'gang',        fn: 'showGang()',              label: 'The Family',     tip: 'Recruit & manage your crew',       level: 5 },
+  { id: 'courthouse',  fn: 'showCourtHouse()',        label: 'Legal Aid',      tip: 'Pay to reduce your wanted level',  level: 5 },
+  { id: 'events',      fn: 'showEventsStatus()',      label: 'Events',         tip: 'Current weather & world events',   level: 5 },
+  { id: 'minigames',   fn: 'showMiniGames()',         label: 'Pastimes',       tip: 'Arcade games & entertainment',     level: 6 },
+  { id: 'casino',      fn: 'showCasino()',            label: 'Gambling',       tip: 'Slots, roulette & card games',     level: 6 },
+  { id: 'fence',       fn: 'showFence()',             label: 'The Fence',      tip: 'Sell stolen goods at premium rates',level: 7 },
+  { id: 'gangmgmt',    fn: 'showGangManagementScreen()', label: 'Crew Details', tip: 'Train, equip & assign your gang', level: 8 },
+  { id: 'jailbreak',   fn: 'showJailbreak()',         label: 'Breakout',       tip: 'Break allies out of prison',       level: 8 },
+
+  // === LATE GAME (Level 10-15) ===
+  { id: 'businesses',  fn: 'showBusinesses()',        label: 'Fronts',         tip: 'Buy & manage businesses',          level: 10 },
+  { id: 'territory',   fn: 'showTerritoryControl()',  label: 'Turf Wars',      tip: 'Capture & control districts',      level: 10 },
+  { id: 'territorymap',fn: 'showTerritoryMapScreen()',label: 'Territory Map',  tip: 'View your territory on the map',   level: 10 },
+  { id: 'loanshark',   fn: 'showLoanShark()',         label: 'Shylock',        tip: 'Borrow money (high interest)',     level: 10 },
+  { id: 'relationships',fn:'showRelationshipsScreen()',label:'Relationships',  tip: 'Faction standing & alliances',     level: 12 },
+  { id: 'rivals',      fn: 'showRivalsScreen()',      label: 'Rivals',         tip: 'Challenge rival gang bosses',      level: 12 },
+  { id: 'laundering',  fn: 'showMoneyLaundering()',   label: 'The Wash',       tip: 'Launder dirty money into clean cash', level: 12 },
+
+  // === ENDGAME (Level 15+) ===
+  { id: 'empire',      fn: 'showEmpireRating()',      label: 'Empire Rating',  tip: 'Track your criminal empire score', level: 15 },
+  { id: 'halloffame',  fn: 'showHallOfFame()',        label: 'Made Men',       tip: 'Hall of Fame & retired legends',   level: 15 },
+  { id: 'legacyperks', fn: 'showLegacyPerkShop()',    label: 'Legacy Perks',   tip: 'Spend legacy points on bonuses',   level: 15 },
+];
+
+function isMenuItemUnlocked(item) {
+  return (player.level || 1) >= item.level;
+}
+
+function getUnlockedItems() {
+  return menuUnlockConfig.filter(item => isMenuItemUnlocked(item));
+}
+
+function getLockedItems() {
+  return menuUnlockConfig.filter(item => !isMenuItemUnlocked(item));
+}
+
+function getNextUnlocks() {
+  const currentLevel = player.level || 1;
+  const locked = getLockedItems();
+  if (locked.length === 0) return [];
+  const nextLevel = Math.min(...locked.map(i => i.level));
+  return locked.filter(i => i.level === nextLevel);
+}
+
+// Check for newly unlocked items and show notification
+function checkForNewUnlocks() {
+  if (!player.unlocksNotified) player.unlocksNotified = [];
+  
+  const newlyUnlocked = menuUnlockConfig.filter(item => 
+    isMenuItemUnlocked(item) && !player.unlocksNotified.includes(item.id)
+  );
+  
+  // On first load, mark everything currently available as already notified (no spam)
+  if (player.unlocksNotified.length === 0) {
+    menuUnlockConfig.forEach(item => {
+      if (isMenuItemUnlocked(item)) player.unlocksNotified.push(item.id);
+    });
+    return;
+  }
+  
+  if (newlyUnlocked.length > 0) {
+    newlyUnlocked.forEach(item => {
+      player.unlocksNotified.push(item.id);
+    });
+    
+    const names = newlyUnlocked.map(i => i.label).join(', ');
+    showUnlockToast(newlyUnlocked);
+    logAction(`🔓 NEW UNLOCKED in Command Center: ${names}! Check it out.`);
+  }
+}
+
+function showUnlockToast(items) {
+  // Remove existing toast if present
+  const existing = document.getElementById('unlock-toast');
+  if (existing) existing.remove();
+  
+  const itemList = items.map(i => `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(212,175,55,0.2);">
+    <strong style="color:#d4af37;">${i.label}</strong>
+    <small style="color:#bdc3c7;">${i.tip}</small>
+  </div>`).join('');
+  
+  const toast = document.createElement('div');
+  toast.id = 'unlock-toast';
+  toast.innerHTML = `
+    <div style="position:fixed;top:20px;right:20px;z-index:3000;max-width:350px;width:90%;
+          background:linear-gradient(135deg,rgba(44,62,80,0.98),rgba(52,73,94,0.98));
+          border:2px solid #d4af37;border-radius:12px;padding:18px;
+          box-shadow:0 8px 32px rgba(0,0,0,0.6),0 0 20px rgba(212,175,55,0.2);
+          animation:slideInRight 0.4s ease-out;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <h3 style="color:#d4af37;margin:0;font-size:1.1em;">🔓 New Unlocks!</h3>
+        <button onclick="document.getElementById('unlock-toast').remove()" 
+                style="background:none;border:none;color:#95a5a6;cursor:pointer;font-size:1.2em;padding:0 4px;">✕</button>
+      </div>
+      ${itemList}
+      <p style="color:#7f8c8d;font-size:0.8em;margin:8px 0 0;text-align:center;">Visit the Command Center to explore</p>
+    </div>
+  `;
+  document.body.appendChild(toast);
+  
+  // Auto-dismiss after 8 seconds
+  setTimeout(() => {
+    const el = document.getElementById('unlock-toast');
+    if (el) el.style.opacity = '0';
+    setTimeout(() => { const el2 = document.getElementById('unlock-toast'); if (el2) el2.remove(); }, 500);
+  }, 8000);
+}
+
 // Function to show the Command Center (full menu with all options)
 function showCommandCenter() {
   hideAllScreens();
   document.getElementById("command-center").style.display = "block";
+  
+  const grid = document.getElementById("command-center-grid");
+  if (!grid) return;
+  
+  const unlocked = getUnlockedItems();
+  const locked = getLockedItems();
+  const nextUnlocks = getNextUnlocks();
+  
+  let html = '';
+  
+  // Render unlocked buttons with tooltips
+  unlocked.forEach(item => {
+    html += `<button class="menu-btn-unlocked" onclick="${item.fn}">
+      <span class="menu-btn-label">${item.label}</span>
+      <span class="menu-btn-tip">${item.tip}</span>
+    </button>`;
+  });
+  
+  // Show next unlock preview (teaser for locked items)
+  if (nextUnlocks.length > 0) {
+    const nextLevel = nextUnlocks[0].level;
+    html += `<div class="menu-locked-section">
+      <div class="menu-locked-header">🔒 Unlocks at Level ${nextLevel} (${nextUnlocks.length} feature${nextUnlocks.length > 1 ? 's' : ''})</div>`;
+    nextUnlocks.forEach(item => {
+      html += `<button class="menu-btn-locked" disabled>
+        <span class="menu-btn-label">🔒 ${item.label}</span>
+        <span class="menu-btn-tip">Reach level ${item.level} to unlock</span>
+      </button>`;
+    });
+    html += `</div>`;
+  }
+  
+  // Show remaining locked count
+  const remainingLocked = locked.length - nextUnlocks.length;
+  if (remainingLocked > 0) {
+    html += `<div class="menu-locked-remaining">
+      +${remainingLocked} more feature${remainingLocked > 1 ? 's' : ''} to discover as you level up
+    </div>`;
+  }
+  
+  grid.innerHTML = html;
 }
 window.showCommandCenter = showCommandCenter;
 
@@ -16875,6 +17045,9 @@ function initializeMissingData() {
   }
   if (!player.fbiInvestigation) {
     player.fbiInvestigation = { stage: 0, progress: 0, lastEscalation: 0 };
+  }
+  if (!player.unlocksNotified) {
+    player.unlocksNotified = [];
   }
 }
 
