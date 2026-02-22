@@ -4624,10 +4624,12 @@ function cheatGrantResources() {
     const cleanAmount = 100000;
     const dirtyAmount = 100000;
     const skillPointsAmount = 100;
+    const xpAmount = 100000;
     player.money += cleanAmount;
     player.dirtyMoney = (player.dirtyMoney || 0) + dirtyAmount;
     player.skillPoints = (player.skillPoints || 0) + skillPointsAmount;
-    logAction(`🧪 Cheat activated: +$${cleanAmount.toLocaleString()} clean, +$${dirtyAmount.toLocaleString()} dirty, +${skillPointsAmount} skill points.`);
+    player.experience = (player.experience || 0) + xpAmount;
+    logAction(`🧪 Cheat activated: +$${cleanAmount.toLocaleString()} clean, +$${dirtyAmount.toLocaleString()} dirty, +${skillPointsAmount} skill points, +${xpAmount.toLocaleString()} XP.`);
     updateUI();
   } catch (e) {
     console.error('Cheat function error:', e);
