@@ -315,21 +315,21 @@ export const skillTreeDefinitions = {
         icon: "🔓",
         description: "Master the art of breaking into secured locations",
         maxLevel: 10,
-        benefits: level => `+${level * 5}% success on stealth jobs, +${level * 2}% lockpicking success`
+        benefits: level => level === 0 ? `Next: +5% stealth job success, +2% lockpicking (per level)` : `+${level * 5}% stealth job success, +${level * 2}% lockpicking`
       },
       escape: {
         name: "Escape Artist",
         icon: "💨",
         description: "Become a master of getting out of sticky situations",
         maxLevel: 10,
-        benefits: level => `+${level * 3}% breakout success, -${level * 2}% arrest chance`
+        benefits: level => level === 0 ? `Next: +3% breakout success, -2% arrest chance (per level)` : `+${level * 3}% breakout success, -${level * 2}% arrest chance`
       },
       surveillance: {
         name: "Surveillance",
         icon: "👁️",
         description: "Gather intel and stay ahead of enemies",
         maxLevel: 10,
-        benefits: level => `+${level * 4}% mission intel, +${level}% critical hit chance`
+        benefits: level => level === 0 ? `Next: +4% mission intel, +1% crit chance (per level)` : `+${level * 4}% mission intel, +${level}% critical hit chance`
       }
     }
   },
@@ -343,21 +343,21 @@ export const skillTreeDefinitions = {
         icon: "🔫",
         description: "Master the use of guns and ranged weapons",
         maxLevel: 10,
-        benefits: level => `+${level * 6}% combat job success, +${level * 3}% headshot chance`
+        benefits: level => level === 0 ? `Next: +6% combat job success, +3% headshot chance (per level)` : `+${level * 6}% combat job success, +${level * 3}% headshot chance`
       },
       melee: {
         name: "Melee Combat",
         icon: "👊",
         description: "Excel in hand-to-hand combat situations",
         maxLevel: 10,
-        benefits: level => `+${level * 4}% unarmed damage, +${level * 2}% disarm chance`
+        benefits: level => level === 0 ? `Next: +4% unarmed damage, +2% disarm chance (per level)` : `+${level * 4}% unarmed damage, +${level * 2}% disarm chance`
       },
       intimidation: {
         name: "Intimidation",
         icon: "😈",
         description: "Use fear as your weapon",
         maxLevel: 10,
-        benefits: level => `+${level * 5}% extortion success, +${level * 3}% reputation gain`
+        benefits: level => level === 0 ? `Next: +5% extortion success, +3% reputation gain (per level)` : `+${level * 5}% extortion success, +${level * 3}% reputation gain`
       }
     }
   },
@@ -371,21 +371,21 @@ export const skillTreeDefinitions = {
         icon: "🤝",
         description: "Secure better deals and prices",
         maxLevel: 10,
-        benefits: level => `+${level * 3}% better prices, +${level * 2}% bribe success`
+        benefits: level => level === 0 ? `Next: +3% better prices, +2% bribe success (per level)` : `+${level * 3}% better prices, +${level * 2}% bribe success`
       },
       leadership: {
         name: "Leadership",
         icon: "👑",
         description: "Command respect and loyalty from your gang",
         maxLevel: 10,
-        benefits: level => `+${level * 5}% gang loyalty, +${level}% gang member capacity`
+        benefits: level => level === 0 ? `Next: +5% gang loyalty, +1% gang capacity (per level)` : `+${level * 5}% gang loyalty, +${level}% gang member capacity`
       },
       manipulation: {
         name: "Manipulation",
         icon: "🎭",
         description: "Control others through psychological tactics",
         maxLevel: 10,
-        benefits: level => `+${level * 4}% information extraction, +${level * 2}% defection resistance`
+        benefits: level => level === 0 ? `Next: +4% info extraction, +2% defection resist (per level)` : `+${level * 4}% information extraction, +${level * 2}% defection resistance`
       }
     }
   },
@@ -399,21 +399,21 @@ export const skillTreeDefinitions = {
         icon: "💻",
         description: "Master digital infiltration and cyber warfare",
         maxLevel: 10,
-        benefits: level => `+${level * 7}% hacking success, +${level * 3}% digital heist rewards`
+        benefits: level => level === 0 ? `Next: +7% hacking success, +3% digital heist rewards (per level)` : `+${level * 7}% hacking success, +${level * 3}% digital heist rewards`
       },
       planning: {
         name: "Strategic Planning",
         icon: "📋",
         description: "Perfect preparation prevents poor performance",
         maxLevel: 10,
-        benefits: level => `+${level * 4}% mission success, +${level * 2}% backup plan chance`
+        benefits: level => level === 0 ? `Next: +4% mission success, +2% backup plan chance (per level)` : `+${level * 4}% mission success, +${level * 2}% backup plan chance`
       },
       forensics: {
         name: "Forensics",
         icon: "🔬",
         description: "Clean up evidence and avoid detection",
         maxLevel: 10,
-        benefits: level => `+${level * 5}% evidence cleanup, -${level * 3}% investigation heat`
+        benefits: level => level === 0 ? `Next: +5% evidence cleanup, -3% investigation heat (per level)` : `+${level * 5}% evidence cleanup, -${level * 3}% investigation heat`
       }
     }
   },
@@ -427,21 +427,21 @@ export const skillTreeDefinitions = {
         icon: "🎰",
         description: "Turn the odds in your favor",
         maxLevel: 10,
-        benefits: level => `+${level * 6}% casino winnings, +${level * 2}% jackpot chance`
+        benefits: level => level === 0 ? `Next: +6% casino winnings, +2% jackpot chance (per level)` : `+${level * 6}% casino winnings, +${level * 2}% jackpot chance`
       },
       fortune: {
         name: "Fortune",
         icon: "🌟",
         description: "Improve random events and discoveries",
         maxLevel: 10,
-        benefits: level => `+${level * 4}% positive events, +${level * 3}% rare item finds`
+        benefits: level => level === 0 ? `Next: +4% positive events, +3% rare item finds (per level)` : `+${level * 4}% positive events, +${level * 3}% rare item finds`
       },
       serendipity: {
         name: "Serendipity",
         icon: "✨",
         description: "Find unexpected opportunities",
         maxLevel: 10,
-        benefits: level => `+${level * 5}% bonus opportunities, +${level * 2}% special job unlocks`
+        benefits: level => level === 0 ? `Next: +5% bonus opportunities, +2% special job unlocks (per level)` : `+${level * 5}% bonus opportunities, +${level * 2}% special job unlocks`
       }
     }
   },
@@ -455,21 +455,21 @@ export const skillTreeDefinitions = {
         icon: "🏃",
         description: "Perform longer operations without fatigue",
         maxLevel: 10,
-        benefits: level => `+${level * 3} max energy, -${level * 2}% energy costs`
+        benefits: level => level === 0 ? `Next: +3 max energy, -2% energy costs (per level)` : `+${level * 3} max energy, -${level * 2}% energy costs`
       },
       recovery: {
         name: "Recovery",
         icon: "❤️‍🩹",
         description: "Heal faster and recover energy more quickly",
         maxLevel: 10,
-        benefits: level => `+${level * 5}% healing rate, +${level * 3}% energy regen`
+        benefits: level => level === 0 ? `Next: +5% healing rate, +3% energy regen (per level)` : `+${level * 5}% healing rate, +${level * 3}% energy regen`
       },
       resistance: {
         name: "Resistance",
         icon: "🛡️",
         description: "Resist drugs, poisons, and environmental hazards",
         maxLevel: 10,
-        benefits: level => `+${level * 4}% poison resistance, +${level * 3}% drug tolerance`
+        benefits: level => level === 0 ? `Next: +4% poison resistance, +3% drug tolerance (per level)` : `+${level * 4}% poison resistance, +${level * 3}% drug tolerance`
       }
     }
   }

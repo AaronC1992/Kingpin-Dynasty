@@ -5053,6 +5053,8 @@ function hideAllScreens() {
   document.getElementById("calendar-screen").style.display = "none";
   document.getElementById("statistics-screen").style.display = "none";
   document.getElementById("options-screen").style.display = "none";
+  const playerStatsScreen = document.getElementById("player-stats-screen");
+  if (playerStatsScreen) playerStatsScreen.style.display = "none";
   const cmdCenter = document.getElementById("command-center");
   if (cmdCenter) cmdCenter.style.display = "none";
 }
@@ -7211,13 +7213,14 @@ function generatePerksContent() {
 }
 
 function getSkillDescription(skillName, level) {
+  const nextLevel = level + 1;
   const descriptions = {
-    stealth: `Reduces arrest chance by ${level * 2}% and improves stealth job success rates.`,
-    violence: `Increases combat effectiveness by ${level * 5}% and reduces injury chance.`,
-    charisma: `Improves negotiation success by ${level * 3}% and reduces store prices by ${level * 2}%.`,
-    intelligence: `Boosts job success rates by ${level * 4}% and unlocks advanced planning options.`,
-    luck: `Increases random event rewards by ${level * 6}% and improves gambling odds.`,
-    endurance: `Reduces energy costs by ${level} point and increases maximum energy by ${level * 2}.`
+    stealth: `<strong>Current:</strong> -${level * 2}% arrest chance | <strong>Next level:</strong> -${nextLevel * 2}%<br><em style="color:#95a5a6;">Each level: -2% arrest chance, better stealth jobs</em>`,
+    violence: `<strong>Current:</strong> +${level * 5}% combat effectiveness | <strong>Next level:</strong> +${nextLevel * 5}%<br><em style="color:#95a5a6;">Each level: +5% combat power, reduced injuries</em>`,
+    charisma: `<strong>Current:</strong> +${level * 3}% negotiation, -${level * 2}% store prices | <strong>Next level:</strong> +${nextLevel * 3}%, -${nextLevel * 2}%<br><em style="color:#95a5a6;">Each level: +3% negotiation, -2% prices</em>`,
+    intelligence: `<strong>Current:</strong> +${level * 4}% job success | <strong>Next level:</strong> +${nextLevel * 4}%<br><em style="color:#95a5a6;">Each level: +4% success rate, advanced planning</em>`,
+    luck: `<strong>Current:</strong> +${level * 6}% event rewards | <strong>Next level:</strong> +${nextLevel * 6}%<br><em style="color:#95a5a6;">Each level: +6% random event rewards, better gambling</em>`,
+    endurance: `<strong>Current:</strong> -${level} energy cost, +${level * 2} max energy | <strong>Next level:</strong> -${nextLevel}, +${nextLevel * 2}<br><em style="color:#95a5a6;">Each level: -1 energy cost, +2 max energy</em>`
   };
   
   return descriptions[skillName] || 'Unknown skill effect.';
@@ -10598,6 +10601,7 @@ const menuUnlockConfig = [
 
   // === EARLY GAME (Level 2-3) ===
   { id: 'skills',      fn: 'showSkills()',            label: 'Expertise',      tip: 'Spend skill points & upgrade',     level: 2 },
+  { id: 'playerstats', fn: 'showPlayerStats()',       label: 'Player Stats',   tip: 'View your current stats & bonuses', level: 2 },
   { id: 'cars',        fn: 'showStolenCars()',        label: 'Motor Pool',     tip: 'Manage your stolen vehicles',      level: 2 },
   { id: 'realestate',  fn: 'showRealEstate()',        label: 'Properties',     tip: 'Buy hideouts & safe houses',       level: 3 },
   { id: 'missions',    fn: 'showMissions()',          label: 'Operations',     tip: 'Story missions & special ops',     level: 3 },
@@ -10758,6 +10762,152 @@ function showCommandCenter() {
   grid.innerHTML = html;
 }
 window.showCommandCenter = showCommandCenter;
+
+// ========================
+// PLAYER STATS SCREEN
+// ========================
+function showPlayerStats() {
+  hideAllScreens();
+  document.getElementById("player-stats-screen").style.display = "block";
+
+  const s = player.skills;
+  const t = player.skillTrees;
+
+  // --- Helper: stat row ---
+  function row(label, value, color) {
+    return `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06);">
+      <span style="color:#bdc3c7;">${label}</span>
+      <span style="color:${color || '#ecf0f1'};font-weight:600;">${value}</span>
+    </div>`;
+  }
+
+  // --- Helper: section card ---
+  function card(title, icon, content) {
+    return `<div style="background:rgba(44,62,80,0.6);border:1px solid rgba(212,175,55,0.2);border-radius:10px;padding:16px;margin-bottom:14px;">
+      <h3 style="color:#d4af37;margin:0 0 10px;font-size:1.05em;">${icon} ${title}</h3>
+      ${content}
+    </div>`;
+  }
+
+  // ---- SECTION 1: Core Stats ----
+  const maxEnergy = 100 + (s.endurance * 2) + (t.endurance.stamina * 3);
+  const coreHTML = [
+    row('Level', player.level, '#d4af37'),
+    row('XP', `${player.experience} / ${player.level * 500 + Math.pow(player.level, 2) * 80 + Math.pow(player.level, 3) * 5}`, '#3498db'),
+    row('Health', `${player.health !== undefined ? player.health : 100} / 100`, '#e74c3c'),
+    row('Energy', `${player.energy !== undefined ? player.energy : maxEnergy} / ${maxEnergy}`, '#2ecc71'),
+    row('Cash', `$${(player.money || 0).toLocaleString()}`, '#27ae60'),
+    row('Dirty Money', `$${(player.dirtyMoney || 0).toLocaleString()}`, '#c0392b'),
+    row('Power', player.power || 0, '#e67e22'),
+    row('Reputation', player.reputation || 0, '#9b59b6'),
+    row('Wanted Level', `${player.wantedLevel || 0} / 100`, '#e74c3c'),
+    row('Suspicion', `${player.suspicionLevel || 0}%`, '#e67e22'),
+    row('Skill Points', player.skillPoints || 0, '#d4af37'),
+  ].join('');
+
+  // ---- SECTION 2: Base Skills ----
+  const skillLabels = {
+    stealth: { icon: '🕵️', desc: '-2% arrest chance per level' },
+    violence: { icon: '⚔️', desc: '+5% combat power per level' },
+    charisma: { icon: '🗣️', desc: '+3% negotiation per level' },
+    intelligence: { icon: '🧠', desc: '+4% job success per level' },
+    luck: { icon: '🍀', desc: '+6% event rewards per level' },
+    endurance: { icon: '💪', desc: '+2 max energy per level' }
+  };
+  const baseSkillsHTML = Object.entries(s).map(([name, level]) => {
+    const info = skillLabels[name] || { icon: '❓', desc: '' };
+    const pctMap = { stealth: level * 2, violence: level * 5, charisma: level * 3, intelligence: level * 4, luck: level * 6, endurance: level * 2 };
+    const bonusVal = name === 'endurance' ? `+${pctMap[name]} max energy` : (name === 'stealth' ? `-${pctMap[name]}%` : `+${pctMap[name]}%`);
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06);">
+      <span style="color:#bdc3c7;">${info.icon} ${name.charAt(0).toUpperCase() + name.slice(1)}</span>
+      <span style="color:#ecf0f1;">Lv ${level}</span>
+      <span style="color:#d4af37;font-weight:600;">${bonusVal}</span>
+    </div>`;
+  }).join('');
+
+  // ---- SECTION 3: Skill Tree Branches ----
+  let treeBranchesHTML = '';
+  for (const [skillName, branches] of Object.entries(t)) {
+    const def = skillTreeDefinitions[skillName];
+    if (!def) continue;
+    for (const [branchName, level] of Object.entries(branches)) {
+      const branchDef = def.branches[branchName];
+      if (!branchDef) continue;
+      const bonusText = level > 0 ? branchDef.benefits(level) : 'Not started';
+      treeBranchesHTML += `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+        <span style="color:#bdc3c7;">${branchDef.icon} ${branchDef.name}</span>
+        <span style="color:#ecf0f1;">Lv ${level}/${branchDef.maxLevel}</span>
+        <span style="color:${level > 0 ? '#d4af37' : '#7f8c8d'};font-size:0.85em;">${bonusText}</span>
+      </div>`;
+    }
+  }
+
+  // ---- SECTION 4: Gang & Territory ----
+  const gangHTML = [
+    row('Gang Members', (player.gang.gangMembers || []).length, '#3498db'),
+    row('Gang Loyalty', `${player.gang.loyalty || 100}%`, '#2ecc71'),
+    row('Max Gang Size', player.realEstate.maxGangMembers || 5, '#ecf0f1'),
+    row('Territories Held', (player.territories || []).length, '#e67e22'),
+    row('Territory Power', player.territoryPower || 100, '#e74c3c'),
+    row('Territory Rep', player.territoryReputation || 0, '#9b59b6'),
+    row('Properties Owned', (player.realEstate.ownedProperties || []).length, '#d4af37'),
+    row('Businesses Owned', (player.businesses || []).length, '#27ae60'),
+  ].join('');
+
+  // ---- SECTION 5: Faction Reputation ----
+  const factionLabels = { torrino: 'Torrino Family', kozlov: 'Kozlov Bratva', chen: 'Chen Triad', morales: 'Morales Cartel', police: 'Police', civilians: 'Civilians', underground: 'Underground' };
+  const factionHTML = Object.entries(player.streetReputation || {}).map(([f, val]) => {
+    const label = factionLabels[f] || f;
+    const color = val > 0 ? '#2ecc71' : (val < 0 ? '#e74c3c' : '#7f8c8d');
+    return row(label, val > 0 ? `+${val}` : val, color);
+  }).join('');
+
+  // ---- SECTION 6: Equipment Bonuses ----
+  let equipHTML = '';
+  if (player.equippedWeapon) {
+    const w = player.equippedWeapon;
+    equipHTML += row('Weapon', `${w.name || 'Unknown'} (+${w.power || w.attack || 0} power)`, '#e74c3c');
+  } else {
+    equipHTML += row('Weapon', 'None equipped', '#7f8c8d');
+  }
+  if (player.equippedArmor) {
+    const a = player.equippedArmor;
+    equipHTML += row('Armor', `${a.name || 'Unknown'} (+${a.defense || 0} defense)`, '#3498db');
+  } else {
+    equipHTML += row('Armor', 'None equipped', '#7f8c8d');
+  }
+  if (player.equippedVehicle) {
+    const v = player.equippedVehicle;
+    equipHTML += row('Vehicle', `${v.name || 'Unknown'}`, '#e67e22');
+  } else {
+    equipHTML += row('Vehicle', 'None', '#7f8c8d');
+  }
+
+  // ---- SECTION 7: Playstyle Stats ----
+  const ps = player.playstyleStats || {};
+  const playstyleHTML = [
+    row('Stealthy Jobs', ps.stealthyJobs || 0),
+    row('Violent Jobs', ps.violentJobs || 0),
+    row('Diplomatic Actions', ps.diplomaticActions || 0),
+    row('Hacking Attempts', ps.hackingAttempts || 0),
+    row('Gambling Wins', ps.gamblingWins || 0),
+    row('Training Sessions', ps.mentoringSessions || 0),
+  ].join('');
+
+  // ---- Assemble full page ----
+  const content = document.getElementById("player-stats-content");
+  content.innerHTML = `
+    <h2 style="color:#d4af37;text-align:center;margin:10px 0 18px;">📊 Player Stats Overview</h2>
+    ${card('Core Stats', '🏛️', coreHTML)}
+    ${card('Base Skills', '📈', baseSkillsHTML)}
+    ${card('Skill Specializations', '🌳', treeBranchesHTML)}
+    ${card('Gang & Territory', '🏴', gangHTML)}
+    ${card('Faction Reputation', '🤝', factionHTML)}
+    ${card('Equipment', '🗡️', equipHTML)}
+    ${card('Playstyle', '🎮', playstyleHTML)}
+  `;
+}
+window.showPlayerStats = showPlayerStats;
 
 // Function to go back to the main menu
 function goBackToMainMenu() {

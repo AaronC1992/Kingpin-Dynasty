@@ -2077,7 +2077,8 @@ p, ul {
 .mobile-device #jailbreak-screen,
 .mobile-device #recruitment-screen,
 .mobile-device #stolen-cars-screen,
-.mobile-device #pharmacy-screen {
+.mobile-device #pharmacy-screen,
+.mobile-device #player-stats-screen {
     padding: 100px 15px 80px 15px !important; /* Top padding for stats bar, bottom for quick actions */
     overflow-y: auto !important;
     max-height: 100vh !important;
