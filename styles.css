@@ -175,6 +175,76 @@ body.season-winter {
     }
 }
 
+/* ── Simplified Main Hub ── */
+.main-hub-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    padding: 30px 20px;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.hub-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 30px 20px;
+    border: 2px solid #d4af37;
+    border-radius: 14px;
+    background: linear-gradient(145deg, rgba(44, 62, 80, 0.9), rgba(26, 26, 26, 0.95));
+    cursor: pointer;
+    transition: all 0.25s ease;
+    text-align: center;
+    min-height: 160px;
+}
+.hub-btn:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 30px rgba(212, 175, 55, 0.35);
+    border-color: #f1c40f;
+    background: linear-gradient(145deg, rgba(52, 73, 94, 0.95), rgba(30, 30, 30, 0.98));
+}
+.hub-btn:active {
+    transform: translateY(0);
+}
+
+.hub-icon {
+    font-size: 2.8em;
+    margin-bottom: 10px;
+    display: block;
+}
+.hub-label {
+    font-size: 1.3em;
+    font-weight: bold;
+    color: #ecf0f1;
+    letter-spacing: 0.5px;
+    display: block;
+}
+.hub-desc {
+    font-size: 0.8em;
+    color: #95a5a6;
+    margin-top: 6px;
+    display: block;
+}
+
+/* Accent borders per button */
+.hub-jobs  { border-left: 5px solid #2ecc71; }
+.hub-ops   { border-left: 5px solid #e74c3c; }
+.hub-motor { border-left: 5px solid #3498db; }
+.hub-cmd   { border-left: 5px solid #f39c12; }
+
+@media (max-width: 500px) {
+    .main-hub-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+        padding: 20px 12px;
+    }
+    .hub-btn { min-height: 120px; padding: 20px 14px; }
+    .hub-icon { font-size: 2.2em; }
+}
+
+/* ── Full Command Center Grid ── */
 .menu-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));

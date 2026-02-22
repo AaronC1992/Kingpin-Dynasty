@@ -114,6 +114,12 @@ function updateMissionProgress(actionType, value = 1) {
     case 'faction_mission_completed':
       stats.factionMissionsCompleted += value;
       break;
+    case 'reputation_changed':
+      // No stat to update — checkCampaignProgress reads player.reputation directly
+      break;
+    case 'property_acquired':
+      // No stat to update — checkCampaignProgress reads ownedProperties.length directly
+      break;
   }
   
   // Check if current campaign chapter is completed
@@ -411,6 +417,44 @@ function generateFactionMissionsHTML() {
         }).join('')}
         
         ${unlockedMissions.length === 0 && lockedMissions.length === 0 ? '<p><small>No missions available</small></p>' : ''}
+        
+        ${(() => {
+          // Signature Job - gated behind 20+ faction reputation
+          const sigJob = family.signatureJob;
+          if (!sigJob) return '';
+          const cooldowns = player.missions.signatureJobCooldowns || {};
+          const lastRun = cooldowns[sigJob.id] || 0;
+          const cooldownMs = (sigJob.cooldown || 24) * 60 * 60 * 1000;
+          const now = Date.now();
+          const onCooldown = (now - lastRun) < cooldownMs;
+          const remaining = onCooldown ? Math.ceil((cooldownMs - (now - lastRun)) / 60000) : 0;
+          const hasRep = reputation >= 20;
+          
+          if (!hasRep) {
+            return `
+              <div style="margin: 8px 0; padding: 10px; background: rgba(155,89,182,0.1); border-radius: 5px; border: 1px solid rgba(155,89,182,0.3);">
+                <strong style="color: #7f8c8d; font-family: 'Georgia', serif;">🔒 SIGNATURE JOB: ${sigJob.name}</strong>
+                <br><small style="color: #95a5a6;">${sigJob.description}</small>
+                <br><small style="color: #8b0000;">Requires 20 ${family.name} reputation (you have ${reputation})</small>
+              </div>
+            `;
+          }
+          
+          return `
+            <div style="margin: 8px 0; padding: 10px; background: rgba(155,89,182,0.15); border-radius: 5px; border: 1px solid rgba(155,89,182,0.5);">
+              <strong style="color: #9b59b6; font-family: 'Georgia', serif;">⭐ SIGNATURE JOB: ${sigJob.name}</strong>
+              <br><small style="color: #ecf0f1;">${sigJob.description}</small>
+              <br><small style="color: #f39c12;">💰 $${sigJob.baseReward.toLocaleString()} | ⚡ ${sigJob.xpReward} XP | Type: ${sigJob.type}</small>
+              <br>${onCooldown 
+                ? `<small style="color: #e67e22;">⏳ Cooldown: ${remaining >= 60 ? Math.floor(remaining/60) + 'h ' + (remaining%60) + 'm' : remaining + 'm'} remaining</small>`
+                : `<button onclick="startSignatureJob('${familyKey}')" 
+                    style="background: #9b59b6; color: white; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; margin-top: 5px; font-weight: bold;">
+                  Execute Signature Job
+                </button>`
+              }
+            </div>
+          `;
+        })()}
       </div>
     `;
   });
@@ -598,6 +642,7 @@ async function startFactionMission(familyKey, missionId) {
     // Mark mission as completed
     player.missions.completedMissions.push(missionId);
     updateMissionProgress('faction_mission_completed');
+    updateMissionProgress('reputation_changed');
     
     logAction(`Mission "${mission.name}" completed for ${crimeFamilies[familyKey].name}! +$${earnings}, +${mission.factionRep} family reputation.`);
     logAction(mission.story);
@@ -613,6 +658,86 @@ async function startFactionMission(familyKey, missionId) {
     logAction(`💥 Mission "${mission.name}" failed! The ${crimeFamilies[familyKey].name} is not pleased with your performance.`);
     showBriefNotification("Mission failed! Try again when you're better prepared.", 'danger');
   }
+  
+  updateUI();
+  showMissions();
+}
+
+// Execute a faction's signature job (special job with cooldown, gated by faction rep)
+function startSignatureJob(familyKey) {
+  const family = crimeFamilies[familyKey];
+  if (!family || !family.signatureJob) return;
+  
+  const sigJob = family.signatureJob;
+  const reputation = player.missions.factionReputation[familyKey] || 0;
+  
+  // Gate: require 20+ faction reputation
+  if (reputation < 20) {
+    alert(`You need 20 reputation with ${family.name} to attempt their signature job.`);
+    return;
+  }
+  
+  // Cooldown check
+  if (!player.missions.signatureJobCooldowns) player.missions.signatureJobCooldowns = {};
+  const lastRun = player.missions.signatureJobCooldowns[sigJob.id] || 0;
+  const cooldownMs = (sigJob.cooldown || 24) * 60 * 60 * 1000;
+  if ((Date.now() - lastRun) < cooldownMs) {
+    const remaining = Math.ceil((cooldownMs - (Date.now() - lastRun)) / 60000);
+    alert(`This signature job is on cooldown. Try again in ${remaining >= 60 ? Math.floor(remaining/60) + 'h ' + (remaining%60) + 'm' : remaining + 'm'}.`);
+    return;
+  }
+  
+  // Energy cost (flat 20)
+  const energyCost = 20;
+  if (player.energy < energyCost) {
+    alert(`You need ${energyCost} energy for this signature job.`);
+    return;
+  }
+  
+  player.energy -= energyCost;
+  startEnergyRegenTimer();
+  
+  // Success chance based on the signature job's type (maps to player skill)
+  const skillMap = { charisma: 'charisma', violence: 'violence', intelligence: 'intelligence', stealth: 'stealth' };
+  const relevantSkill = player.skills[skillMap[sigJob.type]] || 0;
+  let successChance = 40 + (relevantSkill * 3) + (player.power * 0.15) + (reputation * 0.5);
+  successChance = Math.min(successChance, 90);
+  
+  if (Math.random() * 100 < successChance) {
+    // Success
+    const rewardMultiplier = 1 + (reputation / 100); // Higher rep => bigger reward
+    const earnings = Math.floor(sigJob.baseReward * rewardMultiplier);
+    player.dirtyMoney = (player.dirtyMoney || 0) + earnings;
+    player.reputation += 3;
+    player.missions.factionReputation[familyKey] += 5;
+    gainExperience(sigJob.xpReward);
+    
+    // Kozlov special bonus: random weapon on success
+    if (familyKey === 'kozlov') {
+      const bonusWeapons = ['Combat Knife', 'Pistol', 'Shotgun'];
+      const bonusWeapon = bonusWeapons[Math.floor(Math.random() * bonusWeapons.length)];
+      player.inventory.push({ name: bonusWeapon, power: 15 + Math.floor(Math.random() * 20), type: 'weapon' });
+      logAction(`🔫 Kozlov bonus: You scored a ${bonusWeapon} from the convoy!`);
+    }
+    
+    logAction(`⭐ Signature Job "${sigJob.name}" completed for ${family.name}! +$${earnings.toLocaleString()} (dirty), +${sigJob.xpReward} XP, +5 family rep.`);
+    alert(`Signature job complete! Earned $${earnings.toLocaleString()} and gained standing with ${family.name}.`);
+    
+    updateMissionProgress('reputation_changed');
+  } else {
+    // Failure
+    const jailRoll = Math.random() * 100;
+    if (jailRoll < 25) {
+      sendToJail(3);
+      logAction(`⭐ Signature job "${sigJob.name}" went sideways — you got pinched!`);
+      return;
+    }
+    logAction(`⭐ Signature job "${sigJob.name}" failed. ${family.name} is disappointed but willing to give you another shot.`);
+    alert(`The ${sigJob.name} didn't go as planned. Better luck next time.`);
+  }
+  
+  // Set cooldown regardless of outcome
+  player.missions.signatureJobCooldowns[sigJob.id] = Date.now();
   
   updateUI();
   showMissions();
@@ -724,6 +849,7 @@ async function startBossBattle(battleId) {
     player.reputation += battle.rewards.reputation;
     player.territory += battle.rewards.territory;
     player.experience += battle.rewards.experience;
+    updateMissionProgress('reputation_changed');
     
     // Add unique item if exists
     if (battle.rewards.unique_item) {
@@ -2091,7 +2217,13 @@ function startLaundering(methodId) {
   // Calculate success and clean amount
   const suspicionRoll = Math.random() * 100;
   const currentSuspicion = player.suspicionLevel || 0;
-  const adjustedSuspicionRisk = method.suspicionRisk + (currentSuspicion * 0.5);
+  let adjustedSuspicionRisk = method.suspicionRisk + (currentSuspicion * 0.5);
+  
+  // Utility item: Burner Phone reduces suspicion risk by 15%
+  if (hasUtilityItem('Burner Phone')) {
+    adjustedSuspicionRisk *= 0.85;
+    logAction(`📱 Your Burner Phone keeps communications untraceable — suspicion risk reduced.`);
+  }
   
   if (suspicionRoll < adjustedSuspicionRisk) {
     // Caught! Lose money and gain suspicion
@@ -4612,6 +4744,8 @@ function hideAllScreens() {
   document.getElementById("calendar-screen").style.display = "none";
   document.getElementById("statistics-screen").style.display = "none";
   document.getElementById("options-screen").style.display = "none";
+  const cmdCenter = document.getElementById("command-center");
+  if (cmdCenter) cmdCenter.style.display = "none";
 }
 
 // Function to show jobs
@@ -4650,6 +4784,15 @@ function showJobs() {
           buttonColor = "orange";
           buttonText = `Need ${actualEnergyCost} Energy`;
           isDisabled = true;
+        } else if (job.risk === "legendary") {
+          buttonColor = "#9b59b6";
+          buttonText = "Legendary Hit";
+        } else if (job.risk === "extreme") {
+          buttonColor = "#c0392b";
+          buttonText = "Go All In";
+        } else if (job.risk === "very high") {
+          buttonColor = "#e67e22";
+          buttonText = "High Stakes";
         } else if (job.risk === "high") {
           buttonColor = "gold";
           buttonText = "Execute";
@@ -4863,8 +5006,13 @@ function getReputationPriceModifier(faction) {
   return 1.0; // No change for neutral reputation
 }
 
+// Check if the player has a specific utility item in their inventory
+function hasUtilityItem(name) {
+  return player.inventory && player.inventory.some(i => i.name === name);
+}
+
 // Function to start a job
-function startJob(index) {
+async function startJob(index) {
   if (player.inJail) {
     alert("You can't work while you're in jail!");
     return;
@@ -4906,6 +5054,75 @@ function startJob(index) {
     return;
   }
 
+  // ---- JOB DEPTH: Approach choices for mid & elite tier jobs ----
+  let approachBonus = 0;
+  let approachLabel = '';
+  
+  if (job.risk === 'high' || job.risk === 'very high') {
+    // Mid-tier: choose approach — "Go Loud" or "Stay Quiet"
+    const modal = new ModalSystem();
+    const choice = await modal.show(
+      `Plan the ${job.name}`,
+      `<p>This is a <strong>${job.risk.toUpperCase()}</strong> risk job. How do you want to play it?</p>
+       <p style="color:#e74c3c;"><strong>Go Loud</strong> — Brute force. Higher success using <em>violence</em>, but more heat & injury risk.</p>
+       <p style="color:#3498db;"><strong>Stay Quiet</strong> — Stealth approach. Higher success using <em>stealth</em>, but lower payout if things go sideways.</p>`,
+      [
+        { text: 'Go Loud', class: 'modal-btn-primary', value: 'loud', callback: () => true },
+        { text: 'Stay Quiet', class: 'modal-btn-secondary', value: 'quiet', callback: () => true },
+        { text: 'Abort', class: 'modal-btn-secondary', value: 'abort', callback: () => true }
+      ]
+    );
+    
+    if (!choice || choice === 'abort') return;
+    
+    if (choice === 'loud') {
+      approachBonus = player.skills.violence * 3;
+      approachLabel = 'Loud';
+      logAction(`💥 You gear up for a loud approach on the ${job.name}. Violence is your friend today.`);
+    } else {
+      approachBonus = player.skills.stealth * 3;
+      approachLabel = 'Quiet';
+      logAction(`🤫 You plan a stealthy approach for the ${job.name}. Patience is key.`);
+    }
+  } else if (job.risk === 'extreme' || job.risk === 'legendary') {
+    // Elite-tier: briefing panel with crew & vehicle readiness
+    const gangReady = player.gang.members >= 3;
+    const carReady = player.selectedCar !== null && player.selectedCar < player.stolenCars.length;
+    const gangStatus = gangReady 
+      ? `<span style="color:#2ecc71;">&#10004; ${player.gang.members} soldiers standing by</span>` 
+      : `<span style="color:#e74c3c;">&#10008; Need at least 3 gang members (have ${player.gang.members})</span>`;
+    const carStatus = carReady 
+      ? `<span style="color:#2ecc71;">&#10004; Getaway vehicle selected: ${player.stolenCars[player.selectedCar].name}</span>` 
+      : `<span style="color:#e67e22;">&#10008; No getaway vehicle selected (optional but recommended)</span>`;
+    
+    const modal = new ModalSystem();
+    const choice = await modal.show(
+      `${job.risk.toUpperCase()} BRIEFING: ${job.name}`,
+      `<div style="padding:8px;">
+        <p>This is a <strong style="color:#9b59b6;">${job.risk.toUpperCase()}</strong> operation. Review your readiness:</p>
+        <div style="margin:10px 0; padding:10px; background:rgba(0,0,0,0.3); border-radius:5px;">
+          <strong>Crew:</strong> ${gangStatus}<br>
+          <strong>Vehicle:</strong> ${carStatus}<br>
+          <strong>Your Power:</strong> ${player.power} | <strong>Health:</strong> ${player.health}
+        </div>
+        <p style="color:#f39c12;">Gang members provide a bonus to success chance. A getaway vehicle boosts your odds further.</p>
+       </div>`,
+      [
+        { text: 'Launch Operation', class: 'modal-btn-primary', value: 'go', callback: () => true },
+        { text: 'Stand Down', class: 'modal-btn-secondary', value: 'abort', callback: () => true }
+      ]
+    );
+    
+    if (!choice || choice === 'abort') return;
+    
+    // Crew bonus for elite jobs
+    if (gangReady) {
+      approachBonus = Math.min(player.gang.members * 2, 20); // Up to +20% from crew
+      logAction(`👥 Your crew of ${player.gang.members} rolls out with you — strength in numbers.`);
+    }
+    approachLabel = 'Briefed';
+  }
+
   // OFFLINE / FALLBACK: proceed with legacy local simulation
   player.energy -= actualEnergyCost;
   startEnergyRegenTimer(); // Start the regeneration timer
@@ -4936,6 +5153,13 @@ function startJob(index) {
     logAction(`🌡️ The current atmosphere makes people more aggressive - perfect for violent jobs!`);
   }
   
+  // Utility item: Lockpick Set gives +10% success on all jobs
+  let utilityBonus = 0;
+  if (hasUtilityItem('Lockpick Set')) {
+    utilityBonus += 10;
+    logAction(`🔓 Your Lockpick Set gives you an edge on this job (+10% success).`);
+  }
+  
   // Car bonus for jobs (if player has selected a car)
   if (player.selectedCar !== null && player.selectedCar < player.stolenCars.length) {
     let selectedCar = player.stolenCars[player.selectedCar];
@@ -4951,11 +5175,17 @@ function startJob(index) {
   }
   
   if (job.risk === "low") {
-    successChance = 30 + player.power * 0.3 + skillBonus + carBonus + advancedBonus + eventBonus; // Base 30% chance, increased by power, skills, car, and events
+    successChance = 30 + player.power * 0.3 + skillBonus + carBonus + advancedBonus + eventBonus + utilityBonus + approachBonus;
   } else if (job.risk === "medium") {
-    successChance = 20 + player.power * 0.2 + skillBonus + carBonus + advancedBonus + eventBonus; // Base 20% chance, increased by power, skills, car, and events
+    successChance = 20 + player.power * 0.2 + skillBonus + carBonus + advancedBonus + eventBonus + utilityBonus + approachBonus;
   } else if (job.risk === "high") {
-    successChance = 10 + player.power * 0.1 + skillBonus + carBonus + advancedBonus + eventBonus; // Base 10% chance, increased by power, skills, car, and events
+    successChance = 10 + player.power * 0.1 + skillBonus + carBonus + advancedBonus + eventBonus + utilityBonus + approachBonus;
+  } else if (job.risk === "very high") {
+    successChance = 5 + player.power * 0.08 + skillBonus + carBonus + advancedBonus + eventBonus + utilityBonus + approachBonus;
+  } else if (job.risk === "extreme") {
+    successChance = 3 + player.power * 0.05 + skillBonus + carBonus + advancedBonus + eventBonus + utilityBonus + approachBonus;
+  } else if (job.risk === "legendary") {
+    successChance = 1 + player.power * 0.03 + skillBonus + carBonus + advancedBonus + eventBonus + utilityBonus + approachBonus;
   }
 
   // Cap success chance at 95%
@@ -5044,12 +5274,24 @@ function startJob(index) {
   
   // Apply intimidation to reduce wanted level gain (witnesses too scared to report)
   let wantedLevelGain = job.wantedLevelGain;
+  
+  // Approach consequence: "Go Loud" adds 30% more heat
+  if (approachLabel === 'Loud') {
+    wantedLevelGain = Math.ceil(wantedLevelGain * 1.3);
+  }
+  
   let intimidationReduction = player.skillTrees.violence.intimidation * 0.1; // 10% reduction per level
   wantedLevelGain = Math.max(1, Math.floor(wantedLevelGain * (1 - intimidationReduction)));
   
   // Ghost Protocol perk: reduce heat generation by 50%
   if (player.unlockedPerks.includes('ghostProtocol')) {
     wantedLevelGain = Math.max(1, Math.floor(wantedLevelGain * 0.5));
+  }
+  
+  // Utility item: Police Scanner reduces wanted level gain by 20%
+  if (hasUtilityItem('Police Scanner')) {
+    wantedLevelGain = Math.max(1, Math.floor(wantedLevelGain * 0.8));
+    logAction(`📡 Your Police Scanner intercepts radio chatter — you dodge the heat (+20% wanted reduction).`);
   }
   
   // Morales Cartel passive: violent crimes generate 20% less heat
@@ -5120,7 +5362,25 @@ function startJob(index) {
     maxHealthLoss = 50;
     player.reputation += 2;
     gainExperience(50);
+  } else if (job.risk === "very high") {
+    hurtChance = Math.max(0, 15 - player.power * 0.12 - player.skills.violence * 0.5);
+    maxHealthLoss = 60;
+    player.reputation += 3;
+    gainExperience(75);
+  } else if (job.risk === "extreme") {
+    hurtChance = Math.max(0, 20 - player.power * 0.15 - player.skills.violence * 0.5);
+    maxHealthLoss = 75;
+    player.reputation += 5;
+    gainExperience(100);
+  } else if (job.risk === "legendary") {
+    hurtChance = Math.max(0, 25 - player.power * 0.18 - player.skills.violence * 0.5);
+    maxHealthLoss = 90;
+    player.reputation += 8;
+    gainExperience(150);
   }
+
+  // Track reputation changes for campaign objectives
+  updateMissionProgress('reputation_changed');
 
   // Check if the player gets hurt
   if (Math.random() * 100 < hurtChance) {
@@ -5144,7 +5404,10 @@ function startJob(index) {
   let carCatastrophe = false;
   if (player.selectedCar !== null) {
     let damageAmount = Math.floor(Math.random() * 15) + 5; // 5-20% damage per use
-    if (job.risk === "high") damageAmount += 10; // Extra damage for high-risk jobs
+    if (job.risk === "high") damageAmount += 10;
+    else if (job.risk === "very high") damageAmount += 15;
+    else if (job.risk === "extreme") damageAmount += 20;
+    else if (job.risk === "legendary") damageAmount += 30;
     
     carCatastrophe = damageCar(player.selectedCar, damageAmount);
     if (!carCatastrophe) {
@@ -5698,7 +5961,15 @@ function sendToJail(wantedLevelLoss) {
   // Jail time scales with wanted level but caps at 90 seconds. Escape skill reduces time.
   const escapeReduction = (player.skillTrees.stealth.escape || 0) * 2; // -2s per escape level
   const baseJailTime = Math.min(90, 15 + Math.floor(player.wantedLevel * 0.8));
-  player.jailTime = Math.max(10, baseJailTime - escapeReduction);
+  let calculatedJailTime = Math.max(10, baseJailTime - escapeReduction);
+  
+  // Utility item: Fake ID Kit reduces jail time by 5 seconds
+  if (hasUtilityItem('Fake ID Kit')) {
+    calculatedJailTime = Math.max(5, calculatedJailTime - 5);
+    logAction(`🪪 Your Fake ID Kit confuses the booking officers — shorter sentence!`);
+  }
+  
+  player.jailTime = calculatedJailTime;
 
   if (window.EventBus) {
     try { EventBus.emit('jailStatusChanged', { inJail: true, jailTime: player.jailTime }); } catch(e) {}
@@ -9247,6 +9518,13 @@ function handleReactionClick() {
   }
 }
 
+// Function to show the Command Center (full menu with all options)
+function showCommandCenter() {
+  hideAllScreens();
+  document.getElementById("command-center").style.display = "block";
+}
+window.showCommandCenter = showCommandCenter;
+
 // Function to go back to the main menu
 function goBackToMainMenu() {
   // Prevent leaving jail when incarcerated
@@ -10442,6 +10720,7 @@ function resetPlayerForNewGame() {
       },
       unlockedTerritoryMissions: ["suburbs_expansion"],
       unlockedBossBattles: [],
+      signatureJobCooldowns: {},
       missionStats: {
         jobsCompleted: 0,
         moneyEarned: 0,
@@ -11462,6 +11741,9 @@ function buyProperty(index) {
   
   alert(`Congratulations! You now own ${property.name}. Your gang capacity has increased by ${property.gangCapacity} members!`);
   logAction(`🏢 Real estate empire grows! You've acquired ${property.name} for $${property.price.toLocaleString()}. Your criminal organization now has more room to expand.`);
+  
+  // Track mission progress for property ownership
+  updateMissionProgress('property_acquired');
   
   // Check achievements
   checkAchievements();
@@ -17104,6 +17386,7 @@ window.generateFactionMissionsHTML = generateFactionMissionsHTML;
 window.generateTerritoryMissionsHTML = generateTerritoryMissionsHTML;
 window.generateBossBattlesHTML = generateBossBattlesHTML;
 window.startFactionMission = startFactionMission;
+window.startSignatureJob = startSignatureJob;
 window.startTerritoryMission = startTerritoryMission;
 window.startBossBattle = startBossBattle;
 
