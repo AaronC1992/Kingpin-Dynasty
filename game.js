@@ -4649,12 +4649,14 @@ if (typeof window !== 'undefined') {
 }
 
 // Function to refresh the currently active screen
+// IMPORTANT: This runs every ~1 second via the energy regen loop.
+// Never do a full innerHTML rebuild here — only patch individual elements
+// to avoid destroying hover/focus states and causing visible flicker.
 function refreshCurrentScreen() {
-  // Check if jobs screen is visible and refresh just the job list
+  // Check if jobs screen is visible — patch buttons only
   const jobsScreen = document.getElementById("jobs-screen");
   if (jobsScreen && jobsScreen.style.display !== "none") {
-    // Use optimized job list update to avoid full screen reload
-    refreshJobsList();
+    refreshJobsButtons();
     return;
   }
   
@@ -4667,67 +4669,30 @@ function refreshCurrentScreen() {
     return;
   }
   
-  // Check if skills screen is visible and refresh it
-  const skillsScreen = document.getElementById("skills-screen");
-  if (skillsScreen && skillsScreen.style.display !== "none") {
-    // Only refresh if on basic skills tab (which shows skill points)
-    const basicTab = document.getElementById("tab-basic");
-    if (basicTab && basicTab.classList.contains("active-tab")) {
-      showSkillTab('basic');
-    }
-    return;
-  }
-  
-  // Check if gang screen is visible and refresh it
-  const gangScreen = document.getElementById("gang-screen");
-  if (gangScreen && gangScreen.style.display !== "none") {
-    showGang(); // Refresh the gang screen
-    return;
-  }
-  
-  // Check if business screen is visible and refresh it
-  const businessScreen = document.getElementById("business-screen");
-  if (businessScreen && businessScreen.style.display !== "none") {
-    showBusinesses(); // Refresh the business screen
-    return;
-  }
+  // Skills — no per-second refresh needed (points update in HUD bar)
+  // Gang — no per-second refresh needed
+  // Business — no per-second refresh needed
 }
 
-// Optimized function to refresh just the job list without reloading the entire jobs screen
-function refreshJobsList() {
+// Lightweight per-second refresh: only patch job button text / color / disabled
+// without replacing any DOM nodes. This prevents hover-state flicker.
+function refreshJobsButtons() {
   const jobListElement = document.getElementById("job-list");
-  if (!jobListElement) {
-    // Fallback to full refresh if element structure is different
-    showJobs();
-    return;
-  }
+  if (!jobListElement) return;
 
-  if (player.inJail) {
-    jobListElement.innerHTML = '<p style="color: #e74c3c; text-align: center; padding: 20px;">You cannot work while in jail!</p>';
-    return;
-  }
+  const buttons = jobListElement.querySelectorAll('button[data-job-index]');
+  buttons.forEach(btn => {
+    const index = parseInt(btn.getAttribute('data-job-index'), 10);
+    const job = jobs[index];
+    if (!job) return;
 
-  // Generate the same job list HTML as showJobs() function but just for the list part
-  let jobListHTML = jobs.map((job, index) => {
     const hasRequirements = hasRequiredItems(job.requiredItems) && player.reputation >= job.reputation;
-    const requirementsText = job.requiredItems.length > 0 ? `Required Items: ${job.requiredItems.join(", ")}` : "No required items";
-    
-    // Calculate actual energy cost with endurance skill
     const actualEnergyCost = Math.max(1, job.energyCost - player.skills.endurance);
-    
-    let payoutText = "";
-    if (job.special === "car_theft") {
-      payoutText = "Steal random car to sell";
-    } else if (job.paysDirty) {
-      payoutText = `<span style="color:#e74c3c;">$${job.payout[0].toLocaleString()} to $${job.payout[1].toLocaleString()} (DIRTY MONEY)</span>`;
-    } else {
-      payoutText = `$${job.payout[0].toLocaleString()} to $${job.payout[1].toLocaleString()}`;
-    }
-    
+
     let buttonColor = "green";
     let buttonText = "Work";
     let isDisabled = false;
-    
+
     if (!hasRequirements) {
       buttonColor = "red";
       buttonText = "Requirements Not Met";
@@ -4740,17 +4705,69 @@ function refreshJobsList() {
       buttonColor = "gold";
       buttonText = "Execute";
     }
-    
-    let energyDisplay = actualEnergyCost < job.energyCost ? 
-      `${actualEnergyCost} (reduced from ${job.energyCost})` : 
+
+    // Only touch the DOM if something actually changed
+    if (btn.style.backgroundColor !== buttonColor) btn.style.backgroundColor = buttonColor;
+    if (btn.disabled !== isDisabled) btn.disabled = isDisabled;
+    if (btn.textContent.trim() !== buttonText) btn.textContent = buttonText;
+  });
+}
+
+// Full job-list rebuild — called by showJobs() and energy-purchase helpers.
+// NOT called on the per-second timer.
+function refreshJobsList() {
+  const jobListElement = document.getElementById("job-list");
+  if (!jobListElement) {
+    showJobs();
+    return;
+  }
+
+  if (player.inJail) {
+    jobListElement.innerHTML = '<p style="color: #e74c3c; text-align: center; padding: 20px;">You cannot work while in jail!</p>';
+    return;
+  }
+
+  let jobListHTML = jobs.map((job, index) => {
+    const hasRequirements = hasRequiredItems(job.requiredItems) && player.reputation >= job.reputation;
+    const requirementsText = job.requiredItems.length > 0 ? `Required Items: ${job.requiredItems.join(", ")}` : "No required items";
+    const actualEnergyCost = Math.max(1, job.energyCost - player.skills.endurance);
+
+    let payoutText = "";
+    if (job.special === "car_theft") {
+      payoutText = "Steal random car to sell";
+    } else if (job.paysDirty) {
+      payoutText = `<span style="color:#e74c3c;">$${job.payout[0].toLocaleString()} to $${job.payout[1].toLocaleString()} (DIRTY MONEY)</span>`;
+    } else {
+      payoutText = `$${job.payout[0].toLocaleString()} to $${job.payout[1].toLocaleString()}`;
+    }
+
+    let buttonColor = "green";
+    let buttonText = "Work";
+    let isDisabled = false;
+
+    if (!hasRequirements) {
+      buttonColor = "red";
+      buttonText = "Requirements Not Met";
+      isDisabled = true;
+    } else if (player.energy < actualEnergyCost) {
+      buttonColor = "orange";
+      buttonText = `Need ${actualEnergyCost} Energy`;
+      isDisabled = true;
+    } else if (job.risk === "high") {
+      buttonColor = "gold";
+      buttonText = "Execute";
+    }
+
+    let energyDisplay = actualEnergyCost < job.energyCost ?
+      `${actualEnergyCost} (reduced from ${job.energyCost})` :
       `${actualEnergyCost}`;
-    
+
     return `
       <li>
         <strong>${job.name}</strong> - ${payoutText}
         <br><small>Risk: ${job.risk.toUpperCase()} | Energy Cost: ${energyDisplay}</small>
-        <button style="background-color: ${buttonColor};" 
-            onclick="startJob(${index})" 
+        <button data-job-index="${index}" style="background-color: ${buttonColor};"
+            onclick="startJob(${index})"
             ${isDisabled ? 'disabled' : ''}
             title="Reputation Required: ${job.reputation}\n${requirementsText}\nJail Chance: ${job.jailChance}%\nHealth Loss: Up to ${job.healthLoss}\nWanted Level Gain: ${job.wantedLevelGain}\nEnergy Cost: ${actualEnergyCost}">
           ${buttonText}
@@ -5119,7 +5136,7 @@ function showJobs() {
           <li>
             <strong>${job.name}</strong> - ${payoutText}
             <br><small>Risk: ${job.risk.toUpperCase()} | Energy Cost: ${energyDisplay}</small>
-            <button style="background-color: ${buttonColor};" 
+            <button data-job-index="${index}" style="background-color: ${buttonColor};" 
                 onclick="startJob(${index})" 
                 ${isDisabled ? 'disabled' : ''}
                 title="Reputation Required: ${job.reputation}\n${requirementsText}\nJail Chance: ${job.jailChance}%\nHealth Loss: Up to ${job.healthLoss}\nWanted Level Gain: ${job.wantedLevelGain}\nEnergy Cost: ${actualEnergyCost}">
