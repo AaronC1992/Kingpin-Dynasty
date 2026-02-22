@@ -5039,6 +5039,8 @@ function hasRequiredItems(requiredItems) {
 
 // Function to hide all screens
 function hideAllScreens() {
+  // Always scroll to top on screen transitions
+  window.scrollTo(0, 0);
   document.getElementById("menu").style.display = "none";
   document.getElementById("gameplay").style.display = "none";
   document.getElementById("jobs-screen").style.display = "none";
