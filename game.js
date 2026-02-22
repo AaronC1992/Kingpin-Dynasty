@@ -4773,15 +4773,25 @@ function updateRightPanel() {
 }
 
 // Quick Actions panel — respects the progressive unlock system
-const quickActionIds = ['jobs', 'store', 'missions', 'gang', 'businesses', 'territory', 'casino', 'skills'];
+// Default shortcuts shown before the player customizes
+const DEFAULT_QUICK_ACTIONS = ['jobs', 'store', 'missions', 'gang', 'businesses', 'territory', 'casino', 'skills'];
+
+function getQuickActionIds() {
+  if (player.quickActionPrefs && player.quickActionPrefs.length > 0) {
+    return player.quickActionPrefs;
+  }
+  return DEFAULT_QUICK_ACTIONS;
+}
 
 function updateQuickActions() {
   const container = document.getElementById('quick-actions-list');
   if (!container) return;
 
+  const ids = getQuickActionIds();
+
   let html = `<button onclick="goBackToMainMenu()" class="quick-btn main-menu-btn">Command Center</button>`;
 
-  quickActionIds.forEach(id => {
+  ids.forEach(id => {
     const item = menuUnlockConfig.find(m => m.id === id);
     if (item && isMenuItemUnlocked(item)) {
       html += `<button onclick="${item.fn}" class="quick-btn">${item.label}</button>`;
@@ -4793,6 +4803,78 @@ function updateQuickActions() {
   container.innerHTML = html;
 }
 window.updateQuickActions = updateQuickActions;
+
+// ==================== QUICK ACTION CUSTOMIZER ====================
+
+function showQuickActionCustomizer() {
+  const unlocked = menuUnlockConfig.filter(item => isMenuItemUnlocked(item));
+  const current = getQuickActionIds();
+
+  let html = `
+    <div class="page-header">
+      <h1><span class="icon"></span> Quick Actions</h1>
+      <div class="breadcrumb">
+        <a href="#" onclick="goBackToMainMenu(); return false;">Command Center</a>
+        <span class="separator">›</span>
+        <a href="#" onclick="showOptions(); return false;">Settings</a>
+        <span class="separator">›</span>
+        <span class="current">Quick Actions</span>
+      </div>
+    </div>
+
+    <div style="max-width:700px;margin:0 auto;">
+      <p style="color:#bdc3c7;text-align:center;margin-bottom:20px;font-size:0.95em;">Pick which shortcuts appear in the right-hand panel.<br>Command Center and Save Records are always shown.</p>
+
+      <div id="qa-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:25px;">
+        ${unlocked.map(item => {
+          const active = current.includes(item.id);
+          return `<label data-qaid="${item.id}" onclick="toggleQuickActionPref('${item.id}')" 
+            style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:10px;cursor:pointer;transition:all 0.2s;
+            background:${active ? 'rgba(46,204,113,0.15)' : 'rgba(52,73,94,0.5)'};
+            border:2px solid ${active ? '#2ecc71' : '#555'};">
+            <span style="font-size:1.4em;">${active ? '✅' : '⬜'}</span>
+            <span style="color:#ecf0f1;font-weight:bold;">${item.label}</span>
+          </label>`;
+        }).join('')}
+      </div>
+
+      <div style="text-align:center;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+        <button onclick="resetQuickActionPrefs()" style="background:#95a5a6;color:#fff;padding:12px 24px;border:none;border-radius:8px;cursor:pointer;font-size:1em;">↩ Reset to Default</button>
+        <button onclick="showOptions()" style="background:linear-gradient(135deg,#d4af37,#b8962e);color:#1a1a2e;padding:12px 24px;border:none;border-radius:8px;cursor:pointer;font-weight:bold;font-size:1em;">✔ Done</button>
+      </div>
+    </div>`;
+
+  hideAllScreens();
+  // Re-use the statistics screen as a general-purpose display area
+  const screen = document.getElementById('statistics-screen');
+  screen.style.display = 'block';
+  const content = document.getElementById('statistics-content') || screen;
+  content.innerHTML = html;
+}
+window.showQuickActionCustomizer = showQuickActionCustomizer;
+
+function toggleQuickActionPref(id) {
+  if (!player.quickActionPrefs) {
+    player.quickActionPrefs = [...DEFAULT_QUICK_ACTIONS];
+  }
+  const idx = player.quickActionPrefs.indexOf(id);
+  if (idx !== -1) {
+    player.quickActionPrefs.splice(idx, 1);
+  } else {
+    player.quickActionPrefs.push(id);
+  }
+  updateQuickActions();
+  // Re-render the customizer grid to reflect the toggle
+  showQuickActionCustomizer();
+}
+window.toggleQuickActionPref = toggleQuickActionPref;
+
+function resetQuickActionPrefs() {
+  player.quickActionPrefs = [...DEFAULT_QUICK_ACTIONS];
+  updateQuickActions();
+  showQuickActionCustomizer();
+}
+window.resetQuickActionPrefs = resetQuickActionPrefs;
 
 // Update remaining right-panel elements (energy timer, quick buy labels, etc.)
 function updateRightPanelExtras() {
@@ -11813,7 +11895,8 @@ function resetPlayerForNewGame() {
     territoryEvents: [],
     territoryHeat: {},
     territoryPower: 100,
-    territoryReputation: 0
+    territoryReputation: 0,
+    quickActionPrefs: []
   });
 }
 
