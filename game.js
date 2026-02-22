@@ -19488,10 +19488,19 @@ window.resetTikTakToe = resetTikTakToe;
 window.checkDailyReset = checkDailyReset;
 window.canPlayMiniGame = canPlayMiniGame;
 window.trackMiniGamePlay = trackMiniGamePlay;
-window.playSlotMachine = playSlotMachine;
-window.playRoulette = playRoulette;
-window.playBlackjack = playBlackjack;
-window.playDiceGame = playDiceGame;
+window.startBlackjack = startBlackjack;
+window.bjDeal = bjDeal;
+window.bjHit = bjHit;
+window.bjStand = bjStand;
+window.bjDouble = bjDouble;
+window.startSlots = startSlots;
+window.slotSpin = slotSpin;
+window.startRoulette = startRoulette;
+window.rouletteAddBet = rouletteAddBet;
+window.rouletteClear = rouletteClear;
+window.rouletteSpin = rouletteSpin;
+window.startDiceGame = startDiceGame;
+window.diceRoll = diceRoll;
 
 // UI & Helpers
 window.stripEmoji = stripEmoji;
