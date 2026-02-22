@@ -4567,7 +4567,8 @@ function updateUI() {
     document.getElementById("level-display").innerText = `Level: ${player.level}`;
   }
   if (document.getElementById("experience-display")) {
-    document.getElementById("experience-display").innerText = `XP: ${player.experience}/${player.level * 100}`;
+    const xpNeeded = Math.floor(player.level * 250 + Math.pow(player.level, 2) * 30);
+    document.getElementById("experience-display").innerText = `XP: ${player.experience}/${xpNeeded}`;
   }
   if (document.getElementById("skill-points-display")) {
     document.getElementById("skill-points-display").innerText = `Skill Points: ${player.skillPoints}`;
@@ -5579,32 +5580,32 @@ async function startJob(index) {
     hurtChance = Math.max(0, 1 - player.power * 0.01 - player.skills.violence * 0.5);
     maxHealthLoss = 5;
     player.reputation += 0.5;
-    gainExperience(10);
+    gainExperience(5);
   } else if (job.risk === "medium") {
     hurtChance = Math.max(0, 5 - player.power * 0.05 - player.skills.violence * 0.5);
     maxHealthLoss = 20;
     player.reputation += 1;
-    gainExperience(25);
+    gainExperience(15);
   } else if (job.risk === "high") {
     hurtChance = Math.max(0, 10 - player.power * 0.1 - player.skills.violence * 0.5);
     maxHealthLoss = 50;
     player.reputation += 2;
-    gainExperience(50);
+    gainExperience(35);
   } else if (job.risk === "very high") {
     hurtChance = Math.max(0, 15 - player.power * 0.12 - player.skills.violence * 0.5);
     maxHealthLoss = 60;
     player.reputation += 3;
-    gainExperience(75);
+    gainExperience(55);
   } else if (job.risk === "extreme") {
     hurtChance = Math.max(0, 20 - player.power * 0.15 - player.skills.violence * 0.5);
     maxHealthLoss = 75;
     player.reputation += 5;
-    gainExperience(100);
+    gainExperience(80);
   } else if (job.risk === "legendary") {
     hurtChance = Math.max(0, 25 - player.power * 0.18 - player.skills.violence * 0.5);
     maxHealthLoss = 90;
     player.reputation += 8;
-    gainExperience(150);
+    gainExperience(120);
   }
 
   // Track reputation changes for campaign objectives
@@ -14722,12 +14723,12 @@ function bjHandValue(hand) {
 }
 
 function bjCardHTML(card, hidden) {
-  if (hidden) return `<div style="display:inline-block;width:60px;height:85px;background:#2c3e50;border:2px solid #7f8c8d;border-radius:8px;margin:3px;text-align:center;line-height:85px;font-size:1.5em;color:#95a5a6;">?</div>`;
-  const color = (card.suit === '♥' || card.suit === '♦') ? '#e74c3c' : '#ecf0f1';
-  return `<div style="display:inline-block;width:60px;height:85px;background:linear-gradient(135deg,#fff,#f5f5f5);border:2px solid #444;border-radius:8px;margin:3px;padding:4px;text-align:center;position:relative;">
-    <div style="position:absolute;top:3px;left:6px;font-size:0.75em;color:${color};font-weight:bold;">${card.name}</div>
-    <div style="font-size:1.8em;color:${color};line-height:85px;">${card.suit}</div>
-    <div style="position:absolute;bottom:3px;right:6px;font-size:0.75em;color:${color};font-weight:bold;">${card.name}</div>
+  if (hidden) return `<div style="display:inline-block;width:70px;height:100px;background:#2c3e50;border:2px solid #7f8c8d;border-radius:8px;margin:3px;text-align:center;line-height:100px;font-size:1.5em;color:#95a5a6;">?</div>`;
+  const color = (card.suit === '♥' || card.suit === '♦') ? '#e74c3c' : '#1a1a2e';
+  return `<div style="display:inline-block;width:70px;height:100px;background:linear-gradient(135deg,#fff,#f5f5f5);border:2px solid #444;border-radius:8px;margin:3px;padding:4px;text-align:center;position:relative;box-sizing:border-box;">
+    <div style="position:absolute;top:4px;left:6px;font-size:0.9em;color:${color};font-weight:bold;line-height:1;">${card.name}<br>${card.suit}</div>
+    <div style="font-size:2em;color:${color};line-height:100px;">${card.suit}</div>
+    <div style="position:absolute;bottom:4px;right:6px;font-size:0.9em;color:${color};font-weight:bold;line-height:1;transform:rotate(180deg);">${card.name}<br>${card.suit}</div>
   </div>`;
 }
 
@@ -15929,7 +15930,7 @@ document.addEventListener('keydown', function(event) {
     }
     if (event.key === '-') {
       for (let i = 0; i < 10; i++) {
-        player.experience += Math.floor(player.level * 150 + Math.pow(player.level, 2) * 10);
+        player.experience += Math.floor(player.level * 250 + Math.pow(player.level, 2) * 30);
         checkLevelUp();
       }
       showBriefNotification("Cheat: +10 level ups!", 'success');
