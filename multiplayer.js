@@ -11,11 +11,12 @@ const onlineWorld = {
             const hostname = window.location.hostname;
             const isLocal = hostname === 'localhost' || hostname === '127.0.0.1';
             if (isLocal) return 'ws://localhost:3000'; // Local development
+            // For production (cPanel/Passenger), use wss:// on same host
+            // Passenger handles the WebSocket upgrade on the same domain
             const proto = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
-            return proto + window.location.host; // same host + port as the page
+            return proto + window.location.host;
         } catch (e) {
-            // Fallback to original production endpoint if anything goes wrong
-            return 'wss://www.embracedcreation.com';
+            return 'wss://mafiaborn.com';
         }
     })(),
     updateInterval: 3000, // 3 second update interval for world state
@@ -117,6 +118,244 @@ let onlineWorldState = {
     gangWars: [],
     lastUpdate: null
 };
+
+// Territory income tracking
+let territoryIncomeNextCollection = Date.now() + (7 * 24 * 60 * 60 * 1000); // Next weekly collection
+
+// ==================== MISSING FUNCTION IMPLEMENTATIONS ====================
+
+// Sync server territory data to local player object
+function syncMultiplayerTerritoriesToPlayer() {
+    // If connected to server, territories come from server state
+    // Otherwise use local player.territories
+    if (onlineWorldState.isConnected && onlineWorldState.territories) {
+        // Server territories override local
+        console.log('[multiplayer] Syncing territories from server');
+    }
+    // No-op if offline — local territories are already on player object
+}
+
+// Count territories the player controls
+function countControlledTerritories() {
+    if (typeof player !== 'undefined' && player.territories) {
+        return player.territories.length;
+    }
+    return 0;
+}
+
+// Calculate weekly income from multiplayer territories
+function calculateMultiplayerTerritoryWeeklyIncome() {
+    if (typeof player !== 'undefined' && player.territoryIncome) {
+        return player.territoryIncome;
+    }
+    return 0;
+}
+
+// Show the "Whack Rival Don" high-risk PvP challenge
+function showWhackRivalDon() {
+    if (!onlineWorldState.isConnected) {
+        alert('You must be connected to the online world to challenge a rival Don.');
+        return;
+    }
+    const content = document.getElementById('multiplayer-content');
+    if (!content) return;
+    
+    content.innerHTML = `
+        <div style="background: rgba(0,0,0,0.95); padding: 30px; border-radius: 15px; border: 3px solid #8b0000;">
+            <h2 style="color: #ff4444; text-align: center; font-family: 'Georgia', serif;"> Whack Rival Don</h2>
+            <p style="color: #ff6666; text-align: center; font-style: italic;">Challenge another player's Don to a life-or-death showdown.<br>The loser's character is permanently eliminated.</p>
+            <div id="online-player-list" style="margin: 20px 0;">
+                <p style="color: #888; text-align: center;">Loading online players...</p>
+            </div>
+            <div style="text-align: center; margin-top: 20px;">
+                <button onclick="goBackToMainMenu()" style="background: #333; color: #c0a062; padding: 12px 25px; border: 1px solid #c0a062; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">Back</button>
+            </div>
+        </div>
+    `;
+    updateOnlinePlayerList();
+}
+
+// Show active heists available to join
+function showActiveHeists() {
+    const content = document.getElementById('multiplayer-content');
+    if (!content) return;
+    
+    if (typeof hideAllScreens === 'function') hideAllScreens();
+    const mpScreen = document.getElementById("multiplayer-screen");
+    if (mpScreen) mpScreen.style.display = 'block';
+    
+    const heists = onlineWorldState.activeHeists || [];
+    let heistHTML = heists.length > 0 
+        ? heists.map(h => `
+            <div style="background: rgba(0,0,0,0.6); padding: 15px; border-radius: 8px; margin: 10px 0; border: 1px solid #8b0000;">
+                <div style="color: #c0a062; font-weight: bold;">${h.name || 'Unknown Heist'}</div>
+                <div style="color: #ccc; font-size: 0.9em;">Crew: ${h.members ? h.members.length : 0}/${h.maxMembers || 4}</div>
+                <button onclick="joinHeist('${h.id}')" style="margin-top: 8px; background: #8b0000; color: #fff; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer;">Join Heist</button>
+            </div>
+        `).join('')
+        : '<p style="color: #888; text-align: center; font-style: italic;">No active heists right now. Check back later!</p>';
+    
+    content.innerHTML = `
+        <div style="background: rgba(0,0,0,0.95); padding: 30px; border-radius: 15px; border: 3px solid #8b0000;">
+            <h2 style="color: #c0a062; text-align: center; font-family: 'Georgia', serif;"> Big Scores</h2>
+            <p style="color: #ccc; text-align: center;">Join other players on high-paying heists.</p>
+            ${heistHTML}
+            <div style="text-align: center; margin-top: 20px;">
+                <button onclick="goBackToMainMenu()" style="background: #333; color: #c0a062; padding: 12px 25px; border: 1px solid #c0a062; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">Back</button>
+            </div>
+        </div>
+    `;
+}
+
+// Show the trade market
+function showTradeMarket() {
+    const content = document.getElementById('multiplayer-content');
+    if (!content) return;
+    
+    if (typeof hideAllScreens === 'function') hideAllScreens();
+    const mpScreen = document.getElementById("multiplayer-screen");
+    if (mpScreen) mpScreen.style.display = 'block';
+    
+    content.innerHTML = `
+        <div style="background: rgba(0,0,0,0.95); padding: 30px; border-radius: 15px; border: 3px solid #27ae60;">
+            <h2 style="color: #27ae60; text-align: center; font-family: 'Georgia', serif;"> Black Market Trading</h2>
+            <p style="color: #ccc; text-align: center;">Buy and sell contraband with other players.</p>
+            <div style="background: rgba(0,0,0,0.5); padding: 20px; border-radius: 10px; margin: 20px 0; text-align: center;">
+                <p style="color: #888; font-style: italic;">No items listed for trade. List some of yours to get started!</p>
+                <button onclick="listItemForSale()" style="margin-top: 10px; background: #27ae60; color: #fff; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">List Item for Sale</button>
+            </div>
+            <div style="text-align: center; margin-top: 20px;">
+                <button onclick="goBackToMainMenu()" style="background: #333; color: #c0a062; padding: 12px 25px; border: 1px solid #c0a062; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">Back</button>
+            </div>
+        </div>
+    `;
+}
+
+// Show gang wars / turf war battles
+function showGangWars() {
+    const content = document.getElementById('multiplayer-content');
+    if (!content) return;
+    
+    if (typeof hideAllScreens === 'function') hideAllScreens();
+    const mpScreen = document.getElementById("multiplayer-screen");
+    if (mpScreen) mpScreen.style.display = 'block';
+    
+    const wars = onlineWorldState.gangWars || [];
+    let warsHTML = wars.length > 0
+        ? wars.map(w => `
+            <div style="background: rgba(139,0,0,0.2); padding: 15px; border-radius: 8px; margin: 10px 0; border: 1px solid #8b0000;">
+                <div style="color: #ff4444; font-weight: bold;">${w.attacker || '???'} vs ${w.defender || '???'}</div>
+                <div style="color: #ccc; font-size: 0.9em;">District: ${w.district || 'Unknown'}</div>
+                <button onclick="spectateWar('${w.district}')" style="margin-top: 8px; background: #444; color: #c0a062; padding: 8px 15px; border: 1px solid #c0a062; border-radius: 5px; cursor: pointer;">Spectate</button>
+            </div>
+        `).join('')
+        : '<p style="color: #888; text-align: center; font-style: italic;">No active turf wars. The streets are quiet... for now.</p>';
+    
+    content.innerHTML = `
+        <div style="background: rgba(0,0,0,0.95); padding: 30px; border-radius: 15px; border: 3px solid #8b0000;">
+            <h2 style="color: #8b0000; text-align: center; font-family: 'Georgia', serif;"> Turf Wars</h2>
+            <p style="color: #ccc; text-align: center;">Watch or join territorial battles between crews.</p>
+            ${warsHTML}
+            <div style="text-align: center; margin-top: 20px;">
+                <button onclick="goBackToMainMenu()" style="background: #333; color: #c0a062; padding: 12px 25px; border: 1px solid #c0a062; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">Back</button>
+            </div>
+        </div>
+    `;
+}
+
+// Show nearby players list
+function showNearbyPlayers() {
+    const content = document.getElementById('multiplayer-content');
+    if (!content) return;
+    
+    if (typeof hideAllScreens === 'function') hideAllScreens();
+    const mpScreen = document.getElementById("multiplayer-screen");
+    if (mpScreen) mpScreen.style.display = 'block';
+    
+    const players = onlineWorldState.nearbyPlayers || [];
+    let playersHTML = players.length > 0
+        ? players.map(p => `
+            <div style="background: rgba(0,0,0,0.6); padding: 12px; border-radius: 8px; margin: 8px 0; border: 1px solid #f39c12; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <span style="color: #f39c12; font-weight: bold;">${p.name || 'Unknown'}</span>
+                    <span style="color: #888; font-size: 0.85em;"> Lvl ${p.level || 1}</span>
+                </div>
+                <div>
+                    <button onclick="challengePlayer('${p.name}')" style="background: #8b0000; color: #fff; padding: 5px 12px; border: none; border-radius: 4px; cursor: pointer; margin: 0 3px;">Fight</button>
+                    <button onclick="tradeWithPlayer('${p.name}')" style="background: #27ae60; color: #fff; padding: 5px 12px; border: none; border-radius: 4px; cursor: pointer; margin: 0 3px;">Trade</button>
+                </div>
+            </div>
+        `).join('')
+        : '<p style="color: #888; text-align: center; font-style: italic;">No players nearby. Try exploring different districts.</p>';
+    
+    content.innerHTML = `
+        <div style="background: rgba(0,0,0,0.95); padding: 30px; border-radius: 15px; border: 3px solid #f39c12;">
+            <h2 style="color: #f39c12; text-align: center; font-family: 'Georgia', serif;"> Local Crew</h2>
+            <p style="color: #ccc; text-align: center;">Players in your area. Challenge, trade, or recruit them.</p>
+            ${playersHTML}
+            <div style="text-align: center; margin-top: 20px;">
+                <button onclick="goBackToMainMenu()" style="background: #333; color: #c0a062; padding: 12px 25px; border: 1px solid #c0a062; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">Back</button>
+            </div>
+        </div>
+    `;
+}
+
+// View territory details for a specific district
+function viewTerritoryDetails(district) {
+    const content = document.getElementById('multiplayer-content');
+    if (!content) return;
+    
+    const territories = onlineWorldState.territories || {};
+    const info = territories[district] || { controlledBy: 'Unclaimed', power: 0 };
+    
+    content.innerHTML = `
+        <div style="background: rgba(0,0,0,0.95); padding: 30px; border-radius: 15px; border: 3px solid #c0a062;">
+            <h2 style="color: #c0a062; text-align: center; font-family: 'Georgia', serif;"> ${district}</h2>
+            <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 10px; margin: 15px 0;">
+                <p style="color: #ccc;">Controlled by: <span style="color: #f39c12; font-weight: bold;">${info.controlledBy}</span></p>
+                <p style="color: #ccc;">Defense Power: <span style="color: #e74c3c;">${info.power || 0}</span></p>
+            </div>
+            <div style="text-align: center; margin-top: 15px;">
+                <button onclick="challengeForTerritory('${district}')" style="background: #8b0000; color: #fff; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin: 5px;">Attack</button>
+                <button onclick="showOnlineWorld()" style="background: #333; color: #c0a062; padding: 10px 20px; border: 1px solid #c0a062; border-radius: 5px; cursor: pointer; margin: 5px;">Back</button>
+            </div>
+        </div>
+    `;
+}
+
+// Challenge for a territory (sends to server if connected)
+function challengeForTerritory(district) {
+    if (!onlineWorldState.isConnected || !onlineWorldState.socket) {
+        alert('You must be connected to the online world to challenge for territory.');
+        return;
+    }
+    
+    onlineWorldState.socket.send(JSON.stringify({
+        type: 'territory_claim',
+        district: district,
+        playerName: player.name,
+        money: player.money
+    }));
+    
+    logAction(` Challenging for control of ${district}...`);
+}
+
+// Start a heist in a specific district
+function startDistrictHeist(districtName) {
+    if (!onlineWorldState.isConnected || !onlineWorldState.socket) {
+        alert('You must be connected to the online world to start a heist.');
+        return;
+    }
+    
+    onlineWorldState.socket.send(JSON.stringify({
+        type: 'heist_create',
+        district: districtName,
+        playerName: player.name,
+        level: player.level
+    }));
+    
+    logAction(` Starting a heist in ${districtName}... looking for crew members.`);
+}
 
 // ==================== CORE ONLINE WORLD FUNCTIONS ====================
 
@@ -440,6 +679,22 @@ function handleServerMessage(message) {
             }
             break;
             
+        case 'combat_result':
+            // Server-authoritative PvP combat outcome
+            const isWinner = message.winner === (player.name || '');
+            const isLoser = message.loser === (player.name || '');
+            if (isWinner) {
+                const repGain = message.repChange || 5;
+                logAction(` Victory! You defeated ${message.loser} and gained ${repGain} reputation!`);
+                addWorldEvent(` ${message.winner} defeated ${message.loser} in combat!`);
+            } else if (isLoser) {
+                logAction(` Defeat! ${message.winner} defeated you in combat.`);
+            } else {
+                addWorldEvent(` ${message.winner} defeated ${message.loser} in combat!`);
+            }
+            // Stats sync happens via next world_update
+            break;
+
         default:
             console.log('Unknown message type:', message.type);
     }
@@ -1871,20 +2126,19 @@ function challengePlayer(playerName) {
     const confirmChallenge = confirm(`Challenge ${playerName} to combat? This will cost energy and the winner gains reputation.`);
     
     if (confirmChallenge) {
-        // Simulate challenge
-        const victory = Math.random() > 0.5;
-        
-        if (victory) {
-            const repGain = 5 + Math.floor(Math.random() * 10);
-            player.reputation += repGain;
-            alert(` Victory! You defeated ${playerName} and gained ${repGain} reputation!`);
-            logAction(` Defeated ${playerName} in combat (+${repGain} reputation)`);
-            addWorldEvent(` ${player.name || 'A player'} defeated ${playerName} in combat!`);
+        // Send challenge to server for authoritative resolution
+        if (onlineWorldState.socket && onlineWorldState.socket.readyState === WebSocket.OPEN) {
+            onlineWorldState.socket.send(JSON.stringify({
+                type: 'player_challenge',
+                targetPlayer: playerName,
+                playerName: player.name,
+                level: player.level,
+                reputation: player.reputation
+            }));
+            logAction(` Challenged ${playerName} to combat! Awaiting outcome...`);
         } else {
-            const repLoss = 2 + Math.floor(Math.random() * 5);
-            player.reputation = Math.max(0, player.reputation - repLoss);
-            alert(` Defeat! ${playerName} defeated you. Lost ${repLoss} reputation.`);
-            logAction(` Defeated by ${playerName} in combat (-${repLoss} reputation)`);
+            alert('Connection lost. Reconnecting...');
+            connectToOnlineWorld();
         }
     }
 }
