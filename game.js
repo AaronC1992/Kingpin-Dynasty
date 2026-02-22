@@ -8410,11 +8410,19 @@ const seasonalEvents = {
 // Weather Effects System
 const weatherEffects = {
   clear: {
-    name: "Clear Weather",
+    name: "Clear Skies",
     description: "Perfect conditions for operations",
     effects: {},
-    probability: 0.4,
     icon: "☀️"
+  },
+  overcast: {
+    name: "Overcast",
+    description: "Grey skies keep people indoors — fewer witnesses on the streets",
+    effects: {
+      witnessReduction: 0.1,
+      stealthBonus: 0.05
+    },
+    icon: "☁️"
   },
   rain: {
     name: "Rain",
@@ -8425,8 +8433,16 @@ const weatherEffects = {
       witnessReduction: 0.2,
       energyCost: 1.1
     },
-    probability: 0.25,
     icon: "🌧️"
+  },
+  drizzle: {
+    name: "Light Drizzle",
+    description: "A light rain dampens the streets — slight cover for shady dealings",
+    effects: {
+      stealthBonus: 0.08,
+      witnessReduction: 0.1
+    },
+    icon: "🌦️"
   },
   snow: {
     name: "Snow",
@@ -8437,8 +8453,31 @@ const weatherEffects = {
       heatingCosts: 1.3,
       carDamage: 1.2
     },
-    probability: 0.15,
     icon: "🌨️"
+  },
+  blizzard: {
+    name: "Blizzard",
+    description: "A brutal blizzard — the city grinds to a halt, police can barely patrol",
+    effects: {
+      policeResponse: -0.4,
+      stealthBonus: 0.3,
+      carDamage: 1.8,
+      energyCost: 1.5,
+      businessDisruption: 0.5,
+      movementSpeed: -0.35
+    },
+    icon: "❄️"
+  },
+  sleet: {
+    name: "Sleet",
+    description: "Icy rain makes roads treacherous and keeps citizens off the streets",
+    effects: {
+      carAccidents: 0.2,
+      carDamage: 1.4,
+      witnessReduction: 0.25,
+      energyCost: 1.2
+    },
+    icon: "🧊"
   },
   fog: {
     name: "Fog",
@@ -8449,7 +8488,6 @@ const weatherEffects = {
       carAccidents: 0.15,
       jobSuccessBonus: 0.1
     },
-    probability: 0.1,
     icon: "🌫️"
   },
   storm: {
@@ -8462,8 +8500,67 @@ const weatherEffects = {
       energyCost: 1.3,
       businessDisruption: 0.4
     },
-    probability: 0.1,
     icon: "⛈️"
+  },
+  heatwave: {
+    name: "Heatwave",
+    description: "Scorching heat frays tempers — more street fights, less police foot patrol",
+    effects: {
+      policeResponse: -0.15,
+      energyCost: 1.25,
+      witnessReduction: 0.15
+    },
+    icon: "🔥"
+  },
+  humid: {
+    name: "Humid & Muggy",
+    description: "Thick, oppressive air hangs over the city — everyone moves slower",
+    effects: {
+      energyCost: 1.15,
+      movementSpeed: -0.1
+    },
+    icon: "🌡️"
+  }
+};
+
+// Season-specific weather probability tables
+// Each season maps weather types to their relative probability weight
+const seasonalWeatherWeights = {
+  spring: {
+    clear: 20,
+    overcast: 15,
+    rain: 25,
+    drizzle: 20,
+    fog: 12,
+    storm: 8
+  },
+  summer: {
+    clear: 35,
+    overcast: 10,
+    rain: 10,
+    drizzle: 5,
+    storm: 12,
+    heatwave: 18,
+    humid: 10
+  },
+  autumn: {
+    clear: 12,
+    overcast: 20,
+    rain: 22,
+    drizzle: 15,
+    fog: 20,
+    storm: 8,
+    sleet: 3
+  },
+  winter: {
+    overcast: 15,
+    snow: 30,
+    blizzard: 10,
+    sleet: 15,
+    fog: 10,
+    storm: 8,
+    clear: 5,
+    drizzle: 7
   }
 };
 
@@ -9085,10 +9182,12 @@ function updateSeasonalBackground() {
   logAction(`🌍 The city transforms with the changing seasons - now experiencing ${currentSeason}.`);
 }
 
-// Weather system functions
+// Weather system functions — season-aware
 function changeWeather() {
-  const weatherTypes = Object.keys(weatherEffects);
-  const probabilities = weatherTypes.map(type => weatherEffects[type].probability);
+  // Get the weather weights for the current season
+  const weights = seasonalWeatherWeights[currentSeason] || seasonalWeatherWeights.spring;
+  const weatherTypes = Object.keys(weights);
+  const probabilities = weatherTypes.map(type => weights[type]);
   
   // Weighted random selection
   let totalProb = probabilities.reduce((sum, prob) => sum + prob, 0);
