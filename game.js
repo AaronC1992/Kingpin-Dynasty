@@ -18246,7 +18246,10 @@ function getItemImage(itemName) {
     "Leather Jacket": "weapons&armor/Leather Jacket.png",
     "Bulletproof Vest": "weapons&armor/Bulletproof Vest.png",
     "Tommy Gun": "weapons&armor/Tommy gun.png",
-    "Bullets": "weapons&armor/Bullets.png"
+    "Bullets": "weapons&armor/Bullets.png",
+    "Sniper Rifle": "weapons&armor/SniperRifle.png",
+    "Stab Vest": "weapons&armor/Stabvest.png",
+    "Reinforced Body Armor": "weapons&armor/boddy armor.png"
   };
   
   // Mapping for vehicles
@@ -18282,7 +18285,12 @@ function getItemImage(itemName) {
     "Gasoline": "items/Gasoline.png",
     "Bag of Mary Jane": "items/Bag of Mary Jane.png",
     "Crate Moonshine": "items/Crate Moonshine.png",
-    "Pure Cocaine": "items/Pure Cocaine.png"
+    "Pure Cocaine": "items/Pure Cocaine.png",
+    "Police Scanner": "items/PoliceScanner.png",
+    "Burner Phone": "items/BurnerPhone.png",
+    "Fake ID Kit": "items/FakeID.png",
+    "Baseball Bat": "items/bat.png",
+    "Lockpick Set": "items/LockpickSet.png"
   };
   
   // Check if the item is in weapons/armor
