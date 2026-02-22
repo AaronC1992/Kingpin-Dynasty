@@ -194,6 +194,20 @@ export const businessTypes = [
         launderingCapacity: 300000,
         legitimacy: 70,
         category: "retail"
+    },
+    {
+        id: "counterfeiting",
+        name: "Counterfeiting Operation",
+        description: "A hidden printing press churning out fake bills — high profit, but the money needs laundering",
+        basePrice: 4000000,
+        baseIncome: 180000,
+        maxLevel: 5,
+        upgradeMultiplier: 1.7,
+        incomeMultiplier: 1.5,
+        launderingCapacity: 0,
+        legitimacy: 10,
+        category: "illegal",
+        paysDirty: true
     }
 ];
 

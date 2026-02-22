@@ -26,7 +26,7 @@ export const jobs = [
     
     // Weapon-based jobs
     { name: "Protection Collection", payout: [10000, 25000], risk: "medium", jailChance: 20, wantedLevelGain: 3, healthLoss: 8, requiredItems: ["Brass Knuckles"], reputation: 12, energyCost: 8 },
-    { name: "Bank Job", payout: [100000, 250000], risk: "extreme", jailChance: 50, wantedLevelGain: 10, healthLoss: 20, requiredItems: ["Tommy Gun", "Bullets"], reputation: 35, energyCost: 25 },
+    { name: "Bank Job", payout: [100000, 250000], risk: "extreme", jailChance: 50, wantedLevelGain: 10, healthLoss: 20, requiredItems: ["Tommy Gun", "Bullets"], reputation: 35, energyCost: 25, paysDirty: true },
     { name: "Hit on a Rival", payout: [60000, 120000], risk: "very high", jailChance: 40, wantedLevelGain: 6, healthLoss: 25, requiredItems: ["Pistol", "Bullets"], reputation: 30, energyCost: 18 },
     
     // High-tech/Vehicle jobs
@@ -40,6 +40,9 @@ export const jobs = [
     // Property-based jobs
     { name: "Illegal Gambling Den", payout: [120000, 240000], risk: "very high", jailChance: 30, wantedLevelGain: 4, healthLoss: 5, requiredItems: ["Criminal Safehouse"], reputation: 35, energyCost: 22 },
     { name: "Money Laundering", payout: [150000, 350000], risk: "high", jailChance: 20, wantedLevelGain: 3, healthLoss: 0, requiredItems: ["Basement Hideout", "Luxury Automobile"], reputation: 45, energyCost: 25 },
+    
+    // Counterfeiting job (pays dirty money only)
+    { name: "Counterfeiting Money", payout: [200000, 500000], risk: "extreme", jailChance: 45, wantedLevelGain: 8, healthLoss: 0, requiredItems: ["Basement Hideout", "Fake ID Kit"], reputation: 40, energyCost: 20, paysDirty: true },
     
     // Elite endgame jobs
     { name: "International Arms Trade", payout: [500000, 1000000], risk: "legendary", jailChance: 60, wantedLevelGain: 12, healthLoss: 10, requiredItems: ["Private Airplane", "Tommy Gun", "Bulletproof Vest"], reputation: 60, energyCost: 35 },

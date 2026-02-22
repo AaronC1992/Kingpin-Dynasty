@@ -1707,7 +1707,7 @@ async function showBusinesses() {
               
               <div style="background: rgba(0, 0, 0, 0.3); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
                 <p style="margin: 5px 0;"><strong>Level:</strong> ${business.level}/${businessType.maxLevel}</p>
-                <p style="margin: 5px 0;"><strong>Daily Income:</strong> $${currentIncome.toLocaleString()}</p>
+                <p style="margin: 5px 0;"><strong>Daily Income:</strong> $${currentIncome.toLocaleString()}${businessType.paysDirty ? ' <span style="color:#e74c3c;">(DIRTY MONEY)</span>' : ''}</p>
                 <p style="margin: 5px 0;"><strong>Laundering Capacity:</strong> $${(businessType.launderingCapacity * business.level).toLocaleString()}</p>
                 <p style="margin: 5px 0;"><strong>Legitimacy:</strong> ${businessType.legitimacy}%</p>
               </div>
@@ -1757,7 +1757,7 @@ async function showBusinesses() {
             
             <div style="background: rgba(0, 0, 0, 0.3); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
               <p style="margin: 5px 0;"><strong>Price:</strong> $${businessType.basePrice.toLocaleString()}</p>
-              <p style="margin: 5px 0;"><strong>Base Income:</strong> $${businessType.baseIncome.toLocaleString()}/day</p>
+              <p style="margin: 5px 0;"><strong>Base Income:</strong> $${businessType.baseIncome.toLocaleString()}/day${businessType.paysDirty ? ' <span style="color:#e74c3c;">(DIRTY MONEY)</span>' : ''}</p>
               <p style="margin: 5px 0;"><strong>Category:</strong> ${businessType.category}</p>
               <p style="margin: 5px 0;"><strong>Max Level:</strong> ${businessType.maxLevel}</p>
             </div>
@@ -1869,16 +1869,21 @@ async function collectBusinessIncome(businessIndex) {
   const hourlyIncome = Math.floor(businessType.baseIncome * Math.pow(businessType.incomeMultiplier, business.level - 1) / 24);
   const totalIncome = hourlyIncome * Math.min(hoursElapsed, 48); // Cap at 48 hours
   
-  // Business income is clean money
-  player.money += totalIncome;
+  // Counterfeiting pays dirty money; all other businesses pay clean money
+  if (businessType.paysDirty) {
+    player.dirtyMoney = (player.dirtyMoney || 0) + totalIncome;
+  } else {
+    player.money += totalIncome;
+  }
   business.lastCollection = currentTime;
   
   // Track statistics
   updateStatistic('businessIncomeCollected');
   updateStatistic('totalMoneyEarned', totalIncome);
   
-  showBriefNotification(`+$${totalIncome.toLocaleString()} from ${business.name} (${hoursElapsed}h)`, 'success');
-  logAction(`The books are balanced and the cash is counted. ${business.name} delivers another profitable period (+$${totalIncome.toLocaleString()}).`);
+  const dirtyLabel = businessType.paysDirty ? ' (dirty — must be laundered!)' : '';
+  showBriefNotification(`+$${totalIncome.toLocaleString()}${dirtyLabel} from ${business.name} (${hoursElapsed}h)`, 'success');
+  logAction(`${business.name} delivers another profitable period (+$${totalIncome.toLocaleString()}${dirtyLabel}).`);
   
   updateUI();
   showBusinesses();
@@ -4520,8 +4525,10 @@ function refreshJobsList() {
     let payoutText = "";
     if (job.special === "car_theft") {
       payoutText = "Steal random car to sell";
+    } else if (job.paysDirty) {
+      payoutText = `<span style="color:#e74c3c;">$${job.payout[0].toLocaleString()} to $${job.payout[1].toLocaleString()} (DIRTY MONEY)</span>`;
     } else {
-      payoutText = `$${job.payout[0]} to $${job.payout[1]}`;
+      payoutText = `$${job.payout[0].toLocaleString()} to $${job.payout[1].toLocaleString()}`;
     }
     
     let buttonColor = "green";
@@ -4768,8 +4775,10 @@ function showJobs() {
         let payoutText = "";
         if (job.special === "car_theft") {
           payoutText = "Steal random car to sell";
+        } else if (job.paysDirty) {
+          payoutText = `<span style="color:#e74c3c;">$${job.payout[0].toLocaleString()} to $${job.payout[1].toLocaleString()} (DIRTY MONEY)</span>`;
         } else {
-          payoutText = `$${job.payout[0]} to $${job.payout[1]}`;
+          payoutText = `$${job.payout[0].toLocaleString()} to $${job.payout[1].toLocaleString()}`;
         }
         
         let buttonColor = "green";
@@ -5269,8 +5278,12 @@ async function startJob(index) {
     return;
   }
 
-  // Illegal work yields dirty money that must be laundered before use
-  player.dirtyMoney = (player.dirtyMoney || 0) + earnings;
+  // Only Bank Job and Counterfeiting Money pay dirty money; all other jobs pay clean money
+  if (job.paysDirty) {
+    player.dirtyMoney = (player.dirtyMoney || 0) + earnings;
+  } else {
+    player.money += earnings;
+  }
   
   // Apply intimidation to reduce wanted level gain (witnesses too scared to report)
   let wantedLevelGain = job.wantedLevelGain;
@@ -5336,8 +5349,13 @@ async function startJob(index) {
   if (player.unlockedPerks.includes('warMachine') && 
     (job.name.toLowerCase().includes('fight') || job.name.toLowerCase().includes('rob'))) {
     const bonus = Math.floor(earnings * 0.5);
-    player.dirtyMoney = (player.dirtyMoney || 0) + bonus;
-    logAction(`⚔️ War Machine bonus: Your reputation for violence earns you an extra $${bonus.toLocaleString()} (dirty) !`);
+    if (job.paysDirty) {
+      player.dirtyMoney = (player.dirtyMoney || 0) + bonus;
+      logAction(`⚔️ War Machine bonus: Your reputation for violence earns you an extra $${bonus.toLocaleString()} (dirty)!`);
+    } else {
+      player.money += bonus;
+      logAction(`⚔️ War Machine bonus: Your reputation for violence earns you an extra $${bonus.toLocaleString()}!`);
+    }
   }
   
   // Update mission progress
@@ -5417,8 +5435,9 @@ async function startJob(index) {
   }
 
   if (!carCatastrophe) { // Only show success message if car didn't explode/break down
-    alert(`You completed the job as a ${job.name} (${job.risk} risk) and earned $${earnings.toLocaleString()}!`);
-    logAction(`${getRandomNarration('jobSuccess')} (+$${earnings.toLocaleString()}).`);
+    const moneyType = job.paysDirty ? ' (dirty money — must be laundered!)' : '';
+    alert(`You completed the job as a ${job.name} (${job.risk} risk) and earned $${earnings.toLocaleString()}${moneyType}!`);
+    logAction(`${getRandomNarration('jobSuccess')} (+$${earnings.toLocaleString()}${moneyType}).`);
   }
 
   updateUI();
@@ -13192,7 +13211,11 @@ function autoCollectBusinessesAndTribute() {
         const hourlyIncome = Math.floor(businessType.baseIncome * Math.pow(businessType.incomeMultiplier, biz.level - 1) / 24);
         const totalIncome = hourlyIncome * Math.min(hoursElapsed, 48);
         if (totalIncome > 0) {
-          player.money += totalIncome; // business income is clean
+          if (businessType.paysDirty) {
+            player.dirtyMoney = (player.dirtyMoney || 0) + totalIncome; // counterfeiting income is dirty
+          } else {
+            player.money += totalIncome; // business income is clean
+          }
           biz.lastCollection = now;
           collected += totalIncome;
         }
