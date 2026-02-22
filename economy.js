@@ -12,40 +12,40 @@
 // Store items
 export const storeItems = [
     // === Low-tier Weapons ===
-    { name: "Brass Knuckles", price: 7500, power: 10, type: "weapon", description: "Crude but effective in a street fight." },
-    { name: "Switchblade", price: 12000, power: 20, type: "weapon", description: "Quick and concealable." },
-    { name: "Baseball Bat", price: 18000, power: 30, type: "weapon", description: "A classic problem-solver." },
+    { name: "Brass Knuckles", price: 7500, power: 10, type: "weapon", description: "Crude but effective in a street fight. +10 attack power. No ammo needed." },
+    { name: "Switchblade", price: 12000, power: 20, type: "weapon", description: "Quick and concealable. +20 attack power. No ammo needed." },
+    { name: "Baseball Bat", price: 18000, power: 30, type: "weapon", description: "A classic problem-solver. +30 attack power. No ammo needed." },
     // === Mid-tier Guns ===
-    { name: "Pistol", price: 30000, power: 50, type: "gun", description: "Reliable sidearm for any occasion." },
-    { name: "Revolver", price: 45000, power: 70, type: "gun", description: "Six shots, six problems solved." },
-    { name: "Sawed-Off Shotgun", price: 125000, power: 90, type: "gun", description: "Devastating at close range." },
-    { name: "Tommy Gun", price: 150000, power: 100, type: "gun", description: "The kingpin's weapon of choice." },
-    { name: "Sniper Rifle", price: 250000, power: 120, type: "gun", description: "For when you need distance." },
+    { name: "Pistol", price: 30000, power: 50, type: "gun", description: "Reliable sidearm for any occasion. +50 attack power. Requires Bullets." },
+    { name: "Revolver", price: 45000, power: 70, type: "gun", description: "Six shots, six problems solved. +70 attack power. Requires Bullets." },
+    { name: "Sawed-Off Shotgun", price: 125000, power: 90, type: "gun", description: "Devastating at close range. +90 attack power. Requires Bullets." },
+    { name: "Tommy Gun", price: 150000, power: 100, type: "gun", description: "The kingpin's weapon of choice. +100 attack power. Requires Bullets." },
+    { name: "Sniper Rifle", price: 250000, power: 120, type: "gun", description: "For when you need distance. +120 attack power. Requires Bullets." },
     // === Armor ===
-    { name: "Leather Jacket", price: 15000, power: 15, type: "armor", description: "Looks cool, stops a knife." },
-    { name: "Stab Vest", price: 50000, power: 25, type: "armor", description: "Lightweight protection from blades." },
-    { name: "Bulletproof Vest", price: 100000, power: 40, type: "armor", description: "Standard issue for the paranoid." },
-    { name: "Reinforced Body Armor", price: 200000, power: 60, type: "armor", description: "Military-grade protection." },
+    { name: "Leather Jacket", price: 15000, power: 15, type: "armor", description: "Looks cool, stops a knife. +15 defense power. Basic protection against melee attacks." },
+    { name: "Stab Vest", price: 50000, power: 25, type: "armor", description: "Lightweight protection from blades. +25 defense power. Reduces damage from melee weapons." },
+    { name: "Bulletproof Vest", price: 100000, power: 40, type: "armor", description: "Standard issue for the paranoid. +40 defense power. Reduces damage from firearms." },
+    { name: "Reinforced Body Armor", price: 200000, power: 60, type: "armor", description: "Military-grade protection. +60 defense power. Best-in-class damage reduction." },
     // === Vehicles ===
-    { name: "Armored Car", price: 120000, power: 25, type: "car", description: "Bulletproof windows, reinforced frame." },
-    { name: "Luxury Automobile", price: 400000, power: 50, type: "car", description: "Travel in style and power." },
-    { name: "Private Airplane", price: 1500000, power: 200, type: "vehicle", description: "Leave the country at a moment's notice." },
+    { name: "Armored Car", price: 120000, power: 25, type: "car", description: "Bulletproof windows, reinforced frame. +25 power. Requires Gasoline to operate." },
+    { name: "Luxury Automobile", price: 400000, power: 50, type: "car", description: "Travel in style and power. +50 power. Requires Gasoline. Boosts respect." },
+    { name: "Private Airplane", price: 1500000, power: 200, type: "vehicle", description: "Leave the country at a moment's notice. +200 power. Requires Gasoline. Unlocks escape options." },
     // === Supplies ===
-    { name: "Bullets", price: 2500, power: 0, type: "ammo", description: "Standard ammunition." },
-    { name: "Gasoline", price: 4000, power: 0, type: "gas", description: "Fuel for your vehicles." },
+    { name: "Bullets", price: 2500, power: 0, type: "ammo", description: "Standard ammunition. Required to use firearms in combat. Stock up before a fight." },
+    { name: "Gasoline", price: 4000, power: 0, type: "gas", description: "Fuel for your vehicles. Required to operate cars and planes. Consumed per use." },
     // === Energy Items ===
-    { name: "Strong Coffee", price: 800, power: 0, type: "energy", energyRestore: 15, description: "Cheap caffeine boost." },
-    { name: "Energy Drink", price: 1500, power: 0, type: "energy", energyRestore: 30, description: "Chemical energy, slight health risk." },
-    { name: "Steroids", price: 5000, power: 0, type: "energy", energyRestore: 60, description: "Serious boost, serious risk." },
+    { name: "Strong Coffee", price: 800, power: 0, type: "energy", energyRestore: 15, description: "Cheap caffeine boost. Restores 15 energy instantly." },
+    { name: "Energy Drink", price: 1500, power: 0, type: "energy", energyRestore: 30, description: "Chemical energy, slight health risk. Restores 30 energy instantly." },
+    { name: "Steroids", price: 5000, power: 0, type: "energy", energyRestore: 60, description: "Serious boost, serious risk. Restores 60 energy instantly." },
     // === Utility Items ===
     { name: "Lockpick Set", price: 10000, power: 5, type: "utility", description: "Boosts stealth job success. +5 stealth power." },
     { name: "Police Scanner", price: 35000, power: 0, type: "utility", description: "Reduces wanted level gain by 10%." },
     { name: "Burner Phone", price: 8000, power: 0, type: "utility", description: "Reduces suspicion from laundering by 15%." },
     { name: "Fake ID Kit", price: 25000, power: 0, type: "utility", description: "Reduces jail time by 1 day if caught." },
     // === High-Level Drugs (Trade Goods) ===
-    { name: "Crate Moonshine", price: 60000, power: 0, type: "highLevelDrug", maxPayout: 100000, requiredVehicle: "Freight Truck", description: "Bootleg gold." },
-    { name: "Bag of Mary Jane", price: 120000, power: 0, type: "highLevelDrug", maxPayout: 200000, requiredVehicle: "Freight Truck", description: "The green rush." },
-    { name: "Pure Cocaine", price: 200000, power: 0, type: "highLevelDrug", maxPayout: 350000, requiredVehicle: "Freight Truck", description: "White gold — high risk, high reward." }
+    { name: "Crate Moonshine", price: 60000, power: 0, type: "highLevelDrug", maxPayout: 100000, requiredVehicle: "Freight Truck", description: "Bootleg gold. Trade good worth up to $100,000. Requires a Freight Truck to deliver." },
+    { name: "Bag of Mary Jane", price: 120000, power: 0, type: "highLevelDrug", maxPayout: 200000, requiredVehicle: "Freight Truck", description: "The green rush. Trade good worth up to $200,000. Requires a Freight Truck to deliver." },
+    { name: "Pure Cocaine", price: 200000, power: 0, type: "highLevelDrug", maxPayout: 350000, requiredVehicle: "Freight Truck", description: "White gold — high risk, high reward. Trade good worth up to $350,000. Requires a Freight Truck to deliver." }
 ];
 
 // Real Estate Properties
