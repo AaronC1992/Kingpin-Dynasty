@@ -16398,6 +16398,12 @@ document.addEventListener('keydown', function(event) {
 
 // Initialize the game when the page loads
 function initGame() {
+  // Display version on title screen
+  const introVersion = document.getElementById('intro-version');
+  if (introVersion) {
+    introVersion.textContent = `Version ${CURRENT_VERSION}`;
+  }
+
   // Start all game systems
   startRandomEventChecker();
   startPassiveIncomeGenerator();
