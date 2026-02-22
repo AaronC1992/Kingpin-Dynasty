@@ -177,7 +177,7 @@ body.season-winter {
     }
 }
 
-/* ── Simplified Main Hub ── */
+/* â”€â”€ Simplified Main Hub â”€â”€ */
 .main-hub-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -246,7 +246,7 @@ body.season-winter {
     .hub-icon { font-size: 2.2em; }
 }
 
-/* ── Full Command Center Grid ── */
+/* â”€â”€ Full SafeHouse Grid â”€â”€ */
 .menu-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -319,7 +319,7 @@ button:disabled {
     box-shadow: none;
 }
 
-/* ==================== COMMAND CENTER PROGRESSIVE UNLOCK STYLES ==================== */
+/* ==================== SafeHouse PROGRESSIVE UNLOCK STYLES ==================== */
 
 /* Unlocked menu button with tooltip subtitle */
 .menu-btn-unlocked {
