@@ -10669,9 +10669,11 @@ const menuUnlockConfig = [
   { id: 'halloffame',  fn: 'showHallOfFame()',        label: 'Made Men',       tip: 'Hall of Fame & fallen legends',    level: 15 },
   { id: 'empOverview', fn: 'showEmpireOverview()',     label: 'Empire Overview', tip: 'Full empire status dashboard',    level: 10 },
 
+  // === WORLD CHAT (Always Available) ===
+  { id: 'worldchat',   fn: 'showWorldChat()',            label: 'World Chat',     tip: 'Chat with other players online',  level: 0 },
+
   // === MULTIPLAYER (Level 5+) ===
   { id: 'onlineworld', fn: 'showOnlineWorld()',         label: 'The Commission', tip: 'Enter the online underworld',     level: 5 },
-  { id: 'globalchat',  fn: 'showGlobalChat()',          label: 'The Wire',       tip: 'Chat with other players',         level: 5 },
   { id: 'pvparena',    fn: 'showPVP()',                 label: 'PVP Arena',      tip: 'Fight other players for turf',    level: 10 },
 ];
 

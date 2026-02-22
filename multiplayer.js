@@ -1091,6 +1091,15 @@ function updatePVPCountdown() {
 
 // ==================== GLOBAL CHAT & ONLINE WORLD ====================
 
+// World Chat - accessible from level 0, auto-connects if needed
+function showWorldChat() {
+    // If not connected, trigger connection first
+    if (!onlineWorldState.isConnected && typeof connectToOnlineWorld === 'function') {
+        connectToOnlineWorld();
+    }
+    showGlobalChat();
+}
+
 function showGlobalChat() {
     console.log('showGlobalChat called'); // Debug log
     
@@ -1132,8 +1141,8 @@ function showGlobalChat() {
     
     let chatHTML = `
         <div class="game-screen" style="display: block;">
-            <h2 style="color: #c0a062; font-family: 'Georgia', serif; text-shadow: 2px 2px 4px #000;"> The Wire</h2>
-            <p style="color: #ccc;">Communicate with other associates in the family.</p>
+            <h2 style="color: #c0a062; font-family: 'Georgia', serif; text-shadow: 2px 2px 4px #000;">💬 World Chat</h2>
+            <p style="color: #ccc;">Chat with players from around the world.</p>
             
             <!-- Connection Status -->
             <div id="chat-connection-status" style="background: rgba(0, 0, 0, 0.8); padding: 10px; border-radius: 8px; margin-bottom: 15px; text-align: center; border: 1px solid #c0a062;">
@@ -1383,9 +1392,9 @@ function addChatMessage(playerName, message, color = '#ecf0f1') {
 // Get connection status HTML for chat
 function getConnectionStatusHTML() {
     if (onlineWorldState.isConnected) {
-        return `<span style="color: #c0a062; font-family: 'Georgia', serif;">🟢 Connected to The Wire</span>`;
+        return `<span style="color: #c0a062; font-family: 'Georgia', serif;">🟢 Connected to World Chat</span>`;
     } else {
-        return `<span style="color: #8b0000; font-family: 'Georgia', serif;"> Connecting to The Wire...</span>`;
+        return `<span style="color: #8b0000; font-family: 'Georgia', serif;"> Connecting to World Chat...</span>`;
     }
 }
 
