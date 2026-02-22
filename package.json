@@ -1,6 +1,6 @@
 {
   "name": "kingpin-dynasty-multiplayer",
-  "version": "1.3.0",
+  "version": "1.3.8",
   "description": "Kingpin Dynasty - Multiplayer criminal empire building game",
   "main": "server.js",
   "scripts": {

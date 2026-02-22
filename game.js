@@ -4251,7 +4251,7 @@ function manageTerritoryDetails(territoryId) {
         🏛️ Territory Management
       </button>
       <button onclick="goBackToMainMenu()" style="background: #95a5a6; color: white; padding: 12px 25px; margin: 5px; border: none; border-radius: 8px; cursor: pointer;">
-        🏠 Main Menu
+        🏠 SafeHouse
       </button>
     </div>
   `;
@@ -12550,7 +12550,7 @@ function showTutorialPrompt() {
           </button>
         </div>
         <p style="font-size: 0.9em; margin-top: 20px; color: #95a5a6; font-style: italic;">
-          Don't worry - you can always access the tutorial later from the main menu!
+          Don't worry - you can always access the tutorial later from the SafeHouse!
         </p>
       </div>
     </div>
@@ -12628,8 +12628,27 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = "1.3.0";
+const CURRENT_VERSION = "1.3.8";
 const VERSION_UPDATES = {
+  "1.3.8": {
+    title: "June 2025 Update - SafeHouse & Polish",
+    date: "June 2025",
+    changes: [
+      "Command Center renamed to SafeHouse throughout the game",
+      "New Player Stats screen — view detailed skill, combat, and career statistics (unlocks at level 2)",
+      "Skill descriptions now show accurate current and next-level bonuses instead of 0%",
+      "Fixed job button flickering caused by per-second UI rebuilds",
+      "Screen transitions now scroll to the top automatically",
+      "Slower XP progression curve for a more rewarding grind",
+      "Veteran recruit rework — experienced gang members cost more but start stronger",
+      "Season-aware weather system with real-world date-based seasons",
+      "Weather and season-aware narration for immersive job stories",
+      "Mobile responsiveness improvements across all screens",
+      "Payout balance pass — adjusted job rewards for better progression",
+      "Tutorial updated to reflect all current game features and SafeHouse rename",
+      "Numerous bug fixes including property purchase and status bar display issues"
+    ]
+  },
   "1.3.0": {
     title: "February 2026 Update - Dirty Money Overhaul",
     date: "February 21, 2026",
@@ -13094,7 +13113,7 @@ const tutorialSteps = [
         <tr><td style="padding: 4px 8px; color: #3498db;"><strong>K</strong> — Skills</td><td style="padding: 4px 8px; color: #3498db;"><strong>C</strong> — Cars</td><td style="padding: 4px 8px; color: #3498db;"><strong>B</strong> — Businesses</td></tr>
         <tr><td style="padding: 4px 8px; color: #3498db;"><strong>T</strong> — Territory</td><td style="padding: 4px 8px; color: #3498db;"><strong>M</strong> — Map</td><td style="padding: 4px 8px; color: #3498db;"><strong>L</strong> — Calendar</td></tr>
         <tr><td style="padding: 4px 8px; color: #3498db;"><strong>Z</strong> — Statistics</td><td style="padding: 4px 8px; color: #3498db;"><strong>R</strong> — Empire Rating</td><td style="padding: 4px 8px; color: #3498db;"><strong>O</strong> — Empire Overview</td></tr>
-        <tr><td style="padding: 4px 8px; color: #3498db;"><strong>H</strong> — Hall of Fame</td><td style="padding: 4px 8px; color: #3498db;"><strong>E</strong> — Buy Energy Drink</td><td style="padding: 4px 8px; color: #3498db;"><strong>ESC</strong> — Main Menu</td></tr>
+        <tr><td style="padding: 4px 8px; color: #3498db;"><strong>H</strong> — Hall of Fame</td><td style="padding: 4px 8px; color: #3498db;"><strong>E</strong> — Buy Energy Drink</td><td style="padding: 4px 8px; color: #3498db;"><strong>ESC</strong> — SafeHouse</td></tr>
         <tr><td style="padding: 4px 8px; color: #3498db;"><strong>F5</strong> — Save System</td><td style="padding: 4px 8px; color: #3498db;"><strong>F7</strong> — Competition</td><td></td></tr>
       </table>
       <p style="background: rgba(46, 204, 113, 0.2); padding: 10px; border-radius: 5px; margin-top: 15px;">
@@ -14530,7 +14549,7 @@ function showAchievements() {
   achievementsHTML += `
     <div style="text-align: center; margin-top: 20px;">
       <button onclick="showHallOfFame()" style="background: linear-gradient(45deg, #f39c12, #e67e22); color: white; padding: 12px 25px; border: none; border-radius: 8px; cursor: pointer; margin-right: 10px;">🏛️ Hall of Fame</button>
-      <button onclick="goBackToMainMenu()" style="background: linear-gradient(45deg, #95a5a6, #7f8c8d); color: white; padding: 12px 25px; border: none; border-radius: 8px; cursor: pointer;">🏠 Main Menu</button>
+      <button onclick="goBackToMainMenu()" style="background: linear-gradient(45deg, #95a5a6, #7f8c8d); color: white; padding: 12px 25px; border: none; border-radius: 8px; cursor: pointer;">🏠 SafeHouse</button>
     </div>
   `;
 
@@ -17700,7 +17719,7 @@ function saveGameToSlot(slotNumber, customName = null, isAutoSave = false) {
       playtime: playtime,
       saveDate: new Date().toISOString(),
       isAutoSave: isAutoSave,
-      gameVersion: "1.0",
+      gameVersion: "1.3.8",
       data: saveData
     };
     
