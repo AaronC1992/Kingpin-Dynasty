@@ -484,22 +484,13 @@ function connectToOnlineWorld() {
     }
 }
 
-// Fallback to local demo mode when server is unavailable
+// Fallback when server is unavailable — just update status, no fake data
 function connectToLocalDemo() {
-    logAction(" Starting in offline demo mode...");
-    
-    setTimeout(() => {
-        onlineWorldState.isConnected = false; // Keep as demo mode
-        onlineWorldState.connectionStatus = 'demo';
-        onlineWorldState.playerId = generatePlayerId();
-        onlineWorldState.serverInfo.playerCount = 47 + Math.floor(Math.random() * 30);
-        
-        updateConnectionStatus();
-        initializeWorldData();
-        startWorldUpdates();
-        
-        logAction(` Demo mode active - ${onlineWorldState.serverInfo.playerCount} simulated players`);
-    }, 2000);
+    onlineWorldState.isConnected = false;
+    onlineWorldState.connectionStatus = 'offline';
+    onlineWorldState.serverInfo.playerCount = 0;
+    updateConnectionStatus();
+    logAction('⚠️ Server unavailable — World Chat is offline. Will retry automatically.');
 }
 
 // Handle messages from the server
@@ -1399,8 +1390,8 @@ function getConnectionStatusHTML() {
     if (onlineWorldState.isConnected || status === 'connected') {
         const count = onlineWorldState.serverInfo.playerCount || 0;
         return `<span style="color: #2ecc71; font-family: 'Georgia', serif;">🟢 Connected to World Chat — ${count} player${count !== 1 ? 's' : ''} online</span>`;
-    } else if (status === 'demo') {
-        return `<span style="color: #f39c12; font-family: 'Georgia', serif;">🟡 Offline Mode — chat locally while server reconnects</span>`;
+    } else if (status === 'demo' || status === 'offline') {
+        return `<span style="color: #e74c3c; font-family: 'Georgia', serif;">🔴 Server offline — retrying automatically...</span>`;
     } else if (status === 'error') {
         return `<span style="color: #e74c3c; font-family: 'Georgia', serif;">🔴 Server unavailable — retrying...</span>`;
     } else {
@@ -1686,14 +1677,11 @@ function updateConnectionStatus() {
 
 // Initialize world data after connection
 function initializeWorldData() {
-    // Simulate loading world data
-    onlineWorldState.nearbyPlayers = generateNearbyPlayers();
-    // Only seed demo chat if there are no real messages yet
-    if (!onlineWorldState.globalChat || onlineWorldState.globalChat.length === 0) {
-        onlineWorldState.globalChat = generateGlobalChatHistory();
-    }
-    onlineWorldState.serverInfo.cityEvents = generateCityEvents();
-    onlineWorldState.activeHeists = generateActiveHeists();
+    // Real data comes from the server — just set up empty defaults
+    if (!onlineWorldState.nearbyPlayers) onlineWorldState.nearbyPlayers = [];
+    if (!onlineWorldState.globalChat) onlineWorldState.globalChat = [];
+    if (!onlineWorldState.serverInfo.cityEvents) onlineWorldState.serverInfo.cityEvents = [];
+    if (!onlineWorldState.activeHeists) onlineWorldState.activeHeists = [];
     
     onlineWorldState.lastUpdate = new Date().toLocaleTimeString();
 
@@ -1718,16 +1706,11 @@ function startWorldUpdates() {
     }, onlineWorld.updateInterval);
 }
 
-// Update world state
+// Update world state — only runs when connected to real server
 function updateWorldState() {
-    // Simulate receiving world updates
-    onlineWorldState.serverInfo.playerCount = Math.max(30, onlineWorldState.serverInfo.playerCount + (Math.random() > 0.5 ? 1 : -1));
     onlineWorldState.lastUpdate = new Date().toLocaleTimeString();
-    
-    // Update displays if visible
     updateConnectionStatus();
-    
-    // Occasionally add new world events
+}
     if (Math.random() < 0.1) {
         addWorldEvent(generateRandomWorldEvent());
     }
@@ -1840,57 +1823,25 @@ function loadGlobalLeaderboard() {
     `).join('');
 }
 
-// Generate world data
+// Generate world data — real data comes from the server
 function generateNearbyPlayers() {
-    const playerNames = ['CrimeBoss42', 'ShadowDealer', 'StreetKing', 'DarkVendor', 'NightCrawler', 'UrbanLegend'];
-    const colors = ['#3498db', '#e74c3c', '#2ecc71', '#f39c12', '#9b59b6', '#1abc9c'];
-    return playerNames.slice(0, 3 + Math.floor(Math.random() * 3)).map((name, index) => ({
-        id: `nearby_${index}`,
-        name: name,
-        level: 5 + Math.floor(Math.random() * 20),
-        reputation: Math.floor(Math.random() * 100),
-        territory: Math.floor(Math.random() * 5),
-        isOnline: true,
-        lastSeen: 'Now',
-        color: colors[index % colors.length]
-    }));
+    return [];
 }
 
 function generateGlobalChatHistory() {
-    const messages = [
-        { player: 'CrimeBoss42', message: 'Anyone want to team up for a heist?', time: '2 min ago', color: '#3498db' },
-        { player: 'ShadowDealer', message: 'Trading high-end weapons, good prices!', time: '5 min ago', color: '#e74c3c' },
-        { player: 'StreetKing', message: 'Just took over downtown district ', time: '8 min ago', color: '#2ecc71' },
-        { player: 'System', message: 'City Event: Police raid in industrial district!', time: '10 min ago', color: '#f39c12' }
-    ];
-    return messages;
+    return [];
 }
 
 function generateCityEvents() {
-    const events = [
-        { type: 'police_raid', district: 'industrial', description: 'Heavy police presence, high risk/reward jobs available', timeLeft: '15 min' },
-        { type: 'market_crash', district: 'downtown', description: 'Economic instability, weapon prices fluctuating', timeLeft: '1 hour' },
-        { type: 'gang_meeting', district: 'docks', description: 'Underground meeting, recruitment opportunities', timeLeft: '30 min' }
-    ];
-    return events;
+    return [];
 }
 
 function generateActiveHeists() {
-    return [
-        { id: 'heist_1', target: 'First National Bank', organizer: 'CrimeBoss42', participants: 2, maxParticipants: 4, difficulty: 'Hard', reward: 150000 },
-        { id: 'heist_2', target: 'Diamond Jewelry Store', organizer: 'ShadowDealer', participants: 1, maxParticipants: 3, difficulty: 'Medium', reward: 75000 }
-    ];
+    return [];
 }
 
 function generateRandomWorldEvent() {
-    const events = [
-        ` Police raid in ${Object.keys(onlineWorldState.cityDistricts)[Math.floor(Math.random() * 5)]} district!`,
-        ` ${onlineWorldState.nearbyPlayers[Math.floor(Math.random() * onlineWorldState.nearbyPlayers.length)]?.name || 'A player'} completed a major heist!`,
-        ` Territory war brewing between rival gangs!`,
-        ` Weapon prices surge in black market!`,
-        ` New high-value target spotted in the city!`
-    ];
-    return events[Math.floor(Math.random() * events.length)];
+    return '';
 }
 
 // World activity functions
@@ -1898,22 +1849,7 @@ function loadWorldActivityFeed() {
     const feedElement = document.getElementById('world-activity-feed');
     if (!feedElement) return;
     
-    const activities = [
-        ' CrimeBoss42 claimed territory in downtown district',
-        ' ShadowDealer completed a $50,000 heist',
-        ' Gang war started between Serpents and Wolves',
-        ' StreetKing sold rare weapons in trade market',
-        ' Police raid ended in industrial district',
-        ' 15 players currently in global chat',
-        ' 67 players online worldwide'
-    ];
-    
-    feedElement.innerHTML = activities.map((activity, index) => `
-        <div style="margin: 5px 0; padding: 8px; background: rgba(52, 73, 94, 0.3); border-radius: 5px;">
-            ${activity}
-            <small style="color: #95a5a6; float: right;">${Math.floor(Math.random() * 30) + 1} min ago</small>
-        </div>
-    `).join('');
+    feedElement.innerHTML = '<p style="color: #95a5a6; text-align: center; padding: 10px;">No activity yet. Connect to the server to see live events.</p>';
 }
 
 function addWorldEvent(event) {
