@@ -14661,7 +14661,7 @@ function showDeathScreen(causeOfDeath) {
     obituaryEl.innerHTML = `
       <div class="obituary-card">
         <div class="obituary-header">
-          <div class="obituary-portrait">${player.portrait || '💀'}</div>
+          <div class="obituary-portrait">${player.portrait ? `<img src="${player.portrait}" alt="${player.name || 'Portrait'}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;">` : '💀'}</div>
           <div class="obituary-name-block">
             <h3>${player.name || 'Unknown'}</h3>
             <span class="obituary-title">${legacyTitle} — Level ${player.level}</span>
