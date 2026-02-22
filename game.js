@@ -11510,6 +11510,7 @@ function showStore() {
           <div style="margin-bottom: 8px; color: #bdc3c7;">
             ${itemDescription}
           </div>
+          ${item.description ? `<div style="margin-bottom: 6px; color: #a0b0c0; font-size: 0.88em; font-style: italic;">${item.description}</div>` : ''}
           ${comparisonHTML}
           ${requirementText}
           <div id="store-price-${index}" data-base-price="${item.price}" style="color: #f1c40f; font-weight: bold; font-size: 1.1em;">
@@ -13564,6 +13565,7 @@ function updateStoreDisplay() {
           <li style="margin: 10px 0; padding: 10px; background: rgba(52, 73, 94, 0.6); border-radius: 5px;">
             <strong>${item.name}</strong> - $${item.price}<br>
             ${description}
+            ${item.description ? `<br><span style="color: #a0b0c0; font-size: 0.88em; font-style: italic;">${item.description}</span>` : ''}
           </li>
         `;
       }).join('')}
