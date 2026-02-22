@@ -6535,6 +6535,7 @@ function bribeGuard() {
   updateUI();
   showBriefNotification(`You slipped the guard $${bribeCost.toLocaleString()} and walked out the back door.`, 'success');
   logAction(`Bribed a guard $${bribeCost.toLocaleString()} to get out of jail early.`);
+  goBackToMainMenu();
 }
 
 // Jail breakout attempt
@@ -13377,12 +13378,6 @@ function updateJailUI() {
   const jailTimeElement = document.getElementById("jail-time");
   if (jailTimeElement) {
     jailTimeElement.innerText = player.jailTime;
-  }
-  
-  // Update money display when in jail (shows jail time instead of money)
-  const moneyDisplay = document.getElementById("money-display");
-  if (moneyDisplay && player.inJail) {
-    moneyDisplay.innerText = `In Jail for ${player.jailTime} seconds`;
   }
   
 }
