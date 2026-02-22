@@ -38,10 +38,10 @@ export const storeItems = [
     { name: "Energy Drink", price: 1500, power: 0, type: "energy", energyRestore: 30, description: "Chemical energy, slight health risk. Restores 30 energy instantly." },
     { name: "Steroids", price: 5000, power: 0, type: "energy", energyRestore: 60, description: "Serious boost, serious risk. Restores 60 energy instantly." },
     // === Utility Items ===
-    { name: "Lockpick Set", price: 10000, power: 5, type: "utility", description: "Boosts stealth job success. +5 stealth power." },
-    { name: "Police Scanner", price: 35000, power: 0, type: "utility", description: "Reduces wanted level gain by 10%." },
-    { name: "Burner Phone", price: 8000, power: 0, type: "utility", description: "Reduces suspicion from laundering by 15%." },
-    { name: "Fake ID Kit", price: 25000, power: 0, type: "utility", description: "Reduces jail time by 1 day if caught." },
+    { name: "Lockpick Set", price: 10000, power: 5, type: "utility", description: "+5 power. Passively grants +10% success chance on all jobs while owned." },
+    { name: "Police Scanner", price: 35000, power: 0, type: "utility", description: "Passively reduces wanted level gain by 20% on every job and combat action while owned." },
+    { name: "Burner Phone", price: 8000, power: 0, type: "utility", description: "Passively reduces suspicion risk by 15% when laundering money while owned." },
+    { name: "Fake ID Kit", price: 25000, power: 0, type: "utility", description: "Passively reduces jail time by 5 seconds when arrested. Also required for the Counterfeiting Money job." },
     // === High-Level Drugs (Trade Goods) ===
     { name: "Crate Moonshine", price: 60000, power: 0, type: "highLevelDrug", maxPayout: 100000, requiredVehicle: "Freight Truck", description: "Bootleg gold. Trade good worth up to $100,000. Requires a Freight Truck to deliver." },
     { name: "Bag of Mary Jane", price: 120000, power: 0, type: "highLevelDrug", maxPayout: 200000, requiredVehicle: "Freight Truck", description: "The green rush. Trade good worth up to $200,000. Requires a Freight Truck to deliver." },
