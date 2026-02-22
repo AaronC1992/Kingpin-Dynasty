@@ -11944,7 +11944,7 @@ function createCharacter() {
   showIntroNarrative();
 }
 
-// Function to go back to intro screen from character creation
+// Function to go back to intro/title screen from character creation
 function goBackToIntro() {
   const charCreationScreen = document.getElementById('character-creation-screen');
   if (charCreationScreen) {
@@ -11957,15 +11957,15 @@ function goBackToIntro() {
     portraitScreen.remove();
   }
   
-  // Reset selections and restart character creation
+  // Reset selections
   selectedPortraitFile = '';
   const nameInput = document.getElementById('character-name');
   if (nameInput) {
     nameInput.value = '';
   }
   
-  // Restart character creation from name prompt
-  showSimpleCharacterCreation();
+  // Return to the title screen
+  document.getElementById('intro-screen').style.display = 'block';
 }
 
 function showPortraitSelection() {
@@ -15627,7 +15627,12 @@ function loadGameFromIntroSlot(slotNumber) {
 }
 
 function cancelLoadFromIntro() {
-  exitLoadInterface('intro');
+  // Remove the load overlay and return to the title screen
+  const overlay = document.getElementById('intro-save-overlay');
+  if (overlay) {
+    overlay.remove();
+  }
+  document.getElementById('intro-screen').style.display = 'block';
 }
 
 // Expose intro load helpers for inline onclick handlers
@@ -16002,10 +16007,9 @@ function initGame() {
     startEnergyRegenTimer();
   }
   
-  // Skip intro screen — go directly to game
-  // Hide intro screen permanently
-  document.getElementById("intro-screen").style.display = "none";
+  // Show the title screen and let the player choose
   document.getElementById("menu").style.display = "none";
+  document.getElementById("intro-screen").style.display = "block";
   
   // Add event listener for character name input
   const charNameInput = document.getElementById('character-name');
@@ -16017,25 +16021,6 @@ function initGame() {
   setTimeout(() => {
     loadPortraitGrid();
   }, 100);
-  
-  // Check for existing saves — auto-load or start character creation
-  const mostRecentSlot = findMostRecentSaveSlot();
-  if (mostRecentSlot !== null) {
-    // Returning player — auto-load most recent save and go to Command Center
-    if (loadGameFromSlot(mostRecentSlot)) {
-      updateUI();
-      showCommandCenter();
-      const playerName = player.name || "Criminal";
-      logAction(`🎮 Welcome back, ${playerName}! Your criminal empire has been restored.`);
-      showBriefNotification(`✅ Loaded: ${playerName}'s saved game`, 2000);
-    } else {
-      // Load failed — start fresh
-      startGame();
-    }
-  } else {
-    // New player — go straight to character creation
-    startGame();
-  }
 }
 
 // Call initialization when page loads
