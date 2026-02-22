@@ -1,6 +1,6 @@
 @echo off
 echo ================================================
-echo KINGPIN DYNASTY - MULTIPLAYER SERVER STARTER
+echo MAFIA BORN - MULTIPLAYER SERVER STARTER
 echo ================================================
 echo.
 

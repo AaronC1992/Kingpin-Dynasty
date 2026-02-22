@@ -11748,7 +11748,7 @@ function showLevelUpEffects() {
     25: { title: 'Crime Lord',         bonus: 100000, msg: 'Your empire spans the underworld.' },
     30: { title: 'Shadow King',        bonus: 200000, msg: 'Even the cops pay tribute to you.' },
     40: { title: 'Legend of the Streets', bonus: 500000, msg: 'Songs are written about your reign.' },
-    50: { title: 'Kingpin Dynasty',    bonus: 1000000, msg: 'You ARE the dynasty. History remembers.' }
+    50: { title: 'Mafia Born',    bonus: 1000000, msg: 'You ARE the dynasty. History remembers.' }
   };
   
   const milestone = milestones[player.level];
@@ -12738,7 +12738,7 @@ function showVersionUpdateNotification() {
   content.innerHTML = `
     <div style="text-align: center; margin-bottom: 30px;">
       <h2 style="color: #c0a062; font-size: 2.5em; margin: 0 0 10px 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">
-        What's New in Kingpin Dynasty
+        What's New in Mafia Born
       </h2>
       <h3 style="color: #3498db; font-size: 1.5em; margin: 0;">
         ${updateInfo.title}
@@ -12822,7 +12822,7 @@ const tutorialSteps = [
     showUI: "none",
     content: `
       <div style="text-align: center; margin-bottom: 20px;">
-        <img src="gamelogo.png" alt="Kingpin Dynasty Logo" 
+        <img src="gamelogo.png" alt="Mafia Born Logo" 
            style="max-width: 300px; width: 80%; height: auto; border-radius: 10px; 
               box-shadow: 0 5px 15px rgba(0,0,0,0.5); border: 2px solid #e74c3c;" />
       </div>

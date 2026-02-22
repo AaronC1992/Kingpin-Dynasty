@@ -1,4 +1,4 @@
-// ==================== KINGPIN DYNASTY - MULTIPLAYER SERVER ====================
+// ==================== MAFIA BORN - MULTIPLAYER SERVER ====================
 const WebSocket = require('ws');
 const http = require('http');
 const fs = require('fs');
@@ -17,7 +17,7 @@ const server = http.createServer((req, res) => {
                 status: 'ok',
                 serverTime: Date.now(),
                 playersConnected: clients ? clients.size : 0,
-                serverName: 'Kingpin Dynasty - Multiplayer Server'
+                serverName: 'Mafia Born - Multiplayer Server'
             };
             res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
             res.end(JSON.stringify(status));
@@ -75,7 +75,7 @@ const server = http.createServer((req, res) => {
                 console.log(`❌ File not found: ${filePath}`);
                 res.writeHead(404, { 'Content-Type': 'text/html' });
                 res.end(`
-                    <h1>🎮 Kingpin Dynasty - Multiplayer Server</h1>
+                    <h1>🎮 Mafia Born - Multiplayer Server</h1>
                     <p>File not found: ${req.url}</p>
                     <p><a href="/">🏠 Go to Game</a></p>
                     <hr>
@@ -254,7 +254,7 @@ function ensureUniqueName(baseName) {
     return candidate;
 }
 
-console.log('🌐 Kingpin Dynasty - Multiplayer Server Starting...');
+console.log('🌐 Mafia Born - Multiplayer Server Starting...');
 
 // WebSocket connection handler
 wss.on('connection', (ws, req) => {
@@ -324,7 +324,7 @@ wss.on('connection', (ws, req) => {
         playerId: clientId,
         serverInfo: {
             playerCount: clients.size,
-            serverName: 'Kingpin Dynasty - Main Server',
+            serverName: 'Mafia Born - Main Server',
             cityEvents: gameState.cityEvents,
             // Use last persisted snapshot for initial info
             globalLeaderboard: persistedLeaderboard

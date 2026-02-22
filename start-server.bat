@@ -1,6 +1,6 @@
 @echo off
 echo ========================================
-echo  KINGPIN DYNASTY - MULTIPLAYER SETUP
+echo  MAFIA BORN - MULTIPLAYER SETUP
 echo ========================================
 echo.
 

@@ -1,4 +1,4 @@
-// Simple JSON-based world persistence for Kingpin Dynasty
+// Simple JSON-based world persistence for Mafia Born
 // What persists:
 // - cityDistricts control (e.g., who controls which district)
 // - cityEvents (high-level world events visible to all)

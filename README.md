@@ -1,8 +1,8 @@
-# Kingpin Dynasty
+# Mafia Born
 
 A deep criminal empire-building browser game where you rise from street thug to legendary kingpin. Build your crew, claim territory, run businesses, and outmanoeuvre rival crime families — all from your browser.
 
-## **[PLAY NOW - Live Demo](https://aaronc1992.github.io/Kingpin-Dynasty/)**
+## **[PLAY NOW - Live Demo](https://aaronc1992.github.io/Mafia-Born/)**
 
 No installation required. Click above and start playing instantly.
 
@@ -10,7 +10,7 @@ No installation required. Click above and start playing instantly.
 
 ## About
 
-Kingpin Dynasty is a single-page browser game built with pure HTML5, CSS3, and JavaScript. You create a character, grind jobs, recruit a gang, purchase properties and businesses, and navigate a world of rival factions, law enforcement, and dynamic events — all while managing clean and dirty money to fund your criminal empire.
+Mafia Born is a single-page browser game built with pure HTML5, CSS3, and JavaScript. You create a character, grind jobs, recruit a gang, purchase properties and businesses, and navigate a world of rival factions, law enforcement, and dynamic events — all while managing clean and dirty money to fund your criminal empire.
 
 The game features persistent progression via local storage, a full save/load system, progressive feature unlocking, customisable quick actions, and both local and online multiplayer modes.
 
@@ -72,7 +72,7 @@ The game features persistent progression via local storage, a full save/load sys
 
 ## Getting Started
 
-Just open [the live demo](https://aaronc1992.github.io/Kingpin-Dynasty/) in any modern browser. For online multiplayer, run the server locally:
+Just open [the live demo](https://aaronc1992.github.io/Mafia-Born/) in any modern browser. For online multiplayer, run the server locally:
 
 ```bash
 npm install

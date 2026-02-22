@@ -1,4 +1,4 @@
-# 🚀 Kingpin Dynasty - Production Deployment Checklist
+# 🚀 Mafia Born - Production Deployment Checklist
 
 ## Pre-Deployment Checklist
 
@@ -83,13 +83,13 @@ npm start
 **Option 2: PM2 (Recommended for Production)**
 ```bash
 # Start with PM2
-pm2 start server.js --name kingpin-dynasty
+pm2 start server.js --name mafia-born
 
 # View logs
-pm2 logs kingpin-dynasty
+pm2 logs mafia-born
 
 # Restart
-pm2 restart kingpin-dynasty
+pm2 restart mafia-born
 
 # Auto-start on server reboot
 pm2 startup
@@ -117,7 +117,7 @@ server {
     ssl_ciphers HIGH:!aNULL:!MD5;
     
     # Game static files
-    root /var/www/kingpin-dynasty;
+    root /var/www/mafia-born;
     index index.html;
     
     # WebSocket upgrade for multiplayer
@@ -155,7 +155,7 @@ server {
     SSLCertificateKeyFile /etc/letsencrypt/live/embracedcreation.com/privkey.pem
     SSLCertificateChainFile /etc/letsencrypt/live/embracedcreation.com/chain.pem
     
-    DocumentRoot /var/www/kingpin-dynasty
+    DocumentRoot /var/www/mafia-born
     
     # WebSocket proxy
     ProxyPreserveHost On
@@ -204,7 +204,7 @@ console.log(onlineWorldState.serverInfo.playerCount);
 pm2 status
 
 # View real-time logs
-pm2 logs kingpin-dynasty --lines 100
+pm2 logs mafia-born --lines 100
 
 # Monitor resource usage
 pm2 monit
@@ -237,13 +237,13 @@ pm2 monit
 
 ```bash
 # Stop the server
-pm2 stop kingpin-dynasty
+pm2 stop mafia-born
 
 # Upload new files
 # (via FTP, Git, etc.)
 
 # Restart
-pm2 restart kingpin-dynasty
+pm2 restart mafia-born
 
 # Clear browser cache on client side
 # Users: Press Ctrl+F5 to hard refresh
@@ -283,7 +283,7 @@ pm2 restart kingpin-dynasty
 
 **Server Issues:**
 - Check server logs: `pm2 logs`
-- Restart server: `pm2 restart kingpin-dynasty`
+- Restart server: `pm2 restart mafia-born`
 
 **Client Issues:**
 - Users should hard refresh: Ctrl+F5

@@ -34,7 +34,7 @@ Copy/paste systemd unit:
 
 ```
 [Unit]
-Description=Kingpin Dynasty multiplayer server
+Description=Mafia Born multiplayer server
 After=network.target
 
 [Service]

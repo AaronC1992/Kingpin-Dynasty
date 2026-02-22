@@ -1,5 +1,5 @@
 // ==================== SERVER CONFIGURATION ====================
-// Environment-based configuration for Kingpin Dynasty multiplayer server
+// Environment-based configuration for Mafia Born multiplayer server
 // 
 // USAGE:
 // 1. Copy this file to config.js

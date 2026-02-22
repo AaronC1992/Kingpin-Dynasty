@@ -1,7 +1,7 @@
-# Example systemd unit for Kingpin Dynasty multiplayer server
+# Example systemd unit for Mafia Born multiplayer server
 # Copy this file to /etc/systemd/system/kingpin-server.service and edit WorkingDirectory/User as needed.
 [Unit]
-Description=Kingpin Dynasty multiplayer server
+Description=Mafia Born multiplayer server
 After=network.target
 
 [Service]

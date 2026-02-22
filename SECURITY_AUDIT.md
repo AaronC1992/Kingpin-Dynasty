@@ -1,4 +1,4 @@
-# 🔐 Security Audit Report - Kingpin Dynasty Multiplayer
+# 🔐 Security Audit Report - Mafia Born Multiplayer
 
 **Date:** November 24, 2025
 **Version:** 1.0.0 (Production Ready)
@@ -421,7 +421,7 @@ Your code has **strong security foundations** and is ready for production deploy
 ## 📞 INCIDENT RESPONSE
 
 **If security breach detected:**
-1. Run: `pm2 stop kingpin-dynasty`
+1. Run: `pm2 stop mafia-born`
 2. Review logs: `pm2 logs --lines 1000`
 3. Back up world-state.json
 4. Identify attack vector

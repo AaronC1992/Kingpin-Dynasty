@@ -49,7 +49,7 @@ let onlineWorldState = {
     playerId: null,
     serverInfo: {
         playerCount: 0,
-        serverName: 'Kingpin Dynasty - The Commission',
+        serverName: 'Mafia Born - The Commission',
         cityEvents: [],
         globalLeaderboard: []
     },

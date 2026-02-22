@@ -1,4 +1,4 @@
-# Kingpin Dynasty - Multiplayer Setup Guide
+# Mafia Born - Multiplayer Setup Guide
 
 ## 🌐 **PRODUCTION DEPLOYMENT (embracedcreation.com)**
 
@@ -29,7 +29,7 @@
    ```bash
    npm start
    # Or for persistent running:
-   pm2 start server.js --name kingpin-dynasty
+   pm2 start server.js --name mafia-born
    ```
 
 5. **Upload game files:**

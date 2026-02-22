@@ -30,14 +30,14 @@ All security issues have been fixed. Follow these steps to deploy.
 
 ```bash
 # 1. Navigate to your game directory
-cd /path/to/kingpin-dynasty
+cd /path/to/mafia-born
 
 # 2. Install dependencies
 npm install --production
 
 # 3. Start the server with PM2 (recommended)
 npm install -g pm2
-pm2 start server.js --name kingpin-dynasty
+pm2 start server.js --name mafia-born
 
 # 4. Make it start on server reboot
 pm2 startup
@@ -113,12 +113,12 @@ pm2 status
 
 ### View Logs:
 ```bash
-pm2 logs kingpin-dynasty
+pm2 logs mafia-born
 ```
 
 ### Restart Server:
 ```bash
-pm2 restart kingpin-dynasty
+pm2 restart mafia-born
 ```
 
 ---
@@ -145,22 +145,22 @@ lsof -i :3000
 netstat -ano | findstr :3000
 
 # Kill conflicting process and restart
-pm2 restart kingpin-dynasty
+pm2 restart mafia-born
 ```
 
 **Need to see what's happening:**
 ```bash
 # Real-time logs
-pm2 logs kingpin-dynasty --lines 100
+pm2 logs mafia-born --lines 100
 
 # Error logs only
-pm2 logs kingpin-dynasty --err
+pm2 logs mafia-born --err
 ```
 
 **Reset everything:**
 ```bash
-pm2 delete kingpin-dynasty
-pm2 start server.js --name kingpin-dynasty
+pm2 delete mafia-born
+pm2 start server.js --name mafia-born
 ```
 
 ---
@@ -198,7 +198,7 @@ Share the link with your players and watch your criminal empire grow! 🏴‍☠
 ---
 
 **Need Help?**
-- Check server logs: `pm2 logs kingpin-dynasty`
+- Check server logs: `pm2 logs mafia-born`
 - Check browser console: Press F12
 - Review documentation: `PRODUCTION_DEPLOYMENT.md`
 

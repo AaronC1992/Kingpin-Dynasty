@@ -1,4 +1,4 @@
-# 🎮 Kingpin Dynasty - Image Loading Fix Guide
+# 🎮 Mafia Born - Image Loading Fix Guide
 
 ## The Problem
 Your game's images (logo and character portraits) aren't loading when accessed through ngrok because the server needs to be running to serve static files.
@@ -23,7 +23,7 @@ Your game's images (logo and character portraits) aren't loading when accessed t
 ### Step 2: Check Server is Running
 You should see output like:
 ```
-🚀 Kingpin Dynasty Multiplayer Server running on port 8080
+🚀 Mafia Born Multiplayer Server running on port 8080
 🌐 WebSocket server ready for connections
 ```
 
