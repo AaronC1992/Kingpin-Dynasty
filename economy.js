@@ -208,6 +208,34 @@ export const businessTypes = [
         legitimacy: 10,
         category: "illegal",
         paysDirty: true
+    },
+    {
+        id: "druglab",
+        name: "Drug Lab",
+        description: "A clandestine lab cooking up product in an abandoned building — massive returns, massive risk",
+        basePrice: 6000000,
+        baseIncome: 220000,
+        maxLevel: 5,
+        upgradeMultiplier: 1.8,
+        incomeMultiplier: 1.5,
+        launderingCapacity: 0,
+        legitimacy: 5,
+        category: "illegal",
+        paysDirty: true
+    },
+    {
+        id: "chopshop",
+        name: "Chop Shop",
+        description: "Strip stolen cars for parts and sell them on the black market — pairs well with Boost a Ride",
+        basePrice: 3500000,
+        baseIncome: 140000,
+        maxLevel: 5,
+        upgradeMultiplier: 1.6,
+        incomeMultiplier: 1.4,
+        launderingCapacity: 0,
+        legitimacy: 15,
+        category: "illegal",
+        paysDirty: true
     }
 ];
 

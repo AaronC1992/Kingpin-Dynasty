@@ -1869,7 +1869,7 @@ async function collectBusinessIncome(businessIndex) {
   const hourlyIncome = Math.floor(businessType.baseIncome * Math.pow(businessType.incomeMultiplier, business.level - 1) / 24);
   const totalIncome = hourlyIncome * Math.min(hoursElapsed, 48); // Cap at 48 hours
   
-  // Counterfeiting pays dirty money; all other businesses pay clean money
+  // Illegal businesses (Counterfeiting, Drug Lab, Chop Shop) pay dirty money; all other businesses pay clean money
   if (businessType.paysDirty) {
     player.dirtyMoney = (player.dirtyMoney || 0) + totalIncome;
   } else {
@@ -2156,6 +2156,13 @@ function showMoneyLaundering() {
     <div style="background: rgba(231, 76, 60, 0.2); padding: 20px; border-radius: 10px; border: 1px solid #e74c3c; margin: 20px 0;">
       <h4 style="color: #e74c3c;">⚠️ NOTICE</h4>
       <p style="color: #ecf0f1;">Money laundering carries risks. High suspicion levels may attract law enforcement attention. Choose your methods carefully and don't get greedy.</p>
+    </div>
+    
+    <div style="background: rgba(46, 204, 113, 0.15); padding: 20px; border-radius: 10px; border: 1px solid #2ecc71; margin: 20px 0;">
+      <h4 style="color: #2ecc71;">💡 TIPS</h4>
+      <p style="color: #ecf0f1;">• The <strong>Money Laundering</strong> job (under Jobs) also converts dirty money to clean money at 80-95% rates.</p>
+      <p style="color: #ecf0f1;">• Owning a <strong>Counterfeiting Operation</strong> business gives +3% conversion rate on the Money Laundering job.</p>
+      <p style="color: #ecf0f1;">• Dirty money jobs (Bank Job, Counterfeiting Money) increase your suspicion level — launder regularly!</p>
     </div>
     
     <div style="text-align: center; margin-top: 40px;">
@@ -5244,6 +5251,13 @@ async function startJob(index) {
     return;
   }
 
+  // Handle special money laundering job — converts dirty money to clean money
+  if (job.special === "launder_money") {
+    handleLaunderMoneyJob(job, approachLabel);
+    updateUI();
+    return;
+  }
+
   let earnings;
   if (Array.isArray(job.payout)) {
     earnings = Math.floor(Math.random() * (job.payout[1] - job.payout[0] + 1)) + job.payout[0];
@@ -5281,6 +5295,10 @@ async function startJob(index) {
   // Only Bank Job and Counterfeiting Money pay dirty money; all other jobs pay clean money
   if (job.paysDirty) {
     player.dirtyMoney = (player.dirtyMoney || 0) + earnings;
+    // Dirty money jobs raise suspicion — the feds notice large illegal cash flows
+    const dirtySuspicion = 5 + Math.floor(Math.random() * 11); // 5-15 suspicion
+    player.suspicionLevel = Math.min(100, (player.suspicionLevel || 0) + dirtySuspicion);
+    logAction(`🔍 Handling that much dirty cash raises eyebrows... (+${dirtySuspicion} suspicion)`);
   } else {
     player.money += earnings;
   }
@@ -5548,6 +5566,143 @@ function handleCarTheft(job, actualEnergyCost) {
   }
 
   // Note: updateUI, achievement check, showJobs, and health check are now handled in handleStolenCarChoice
+}
+
+// Function to handle money laundering job — converts dirty money to clean money
+function handleLaunderMoneyJob(job, approachLabel) {
+  // Check if player actually has dirty money to launder
+  if (!player.dirtyMoney || player.dirtyMoney <= 0) {
+    alert("You don't have any dirty money to launder! Earn dirty money from Bank Jobs or Counterfeiting first.");
+    return;
+  }
+
+  // Deduct energy
+  let actualEnergyCost = job.energyCost;
+  if (player.unlockedPerks && player.unlockedPerks.includes('streetSmart')) {
+    actualEnergyCost = Math.max(1, Math.floor(actualEnergyCost * 0.8));
+  }
+  player.energy -= actualEnergyCost;
+
+  // Calculate how much dirty money we can launder this run (based on job payout range + luck)
+  let launderCapacity;
+  if (Array.isArray(job.payout)) {
+    launderCapacity = Math.floor(Math.random() * (job.payout[1] - job.payout[0] + 1)) + job.payout[0];
+    launderCapacity += Math.floor(launderCapacity * (player.skills.luck * 0.02));
+  } else {
+    launderCapacity = job.payout;
+  }
+
+  // Can't launder more than you have
+  const amountToLaunder = Math.min(launderCapacity, player.dirtyMoney);
+
+  // Jail check — stealth skills reduce the chance
+  let stealthBonus = player.skills.stealth * 2;
+  stealthBonus += player.skillTrees.stealth.escape * 3;
+  stealthBonus += player.skillTrees.stealth.infiltration * 2;
+  let adjustedJailChance = Math.max(1, job.jailChance - stealthBonus);
+
+  if (Math.random() * 100 <= adjustedJailChance) {
+    // Caught! Lose the dirty money being laundered and go to jail
+    const seized = Math.floor(amountToLaunder * (0.3 + Math.random() * 0.4)); // Feds seize 30-70%
+    player.dirtyMoney = Math.max(0, player.dirtyMoney - seized);
+    player.suspicionLevel = Math.min(100, (player.suspicionLevel || 0) + 15);
+    sendToJail(job.wantedLevelGain);
+    logAction(`🚔💰 The feds bust your laundering operation! $${seized.toLocaleString()} in dirty money seized as evidence. You're dragged away in cuffs.`);
+    return;
+  }
+
+  // Success! Convert dirty money to clean money with a conversion rate
+  // Base rate 80-90%, improved by intelligence skills
+  let conversionRate = 0.80 + (Math.random() * 0.10);
+
+  // Intelligence skill improves conversion rate
+  conversionRate += player.skills.intelligence * 0.005; // +0.5% per level
+  conversionRate += (player.skillTrees.intelligence.forensics || 0) * 0.01; // +1% per forensics level
+
+  // Approach bonus: "Smart" approach gives better conversion rate
+  if (approachLabel === 'Smart') {
+    conversionRate += 0.05; // +5% for smart approach
+  }
+  // "Loud" approach increases suspicion more
+  if (approachLabel === 'Loud') {
+    player.suspicionLevel = Math.min(100, (player.suspicionLevel || 0) + 5);
+  }
+
+  // Owning a Counterfeiting Operation improves conversion (mixing fake with real bills)
+  if (player.businesses && player.businesses.some(b => b.id === 'counterfeiting')) {
+    conversionRate += 0.03; // +3% if you own the Counterfeiting Operation
+    logAction(`🏭 Your Counterfeiting Operation helps mix the bills — improved conversion rate.`);
+  }
+
+  // Cap at 95%
+  conversionRate = Math.min(0.95, conversionRate);
+
+  const cleanAmount = Math.floor(amountToLaunder * conversionRate);
+  const fee = amountToLaunder - cleanAmount;
+
+  // Deduct dirty, add clean
+  player.dirtyMoney -= amountToLaunder;
+  player.money += cleanAmount;
+
+  // Wanted level gain (reduced by perks/skills)
+  let wantedLevelGain = job.wantedLevelGain;
+  if (approachLabel === 'Loud') {
+    wantedLevelGain = Math.ceil(wantedLevelGain * 1.3);
+  }
+  let intimidationReduction = player.skillTrees.violence.intimidation * 0.1;
+  wantedLevelGain = Math.max(1, Math.floor(wantedLevelGain * (1 - intimidationReduction)));
+  if (player.unlockedPerks.includes('ghostProtocol')) {
+    wantedLevelGain = Math.max(1, Math.floor(wantedLevelGain * 0.5));
+  }
+  if (hasUtilityItem('Police Scanner')) {
+    wantedLevelGain = Math.max(1, Math.floor(wantedLevelGain * 0.8));
+    logAction(`📡 Your Police Scanner intercepts radio chatter — you dodge the heat.`);
+  }
+  player.wantedLevel += wantedLevelGain;
+
+  // Small suspicion gain even on success
+  const suspicionGain = 2 + Math.floor(Math.random() * 4); // 2-5 suspicion
+  player.suspicionLevel = Math.min(100, (player.suspicionLevel || 0) + suspicionGain);
+
+  // Reputation and XP based on risk level
+  player.reputation += 3;
+  gainExperience(75);
+
+  // Track statistics
+  updateStatistic('jobsCompleted');
+  updateStatistic('totalMoneyEarned', cleanAmount);
+  trackJobCompletion(job.name);
+
+  // Advanced Skills System Integration
+  trackJobPlaystyle(job, true);
+  updateFactionReputation(job, true);
+
+  // Update mission progress
+  updateMissionProgress('job_completed', 1);
+  updateMissionProgress('money_earned', cleanAmount);
+
+  // Forensics skill can reduce evidence trail
+  if (player.skillTrees.intelligence.forensics > 0) {
+    let forensicsChance = player.skillTrees.intelligence.forensics * 8;
+    if (Math.random() * 100 < forensicsChance) {
+      let evidenceReduction = Math.min(2, Math.floor(player.skillTrees.intelligence.forensics / 3));
+      player.wantedLevel = Math.max(0, player.wantedLevel - evidenceReduction);
+      logAction(`🧹 Your forensics expertise helps you cover the paper trail, reducing heat by ${evidenceReduction}!`);
+    }
+  }
+
+  const ratePercent = Math.round(conversionRate * 100);
+  alert(`💰 Laundering successful! Cleaned $${cleanAmount.toLocaleString()} from $${amountToLaunder.toLocaleString()} dirty money (${ratePercent}% rate, $${fee.toLocaleString()} in fees).`);
+  logAction(`💧💰 The dirty bills flow through shell companies and emerge squeaky clean. $${amountToLaunder.toLocaleString()} dirty → $${cleanAmount.toLocaleString()} clean (${ratePercent}% rate). The laundering fee of $${fee.toLocaleString()} vanishes into the ether.`);
+
+  // Refresh jobs UI if visible
+  if (document.getElementById("jobs-screen").style.display === "block") {
+    refreshJobsList();
+  }
+
+  if (player.health <= 0) {
+    showDeathScreen("Killed during a laundering operation gone wrong");
+  }
 }
 
 // Function to show car theft result with sell/store choice
@@ -11218,11 +11373,17 @@ const VERSION_UPDATES = {
     date: "February 21, 2026",
     changes: [
       "💰 Dirty Money rework — only Bank Job and Counterfeiting Money produce dirty money; all other jobs now pay clean cash",
-      "🏭 New Business: Counterfeiting Operation — generates high passive income as dirty money that must be laundered",
+      "💧 Money Laundering job reworked — now converts dirty money to clean money at 80-95% rate instead of paying cash",
+      "🔍 Dirty money jobs now raise Suspicion Level (+5-15 per job), making laundering more urgent",
+      "🏭 New Business: Counterfeiting Operation — $4M, $180K/day dirty income, +3% laundering job bonus",
+      "🏭 New Business: Drug Lab — $6M, $220K/day dirty income, the highest-earning illegal business",
+      "🏭 New Business: Chop Shop — $3.5M, $140K/day dirty income, pairs with Boost a Ride",
       "🆕 New Job: Counterfeiting Money — extreme risk, $200K–$500K payout (dirty), requires Basement Hideout & Fake ID Kit",
       "🏷️ Jobs and businesses that pay dirty money are now clearly labeled in red (DIRTY MONEY)",
-      "📝 Comprehensive 16-step tutorial rewritten to match all current game mechanics",
-      "📖 Complete README overhaul with full game mechanics documentation",
+      "💡 Money Laundering screen now shows tips about the laundering job, Counterfeiting synergy, and suspicion",
+      "📝 Comprehensive 16-step tutorial rewritten to match all current game mechanics including dirty money",
+      "📖 Complete README overhaul with accurate game data for all 18 jobs, 9 businesses, and store prices",
+      "💾 Save migration for older saves — dirty money, suspicion level, and laundering setups auto-initialize",
       "🔗 Play Now button restored to project page"
     ]
   },
@@ -11431,7 +11592,7 @@ const tutorialSteps = [
     title: "Jobs & Energy Management",
     showUI: "jobs",
     content: `
-      <h3>🔫 Your Criminal Career — 17 Jobs</h3>
+      <h3>🔫 Your Criminal Career — 18 Jobs</h3>
       <p><strong>This is the Jobs screen!</strong> Your primary source of income and XP. Jobs scale from entry-level to legendary:</p>
       <ul>
         <li><strong>Street Soldier (1 Energy):</strong> Low risk, low reward — $1K–$5K payouts to get started</li>
@@ -11439,6 +11600,8 @@ const tutorialSteps = [
         <li><strong>Store Heist (10 Energy):</strong> $20K–$40K payouts — requires 10 reputation</li>
         <li><strong>Drug Jobs:</strong> Bootleg Run, Speakeasy Supply, White Powder Distribution — buy the product from the store, sell it on the street for big profit</li>
         <li><strong>Weapon Jobs:</strong> Protection Collection, Bank Job, Hit on a Rival — require weapons and ammo</li>
+        <li><strong>💰 Dirty Money Jobs:</strong> <span style="color:#e74c3c;">Bank Job</span> and <span style="color:#e74c3c;">Counterfeiting Money</span> pay only dirty money that must be laundered! These also raise your suspicion level</li>
+        <li><strong>💧 Money Laundering Job:</strong> Converts dirty money → clean money (80-95% rate). Owning a Counterfeiting Operation business boosts the rate!</li>
         <li><strong>Elite Jobs:</strong> International Arms Trade ($500K–$1M) and Take Over the City ($2M–$5M) — legendary risk, legendary reward</li>
       </ul>
       <p><strong>Energy System:</strong> Energy regenerates 1 point every 20 seconds (base). The <strong>Recovery</strong> skill tree reduces this timer, and the <strong>Endurance</strong> skill reduces energy costs per job!</p>
@@ -11544,20 +11707,31 @@ const tutorialSteps = [
     title: "Businesses & Money Laundering",
     showUI: "menu",
     content: `
-      <h3>💼 Building Legitimate Fronts</h3>
-      <p><strong>6 Business Types</strong> generate daily passive income:</p>
+      <h3>💼 Building Legitimate Fronts & Illegal Operations</h3>
+      <p><strong>9 Business Types</strong> — 6 legitimate fronts and 3 illegal operations:</p>
+      <h4>Legitimate Businesses (pay clean money):</h4>
       <ul>
-        <li><strong>24/7 Laundromat</strong> — $15K, $300/day (95% legit)</li>
-        <li><strong>Family Restaurant</strong> — $25K, $500/day (85% legit)</li>
-        <li><strong>Premium Car Wash</strong> — $30K, $600/day (90% legit)</li>
-        <li><strong>Underground Nightclub</strong> — $50K, $1,200/day (60% legit)</li>
-        <li><strong>Private Casino</strong> — $100K, $2,500/day (40% legit)</li>
-        <li><strong>Discount Pawn Shop</strong> — $20K, $400/day (70% legit)</li>
+        <li><strong>24/7 Laundromat</strong> — $1.5M, $30K/day (95% legit, best laundering capacity)</li>
+        <li><strong>Discount Pawn Shop</strong> — $2M, $40K/day (70% legit)</li>
+        <li><strong>Family Restaurant</strong> — $2.5M, $50K/day (85% legit)</li>
+        <li><strong>Premium Car Wash</strong> — $3M, $60K/day (90% legit)</li>
+        <li><strong>Underground Nightclub</strong> — $5M, $120K/day (60% legit)</li>
+        <li><strong>Private Casino</strong> — $10M, $250K/day (40% legit)</li>
       </ul>
-      <p><strong>Money Laundering:</strong> 5 methods to clean dirty money — from Casino Chips (85% clean, 2hr) to Offshore Banking (95% clean, 48hr). A Burner Phone reduces suspicion by 15%!</p>
-      <p><strong>Loan Shark:</strong> Borrow $2K–$100K at 15–30% weekly interest. Miss payments and face consequences.</p>
+      <h4 style="color: #e74c3c;">Illegal Businesses (pay DIRTY money):</h4>
+      <ul>
+        <li><strong>Chop Shop</strong> — $3.5M, $140K/day (pairs with Boost a Ride jobs)</li>
+        <li><strong>Counterfeiting Operation</strong> — $4M, $180K/day (boosts Money Laundering job rate +3%)</li>
+        <li><strong>Drug Lab</strong> — $6M, $220K/day (highest illegal income)</li>
+      </ul>
+      <p><strong>💧 Money Laundering:</strong> Two ways to clean dirty money:</p>
+      <ul>
+        <li><strong>Laundering Menu:</strong> 5 methods from Casino Chips (85% clean, 2hr) to Offshore Banking (95% clean, 48hr)</li>
+        <li><strong>Money Laundering Job:</strong> Converts dirty → clean at 80-95% rate. Faster but burns energy</li>
+      </ul>
+      <p><strong>Loan Shark:</strong> Borrow $200K–$10M at 15–30% weekly interest. Miss payments and face consequences.</p>
       <p style="background: rgba(46, 204, 113, 0.2); padding: 10px; border-radius: 5px; margin-top: 15px;">
-        <strong>💰 Tip:</strong> Businesses with lower legitimacy earn more but raise suspicion. Balance risk and reward!
+        <strong>💰 Tip:</strong> Illegal businesses earn more but pay dirty money you must launder. Balance risk and reward!
       </p>
     `
   },
@@ -13225,7 +13399,7 @@ function autoCollectBusinessesAndTribute() {
         const totalIncome = hourlyIncome * Math.min(hoursElapsed, 48);
         if (totalIncome > 0) {
           if (businessType.paysDirty) {
-            player.dirtyMoney = (player.dirtyMoney || 0) + totalIncome; // counterfeiting income is dirty
+            player.dirtyMoney = (player.dirtyMoney || 0) + totalIncome; // illegal business income is dirty
           } else {
             player.money += totalIncome; // business income is clean
           }
@@ -15833,6 +16007,17 @@ function initializeMissingData() {
   // Initialize legacy if missing
   if (!player.legacy) {
     initializeLegacyBonuses();
+  }
+
+  // v1.3.0 — Dirty Money system migration for older saves
+  if (player.dirtyMoney === undefined || player.dirtyMoney === null) {
+    player.dirtyMoney = 0;
+  }
+  if (player.suspicionLevel === undefined || player.suspicionLevel === null) {
+    player.suspicionLevel = 0;
+  }
+  if (!player.launderingSetups) {
+    player.launderingSetups = [];
   }
 }
 

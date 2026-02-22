@@ -1,4 +1,4 @@
-# From Dusk to Don
+# Kingpin Dynasty
 
 A deep criminal empire-building game where you rise from street thug to legendary kingpin. Features a full progression system with jobs, gangs, territories, businesses, skill trees, boss battles, faction politics, mini-games, and both local and online multiplayer.
 
@@ -12,19 +12,20 @@ Click the link above to play the game instantly in your browser — no installat
 
 ### Character Creation
 - Choose your **name**, **gender**, and **ethnicity** (8 unique portraits)
-- Interactive **12-step tutorial** to learn all game systems
+- Interactive **16-step tutorial** to learn all game systems
 - Persistent progression saved via local storage
 
 ### Player Stats
 | Stat | Description |
 |------|-------------|
-| **Money** | Your cash on hand — earned from jobs, businesses, and hustles |
+| **Money** | Your clean cash on hand — earned from jobs, businesses, and hustles |
+| **Dirty Money** | Illicit cash from Bank Jobs, Counterfeiting, and illegal businesses — must be laundered! |
 | **Health** | Starts at 100. Lost from risky jobs and combat. Heal at the hospital |
-| **Energy** | Starts at 100. Every job costs energy. Regenerates 1 per 30 seconds |
+| **Energy** | Starts at 100. Every job costs energy. Regenerates 1 per 20 seconds |
 | **Power** | Increased by weapons, armor, vehicles, and properties |
 | **Reputation** | Unlocks higher-tier jobs and faction missions |
 | **Wanted Level** | Raised by criminal activity. Increases jail time and police attention |
-| **Suspicion** | 0–100 scale affecting law enforcement interest in your operations |
+| **Suspicion** | 0–100 scale affecting law enforcement interest in your operations. Dirty money jobs raise it |
 
 ### Leveling & XP
 - Earn XP from completing jobs (higher risk = more XP)
@@ -33,29 +34,46 @@ Click the link above to play the game instantly in your browser — no installat
 
 ---
 
-## 💼 Jobs (17 Total)
+## 💼 Jobs (18 Total)
 
 Jobs range from low-risk errands to legendary criminal operations. Each has a payout range, energy cost, jail chance, wanted level gain, health loss, reputation requirement, and optional required items.
 
 | Tier | Job | Payout | Energy | Jail % | Requires |
 |------|-----|--------|--------|--------|----------|
-| Entry | Street Corner Lookout | $1–15 | 1 | 5% | — |
-| Special | Steal Car | Stolen car | 5 | 40% | — |
-| Mid | Armed Robbery | $50–100 | 10 | 30% | Rep 10 |
-| Drug | Moonshine Distribution | $200–400 | 12 | 25% | Crate Moonshine |
-| Drug | Underground Weed Operation | $400–800 | 15 | 35% | Bag of Mary Jane |
-| Drug | High-Stakes Cocaine Deal | $800–1,500 | 20 | 45% | Pure Cocaine |
-| Weapon | Protection Racket | $100–250 | 8 | 20% | Brass Knuckles |
-| Weapon | Bank Heist | $500–1,200 | 25 | 50% | Tommy Gun + Bullets |
-| Weapon | Rival Gang Assassination | $300–600 | 18 | 40% | Pistol + Bullets |
-| Vehicle | Luxury Car Theft Ring | $400–800 | 15 | 30% | Luxury Automobile |
-| Vehicle | Cross-State Smuggling | $1,000–2,000 | 30 | 35% | Private Airplane + Gasoline |
-| Gang | Territory War | $200–500 | 20 | 45% | Gang Recruit |
-| Gang | Underground Fighting Ring | $150–350 | 12 | 25% | Brass Knuckles |
-| Business | Illegal Casino Operation | $600–1,200 | 22 | 30% | Criminal Safehouse |
-| Business | Money Laundering Scheme | $800–1,500 | 25 | 20% | Basement Hideout + Luxury Automobile |
-| Legendary | International Arms Deal | $1,500–3,000 | 35 | 60% | Private Airplane + Tommy Gun + Bulletproof Vest |
-| Legendary | Criminal Empire Takeover | $2,000–4,000 | 40 | 70% | Gang Recruit + Underground Bunker + Tommy Gun + Luxury Automobile |
+| Entry | Street Soldier | $1K–$5K | 1 | 20% | — |
+| Special | Boost a Ride | Stolen car | 5 | 40% | — |
+| Mid | Store Heist | $20K–$40K | 10 | 30% | Rep 10 |
+| Drug | Bootleg Run | $40K–$80K | 12 | 25% | Crate Moonshine, Rep 15 |
+| Drug | Speakeasy Supply | $80K–$160K | 15 | 35% | Bag of Mary Jane, Rep 25 |
+| Drug | White Powder Distribution | $160K–$300K | 20 | 45% | Pure Cocaine, Rep 40 |
+| Weapon | Protection Collection | $10K–$25K | 8 | 20% | Brass Knuckles, Rep 12 |
+| Weapon | Bank Job 💰 | $100K–$250K | 25 | 50% | Tommy Gun + Bullets, Rep 35 |
+| Weapon | Hit on a Rival | $60K–$120K | 18 | 40% | Pistol + Bullets, Rep 30 |
+| Vehicle | Luxury Car Ring | $80K–$160K | 15 | 30% | Luxury Automobile, Rep 20 |
+| Vehicle | Cross-Border Smuggling | $200K–$400K | 30 | 35% | Private Airplane + Gasoline, Rep 50 |
+| Gang | Turf War | $40K–$100K | 20 | 45% | Gang Recruit, Rep 25 |
+| Gang | Underground Boxing | $30K–$70K | 12 | 25% | Brass Knuckles, Rep 18 |
+| Business | Illegal Gambling Den | $120K–$240K | 22 | 30% | Criminal Safehouse, Rep 35 |
+| Special | Money Laundering 💧 | Converts dirty→clean | 25 | 20% | Basement Hideout + Luxury Auto, Rep 45 |
+| Dirty | Counterfeiting Money 💰 | $200K–$500K | 20 | 45% | Basement Hideout + Fake ID Kit, Rep 40 |
+| Legendary | International Arms Trade | $500K–$1M | 35 | 60% | Private Airplane + Tommy Gun + Bulletproof Vest, Rep 60 |
+| Legendary | Take Over the City | $2M–$5M | 40 | 70% | Gang Recruit + Underground Bunker + Tommy Gun + Luxury Auto, Rep 80 |
+
+> 💰 = Pays **dirty money** only (must be laundered) | 💧 = Converts dirty money to clean money (80–95% rate)
+
+---
+
+## 💰 Dirty Money System
+
+Certain high-value criminal activities pay **dirty money** instead of clean cash. Dirty money cannot be spent directly — it must be laundered first.
+
+### How Dirty Money Works
+- **Bank Job** and **Counterfeiting Money** jobs pay dirty money and raise your suspicion level (+5–15 per job)
+- **Illegal businesses** (Counterfeiting Operation, Drug Lab, Chop Shop) generate dirty passive income
+- **Money Laundering job** converts dirty → clean money at 80–95% rate (Intelligence skills improve the rate)
+- **Laundering Menu** offers 5 methods from Casino Chips (85% rate) to Offshore Banking (95% rate)
+- **Owning a Counterfeiting Operation** boosts the Money Laundering job's conversion rate by +3%
+- **High suspicion** increases risk of failed laundering attempts and law enforcement attention
 
 ---
 
@@ -69,7 +87,7 @@ Leveled using skill points. Cost increases every 5 levels.
 | **Stealth** | Reduces jail chance, improves breakout success |
 | **Violence** | Increases combat job success rate |
 | **Charisma** | Store discounts (2%/level), reduced suspicion |
-| **Intelligence** | Overall job success boost |
+| **Intelligence** | Overall job success boost, better laundering rates |
 | **Luck** | Better random event outcomes and payouts |
 | **Endurance** | Reduces energy cost per job (-1/level) |
 
@@ -135,21 +153,32 @@ Basic Combat, Stealth Training, Business Operations, Team Building, and Advanced
 
 ## 🏢 Business & Money Laundering
 
-### Businesses (6)
+### Businesses (9 Total)
+
+#### Legitimate Businesses (pay clean money)
 | Business | Cost | Income/Day | Legitimacy |
 |----------|------|-----------|------------|
-| Family Restaurant | $25K | $500 | 85% |
-| Underground Nightclub | $50K | $1,200 | 60% |
-| 24/7 Laundromat | $15K | $300 | 95% |
-| Premium Car Wash | $30K | $600 | 90% |
-| Private Casino | $100K | $2,500 | 40% |
-| Discount Pawn Shop | $20K | $400 | 70% |
+| 24/7 Laundromat | $1.5M | $30K | 95% |
+| Discount Pawn Shop | $2M | $40K | 70% |
+| Family Restaurant | $2.5M | $50K | 85% |
+| Premium Car Wash | $3M | $60K | 90% |
+| Underground Nightclub | $5M | $120K | 60% |
+| Private Casino | $10M | $250K | 40% |
+
+#### Illegal Businesses (pay DIRTY money 💰)
+| Business | Cost | Income/Day | Legitimacy |
+|----------|------|-----------|------------|
+| Chop Shop | $3.5M | $140K | 15% |
+| Counterfeiting Operation | $4M | $180K | 10% |
+| Drug Lab | $6M | $220K | 5% |
+
+> Illegal business income is dirty money and must be laundered before spending!
 
 ### Money Laundering (5 Methods)
 Casino Chips (85% clean, 2hr), Restaurant Revenue (90%, 4hr), Cash Business Front (80%, 6hr), Art Auction (75%, 24hr), Offshore Banking (95%, 48hr)
 
 ### Loan Shark System
-Borrow $2K–$100K with 15–30% weekly interest. Miss payments at your own risk.
+Borrow $200K–$10M with 15–30% weekly interest. Miss payments at your own risk.
 
 ---
 
@@ -169,20 +198,59 @@ Borrow $2K–$100K with 15–30% weekly interest. Miss payments at your own risk
 
 ## 🛒 Store Items
 
-### Weapons & Armor
-Brass Knuckles ($75), Pistol ($300), Tommy Gun ($1,500), Leather Jacket ($150), Bulletproof Vest ($1,000)
+### Weapons
+| Weapon | Price | Power |
+|--------|-------|-------|
+| Brass Knuckles | $7,500 | 10 |
+| Switchblade | $12,000 | 20 |
+| Baseball Bat | $18,000 | 30 |
+| Pistol | $30,000 | 50 |
+| Revolver | $45,000 | 70 |
+| Sawed-Off Shotgun | $125,000 | 90 |
+| Tommy Gun | $150,000 | 100 |
+| Sniper Rifle | $250,000 | 120 |
+
+### Armor
+| Armor | Price | Power |
+|-------|-------|-------|
+| Leather Jacket | $15,000 | 15 |
+| Stab Vest | $50,000 | 25 |
+| Bulletproof Vest | $100,000 | 40 |
+| Reinforced Body Armor | $200,000 | 60 |
 
 ### Vehicles
-Armored Car ($1,200), Luxury Automobile ($4,000), Private Airplane ($15,000)
+| Vehicle | Price | Power |
+|---------|-------|-------|
+| Armored Car | $120,000 | 25 |
+| Luxury Automobile | $400,000 | 50 |
+| Private Airplane | $1,500,000 | 200 |
 
-### Consumables
-Energy Drink ($15, +30 energy), Strong Coffee ($8, +15 energy), Steroids ($50, +60 energy), Bullets ($25), Gasoline ($40)
+### Consumables & Supplies
+| Item | Price | Effect |
+|------|-------|--------|
+| Strong Coffee | $800 | +15 energy |
+| Energy Drink | $1,500 | +30 energy |
+| Steroids | $5,000 | +60 energy |
+| Bullets | $2,500 | Ammo for guns |
+| Gasoline | $4,000 | Fuel for vehicles |
 
-### Drugs (for distribution jobs)
-Crate Moonshine ($600), Bag of Mary Jane ($1,200), Pure Cocaine ($2,000)
+### Utility Items
+| Item | Price | Effect |
+|------|-------|--------|
+| Lockpick Set | $10,000 | +5 stealth power |
+| Burner Phone | $8,000 | -15% laundering suspicion |
+| Fake ID Kit | $25,000 | -1 day jail time |
+| Police Scanner | $35,000 | -20% wanted level gain |
 
-### Stolen Cars (7 Types)
-Steal and sell cars ranging from Rusty Jalopy ($50) to High-End Roadster ($2,000). Cars can take damage and suffer catastrophic failures.
+### Drugs (Trade Goods for Distribution Jobs)
+| Drug | Price | Required Vehicle |
+|------|-------|-----------------|
+| Crate Moonshine | $60,000 | Freight Truck |
+| Bag of Mary Jane | $120,000 | Freight Truck |
+| Pure Cocaine | $200,000 | Freight Truck |
+
+### Stolen Cars (30+ Types)
+Steal cars via the **Boost a Ride** job. Vehicles range from Broken Family Wagons ($800) to Police Cruisers ($250,000). Cars take damage during theft and can be sold immediately or stored in your collection.
 
 ---
 
@@ -413,9 +481,9 @@ Chrome 60+, Firefox 55+, Safari 11+, Edge 16+, iOS Safari, Chrome Mobile
 
 ## 📚 Strategy Tips
 
-- **Early Game** — Grind Street Corner Lookout for safe cash. Buy an Energy Drink to extend your runs. Save up for Brass Knuckles to unlock Protection Racket.
-- **Mid Game** — Invest in a Basement Hideout and start recruiting gang members. Buy drugs wholesale and run distribution jobs for major profit. Train your Stealth and Endurance skills.
-- **Late Game** — Acquire properties, set up protection rackets, and corrupt officials. Push faction reputation for exclusive perks. Challenge rival bosses when your power is high enough.
+- **Early Game** — Grind Street Soldier for safe cash ($1K–$5K). Buy Strong Coffee ($800) to extend your runs. Save up for Brass Knuckles ($7,500) to unlock Protection Collection.
+- **Mid Game** — Invest in a Basement Hideout ($6K) and start recruiting gang members. Buy drugs wholesale and run distribution jobs for major profit. Train your Stealth and Endurance skills.
+- **Late Game** — Acquire businesses (start with Laundromat at $1.5M), set up protection rackets, and corrupt officials. Push faction reputation for exclusive perks. Consider illegal businesses for high dirty money income, but keep laundering it!
 - **Endgame** — Pursue one of the 4 retirement paths to enter the Hall of Fame and unlock legacy bonuses for your next character.
 
 ---
