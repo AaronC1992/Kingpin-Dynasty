@@ -30,20 +30,28 @@ const server = http.createServer((req, res) => {
     // Handle HTTP requests to serve game files
     let reqPath = decodeURIComponent(req.url); // Decode URL to handle spaces
     if (reqPath.includes('\0')) reqPath = reqPath.replace(/\0/g, '');
-    // Normalize path and restrict serving to the server's working directory
-    let filePath = path.normalize(path.join(process.cwd(), reqPath));
+    
+    // Determine the static files root directory
+    // In cPanel, game files may be in ../public_html while server runs from a separate dir
+    const cwd = process.cwd();
+    const publicHtmlDir = path.join(path.dirname(cwd), 'public_html');
+    const hasPublicHtml = fs.existsSync(publicHtmlDir);
+    const staticRoot = hasPublicHtml ? publicHtmlDir : cwd;
+    
+    // Normalize path and restrict serving to the static root
+    let filePath = path.normalize(path.join(staticRoot, reqPath));
     if (reqPath === '/' || reqPath === '') {
-        filePath = path.join(process.cwd(), 'index.html');
+        filePath = path.join(staticRoot, 'index.html');
     }
-    // Prevent path traversal attacks - ensure resolved path is under the project root
-    if (!filePath.startsWith(process.cwd())) {
+    // Prevent path traversal attacks - ensure resolved path is under the static root
+    if (!filePath.startsWith(staticRoot)) {
         console.log(`⚠️ Attempted path traversal: ${req.url} -> ${filePath}`);
         res.writeHead(403, { 'Content-Type': 'text/html' });
         res.end(`<h1>403 Forbidden</h1><p>Access denied</p>`);
         return;
     }
     if (filePath === './') {
-        filePath = './index.html';
+        filePath = path.join(staticRoot, 'index.html');
     }
     
     console.log(`Request for: ${req.url} -> ${filePath}`);
