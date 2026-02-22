@@ -4540,8 +4540,6 @@ function updateUI() {
   }
   
   document.getElementById("inventory-display").innerText = `Inventory: ${player.inventory.length} Items`;
-  document.getElementById("ammo-display").innerText = `Ammo: ${player.ammo}`;
-  document.getElementById("gas-display").innerText = `Gas: ${player.gas}`;
   document.getElementById("health-display").innerText = `Health: ${player.health}`;
   
   // Update energy display with timer (compact format)
@@ -12019,13 +12017,9 @@ function unlockAchievement(achievementId) {
   const achievement = achievements.find(a => a.id === achievementId);
   if (achievement && !achievement.unlocked) {
     achievement.unlocked = true;
-    // Give scaled rewards
-    const reward = achievement.reward || { money: 1000, xp: 50 };
-    player.money += reward.money;
-    gainExperience(reward.xp);
-    // Show toast notification instead of blocking alert
-    showBriefNotification(`🏆 ${achievement.name}: ${achievement.description} (+$${reward.money.toLocaleString()})`, 4000);
-    logAction(`🏆 Achievement Unlocked: "${achievement.name}" — ${achievement.description}. Reward: $${reward.money.toLocaleString()} and ${reward.xp} XP.`);
+    // Achievements are for fun — no money or XP rewards
+    showBriefNotification(`🏆 ${achievement.name}: ${achievement.description}`, 4000);
+    logAction(`🏆 Achievement Unlocked: "${achievement.name}" — ${achievement.description}.`);
   }
 }
 
@@ -14546,7 +14540,6 @@ function showAchievements() {
         </h3>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px;">
           ${catAchievements.map(a => {
-            const rewardText = a.reward ? `💵 $${a.reward.money.toLocaleString()} · ⭐ ${a.reward.xp} XP` : '';
             return `
               <div style="background: ${a.unlocked ? 'rgba(46, 204, 113, 0.15)' : 'rgba(0,0,0,0.3)'}; 
                     padding: 12px; border-radius: 8px; 
@@ -14557,7 +14550,6 @@ function showAchievements() {
                   <span style="font-size: 1.2em;">${a.unlocked ? '✅' : '🔒'}</span>
                 </div>
                 <p style="color: #bdc3c7; font-size: 0.85em; margin: 5px 0 3px;">${a.description}</p>
-                ${rewardText ? `<div style="font-size: 0.75em; color: ${a.unlocked ? '#95a5a6' : '#f1c40f'};">${a.unlocked ? '✓ Claimed' : rewardText}</div>` : ''}
               </div>
             `;
           }).join('')}
