@@ -2972,3 +2972,50 @@ p, ul {
     color: #bdc3c7;
     margin: 0;
 }
+
+/* ==================== MOBILE FIX PASS ==================== */
+
+/* Intro screen: stack buttons vertically on mobile */
+.mobile-device #intro-screen button {
+    display: block !important;
+    width: 100% !important;
+    margin: 8px 0 !important;
+    box-sizing: border-box !important;
+}
+
+/* Store screen: collapse 2-column grid to single column on mobile */
+.mobile-device #store-screen > div[style*="grid"] {
+    grid-template-columns: 1fr !important;
+}
+
+/* Toast notifications above the quick actions bar on mobile */
+.mobile-device .toast-container {
+    bottom: 80px !important;
+}
+
+/* Mini-games grid: fit on small phones */
+@media (max-width: 480px) {
+    #mini-games-screen div[style*="minmax(300px"] {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* TikTakToe cells: smaller on mobile */
+.mobile-device .tiktaktoe-cell,
+.mobile-device .mg-tiktaktoe-cell {
+    width: 60px !important;
+    height: 60px !important;
+    font-size: 20px !important;
+}
+
+.mobile-device #tiktaktoe-board,
+.mobile-device #mg-tiktaktoe-board {
+    grid-template-columns: repeat(3, 60px) !important;
+}
+
+/* Casino game selection grid: smaller minimum on very narrow screens */
+@media (max-width: 380px) {
+    #casino-game-select div[style*="minmax(150px"] {
+        grid-template-columns: 1fr !important;
+    }
+}

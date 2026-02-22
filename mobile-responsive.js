@@ -561,7 +561,7 @@ export const MobileSystem = {
         `;
         
         quickActionsBar.innerHTML = `
-            <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; font-family: 'Georgia', serif; max-width: 100%;">
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; font-family: 'Georgia', serif; max-width: 100%;">
                 <button onclick="showStore()" 
                         style="padding: 8px 4px; background: linear-gradient(45deg, #333, #000); color: #c0a062; border: 1px solid #c0a062; border-radius: 5px; 
                                font-size: 10px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 44px; display: flex; align-items: center; justify-content: center;">
