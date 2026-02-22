@@ -9,7 +9,7 @@ Your game's images (logo and character portraits) aren't loading when accessed t
 1. Open Command Prompt or PowerShell
 2. Navigate to your game folder:
    ```
-   cd "c:\Users\jenna\OneDrive\Desktop\Portfolio projects\KingpinDynasty"   # update after local folder rename
+   cd "c:\Users\jenna\Desktop\Portfolio projects\Mafia-Born"
    ```
 3. Start the server:
    ```

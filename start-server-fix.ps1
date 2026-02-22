@@ -22,7 +22,7 @@ foreach ($file in $requiredFiles) {
 if ($missingFiles.Count -gt 0) {
     Write-Host ''
     Write-Host '[!] Some required files are missing. Make sure you are in the correct directory.' -ForegroundColor Yellow
-    Write-Host 'Navigate to: c:\Users\jenna\OneDrive\Desktop\Portfolio projects\KingpinDynasty' -ForegroundColor Yellow
+    Write-Host 'Navigate to: c:\Users\jenna\Desktop\Portfolio projects\Mafia-Born' -ForegroundColor Yellow
     Read-Host "Press Enter to continue anyway"
 }
 
