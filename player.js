@@ -193,8 +193,8 @@ export function gainExperience(amount) {
  * Check if player has enough XP to level up and process the level up
  */
 export function checkLevelUp() {
-  // Steeper XP curve: higher base + stronger quadratic scaling
-  let requiredXP = Math.floor(player.level * 250 + Math.pow(player.level, 2) * 30);
+  // Very steep XP curve for 60+ hour gameplay: high base + strong cubic scaling
+  let requiredXP = Math.floor(player.level * 500 + Math.pow(player.level, 2) * 80 + Math.pow(player.level, 3) * 5);
   if (player.experience >= requiredXP) {
     player.level++;
     player.experience -= requiredXP;

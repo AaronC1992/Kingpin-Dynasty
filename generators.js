@@ -145,25 +145,23 @@ export function generateAvailableRecruits() {
     return availableRecruits;
 }
 
-// Generate random encounter recruit
+// Generate random encounter recruit — veterans only, chance scales with player level
 export function generateRandomEncounter() {
-    if (Math.random() < 0.03) { // 3% chance per job completion
+    // Base 1% chance, +0.5% per player level (caps at ~15% around level 28)
+    const playerLevel = (typeof player !== 'undefined' && player.level) ? player.level : 1;
+    const encounterChance = Math.min(0.15, 0.01 + playerLevel * 0.005);
+    
+    if (Math.random() < encounterChance) {
         const name = recruitNames[Math.floor(Math.random() * recruitNames.length)];
         
-        // Random encounters have higher chance of better recruits
-        let experienceLevel;
-        const rarityRoll = Math.random() * 100;
+        // Only veteran recruits — experience level 7-10
+        // Higher player level slightly biases toward the top end
+        const levelBonus = Math.min(2, Math.floor(playerLevel / 10)); // 0-2 bonus from player level
+        let experienceLevel = Math.floor(Math.random() * 4) + 7; // 7-10 base
+        experienceLevel = Math.min(10, experienceLevel + Math.floor(Math.random() * (levelBonus + 1)));
         
-        if (rarityRoll < 70) {
-            experienceLevel = Math.floor(Math.random() * 3) + 1; // 1-3 (70%)
-        } else if (rarityRoll < 90) {
-            experienceLevel = Math.floor(Math.random() * 3) + 4; // 4-6 (20%)
-        } else {
-            experienceLevel = Math.floor(Math.random() * 4) + 7; // 7-10 (10%)
-        }
-        
-        const baseCost = 800; // Slightly cheaper than recruitment screen
-        const cost = baseCost + (experienceLevel * 400) + Math.floor(Math.random() * 400);
+        const baseCost = 3000; // Veterans cost more
+        const cost = baseCost + (experienceLevel * 800) + Math.floor(Math.random() * 1000);
         const tributeMultiplier = 1 + (experienceLevel * 0.3);
         
         const specializations = ["muscle", "thief", "dealer", "driver", "enforcer", "technician"];
@@ -175,12 +173,12 @@ export function generateRandomEncounter() {
             cost: cost,
             tributeMultiplier: tributeMultiplier,
             specialization: specialization,
-            loyalty: Math.floor(Math.random() * 20) + 80, // 80-100% loyalty for encounters
+            loyalty: Math.floor(Math.random() * 15) + 85, // 85-100% loyalty for veteran encounters
             encountered: true,
             skills: {
-                violence: Math.floor(Math.random() * 3) + 1,
-                stealth: Math.floor(Math.random() * 3) + 1,
-                intelligence: Math.floor(Math.random() * 3) + 1
+                violence: Math.floor(Math.random() * 3) + 3,
+                stealth: Math.floor(Math.random() * 3) + 3,
+                intelligence: Math.floor(Math.random() * 3) + 3
             },
             onOperation: false,
             inTraining: false,

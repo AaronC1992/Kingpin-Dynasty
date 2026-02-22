@@ -14,23 +14,18 @@ function refreshMoneyDisplay() {
     const dirtyEl = document.getElementById('dirty-money-display');
     if (!moneyEl) return;
 
-    if (player.inJail) {
-        moneyEl.innerText = `In Jail for ${player.jailTime} seconds`;
-    } else {
-        const money = player.money || 0;
-        moneyEl.innerText = `Money: $${formatMoney(money)}`;
-    }
+    // Always show money — jail status is shown on the jail screen, not the status bar
+    const money = player.money || 0;
+    moneyEl.innerText = `Money: $${formatMoney(money)}`;
 
     if (dirtyEl) {
         const dirty = player.dirtyMoney || 0;
-        dirtyEl.innerText = `Dirty: $${formatMoney(dirty)}`;
+        dirtyEl.innerText = `Dirty Money: $${formatMoney(dirty)}`;
     }
 }
 
 export function initUIEvents() {
     EventBus.on('moneyChanged', ({ oldValue, newValue }) => {
-        // Only update cash HUD when not in jail (jail handler takes precedence)
-        if (player.inJail) return;
         refreshMoneyDisplay();
     });
 
@@ -51,14 +46,11 @@ export function initUIEvents() {
     EventBus.on('jailStatusChanged', ({ inJail, jailTime }) => {
         const jailStatus = document.getElementById('jail-status');
         if (jailStatus) jailStatus.innerText = inJail ? `${jailTime}s` : 'Free';
-        refreshMoneyDisplay();
     });
 
     EventBus.on('jailTimeUpdated', ({ jailTime }) => {
         const jailStatus = document.getElementById('jail-status');
         if (jailStatus && player.inJail) jailStatus.innerText = `${jailTime}s`;
-        // Keep top bar in sync while jailed
-        if (player.inJail) refreshMoneyDisplay();
     });
 
     // Initial paint

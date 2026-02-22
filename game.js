@@ -721,6 +721,7 @@ function startSignatureJob(familyKey) {
     }
     
     logAction(`⭐ Signature Job "${sigJob.name}" completed for ${family.name}! +$${earnings.toLocaleString()} (dirty), +${sigJob.xpReward} XP, +5 family rep.`);
+    flashSuccessScreen();
     alert(`Signature job complete! Earned $${earnings.toLocaleString()} and gained standing with ${family.name}.`);
     
     updateMissionProgress('reputation_changed');
@@ -4492,12 +4493,11 @@ function updateUI() {
 
   // Money and wanted level HUD updates handled via EventBus subscribers
   
-  // Update dirty money display in stats bar
+  // Update dirty money display in stats bar (always visible)
   const dirtyMoneyDisplay = document.getElementById("dirty-money-display");
   if (dirtyMoneyDisplay) {
     const dirtyAmount = player.dirtyMoney || 0;
-    dirtyMoneyDisplay.innerText = `Dirty: $${dirtyAmount.toLocaleString()}`;
-    dirtyMoneyDisplay.style.display = dirtyAmount > 0 ? 'block' : 'none';
+    dirtyMoneyDisplay.innerText = `Dirty Money: $${dirtyAmount.toLocaleString()}`;
   }
   
   // Update suspicion display in stats bar
@@ -4567,7 +4567,7 @@ function updateUI() {
     document.getElementById("level-display").innerText = `Level: ${player.level}`;
   }
   if (document.getElementById("experience-display")) {
-    const xpNeeded = Math.floor(player.level * 250 + Math.pow(player.level, 2) * 30);
+    const xpNeeded = Math.floor(player.level * 500 + Math.pow(player.level, 2) * 80 + Math.pow(player.level, 3) * 5);
     document.getElementById("experience-display").innerText = `XP: ${player.experience}/${xpNeeded}`;
   }
   if (document.getElementById("skill-points-display")) {
@@ -5522,7 +5522,7 @@ async function startJob(index) {
     // Check for Shadow Walker perk (25% chance to avoid consequences)
     if (player.unlockedPerks.includes('shadowWalker') && Math.random() < 0.25) {
       logAction(`👻 Your Shadow Walker abilities activate! You slip away undetected despite the failed attempt, avoiding all consequences.`);
-      gainExperience(10); // Bonus experience for avoiding consequences
+      gainExperience(4); // Bonus experience for avoiding consequences
       updateUI();
       return;
     }
@@ -5530,7 +5530,7 @@ async function startJob(index) {
     alert(`${getRandomNarration('jobFailure')} You lost ${actualEnergyCost} energy.`);
     logAction(getRandomNarration('jobFailure'));
     // Still gain some experience for trying
-    gainExperience(5);
+    gainExperience(2);
     updateUI();
     return;
   }
@@ -5688,33 +5688,33 @@ async function startJob(index) {
   if (job.risk === "low") {
     hurtChance = Math.max(0, 1 - player.power * 0.01 - player.skills.violence * 0.5);
     maxHealthLoss = 5;
-    player.reputation += 0.5;
-    gainExperience(5);
+    player.reputation += 0.3;
+    gainExperience(2);
   } else if (job.risk === "medium") {
     hurtChance = Math.max(0, 5 - player.power * 0.05 - player.skills.violence * 0.5);
     maxHealthLoss = 20;
-    player.reputation += 1;
-    gainExperience(15);
+    player.reputation += 0.5;
+    gainExperience(6);
   } else if (job.risk === "high") {
     hurtChance = Math.max(0, 10 - player.power * 0.1 - player.skills.violence * 0.5);
     maxHealthLoss = 50;
-    player.reputation += 2;
-    gainExperience(35);
+    player.reputation += 1;
+    gainExperience(14);
   } else if (job.risk === "very high") {
     hurtChance = Math.max(0, 15 - player.power * 0.12 - player.skills.violence * 0.5);
     maxHealthLoss = 60;
-    player.reputation += 3;
-    gainExperience(55);
+    player.reputation += 1.5;
+    gainExperience(22);
   } else if (job.risk === "extreme") {
     hurtChance = Math.max(0, 20 - player.power * 0.15 - player.skills.violence * 0.5);
     maxHealthLoss = 75;
-    player.reputation += 5;
-    gainExperience(80);
+    player.reputation += 2.5;
+    gainExperience(35);
   } else if (job.risk === "legendary") {
     hurtChance = Math.max(0, 25 - player.power * 0.18 - player.skills.violence * 0.5);
     maxHealthLoss = 90;
-    player.reputation += 8;
-    gainExperience(120);
+    player.reputation += 4;
+    gainExperience(50);
   }
 
   // Track reputation changes for campaign objectives
@@ -5756,6 +5756,7 @@ async function startJob(index) {
 
   if (!carCatastrophe) { // Only show success message if car didn't explode/break down
     const moneyType = job.paysDirty ? ' (dirty money — must be laundered!)' : '';
+    flashSuccessScreen();
     alert(`You completed the job as a ${job.name} (${job.risk} risk) and earned $${earnings.toLocaleString()}${moneyType}!`);
     logAction(`${getRandomNarration('jobSuccess')} (+$${earnings.toLocaleString()}${moneyType}).`);
   }
@@ -5797,7 +5798,7 @@ function handleCarTheft(job, actualEnergyCost) {
     alert(`${getRandomNarration('carTheftFailure')} Lost ${actualEnergyCost} energy.`);
     logAction(`🔍 ${getRandomNarration('carTheftFailure')} The streets can be unforgiving to those seeking easy rides.`);
     player.wantedLevel += 1; // Small wanted level increase for suspicious activity
-    gainExperience(5);
+    gainExperience(2);
     updateUI();
     // Only refresh the job list instead of reloading the entire jobs screen to prevent flashing
     if (document.getElementById("jobs-screen").style.display === "block") {
@@ -5852,8 +5853,8 @@ function handleCarTheft(job, actualEnergyCost) {
   };
 
   player.wantedLevel += job.wantedLevelGain;
-  player.reputation += 1;
-  gainExperience(20);
+  player.reputation += 0.5;
+  gainExperience(8);
 
   // Check if player gets hurt during theft
   if (Math.random() * 100 < 15) { // 15% chance of getting hurt
@@ -5863,6 +5864,7 @@ function handleCarTheft(job, actualEnergyCost) {
     showCarTheftChoiceResult(stolenCar, true, healthLoss);
     logAction(`🚗💥 You grab the ${stolenCar.name} but the owner puts up a fight! Keys in hand, blood on your knuckles - it's yours now, but the price was pain (${damagePercentage}% damaged).`);
   } else {
+    flashSuccessScreen();
     showCarTheftChoiceResult(stolenCar, false);
     logAction(`🚗✨ Like taking candy from a baby! You slip into the ${stolenCar.name} and drive off into the night. The engine purrs under your control (${damagePercentage}% damaged).`);
   }
@@ -5994,8 +5996,8 @@ function handleLaunderMoneyJob(job, approachLabel) {
   player.suspicionLevel = Math.min(100, (player.suspicionLevel || 0) + baseSuspicionGain);
 
   // Reputation and XP based on risk level
-  player.reputation += 3;
-  gainExperience(75);
+  player.reputation += 1.5;
+  gainExperience(30);
 
   // Track statistics
   updateStatistic('jobsCompleted');
@@ -6021,6 +6023,7 @@ function handleLaunderMoneyJob(job, approachLabel) {
   }
 
   const ratePercent = Math.round(conversionRate * 100);
+  flashSuccessScreen();
   alert(`💰 Laundering successful! Cleaned $${cleanAmount.toLocaleString()} from $${amountToLaunder.toLocaleString()} dirty money (${ratePercent}% rate, $${fee.toLocaleString()} in fees).`);
   logAction(`💧💰 The dirty bills flow through shell companies and emerge squeaky clean. $${amountToLaunder.toLocaleString()} dirty → $${cleanAmount.toLocaleString()} clean (${ratePercent}% rate). The laundering fee of $${fee.toLocaleString()} vanishes into the ether.`);
 
@@ -6454,6 +6457,19 @@ function flashHurtScreen() {
   setTimeout(() => {
     hurtFlash.style.display = "none";
   }, 200);
+}
+
+function flashSuccessScreen() {
+  const flash = document.getElementById("success-flash");
+  if (!flash) return;
+  flash.style.display = "block";
+  // Reset animation by forcing reflow
+  flash.style.animation = 'none';
+  flash.offsetHeight; // trigger reflow
+  flash.style.animation = '';
+  setTimeout(() => {
+    flash.style.display = "none";
+  }, 500);
 }
 
 // Override the alert function to support red alerts
@@ -7860,7 +7876,7 @@ function updatePrisonerList() {
         </div>
       `;
     } else {
-      const expReward = prisoner.difficulty * 15 + 10; // 25, 40, or 55 exp
+      const expReward = prisoner.difficulty * 6 + 4; // 10, 16, or 22 exp
       const difficultyText = ["Easy", "Medium", "Hard"][prisoner.difficulty - 1];
       prisonerHTML += `
         <div style="background: rgba(52, 73, 94, 0.6); padding: 15px; margin: 10px 0; border-radius: 8px; border: 1px solid #3498db;">
@@ -7898,7 +7914,7 @@ function breakoutPrisoner(prisonerIndex) {
   const success = Math.random() * 100 < successChance;
   
   if (success) {
-  const expReward = prisoner.difficulty * 8 + 5;
+  const expReward = prisoner.difficulty * 3 + 2;
   player.experience += expReward;
     
     // Check for level up
@@ -11041,10 +11057,9 @@ function handleRandomRecruitEncounter() {
   if (!randomEncounterRecruit) return;
 
   const recruit = randomEncounterRecruit;
-  const levelColor = recruit.experienceLevel <= 3 ? '#95a5a6' : 
-           recruit.experienceLevel <= 6 ? '#3498db' : '#e74c3c';
-  const levelText = recruit.experienceLevel <= 3 ? 'Rookie' : 
-           recruit.experienceLevel <= 6 ? 'Experienced' : 'Veteran';
+  const levelColor = recruit.experienceLevel <= 7 ? '#e67e22' : 
+           recruit.experienceLevel <= 8 ? '#3498db' : '#e74c3c';
+  const levelText = 'Veteran';
 
   showRecruitEncounterDialog(recruit, levelText, levelColor);
 }
@@ -14325,7 +14340,7 @@ function randomSale() {
 
 function luckyFind() {
   // Scale lucky find with player level so it stays relevant
-  const base = 500 + player.level * 200;
+  const base = 150 + player.level * 60;
   let found = Math.floor(Math.random() * base) + base;
   found += Math.floor(found * (player.skills.luck * 0.05));
   player.money += found;
@@ -14338,8 +14353,8 @@ function luckyFind() {
 
 function mysteriousTip() {
   // Gives the player a small XP boost and a bit of reputation
-  const xpGain = 20 + player.level * 5;
-  const repGain = Math.floor(Math.random() * 3) + 1;
+  const xpGain = 8 + player.level * 2;
+  const repGain = Math.floor(Math.random() * 2) + 1;
   gainExperience(xpGain);
   player.reputation += repGain;
   showBriefNotification(`💬 Mysterious tip! +${xpGain} XP, +${repGain} Rep`, 3000);
@@ -19672,6 +19687,7 @@ window.skipTutorial = skipTutorial;
 
 // Other Locations
 window.showRealEstate = showRealEstate;
+window.buyProperty = buyProperty;
 window.showInventory = showInventory;
 window.equipItem = equipItem;
 window.unequipItem = unequipItem;
