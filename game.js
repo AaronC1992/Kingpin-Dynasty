@@ -318,7 +318,7 @@ async function showMissions() {
     </div>
     
     <button onclick="goBackToMainMenu()" style="background: #95a5a6; color: white; padding: 15px 30px; border: none; border-radius: 8px; cursor: pointer; margin-top: 20px;">
-      Back to Main Menu
+      Back to Command Center
     </button>
   `;
   
@@ -1812,7 +1812,7 @@ async function showBusinesses() {
       <button onclick="goBackToMainMenu()" 
           style="background: linear-gradient(45deg, #95a5a6, #7f8c8d); color: white; padding: 18px 35px; 
               border: none; border-radius: 12px; font-size: 1.3em; font-weight: bold; cursor: pointer;">
-        🏠Back to Main Menu
+        🏠Back to Command Center
       </button>
     </div>
   `;
@@ -2139,7 +2139,7 @@ async function showLoanShark() {
       <button onclick="goBackToMainMenu()" 
           style="background: linear-gradient(45deg, #95a5a6, #7f8c8d); color: white; padding: 18px 35px; 
               border: none; border-radius: 12px; font-size: 1.3em; font-weight: bold; cursor: pointer;">
-        🏠Back to Main Menu
+        🏠Back to Command Center
       </button>
     </div>
   `;
@@ -2318,7 +2318,7 @@ function showMoneyLaundering() {
       <button onclick="goBackToMainMenu()" 
           style="background: linear-gradient(45deg, #95a5a6, #7f8c8d); color: white; padding: 18px 35px; 
               border: none; border-radius: 12px; font-size: 1.3em; font-weight: bold; cursor: pointer;">
-        🏠Back to Main Menu
+        🏠Back to Command Center
       </button>
     </div>
   `;
@@ -2470,7 +2470,7 @@ function showGang() {
     </div>
     
     <button onclick="goBackToMainMenu()" style="background: #95a5a6; color: white; padding: 15px 30px; border: none; border-radius: 8px; cursor: pointer; margin-top: 20px;">
-      Back to Main Menu
+      Back to Command Center
     </button>
   `;
   
@@ -2590,7 +2590,7 @@ function showGangManagementScreen() {
         ← Gang Operations
       </button>
       <button onclick="goBackToMainMenu()" style="background: #95a5a6; color: white; padding: 12px 25px; border: none; border-radius: 8px; cursor: pointer;">
-        Back to Main Menu
+        Back to Command Center
       </button>
     </div>
   `;
@@ -3398,7 +3398,7 @@ function showTerritoryControl() {
       <button onclick="goBackToMainMenu()" 
           style="padding: 12px 30px; background: linear-gradient(135deg, #95a5a6, #7f8c8d); 
               border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer;">
-        ←Back to Main Menu
+        ←Back to Command Center
       </button>
     </div>`;
   
@@ -6266,7 +6266,7 @@ function showStolenCars() {
           style="background: linear-gradient(45deg, #95a5a6, #7f8c8d); color: white; padding: 18px 35px; 
               border: none; border-radius: 12px; font-size: 1.3em; font-weight: bold; cursor: pointer;
               transition: all 0.3s ease;">
-        🏠Back to Main Menu
+        🏠Back to Command Center
       </button>
     </div>
   `;
@@ -6523,7 +6523,7 @@ function showSkills() {
       <div style="text-align: center; margin-top: 30px;">
         <button onclick="goBackToMainMenu()" style="background: linear-gradient(135deg, #95a5a6, #7f8c8d); 
               color: white; padding: 15px 30px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer;">
-          ←Back to Main Menu
+          ←Back to Command Center
         </button>
       </div>
     </div>
@@ -9264,7 +9264,7 @@ function showEventsStatus() {
           style="background: linear-gradient(45deg, #95a5a6, #7f8c8d); color: white; padding: 18px 35px; 
               border: none; border-radius: 12px; font-size: 1.3em; font-weight: bold; cursor: pointer;
               transition: all 0.3s ease;">
-        🏠Back to Main Menu
+        🏠Back to Command Center
       </button>
     </div>
   `;
@@ -10377,7 +10377,7 @@ const menuUnlockConfig = [
   { id: 'courthouse',  fn: 'showCourtHouse()',        label: 'Legal Aid',      tip: 'Pay to reduce your wanted level',  level: 5 },
   { id: 'events',      fn: 'showEventsStatus()',      label: 'Events',         tip: 'Current weather & world events',   level: 5 },
   { id: 'minigames',   fn: 'showMiniGames()',         label: 'Pastimes',       tip: 'Arcade games & entertainment',     level: 6 },
-  { id: 'casino',      fn: 'showCasino()',            label: 'Gambling',       tip: 'Slots, roulette & card games',     level: 6 },
+  { id: 'casino',      fn: 'showCasino()',            label: 'Gambling',       tip: 'Slots, roulette & card games',     level: 0 },
   { id: 'fence',       fn: 'showFence()',             label: 'The Fence',      tip: 'Sell stolen goods at premium rates',level: 7 },
   { id: 'gangmgmt',    fn: 'showGangManagementScreen()', label: 'Crew Details', tip: 'Train, equip & assign your gang', level: 8 },
   { id: 'jailbreak',   fn: 'showJailbreak()',         label: 'Breakout',       tip: 'Break allies out of prison',       level: 8 },
@@ -10546,7 +10546,6 @@ function goBackToMainMenu() {
   });
   
   hideAllScreens();
-  document.getElementById("menu").style.display = "block";
   
   // Explicitly hide these screens as backup (with null checks)
   const screensToHide = [
@@ -10559,6 +10558,9 @@ function goBackToMainMenu() {
     const screen = document.getElementById(screenId);
     if (screen) screen.style.display = "none";
   });
+  
+  // Go directly to Command Center (replaces old main menu)
+  showCommandCenter();
   
   // Ensure mobile UI elements are properly managed
   if (window.innerWidth <= 768) {
@@ -10800,7 +10802,7 @@ function showRecruitment() {
           style="background: linear-gradient(45deg, #95a5a6, #7f8c8d); color: white; padding: 15px 25px; 
               border: none; border-radius: 8px; font-weight: bold; cursor: pointer; 
               font-size: 16px; margin: 0 10px; transition: all 0.3s ease;">
-        🏠Back to Main Menu
+        🏠Back to Command Center
       </button>
     </div>
   `;
@@ -11811,8 +11813,8 @@ async function showSimpleCharacterCreation() {
   
   if (!playerName || playerName.trim() === "") {
     ui.alert("You need a name to make it in this world!");
-    // Show main menu again if they cancel
-    document.getElementById("menu").style.display = "block";
+    // Re-prompt — new players must create a character
+    showSimpleCharacterCreation();
     return;
   }
   
@@ -11944,22 +11946,25 @@ function createCharacter() {
 // Function to go back to intro screen from character creation
 function goBackToIntro() {
   const charCreationScreen = document.getElementById('character-creation-screen');
-  const introScreen = document.getElementById('intro-screen');
-  
   if (charCreationScreen) {
     charCreationScreen.style.display = 'none';
   }
   
-  if (introScreen) {
-    introScreen.style.display = 'block';
+  // Remove portrait selection overlay if present
+  const portraitScreen = document.getElementById('portrait-selection-screen');
+  if (portraitScreen) {
+    portraitScreen.remove();
   }
   
-  // Reset selections
+  // Reset selections and restart character creation
   selectedPortraitFile = '';
   const nameInput = document.getElementById('character-name');
   if (nameInput) {
     nameInput.value = '';
   }
+  
+  // Restart character creation from name prompt
+  showSimpleCharacterCreation();
 }
 
 function showPortraitSelection() {
@@ -12205,16 +12210,8 @@ function startGameAfterIntro() {
   // Use the same screen cleanup as goBackToMainMenu for consistency
   hideAllScreens();
   
-  // Show the main menu with proper positioning
-  const menuElement = document.getElementById("menu");
-  menuElement.style.display = "block";
-  
-  // Ensure menu has correct CSS positioning (fix tutorial highlight side effects)
-  menuElement.style.position = "fixed";
-  menuElement.style.top = "0";
-  menuElement.style.left = "0";
-  menuElement.style.width = "100vw";
-  menuElement.style.height = "100vh";
+  // Show the Command Center directly (replaces old main menu)
+  showCommandCenter();
   
   // Generate random prisoners for the first time
   generateJailPrisoners();
@@ -13003,15 +13000,17 @@ function showTutorialUI(uiType) {
       break;
       
     case "menu":
-      // Show main menu in background
-      const menuScreen = document.getElementById("menu");
-      menuScreen.style.display = "block";
-      menuScreen.style.opacity = "1";
-      menuScreen.style.pointerEvents = "none";
-      menuScreen.style.border = "3px solid #e74c3c";
-      menuScreen.style.boxShadow = "0 0 20px rgba(231, 76, 60, 0.8)";
-      menuScreen.style.zIndex = "800";
-      menuScreen.style.position = "relative";
+      // Show command center in background (replaces old main menu)
+      showCommandCenter();
+      const cmdCenterScreen = document.getElementById("command-center");
+      if (cmdCenterScreen) {
+        cmdCenterScreen.style.opacity = "1";
+        cmdCenterScreen.style.pointerEvents = "none";
+        cmdCenterScreen.style.border = "3px solid #e74c3c";
+        cmdCenterScreen.style.boxShadow = "0 0 20px rgba(231, 76, 60, 0.8)";
+        cmdCenterScreen.style.zIndex = "800";
+        cmdCenterScreen.style.position = "relative";
+      }
       // Position tutorial on right side
       if (tutorialContent) {
         tutorialContent.style.marginTop = "80px";
@@ -13174,7 +13173,7 @@ function updateSkillsScreenDisplay() {
   skillsHTML += `
     </div>
     <p><strong>Available Skill Points:</strong> ${player.skillPoints}</p>
-    <button onclick="goBackToMainMenu()">Back to Main Menu</button>
+    <button onclick="goBackToMainMenu()">Back to Command Center</button>
   `;
   
   document.getElementById("skills-content").innerHTML = skillsHTML;
@@ -14039,9 +14038,9 @@ function restartGame() {
   updateUI();
   logAction("🔄 The slate is wiped clean. Back to the bottom of the food chain, but every kingpin started somewhere. Time to climb again.");
   
-  // Show intro screen for new character creation
-  document.getElementById("intro-screen").style.display = "block";
+  // Start fresh character creation (intro screen removed)
   document.getElementById("death-screen").style.display = "none";
+  startGame();
 }
 
 // Function to show achievements
@@ -15427,7 +15426,7 @@ function showSaveSelectionInterface(saves) {
       <div style="display: grid; gap: 15px; margin-bottom: 30px;">
         ${saves.map(save => `
           <div style="background: rgba(52, 73, 94, 0.8); border: 2px solid #3498db; border-radius: 15px; padding: 20px; cursor: pointer; transition: all 0.3s ease;" 
-             onclick="if(loadGameFromSlot(${save.slotNumber})) { hideAllScreens(); document.getElementById('menu').style.display = 'block'; }"
+             onclick="if(loadGameFromSlot(${save.slotNumber})) { hideAllScreens(); showCommandCenter(); }"
              onmouseover="this.style.background='rgba(52, 152, 219, 0.3)'; this.style.borderColor='#2ecc71';"
              onmouseout="this.style.background='rgba(52, 73, 94, 0.8)'; this.style.borderColor='#3498db';">
             
@@ -15464,7 +15463,7 @@ function showSaveSelectionInterface(saves) {
       
       <div style="text-align: center;">
         <button onclick="exitLoadInterface('menu')" style="background: #95a5a6; color: white; padding: 15px 30px; border: none; border-radius: 10px; cursor: pointer; font-size: 1.1em;">
-          ←Back to Main Menu
+          ←Back to Command Center
         </button>
       </div>
     </div>
@@ -15594,11 +15593,8 @@ function exitLoadInterface(target = 'menu') {
   }
 
   hideAllScreens();
-  if (target === 'intro') {
-    document.getElementById('intro-screen').style.display = 'block';
-  } else {
-    document.getElementById('menu').style.display = 'block';
-  }
+  // Always go to Command Center (intro screen removed)
+  showCommandCenter();
 }
 
 function loadGameFromIntroSlot(slotNumber) {
@@ -15610,12 +15606,12 @@ function loadGameFromIntroSlot(slotNumber) {
       overlay.remove();
     }
     
-    // Hide intro screen and show main menu directly (bypass character creation)
+    // Show Command Center directly (bypass character creation)
     document.getElementById('intro-screen').style.display = 'none';
-    document.getElementById('menu').style.display = 'block';
     
     // Update UI to reflect loaded player data
     updateUI();
+    showCommandCenter();
     
     // Show welcome back message with player name
     const playerName = player.name || "Criminal";
@@ -15837,20 +15833,12 @@ function getCurrentScreen() {
 }
 
 function restorePreviousScreen() {
-  // Check if we're in intro screen context or options screen context
-  if (document.getElementById('intro-screen').style.display !== 'none' || 
-    window.location.hash === '#intro') {
-    document.getElementById('intro-screen').style.display = 'block';
+  // Always go to command center (intro screen removed)
+  const optionsScreen = document.getElementById('options-screen');
+  if (optionsScreen && optionsScreen.style.display !== 'none') {
+    optionsScreen.style.display = 'block';
   } else {
-    // Restore options screen or main menu
-    const optionsScreen = document.getElementById('options-screen');
-    const mainMenu = document.getElementById('menu');
-    
-    if (optionsScreen && optionsScreen.style.display !== 'none') {
-      optionsScreen.style.display = 'block';
-    } else {
-      mainMenu.style.display = 'block';
-    }
+    showCommandCenter();
   }
 }
 
@@ -15876,12 +15864,10 @@ function returnToIntroScreen() {
     }
   });
   
-  // Show the intro screen
-  document.getElementById('intro-screen').style.display = 'block';
+  // Show the command center (intro screen removed)
+  showCommandCenter();
   
-  // Reset any game state if needed
-  // This ensures the player starts fresh when they click "Start Game"
-  logAction(`🏠 Returned to main screen - ready to start a new criminal empire!`);
+  logAction(`🏠 Returned to Command Center - ready to start a new criminal empire!`);
 }
 
 // Function to confirm reset game
@@ -15954,12 +15940,14 @@ document.addEventListener('keydown', function(event) {
   
   // Quick navigation
   if (event.key === 'j' || event.key === 'J') {
-    if (document.getElementById("menu").style.display === "block") {
+    const cmdCenter = document.getElementById("command-center");
+    if (cmdCenter && cmdCenter.style.display === "block") {
       showJobs();
     }
   }
   if (event.key === 's' || event.key === 'S') {
-    if (document.getElementById("menu").style.display === "block") {
+    const cmdCenter = document.getElementById("command-center");
+    if (cmdCenter && cmdCenter.style.display === "block") {
       showStore();
     }
   }
@@ -16013,15 +16001,10 @@ function initGame() {
     startEnergyRegenTimer();
   }
   
-  // Always show intro screen with Start Game and Load Game buttons
-  document.getElementById("intro-screen").style.display = "block";
+  // Skip intro screen — go directly to game
+  // Hide intro screen permanently
+  document.getElementById("intro-screen").style.display = "none";
   document.getElementById("menu").style.display = "none";
-  
-  // Display version on intro screen
-  const introVersion = document.getElementById('intro-version');
-  if (introVersion) {
-    introVersion.textContent = `v${CURRENT_VERSION}`;
-  }
   
   // Add event listener for character name input
   const charNameInput = document.getElementById('character-name');
@@ -16034,8 +16017,24 @@ function initGame() {
     loadPortraitGrid();
   }, 100);
   
-  // Update UI
-  updateUI();
+  // Check for existing saves — auto-load or start character creation
+  const mostRecentSlot = findMostRecentSaveSlot();
+  if (mostRecentSlot !== null) {
+    // Returning player — auto-load most recent save and go to Command Center
+    if (loadGameFromSlot(mostRecentSlot)) {
+      updateUI();
+      showCommandCenter();
+      const playerName = player.name || "Criminal";
+      logAction(`🎮 Welcome back, ${playerName}! Your criminal empire has been restored.`);
+      showBriefNotification(`✅ Loaded: ${playerName}'s saved game`, 2000);
+    } else {
+      // Load failed — start fresh
+      startGame();
+    }
+  } else {
+    // New player — go straight to character creation
+    startGame();
+  }
 }
 
 // Call initialization when page loads
@@ -16178,7 +16177,7 @@ function showMap() {
         🏛️ Territory Management
       </button>
       <button onclick="goBackToMainMenu()" style="background: #95a5a6; color: white; padding: 12px 25px; margin: 5px; border: none; border-radius: 8px; cursor: pointer;">
-        🏠Back to Main Menu
+        🏠Back to Command Center
       </button>
     </div>
   `;
@@ -16320,7 +16319,7 @@ function showCalendar() {
     
     <div style="text-align: center; margin-top: 30px;">
       <button onclick="goBackToMainMenu()" style="background: #95a5a6; color: white; padding: 12px 25px; border: none; border-radius: 8px; cursor: pointer;">
-        🏠Back to Main Menu
+        🏠Back to Command Center
       </button>
     </div>
   `;
@@ -16582,7 +16581,7 @@ function showStatistics() {
         🔄 Reset Stats
       </button>
       <button onclick="goBackToMainMenu()" style="background: #95a5a6; color: white; padding: 12px 25px; margin: 5px; border: none; border-radius: 8px; cursor: pointer;">
-        🏠Back to Main Menu
+        🏠Back to Command Center
       </button>
     </div>
   `;
@@ -17013,7 +17012,7 @@ function showEmpireRating() {
           🏆 Hall of Fame
         </button>
         <button onclick="goBackToMainMenu()" style="background: linear-gradient(45deg, #95a5a6, #7f8c8d); color: white; padding: 15px 30px; border: none; border-radius: 12px; font-size: 1.2em; font-weight: bold; cursor: pointer;">
-          🏠Back to Main Menu
+          🏠Back to Command Center
         </button>
       </div>
     </div>
@@ -17089,7 +17088,7 @@ function showHallOfFame() {
           🏆 Achievements
         </button>
         <button onclick="goBackToMainMenu()" style="background: linear-gradient(45deg, #95a5a6, #7f8c8d); color: white; padding: 15px 30px; border: none; border-radius: 12px; font-size: 1.2em; font-weight: bold; cursor: pointer;">
-          🏠Back to Main Menu
+          🏠Back to Command Center
         </button>
       </div>
     </div>
@@ -17774,7 +17773,7 @@ function showSaveSystem() {
       
       <div style="text-align: center; margin-top: 30px;">
         <button onclick="goBackToMainMenu()" style="background: linear-gradient(45deg, #95a5a6, #7f8c8d); color: white; padding: 15px 30px; border: none; border-radius: 12px; font-size: 1.2em; font-weight: bold; cursor: pointer;">
-          🏠Back to Main Menu
+          🏠Back to Command Center
         </button>
       </div>
     </div>
@@ -18534,7 +18533,7 @@ function displayImportedShowcase(showcase) {
       
       <div style="text-align: center; margin-top: 30px;">
         <button onclick="goBackToMainMenu()" style="background: linear-gradient(45deg, #95a5a6, #7f8c8d); color: white; padding: 15px 30px; border: none; border-radius: 12px; font-size: 1.2em; font-weight: bold; cursor: pointer;">
-          🏠Back to Main Menu
+          🏠Back to Command Center
         </button>
       </div>
     </div>
@@ -18589,7 +18588,7 @@ function showRivalsScreen() {
       
       <div style="text-align: center; margin-top: 30px;">
         <button onclick="goBackToMainMenu()" style="background: linear-gradient(45deg, #95a5a6, #7f8c8d); color: white; padding: 15px 30px; border: none; border-radius: 12px; font-size: 1.2em; font-weight: bold; cursor: pointer;">
-          🏠 Back to Main Menu
+          🏠 Back to Command Center
         </button>
       </div>
     </div>
@@ -18795,7 +18794,7 @@ function showLeaderboards() {
           🏆 Back to Competition
         </button>
         <button onclick="goBackToMainMenu()" style="background: linear-gradient(45deg, #95a5a6, #7f8c8d); color: white; padding: 15px 30px; border: none; border-radius: 12px; font-size: 1.2em; font-weight: bold; cursor: pointer;">
-          🏠Back to Main Menu
+          🏠Back to Command Center
         </button>
       </div>
     </div>
@@ -18988,7 +18987,7 @@ function showWeeklyChallenges() {
           🏆 Back to Rivals
         </button>
         <button onclick="goBackToMainMenu()" style="background: linear-gradient(45deg, #95a5a6, #7f8c8d); color: white; padding: 15px 30px; border: none; border-radius: 12px; font-size: 1.2em; font-weight: bold; cursor: pointer;">
-          🏠Back to Main Menu
+          🏠Back to Command Center
         </button>
       </div>
     </div>
@@ -19129,7 +19128,7 @@ function showCharacterShowcase() {
           🏆 Back to Rivals
         </button>
         <button onclick="goBackToMainMenu()" style="background: linear-gradient(45deg, #95a5a6, #7f8c8d); color: white; padding: 15px 30px; border: none; border-radius: 12px; font-size: 1.2em; font-weight: bold; cursor: pointer;">
-          🏠Back to Main Menu
+          🏠Back to Command Center
         </button>
       </div>
     </div>
