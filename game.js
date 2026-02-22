@@ -61,6 +61,10 @@ window.initUIEvents = initUIEvents;
 window.ExpandedSystems = ExpandedSystems;
 window.ExpandedUI = ExpandedUI;
 
+// Flag to prevent events/notifications from firing while on the title screen.
+// Set to true only when the player enters actual gameplay.
+let gameplayActive = false;
+
 // Save / load related functions that are used via inline onclick handlers
 // (defined later in this file, but hoisted onto window here for safety)
 window.loadGameFromIntroSlot = undefined;
@@ -9176,7 +9180,9 @@ function initializeEventsSystem() {
     player.activeEvents = [];
   }
   
-  logAction("🌍 The city awakens with new possibilities. Events and weather will now shape your criminal empire.");
+  if (gameplayActive) {
+    logAction("🌍 The city awakens with new possibilities. Events and weather will now shape your criminal empire.");
+  }
 }
 
 // Determine current season
@@ -9204,8 +9210,10 @@ function updateSeasonalBackground() {
   // Update the UI to reflect the new season
   updateUI();
   
-  // Log the season change for player awareness
-  logAction(`🌍 The city transforms with the changing seasons - now experiencing ${currentSeason}.`);
+  // Log the season change for player awareness (only during gameplay)
+  if (gameplayActive) {
+    logAction(`🌍 The city transforms with the changing seasons - now experiencing ${currentSeason}.`);
+  }
 }
 
 // Weather system functions — season-aware
@@ -9227,8 +9235,10 @@ function changeWeather() {
       if (newWeather !== currentWeather) {
         currentWeather = newWeather;
         const weather = weatherEffects[currentWeather];
-        showWeatherAlert(weather);
-        logAction(`🌤️ Weather update: ${weather.name}. ${weather.description}`);
+        if (gameplayActive) {
+          showWeatherAlert(weather);
+          logAction(`🌤️ Weather update: ${weather.name}. ${weather.description}`);
+        }
       }
       break;
     }
@@ -9407,36 +9417,43 @@ function cleanupExpiredEvents() {
 function startEventTimers() {
   // Weather changes every 15-45 minutes
   weatherTimer = setInterval(() => {
+    if (!gameplayActive) return;
     changeWeather();
   }, (Math.random() * 30 + 15) * 60 * 1000);
   
   // News events check every 30 minutes
   newsTimer = setInterval(() => {
+    if (!gameplayActive) return;
     triggerNewsEvent();
   }, 30 * 60 * 1000);
   
   // Seasonal events check every hour
   setInterval(() => {
+    if (!gameplayActive) return;
     checkSeasonalEvents();
   }, 60 * 60 * 1000);
   
   // Police crackdowns check every 20 minutes
   setInterval(() => {
+    if (!gameplayActive) return;
     triggerPoliceCrackdown();
   }, 20 * 60 * 1000);
   
   // Cleanup expired events every 5 minutes
   setInterval(() => {
+    if (!gameplayActive) return;
     cleanupExpiredEvents();
   }, 5 * 60 * 1000);
   
   // Suspicion consequences check every 60 seconds
   setInterval(() => {
+    if (!gameplayActive) return;
     checkSuspicionConsequences();
   }, 60 * 1000);
   
   // FBI investigation escalation check every 90 seconds
   setInterval(() => {
+    if (!gameplayActive) return;
     checkFBIInvestigation();
   }, 90 * 1000);
 }
@@ -12592,6 +12609,9 @@ function skipTutorialAndStartGame() {
 
 // Function to start the game after intro (extracted from original finishIntro)
 function startGameAfterIntro() {
+  // Activate all gameplay systems (events, timers, etc.) on first entry
+  activateGameplaySystems();
+
   // Clean up any remaining character creation elements
   const portraitScreen = document.getElementById('portrait-selection-screen');
   if (portraitScreen) {
@@ -15026,6 +15046,7 @@ function chargeBookieFeeHourly() {
 // Function to periodically check for random events
 function startRandomEventChecker() {
   setInterval(() => {
+    if (!gameplayActive) return;
     if (Math.random() < 0.05) { // 5% chance every minute for better balance
       triggerRandomEvent();
     }
@@ -16035,6 +16056,9 @@ function exitLoadInterface(target = 'menu') {
 function loadGameFromIntroSlot(slotNumber) {
   // Load the game from the selected slot
   if (loadGameFromSlot(slotNumber)) {
+    // Activate all gameplay systems (events, timers, etc.) on first entry
+    activateGameplaySystems();
+
     // Remove the overlay
     const overlay = document.getElementById('intro-save-overlay');
     if (overlay) {
@@ -16404,32 +16428,16 @@ function initGame() {
     introVersion.textContent = `Version ${CURRENT_VERSION}`;
   }
 
-  // Start all game systems
-  startRandomEventChecker();
-  startPassiveIncomeGenerator();
-  startEnergyRegeneration();
-  startGangTributeTimer();
-  startScreenRefreshTimer(); // Start the universal screen refresh timer
-  initializeEventsSystem(); // Initialize the events & randomization system
-  initializeInterfaceImprovements(); // Initialize interface improvements
-  initializeLegacyBonuses(); // Initialize legacy system bonuses
+  // Start only silent/essential systems; noisy gameplay systems are deferred
+  // until the player actually enters the game (see activateGameplaySystems).
   initializeSaveSystem(); // Initialize save system
-  initializeCompetitionSystem(); // Initialize competition system
-  
-  // Initialize expanded systems (gang roles, territory wars, etc.)
-  ExpandedSystems.initializeExpandedSystems(player);
-  
-  // Start rival AI and interactive events
-  ExpandedUI.startRivalAISystem();
-  setInterval(() => ExpandedUI.checkAndTriggerInteractiveEvent(), 60000); // Check every minute
-  
-  // Initialize UI Events
-  if (typeof initUIEvents === 'function') {
-    initUIEvents();
-  }
+  initializeInterfaceImprovements(); // Initialize interface improvements (hotkeys)
+  initializeLegacyBonuses(); // Initialize legacy system bonuses
 
-  // Initialize Onboarding (Act 0 Guide)
-  initOnboarding();
+  // Silently determine season & weather without logging
+  updateCurrentSeason();
+  changeWeather();
+  if (!player.activeEvents) { player.activeEvents = []; }
 
   // Generate initial prisoners and recruits
   generateJailPrisoners();
@@ -16463,6 +16471,38 @@ function initGame() {
   }, 100);
 }
 
+// ==================== ACTIVATE GAMEPLAY SYSTEMS ====================
+// Called once when the player actually enters the game (not on title screen).
+// This starts all the noisy event/timer systems that were deferred from initGame().
+function activateGameplaySystems() {
+  if (gameplayActive) return; // Already activated
+  gameplayActive = true;
+
+  // Start event & timer systems
+  startRandomEventChecker();
+  startPassiveIncomeGenerator();
+  startEnergyRegeneration();
+  startGangTributeTimer();
+  startScreenRefreshTimer();
+  initializeEventsSystem();
+  initializeCompetitionSystem();
+
+  // Initialize expanded systems (gang roles, territory wars, etc.)
+  ExpandedSystems.initializeExpandedSystems(player);
+
+  // Start rival AI and interactive events
+  ExpandedUI.startRivalAISystem();
+  setInterval(() => { if (gameplayActive) ExpandedUI.checkAndTriggerInteractiveEvent(); }, 60000);
+
+  // Initialize UI Events
+  if (typeof initUIEvents === 'function') {
+    initUIEvents();
+  }
+
+  // Initialize Onboarding (Act 0 Guide)
+  initOnboarding();
+}
+
 // Call initialization when page loads
 // ==================== INTERFACE IMPROVEMENTS SYSTEM ====================
 
@@ -16476,7 +16516,9 @@ function initializeInterfaceImprovements() {
     player.statistics = initializePlayerStatistics();
   }
   
-  logAction("🎮 Interface improvements activated - hotkeys available!");
+  if (gameplayActive) {
+    logAction("🎮 Interface improvements activated - hotkeys available!");
+  }
 }
 
 // Hotkey system
