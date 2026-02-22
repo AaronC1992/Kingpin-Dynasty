@@ -2,7 +2,7 @@
 
 A deep criminal empire-building browser game where you rise from street thug to legendary kingpin. Build your crew, claim territory, run businesses, and outmanoeuvre rival crime families — all from your browser.
 
-## 🎮 **[PLAY NOW - Live Demo](https://aaronc1992.github.io/Kingpin-Dynasty/)**
+## **[PLAY NOW - Live Demo](https://aaronc1992.github.io/Kingpin-Dynasty/)**
 
 No installation required. Click above and start playing instantly.
 
@@ -12,7 +12,7 @@ No installation required. Click above and start playing instantly.
 
 Kingpin Dynasty is a single-page browser game built with pure HTML5, CSS3, and JavaScript. You create a character, grind jobs, recruit a gang, purchase properties and businesses, and navigate a world of rival factions, law enforcement, and dynamic events — all while managing clean and dirty money to fund your criminal empire.
 
-The game features persistent progression via local storage, a full save/load system, and both local and online multiplayer modes.
+The game features persistent progression via local storage, a full save/load system, progressive feature unlocking, customisable quick actions, and both local and online multiplayer modes.
 
 ---
 
@@ -25,7 +25,7 @@ The game features persistent progression via local storage, a full save/load sys
 - **The Fence** — a dedicated black market for selling stolen goods and contraband at premium rates
 
 ### Empire Building
-- **9 businesses** (legitimate and illegal) generating passive income, each upgradeable to level 5
+- **9 businesses** (6 legitimate fronts and 3 illegal operations) generating passive income, each upgradeable to level 5
 - **7 properties** from hideouts to private islands, expanding gang capacity and unlocking new jobs
 - **12 map districts** to capture and control, with protection rackets and territory events
 - **Loan shark** system for high-risk borrowing
@@ -37,6 +37,7 @@ The game features persistent progression via local storage, a full save/load sys
 - Loyalty mechanics, betrayal events, and gang operations
 
 ### Progression
+- **Progressive unlock system** — game features unlock as you level up, from basics at level 0 to endgame content at level 15+
 - **6 base skills** with 18 advanced skill tree branches
 - **Perks and achievements** unlocked through gameplay milestones
 - **Empire rating** system grading your criminal empire from D to Legendary
@@ -46,7 +47,7 @@ The game features persistent progression via local storage, a full save/load sys
 ### Law & Consequences
 - **Wanted level** and **suspicion** systems that escalate law enforcement attention
 - Suspicion consequences ranging from surveillance to full FBI investigation chains
-- Jail, breakout attempts, courthouse bribes, and corrupt officials
+- Jail, breakout attempts, guard bribery, courthouse bribes, and corrupt officials
 - Police crackdowns triggered by criminal activity in your territories
 
 ### Living World
@@ -57,10 +58,14 @@ The game features persistent progression via local storage, a full save/load sys
 
 ### Mini-Games & Casino
 - 6 arcade mini-games playable in jail or at the arcade
-- Casino with slot machines and roulette
+- Casino with slot machines, roulette, blackjack, and dice
+
+### Customisation
+- **Customisable quick actions panel** — choose which shortcut buttons appear on your screen via Settings > Personalization
+- **Title screen** with options to start fresh, resume, access the tutorial, or reset all data
 
 ### Multiplayer
-- **Local multiplayer** — 2–4 players on the same device with competitive, cooperative, and territory war modes
+- **Local multiplayer** — 2-4 players on the same device with competitive, cooperative, and territory war modes
 - **Online multiplayer** — real-time rooms via Node.js/WebSocket server with chat, trading, alliances, and leaderboards
 
 ---
@@ -94,7 +99,8 @@ Compatible with Chrome, Firefox, Safari, Edge, and their mobile counterparts.
 - 10 manual save slots plus auto-save and emergency save on browser close
 - Export and import saves as JSON files
 - Full persistence of all progress, achievements, and legacy data
+- Save migration for older saves — new features auto-initialize on load
 
 ---
 
-Build your legacy, expand your territory, and prove who's the ultimate Don. 👑
+Build your legacy, expand your territory, and prove who's the ultimate Don.

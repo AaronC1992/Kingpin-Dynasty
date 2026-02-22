@@ -12347,35 +12347,35 @@ const VERSION_UPDATES = {
     title: "February 2026 Update - Dirty Money Overhaul",
     date: "February 21, 2026",
     changes: [
-      "💰 Dirty Money rework — only Bank Job and Counterfeiting Money produce dirty money; all other jobs now pay clean cash",
-      "💧 Money Laundering job reworked — now converts dirty money to clean money at 80-95% rate instead of paying cash",
-      "🔍 Dirty money jobs now raise Suspicion Level (+5-15 per job), making laundering more urgent",
-      "🏭 New Business: Counterfeiting Operation — $4M, $180K/day dirty income, +3% laundering job bonus",
-      "🏭 New Business: Drug Lab — $6M, $220K/day dirty income, the highest-earning illegal business",
-      "🏭 New Business: Chop Shop — $3.5M, $140K/day dirty income, pairs with Boost a Ride",
-      "🆕 New Job: Counterfeiting Money — extreme risk, $200K–$500K payout (dirty), requires Basement Hideout & Fake ID Kit",
-      "🏷️ Jobs and businesses that pay dirty money are now clearly labeled in red (DIRTY MONEY)",
-      "💡 Money Laundering screen now shows tips about the laundering job, Counterfeiting synergy, and suspicion",
-      "📝 Comprehensive 16-step tutorial rewritten to match all current game mechanics including dirty money",
-      "📖 Complete README overhaul with accurate game data for all 18 jobs, 9 businesses, and store prices",
-      "💾 Save migration for older saves — dirty money, suspicion level, and laundering setups auto-initialize",
-      "🔗 Play Now button restored to project page"
+      "Dirty Money rework — only Bank Job and Counterfeiting Money produce dirty money; all other jobs now pay clean cash",
+      "Money Laundering job reworked — now converts dirty money to clean money at 80-95% rate instead of paying cash",
+      "Dirty money jobs now raise Suspicion Level (+5-15 per job), making laundering more urgent",
+      "New Business: Counterfeiting Operation — $4M, $180K/day dirty income, +3% laundering job bonus",
+      "New Business: Drug Lab — $6M, $220K/day dirty income, the highest-earning illegal business",
+      "New Business: Chop Shop — $3.5M, $140K/day dirty income, pairs with Boost a Ride",
+      "New Job: Counterfeiting Money — extreme risk, $200K-$500K payout (dirty), requires Basement Hideout & Fake ID Kit",
+      "Jobs and businesses that pay dirty money are now clearly labeled in red (DIRTY MONEY)",
+      "Money Laundering screen now shows tips about the laundering job, Counterfeiting synergy, and suspicion",
+      "Comprehensive 16-step tutorial rewritten to match all current game mechanics including dirty money",
+      "Complete README overhaul with accurate game data for all 18 jobs, 9 businesses, and store prices",
+      "Save migration for older saves — dirty money, suspicion level, and laundering setups auto-initialize",
+      "Play Now button restored to project page"
     ]
   },
   "1.2.0": {
     title: "November 2025 Update - Quality of Life Improvements",
     date: "November 23, 2025",
     changes: [
-      "🎨 Fixed mobile portrait selection - no more cut-off images!",
-      "💾 Fixed load game system - loading slots now properly starts your game",
-      "🔧 Fixed back button in load screen",
-      "🚗 Added 35+ vehicle variants to car theft (broken, rusty, and pristine conditions)",
-      "🔫 Added new weapons: Switchblade, Revolver, and Sawed-Off Shotgun",
-      "📝 Updated tutorial content to reflect current game features",
-      "🎯 Added objective tracker to help guide your criminal career",
-      "💰 Improved money display and stat tracking",
-      "⚖️ Increased Street Soldier job risk (20% jail chance)",
-      "📱 Enhanced mobile UI with better quick access bar"
+      "Fixed mobile portrait selection - no more cut-off images!",
+      "Fixed load game system - loading slots now properly starts your game",
+      "Fixed back button in load screen",
+      "Added 35+ vehicle variants to car theft (broken, rusty, and pristine conditions)",
+      "Added new weapons: Switchblade, Revolver, and Sawed-Off Shotgun",
+      "Updated tutorial content to reflect current game features",
+      "Added objective tracker to help guide your criminal career",
+      "Improved money display and stat tracking",
+      "Increased Street Soldier job risk (20% jail chance)",
+      "Enhanced mobile UI with better quick access bar"
     ]
   }
 };
@@ -12429,7 +12429,7 @@ function showVersionUpdateNotification() {
   content.innerHTML = `
     <div style="text-align: center; margin-bottom: 30px;">
       <h2 style="color: #c0a062; font-size: 2.5em; margin: 0 0 10px 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">
-        🎉 What's New in Kingpin Dynasty
+        What's New in Kingpin Dynasty
       </h2>
       <h3 style="color: #3498db; font-size: 1.5em; margin: 0;">
         ${updateInfo.title}
@@ -12444,7 +12444,7 @@ function showVersionUpdateNotification() {
     
     <div style="background: rgba(0, 0, 0, 0.3); padding: 25px; border-radius: 15px; margin-bottom: 30px;">
       <h4 style="color: #2ecc71; font-size: 1.3em; margin: 0 0 15px 0; text-align: center;">
-        📋 Update Highlights
+        Update Highlights
       </h4>
       <ul style="list-style: none; padding: 0; margin: 0;">
         ${updateInfo.changes.map(change => `
@@ -12481,13 +12481,13 @@ function showVersionUpdateNotification() {
         onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 6px 20px rgba(192, 160, 98, 0.6)';"
         onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 4px 15px rgba(192, 160, 98, 0.4)';"
       >
-        Let's Get Started! 🚀
+        Let's Get Started!
       </button>
     </div>
     
     <div style="text-align: center; margin-top: 20px;">
       <p style="color: #95a5a6; font-size: 0.85em;">
-        💡 Tip: You can always check the latest updates in the game menu
+        Tip: You can always check the latest updates in the game menu
       </p>
     </div>
   `;
@@ -12521,7 +12521,7 @@ const tutorialSteps = [
       <p><strong>Your Goal:</strong> Build your criminal empire, gain reputation, manage your gang, acquire territory, run businesses, and leave a lasting legacy in the underworld.</p>
       <p><strong>Warning:</strong> Every choice has consequences. Poor planning could land you in jail, bankrupt, or worse. But smart players can build empires that span generations — and even retire!</p>
       <p style="margin-top: 20px; padding: 15px; background: rgba(52, 152, 219, 0.2); border-radius: 8px; border: 1px solid #3498db;">
-        <strong>💡 This tutorial covers all the major game systems. Pay attention — mastering these mechanics is the difference between surviving and thriving!</strong>
+        <strong>This tutorial covers all the major game systems. Pay attention — mastering these mechanics is the difference between surviving and thriving!</strong>
       </p>
     `
   },
@@ -12529,27 +12529,27 @@ const tutorialSteps = [
     title: "Understanding Your Stats",
     showUI: "stats",
     content: `
-      <h3>📊 Your Criminal Profile</h3>
+      <h3>Your Criminal Profile</h3>
       <p><strong>Look at the top of your screen!</strong> The stats bar shows your current status:</p>
       <ul>
-        <li><strong>💰 Money:</strong> Your cash on hand — needed for equipment, properties, and bribes</li>
-        <li><strong>⚡ Energy:</strong> Required for every job — regenerates 1 point every 20 seconds (improved by Recovery skill)</li>
-        <li><strong>❤️ Health:</strong> Starts at 100. Risky jobs and combat drain it. Visit the hospital to heal</li>
-        <li><strong>🚨 Wanted Level:</strong> Rises from criminal activity. Higher wanted = longer jail time and police crackdowns</li>
-        <li><strong>⭐ Reputation:</strong> Unlocks higher-tier jobs and faction missions as it grows</li>
-        <li><strong>📈 Level & XP:</strong> Earn XP from jobs. Each level-up grants 3 skill points</li>
-        <li><strong>💪 Power:</strong> Increased by weapons, armor, vehicles, and properties. Needed for boss battles</li>
-        <li><strong>🔍 Suspicion:</strong> 0–100 scale — affects how closely law enforcement watches your operations</li>
+        <li><strong>Money:</strong> Your cash on hand — needed for equipment, properties, and bribes</li>
+        <li><strong>Energy:</strong> Required for every job — regenerates 1 point every 20 seconds (improved by Recovery skill)</li>
+        <li><strong>Health:</strong> Starts at 100. Risky jobs and combat drain it. Visit the hospital to heal</li>
+        <li><strong>Wanted Level:</strong> Rises from criminal activity. Higher wanted = longer jail time and police crackdowns</li>
+        <li><strong>Reputation:</strong> Unlocks higher-tier jobs and faction missions as it grows</li>
+        <li><strong>Level & XP:</strong> Earn XP from jobs. Each level-up grants 3 skill points</li>
+        <li><strong>Power:</strong> Increased by weapons, armor, vehicles, and properties. Needed for boss battles</li>
+        <li><strong>Suspicion:</strong> 0-100 scale — affects how closely law enforcement watches your operations</li>
       </ul>
       <p style="background: rgba(231, 76, 60, 0.2); padding: 10px; border-radius: 5px; margin-top: 15px;">
-        <strong>👀 Pro Tip:</strong> Watch the objective tracker on the right side to see your current goals. Use letter hotkeys (J, S, G, K, etc.) for fast navigation!</p>
+        <strong>Pro Tip:</strong> Watch the objective tracker on the right side to see your current goals. Use letter hotkeys (J, S, G, K, etc.) for fast navigation!</p>
     `
   },
   {
     title: "The Action Log",
     showUI: "log",
     content: `
-      <h3>📖 Your Criminal Chronicle</h3>
+      <h3>Your Criminal Chronicle</h3>
       <p><strong>Look to the left side of your screen!</strong> The Action Log is your criminal story being written in real-time:</p>
       <ul>
         <li>Every job you pull gets recorded with immersive narration</li>
@@ -12559,7 +12559,7 @@ const tutorialSteps = [
         <li>Gang operations, business deals, territory expansions, and boss battle results are all documented</li>
       </ul>
       <p style="background: rgba(46, 204, 113, 0.2); padding: 10px; border-radius: 5px; margin-top: 15px;">
-        <strong>📝 Tip:</strong> The action log tracks your entire criminal career, including milestones, achievements, and faction standing changes!
+        <strong>Tip:</strong> The action log tracks your entire criminal career, including milestones, achievements, and faction standing changes!
       </p>
     `
   },
@@ -12567,21 +12567,21 @@ const tutorialSteps = [
     title: "Jobs & Energy Management",
     showUI: "jobs",
     content: `
-      <h3>🔫 Your Criminal Career — 18 Jobs</h3>
+      <h3>Your Criminal Career — 18 Jobs</h3>
       <p><strong>This is the Jobs screen!</strong> Your primary source of income and XP. Jobs scale from entry-level to legendary:</p>
       <ul>
-        <li><strong>Street Soldier (1 Energy):</strong> Low risk, low reward — $1K–$5K payouts to get started</li>
+        <li><strong>Street Soldier (1 Energy):</strong> Low risk, low reward — $1K-$5K payouts to get started</li>
         <li><strong>Boost a Ride (5 Energy):</strong> Steal cars to sell or keep. Risky but no cash needed upfront</li>
-        <li><strong>Store Heist (10 Energy):</strong> $20K–$40K payouts — requires 10 reputation</li>
+        <li><strong>Store Heist (10 Energy):</strong> $20K-$40K payouts — requires 10 reputation</li>
         <li><strong>Drug Jobs:</strong> Bootleg Run, Speakeasy Supply, White Powder Distribution — buy the product from the store, sell it on the street for big profit</li>
         <li><strong>Weapon Jobs:</strong> Protection Collection, Bank Job, Hit on a Rival — require weapons and ammo</li>
-        <li><strong>💰 Dirty Money Jobs:</strong> <span style="color:#e74c3c;">Bank Job</span> and <span style="color:#e74c3c;">Counterfeiting Money</span> pay only dirty money that must be laundered! These also raise your suspicion level</li>
-        <li><strong>💧 Money Laundering Job:</strong> Converts dirty money → clean money (80-95% rate). Owning a Counterfeiting Operation business boosts the rate!</li>
-        <li><strong>Elite Jobs:</strong> International Arms Trade ($500K–$1M) and Take Over the City ($2M–$5M) — legendary risk, legendary reward</li>
+        <li><strong>Dirty Money Jobs:</strong> <span style="color:#e74c3c;">Bank Job</span> and <span style="color:#e74c3c;">Counterfeiting Money</span> pay only dirty money that must be laundered! These also raise your suspicion level</li>
+        <li><strong>Money Laundering Job:</strong> Converts dirty money to clean money (80-95% rate). Owning a Counterfeiting Operation business boosts the rate!</li>
+        <li><strong>Elite Jobs:</strong> International Arms Trade ($500K-$1M) and Take Over the City ($2M-$5M) — legendary risk, legendary reward</li>
       </ul>
       <p><strong>Energy System:</strong> Energy regenerates 1 point every 20 seconds (base). The <strong>Recovery</strong> skill tree reduces this timer, and the <strong>Endurance</strong> skill reduces energy costs per job!</p>
       <p style="background: rgba(52, 152, 219, 0.2); padding: 10px; border-radius: 5px; margin-top: 15px;">
-        <strong>🎯 Strategy:</strong> Every job shows its jail chance, wanted level gain, and health loss. Check the requirements — some need specific items, weapons, or reputation!
+        <strong>Strategy:</strong> Every job shows its jail chance, wanted level gain, and health loss. Check the requirements — some need specific items, weapons, or reputation!
       </p>
     `
   },
@@ -12589,19 +12589,19 @@ const tutorialSteps = [
     title: "The Store & Equipment",
     showUI: "store",
     content: `
-      <h3>🏪 The Underground Marketplace</h3>
+      <h3>The Underground Marketplace</h3>
       <p><strong>This is the Store!</strong> Everything you need to build your criminal empire:</p>
       <ul>
-        <li><strong>🔫 Weapons:</strong> Brass Knuckles ($7.5K) → Switchblade → Baseball Bat → Pistol ($30K) → Revolver → Sawed-Off → Tommy Gun ($150K) → Sniper Rifle ($250K)</li>
-        <li><strong>🛡️ Armor:</strong> Leather Jacket ($15K) → Stab Vest → Bulletproof Vest ($100K) → Reinforced Body Armor ($200K)</li>
-        <li><strong>🚗 Vehicles:</strong> Armored Car ($120K), Luxury Automobile ($400K), Private Airplane ($1.5M)</li>
-        <li><strong>⚡ Energy:</strong> Strong Coffee (+15, $800), Energy Drink (+30, $1.5K), Steroids (+60, $5K)</li>
-        <li><strong>🔧 Utility:</strong> Lockpick Set, Police Scanner, Burner Phone, Fake ID Kit — each provides unique passive bonuses</li>
-        <li><strong>💊 Drugs (Trade Goods):</strong> Buy Moonshine/Mary Jane/Cocaine to use in distribution jobs for profit. Require a Freight Truck to transport!</li>
+        <li><strong>Weapons:</strong> Brass Knuckles ($7.5K) > Switchblade > Baseball Bat > Pistol ($30K) > Revolver > Sawed-Off > Tommy Gun ($150K) > Sniper Rifle ($250K)</li>
+        <li><strong>Armor:</strong> Leather Jacket ($15K) > Stab Vest > Bulletproof Vest ($100K) > Reinforced Body Armor ($200K)</li>
+        <li><strong>Vehicles:</strong> Armored Car ($120K), Luxury Automobile ($400K), Private Airplane ($1.5M)</li>
+        <li><strong>Energy:</strong> Strong Coffee (+15, $800), Energy Drink (+30, $1.5K), Steroids (+60, $5K)</li>
+        <li><strong>Utility:</strong> Lockpick Set, Police Scanner, Burner Phone, Fake ID Kit — each provides unique passive bonuses</li>
+        <li><strong>Drugs (Trade Goods):</strong> Buy Moonshine/Mary Jane/Cocaine to use in distribution jobs for profit. Require a Freight Truck to transport!</li>
       </ul>
       <p><strong>Charisma skill</strong> gives you better prices (2% discount per level). Plan your purchases around your job goals!</p>
       <p style="background: rgba(230, 126, 34, 0.2); padding: 10px; border-radius: 5px; margin-top: 15px;">
-        <strong>💡 Investment Tip:</strong> Weapons and armor increase your Power stat permanently. Utility items provide passive bonuses that compound over time!
+        <strong>Investment Tip:</strong> Weapons and armor increase your Power stat permanently. Utility items provide passive bonuses that compound over time!
       </p>
     `
   },
@@ -12609,7 +12609,7 @@ const tutorialSteps = [
     title: "Skills & Skill Trees",
     showUI: "skills",
     content: `
-      <h3>🧠 Building Your Criminal Expertise</h3>
+      <h3>Building Your Criminal Expertise</h3>
       <p><strong>Welcome to the Skills screen!</strong> You earn 3 skill points per level-up. Invest them in 6 base skills:</p>
       <ul>
         <li><strong>Stealth:</strong> Reduces jail chance and improves breakout success</li>
@@ -12619,7 +12619,7 @@ const tutorialSteps = [
         <li><strong>Luck:</strong> Better random events, payouts, and gambling odds</li>
         <li><strong>Endurance:</strong> Reduces energy cost for all jobs (-1 per level!)</li>
       </ul>
-      <h4>🌳 18 Skill Tree Branches</h4>
+      <h4>18 Skill Tree Branches</h4>
       <p>Each base skill unlocks <strong>3 specialized branches</strong> (max level 10 each, 2 skill points per upgrade):</p>
       <ul>
         <li><strong>Stealth:</strong> Infiltration, Escape Artist, Surveillance</li>
@@ -12630,7 +12630,7 @@ const tutorialSteps = [
         <li><strong>Physical:</strong> Stamina (+3 max energy/level), Recovery (faster energy regen), Resistance</li>
       </ul>
       <p style="background: rgba(155, 89, 182, 0.2); padding: 10px; border-radius: 5px; margin-top: 15px;">
-        <strong>🎯 Strategy:</strong> Focus on Endurance early to reduce energy costs, then branch into skills that match your playstyle!
+        <strong>Strategy:</strong> Focus on Endurance early to reduce energy costs, then branch into skills that match your playstyle!
       </p>
     `
   },
@@ -12638,19 +12638,19 @@ const tutorialSteps = [
     title: "Gang, Properties & Territory",
     showUI: "menu",
     content: `
-      <h3>👥 Building Your Criminal Organization</h3>
+      <h3>Building Your Criminal Organization</h3>
       <p><strong>Gang System:</strong></p>
       <ul>
         <li><strong>Recruit members</strong> with random specializations: muscle, thief, dealer, driver, enforcer, technician</li>
-        <li><strong>Loyalty (0–100)</strong> — low loyalty triggers betrayal events: police informants, territory sellouts, coups</li>
+        <li><strong>Loyalty (0-100)</strong> — low loyalty triggers betrayal events: police informants, territory sellouts, coups</li>
         <li><strong>Tribute:</strong> Collect income from your gang members (5-minute cooldown, boosted by territory)</li>
         <li><strong>Operations:</strong> Send specialists on timed missions — Protection Rackets, Car Theft Rings, Drug Labs, Tech Heists</li>
         <li><strong>Training:</strong> 5 programs from Basic Combat ($300) to Advanced Tactical ($1,000) to improve your crew</li>
       </ul>
       <p><strong>Real Estate (7 Properties):</strong> From Abandoned Warehouse ($2.5K, +3 gang capacity) up to Private Island ($200K, +50 capacity). You need properties to house more gang members!</p>
-      <p><strong>Territory (12 Districts):</strong> Capture districts, set up protection rackets ($200–$2,000/week), and corrupt officials from Patrol Officers ($500) to the Mayor ($25K). Beware of territory heat and rival gang encroachment!</p>
+      <p><strong>Territory (12 Districts):</strong> Capture districts, set up protection rackets ($200-$2,000/week), and corrupt officials from Patrol Officers ($500) to the Mayor ($25K). Beware of territory heat and rival gang encroachment!</p>
       <p style="background: rgba(231, 76, 60, 0.2); padding: 10px; border-radius: 5px; margin-top: 15px;">
-        <strong>🏰 Empire Tip:</strong> Buy a Warehouse first → recruit gang → capture territory → set up rackets. This is your income engine!
+        <strong>Empire Tip:</strong> Buy a Warehouse first > recruit gang > capture territory > set up rackets. This is your income engine!
       </p>
     `
   },
@@ -12658,7 +12658,7 @@ const tutorialSteps = [
     title: "Factions, Mentors & Boss Battles",
     showUI: "menu",
     content: `
-      <h3>🤝 The Criminal Underworld Powers</h3>
+      <h3>The Criminal Underworld Powers</h3>
       <p><strong>4 Crime Families</strong> control the city. Your standing with each affects what you can access:</p>
       <ul>
         <li><strong>Torrino Family</strong> (Don Salvatore) — Protection rackets & loan sharking</li>
@@ -12674,7 +12674,7 @@ const tutorialSteps = [
         <li><strong>Chief Margaret Morrison</strong> — Requires 80 power, 6 gang, 30 rep. Reward: $6K + wanted level reduction</li>
       </ul>
       <p style="background: rgba(52, 152, 219, 0.2); padding: 10px; border-radius: 5px; margin-top: 15px;">
-        <strong>⚔️ Tip:</strong> Complete faction missions to build reputation. High standing with one family may lower it with rivals!
+        <strong>Tip:</strong> Complete faction missions to build reputation. High standing with one family may lower it with rivals!
       </p>
     `
   },
@@ -12682,7 +12682,7 @@ const tutorialSteps = [
     title: "Businesses & Money Laundering",
     showUI: "menu",
     content: `
-      <h3>💼 Building Legitimate Fronts & Illegal Operations</h3>
+      <h3>Building Legitimate Fronts & Illegal Operations</h3>
       <p><strong>9 Business Types</strong> — 6 legitimate fronts and 3 illegal operations:</p>
       <h4>Legitimate Businesses (pay clean money):</h4>
       <ul>
@@ -12699,14 +12699,14 @@ const tutorialSteps = [
         <li><strong>Counterfeiting Operation</strong> — $4M, $180K/day (boosts Money Laundering job rate +3%)</li>
         <li><strong>Drug Lab</strong> — $6M, $220K/day (highest illegal income)</li>
       </ul>
-      <p><strong>💧 Money Laundering:</strong> Two ways to clean dirty money:</p>
+      <p><strong>Money Laundering:</strong> Two ways to clean dirty money:</p>
       <ul>
         <li><strong>Laundering Menu:</strong> 5 methods from Casino Chips (85% clean, 2hr) to Offshore Banking (95% clean, 48hr)</li>
-        <li><strong>Money Laundering Job:</strong> Converts dirty → clean at 80-95% rate. Faster but burns energy</li>
+        <li><strong>Money Laundering Job:</strong> Converts dirty to clean at 80-95% rate. Faster but burns energy</li>
       </ul>
-      <p><strong>Loan Shark:</strong> Borrow $200K–$10M at 15–30% weekly interest. Miss payments and face consequences.</p>
+      <p><strong>Loan Shark:</strong> Borrow $200K-$10M at 15-30% weekly interest. Miss payments and face consequences.</p>
       <p style="background: rgba(46, 204, 113, 0.2); padding: 10px; border-radius: 5px; margin-top: 15px;">
-        <strong>💰 Tip:</strong> Illegal businesses earn more but pay dirty money you must launder. Balance risk and reward!
+        <strong>Tip:</strong> Illegal businesses earn more but pay dirty money you must launder. Balance risk and reward!
       </p>
     `
   },
@@ -12714,18 +12714,18 @@ const tutorialSteps = [
     title: "Advanced Activities",
     showUI: "menu",
     content: `
-      <h3>🎯 Beyond the Basics</h3>
+      <h3>Beyond the Basics</h3>
       <p><strong>As your reputation grows, you'll unlock:</strong></p>
       <ul>
-        <li><strong>🚗 Stolen Cars:</strong> Over 30 vehicle types from Broken Family Wagons ($800) to Police Cruisers ($250K). Sell or keep your collection</li>
-        <li><strong>🔓 Jailbreak Operations:</strong> Free NPCs from prison for cash, XP, and reputation</li>
-        <li><strong>🎰 Casino:</strong> Slot Machine ($100/spin, ~2% jackpot $10K) and Roulette ($200/spin, ~1% jackpot $500K). Gambling skill doubles your odds</li>
-        <li><strong>🎮 6 Mini-Games:</strong> Tic-Tac-Toe, Number Guessing, Rock Paper Scissors, Memory Match, Snake, Quick Draw — earn $50–$500 per win</li>
-        <li><strong>📋 Story Campaign:</strong> "Rising Through the Ranks" — 4 chapters from street hustler to empire builder</li>
-        <li><strong>💵 Money Laundering:</strong> Clean your dirty money through 5 methods at varying speeds and rates</li>
+        <li><strong>Stolen Cars:</strong> Over 30 vehicle types from Broken Family Wagons ($800) to Police Cruisers ($250K). Sell or keep your collection</li>
+        <li><strong>Jailbreak Operations:</strong> Free NPCs from prison for cash, XP, and reputation</li>
+        <li><strong>Casino (4 games):</strong> Slot Machine, Roulette, Blackjack (hit, stand, double down), and Dice. The Gambling skill tree boosts your odds across all games</li>
+        <li><strong>6 Mini-Games:</strong> Tic-Tac-Toe, Number Guessing, Rock Paper Scissors, Memory Match, Snake, Quick Draw — earn $50-$500 per win</li>
+        <li><strong>Story Campaign:</strong> "Rising Through the Ranks" — 4 chapters from street hustler to empire builder</li>
+        <li><strong>Money Laundering:</strong> Clean your dirty money through 5 methods at varying speeds and rates</li>
       </ul>
       <p style="background: rgba(52, 152, 219, 0.2); padding: 10px; border-radius: 5px; margin-top: 15px;">
-        <strong>⚡ Pro Tip:</strong> Mini-games reset your personal bests for bonus payouts. The casino is risky but the Gambling skill tree makes it much more profitable!
+        <strong>Pro Tip:</strong> Mini-games reset your personal bests for bonus payouts. The casino is risky but the Gambling skill tree makes it much more profitable!
       </p>
     `
   },
@@ -12733,18 +12733,20 @@ const tutorialSteps = [
     title: "Law Enforcement & Survival",
     showUI: "none",
     content: `
-      <h3>🚔 Staying Out of Trouble</h3>
+      <h3>Staying Out of Trouble</h3>
       <p><strong>The law is always watching.</strong> Here's how the system works:</p>
       <ul>
         <li><strong>Jail Time:</strong> Sentence = max(15, 10 + wanted level) seconds. Higher wanted = longer lockup</li>
         <li><strong>Breakout:</strong> 3 attempts per sentence. 45% base chance + Stealth bonuses. Failed attempts add 10 seconds</li>
-        <li><strong>Courthouse:</strong> Pay wanted level × $500 to clear your record (must serve jail time first)</li>
+        <li><strong>Bribe the Guard:</strong> Pay to walk free immediately — amount scales with your wanted level</li>
+        <li><strong>Courthouse:</strong> Pay wanted level x $500 to clear your record (must serve jail time first)</li>
         <li><strong>Police Crackdowns:</strong> Drug enforcement, gang sweeps, auto theft ops, corruption investigations — triggered randomly</li>
+        <li><strong>Suspicion System:</strong> Dirty money jobs and illegal businesses raise your suspicion (0-100). High suspicion triggers FBI surveillance and investigation chains</li>
         <li><strong>Bribery:</strong> Corrupt 6 tiers of officials. A corrupted Mayor ($25K) provides maximum protection</li>
         <li><strong>Forensics Skill:</strong> Passively decays your wanted level over time (3% chance per level per energy tick)</li>
       </ul>
       <p style="background: rgba(231, 76, 60, 0.2); padding: 10px; border-radius: 5px; margin-top: 15px;">
-        <strong>⚠️ Survival Tip:</strong> Keep your wanted level manageable! Use the courthouse when it gets high, and invest in Stealth for better breakout odds.
+        <strong>Survival Tip:</strong> Keep your wanted level manageable! Use the courthouse when it gets high, and invest in Stealth for better breakout odds.
       </p>
     `
   },
@@ -12752,16 +12754,16 @@ const tutorialSteps = [
     title: "Dynamic World & Events",
     showUI: "none",
     content: `
-      <h3>🌍 A Living, Breathing City</h3>
+      <h3>A Living, Breathing City</h3>
       <p><strong>The world changes around you:</strong></p>
       <ul>
-        <li><strong>🌦️ Weather System (5 types):</strong> Changes every 15–45 minutes. Rain (+15% stealth), Snow (+30% evidence reduction), Fog (+25% stealth), Storm (-30% police response)</li>
-        <li><strong>🍂 Seasons:</strong> Based on real-world date. Spring Festival, Tourist Season, Harvest Festival, Holiday Shopping Chaos, and more</li>
-        <li><strong>📰 News Events:</strong> Police Budget Cuts, New Police Chief, Economic Boom, Gang Violence Surge, New Surveillance Technology — each changes gameplay</li>
-        <li><strong>🎲 Random Events:</strong> Police Raids, Lucky Finds ($100–$500+), Random Sales (30% off for 2 min), Gang Recruitment offers, Territory Disputes</li>
+        <li><strong>Weather System (5 types):</strong> Changes every 15-45 minutes. Rain (+15% stealth), Snow (+30% evidence reduction), Fog (+25% stealth), Storm (-30% police response)</li>
+        <li><strong>Seasons:</strong> Based on real-world date. Spring Festival, Tourist Season, Harvest Festival, Holiday Shopping Chaos, and more</li>
+        <li><strong>News Events:</strong> Police Budget Cuts, New Police Chief, Economic Boom, Gang Violence Surge, New Surveillance Technology — each changes gameplay</li>
+        <li><strong>Random Events:</strong> Police Raids, Lucky Finds ($100-$500+), Random Sales (30% off for 2 min), Gang Recruitment offers, Territory Disputes</li>
       </ul>
       <p style="background: rgba(52, 152, 219, 0.2); padding: 10px; border-radius: 5px; margin-top: 15px;">
-        <strong>🌟 Tip:</strong> Pay attention to weather — Rain and Fog are great for stealth-based jobs. Storms keep the police occupied!
+        <strong>Tip:</strong> Pay attention to weather — Rain and Fog are great for stealth-based jobs. Storms keep the police occupied!
       </p>
     `
   },
@@ -12769,9 +12771,9 @@ const tutorialSteps = [
     title: "Empire Rating & Retirement",
     showUI: "menu",
     content: `
-      <h3>🏆 The Endgame</h3>
+      <h3>The Endgame</h3>
       <p><strong>Empire Rating</strong> (max 10,000 points) measures your overall criminal success across 6 categories: Money, Gang, Territory, Business, Reputation, and Skills.</p>
-      <p><strong>Grades:</strong> D → C → B → A → A+ → S → S+ → <span style="color: #f1c40f;">LEGENDARY</span> (9,000+)</p>
+      <p><strong>Grades:</strong> D > C > B > A > A+ > S > S+ > <span style="color: #f1c40f;">LEGENDARY</span> (9,000+)</p>
       <p><strong>4 Retirement Paths:</strong></p>
       <ul>
         <li><strong>Going Legitimate:</strong> $1M clean money, 10 businesses, low heat</li>
@@ -12782,7 +12784,7 @@ const tutorialSteps = [
       <p>Retired characters enter the <strong>Hall of Fame</strong> and grant <strong>Legacy Bonuses</strong> to your next character (starting money, skills, inherited gang/territory)!</p>
       <p><strong>Weekly Challenges:</strong> 3 random challenges per week with tiered rewards — Bronze ($50K) to Platinum ($500K).</p>
       <p style="background: rgba(155, 89, 182, 0.2); padding: 10px; border-radius: 5px; margin-top: 15px;">
-        <strong>🌟 Long-term Goal:</strong> Build an empire worthy of Legendary status and retire to leave bonuses for your next criminal dynasty!
+        <strong>Long-term Goal:</strong> Build an empire worthy of Legendary status and retire to leave bonuses for your next criminal dynasty!
       </p>
     `
   },
@@ -12790,7 +12792,7 @@ const tutorialSteps = [
     title: "Saves & Hotkeys",
     showUI: "none",
     content: `
-      <h3>💾 Protecting Your Empire & Fast Navigation</h3>
+      <h3>Protecting Your Empire & Fast Navigation</h3>
       <p><strong>Save System:</strong></p>
       <ul>
         <li><strong>10 manual save slots</strong> + auto-save slot + emergency save on browser close</li>
@@ -12798,6 +12800,7 @@ const tutorialSteps = [
         <li><strong>Export/Import</strong> saves as JSON files for backup</li>
         <li>Access via Options menu or press <strong>F5</strong></li>
       </ul>
+      <p><strong>Quick Actions Panel:</strong> The right side of your screen shows shortcut buttons for common actions. You can customise which buttons appear in Settings > Personalization.</p>
       <p><strong>Hotkeys for Desktop:</strong></p>
       <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
         <tr><td style="padding: 4px 8px; color: #3498db;"><strong>J</strong> — Jobs</td><td style="padding: 4px 8px; color: #3498db;"><strong>S</strong> — Store</td><td style="padding: 4px 8px; color: #3498db;"><strong>G</strong> — Gang</td></tr>
@@ -12808,7 +12811,27 @@ const tutorialSteps = [
         <tr><td style="padding: 4px 8px; color: #3498db;"><strong>F5</strong> — Save System</td><td style="padding: 4px 8px; color: #3498db;"><strong>F7</strong> — Competition</td><td></td></tr>
       </table>
       <p style="background: rgba(46, 204, 113, 0.2); padding: 10px; border-radius: 5px; margin-top: 15px;">
-        <strong>💡 Tip:</strong> Use multiple save slots and JSON exports to protect your progress!
+        <strong>Tip:</strong> Use multiple save slots and JSON exports to protect your progress!
+      </p>
+    `
+  },
+  {
+    title: "Progressive Unlocks & Quick Actions",
+    showUI: "none",
+    content: `
+      <h3>Growing Your Empire Step by Step</h3>
+      <p><strong>Progressive Unlock System:</strong> Not everything is available from the start. Game features unlock as you level up:</p>
+      <ul>
+        <li><strong>Level 0 (Start):</strong> Jobs, Black Market, Stash, The Doctor, Settings, Gambling</li>
+        <li><strong>Level 2-3:</strong> Expertise (Skills), Motor Pool (Cars), Properties, Operations (Missions)</li>
+        <li><strong>Level 5-8:</strong> The Family (Gang), Legal Aid, Events, Pastimes, The Fence, Crew Details, Breakout</li>
+        <li><strong>Level 10-12:</strong> Fronts (Businesses), Turf Wars, Territory Map, Shylock (Loans), Relationships, Rivals, The Wash (Laundering)</li>
+        <li><strong>Level 15+:</strong> Empire Rating, Made Men (Hall of Fame), Legacy Perks</li>
+      </ul>
+      <p>You'll see a notification when new features unlock. Locked features are hidden from menus until you reach the required level.</p>
+      <p><strong>Customisable Quick Actions:</strong> The right side panel shows shortcut buttons for your most-used actions. Head to <strong>Settings > Personalization</strong> to choose which buttons appear. Only unlocked features can be added.</p>
+      <p style="background: rgba(52, 152, 219, 0.2); padding: 10px; border-radius: 5px; margin-top: 15px;">
+        <strong>Tip:</strong> Focus on levelling up early to unlock more game systems. Customise your quick actions to match your current playstyle!
       </p>
     `
   },
@@ -12816,23 +12839,23 @@ const tutorialSteps = [
     title: "Your Criminal Empire Awaits",
     showUI: "none",
     content: `
-      <h3>🌟 Ready to Rule the Underworld</h3>
+      <h3>Ready to Rule the Underworld</h3>
       <p>You now understand all the major systems that will define your criminal career:</p>
       <ul>
-        <li><strong>💪 Build Power:</strong> Jobs → Money → Equipment → Gang → Territory → Businesses</li>
-        <li><strong>📈 Develop Skills:</strong> Invest 3 skill points per level into base skills and 18 specialized branches</li>
-        <li><strong>🏰 Expand Empire:</strong> Buy properties, recruit gang, capture territory, set up rackets</li>
-        <li><strong>🤝 Navigate Factions:</strong> Build standing with 4 crime families for exclusive rewards</li>
-        <li><strong>⚔️ Challenge Bosses:</strong> Take down rival leaders for unique weapons and territory</li>
-        <li><strong>💼 Run Businesses:</strong> Generate passive income and launder your dirty money</li>
-        <li><strong>🎯 Complete Challenges:</strong> Weekly competitions, story campaign, and achievements</li>
-        <li><strong>🏆 Leave a Legacy:</strong> Achieve a Legendary empire rating and retire to the Hall of Fame</li>
+        <li><strong>Build Power:</strong> Jobs > Money > Equipment > Gang > Territory > Businesses</li>
+        <li><strong>Develop Skills:</strong> Invest 3 skill points per level into base skills and 18 specialized branches</li>
+        <li><strong>Expand Empire:</strong> Buy properties, recruit gang, capture territory, set up rackets</li>
+        <li><strong>Navigate Factions:</strong> Build standing with 4 crime families for exclusive rewards</li>
+        <li><strong>Challenge Bosses:</strong> Take down rival leaders for unique weapons and territory</li>
+        <li><strong>Run Businesses:</strong> Generate passive income and launder your dirty money</li>
+        <li><strong>Complete Challenges:</strong> Weekly competitions, story campaign, and achievements</li>
+        <li><strong>Leave a Legacy:</strong> Achieve a Legendary empire rating and retire to the Hall of Fame</li>
       </ul>
       <p style="background: rgba(231, 76, 60, 0.2); padding: 15px; border-radius: 8px; margin-top: 20px;">
-        <strong>⚠️ Remember:</strong> Every choice matters. Manage risk vs reward, watch your wanted level, keep your gang loyal, and always have an escape plan!
+        <strong>Remember:</strong> Every choice matters. Manage risk vs reward, watch your wanted level, keep your gang loyal, and always have an escape plan!
       </p>
       <p style="text-align: center; margin-top: 30px; padding: 20px; background: rgba(46, 204, 113, 0.2); border-radius: 10px; border: 2px solid #2ecc71;">
-        <strong style="font-size: 1.3em; color: #2ecc71;">🎭 From street thug to criminal legend...</strong><br>
+        <strong style="font-size: 1.3em; color: #2ecc71;">From street thug to criminal legend...</strong><br>
         <span style="font-size: 1.1em; color: #ecf0f1;">Your dynasty begins now. Make every decision count.</span>
       </p>
     `
