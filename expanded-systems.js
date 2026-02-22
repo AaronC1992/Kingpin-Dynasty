@@ -9,8 +9,7 @@
  * 3. Interactive Random Events
  * 4. Rival AI Kingpins
  * 5. Permanent Legacy Perks
- * 6. Collectibles & The Don's Vault
- * 7. Respect-Based Relationship System
+ * 6. Respect-Based Relationship System
  * 
  * All features integrate with existing systems without replacing them.
  */
@@ -1267,8 +1266,8 @@ export function initializeExpandedSystems(player) {
         player.legacy.availableLegacyPoints = 0;
     }
     
-    // Respect system
-    initializeRespectSystem(player);
+    // Respect system removed — factions use streetReputation in player.js
+    // initializeRespectSystem(player);
     
     // Event tracking
     if (!player.interactiveEvents) {

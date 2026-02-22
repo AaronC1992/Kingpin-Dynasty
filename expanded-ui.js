@@ -9,7 +9,6 @@
  * - Interactive event choices
  * - Rival kingpin activity tracking
  * - Legacy perk shop
- * - The Don's Vault collectibles
  * - Respect/relationship viewer
  */
 
@@ -583,8 +582,6 @@ window.purchaseLegacyPerk = function(perkId) {
   showLegacyPerkShop();
   updateUI();
 };
-
-// ==================== THE DON'S VAULT UI ====================
 
 // ==================== RESPECT/RELATIONSHIPS UI ====================
 
