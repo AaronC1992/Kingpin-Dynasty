@@ -4539,7 +4539,6 @@ function updateUI() {
     }
   }
   
-  document.getElementById("inventory-display").innerText = `Inventory: ${player.inventory.length} Items`;
   document.getElementById("health-display").innerText = `Health: ${player.health}`;
   
   // Update energy display with timer (compact format)
@@ -4558,16 +4557,6 @@ function updateUI() {
   // Update Empire Rating (passive calculation)
   calculateEmpireRating();
   
-  // Update stolen cars display
-  if (document.getElementById("stolen-cars-display")) {
-    let selectedCarText = "";
-    if (player.selectedCar !== null && player.selectedCar < player.stolenCars.length) {
-      selectedCarText = ` (${player.stolenCars[player.selectedCar].name} selected)`;
-    }
-    const vehicleText = player.stolenCars.length === 1 ? "vehicle" : "vehicles";
-    document.getElementById("stolen-cars-display").innerText = `Garage: ${player.stolenCars.length} ${vehicleText}${selectedCarText}`;
-  }
-
   // Add new UI elements if they exist
   if (document.getElementById("level-display")) {
     document.getElementById("level-display").innerText = `Level: ${player.level}`;
