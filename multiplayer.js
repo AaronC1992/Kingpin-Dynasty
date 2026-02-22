@@ -450,14 +450,17 @@ function connectToOnlineWorld() {
         
         onlineWorldState.socket.onclose = function(event) {
             onlineWorldState.isConnected = false;
-            onlineWorldState.connectionStatus = 'disconnected';
-            updateConnectionStatus();
-            logAction(" Disconnected from online world");
-            
-            // Attempt to reconnect
-            setTimeout(() => {
-                connectToOnlineWorld();
-            }, onlineWorld.reconnectInterval);
+            // Only reconnect if we were previously connected (not if we failed to connect)
+            if (onlineWorldState.connectionStatus === 'connected') {
+                onlineWorldState.connectionStatus = 'disconnected';
+                updateConnectionStatus();
+                logAction(" Disconnected from online world");
+                // Attempt to reconnect
+                setTimeout(() => {
+                    connectToOnlineWorld();
+                }, onlineWorld.reconnectInterval);
+            }
+            // If status is 'error' or 'demo', don't loop — let demo mode handle it
         };
         
         onlineWorldState.socket.onerror = function(error) {
@@ -1093,9 +1096,11 @@ function updatePVPCountdown() {
 
 // World Chat - accessible from level 0, auto-connects if needed
 function showWorldChat() {
-    // If not connected, trigger connection first
-    if (!onlineWorldState.isConnected && typeof connectToOnlineWorld === 'function') {
-        connectToOnlineWorld();
+    // If not connected and not already trying, trigger connection
+    if (!onlineWorldState.isConnected && onlineWorldState.connectionStatus !== 'connecting') {
+        if (typeof connectToOnlineWorld === 'function') {
+            connectToOnlineWorld();
+        }
     }
     showGlobalChat();
 }
@@ -1391,10 +1396,16 @@ function addChatMessage(playerName, message, color = '#ecf0f1') {
 
 // Get connection status HTML for chat
 function getConnectionStatusHTML() {
-    if (onlineWorldState.isConnected) {
-        return `<span style="color: #c0a062; font-family: 'Georgia', serif;">🟢 Connected to World Chat</span>`;
+    const status = onlineWorldState.connectionStatus;
+    if (onlineWorldState.isConnected || status === 'connected') {
+        const count = onlineWorldState.serverInfo.playerCount || 0;
+        return `<span style="color: #2ecc71; font-family: 'Georgia', serif;">🟢 Connected to World Chat — ${count} player${count !== 1 ? 's' : ''} online</span>`;
+    } else if (status === 'demo') {
+        return `<span style="color: #f39c12; font-family: 'Georgia', serif;">🟡 Offline Mode — chat locally while server reconnects</span>`;
+    } else if (status === 'error') {
+        return `<span style="color: #e74c3c; font-family: 'Georgia', serif;">🔴 Server unavailable — retrying...</span>`;
     } else {
-        return `<span style="color: #8b0000; font-family: 'Georgia', serif;"> Connecting to World Chat...</span>`;
+        return `<span style="color: #f39c12; font-family: 'Georgia', serif;">⏳ Connecting to World Chat...</span>`;
     }
 }
 
@@ -1666,17 +1677,37 @@ function updateConnectionStatus() {
     }
     
     statusElement.innerHTML = statusHTML;
+
+    // Also update the chat screen's connection status if it's visible
+    const chatStatus = document.getElementById('chat-connection-status');
+    if (chatStatus) {
+        chatStatus.innerHTML = getConnectionStatusHTML();
+    }
 }
 
 // Initialize world data after connection
 function initializeWorldData() {
     // Simulate loading world data
     onlineWorldState.nearbyPlayers = generateNearbyPlayers();
-    onlineWorldState.globalChat = generateGlobalChatHistory();
+    // Only seed demo chat if there are no real messages yet
+    if (!onlineWorldState.globalChat || onlineWorldState.globalChat.length === 0) {
+        onlineWorldState.globalChat = generateGlobalChatHistory();
+    }
     onlineWorldState.serverInfo.cityEvents = generateCityEvents();
     onlineWorldState.activeHeists = generateActiveHeists();
     
     onlineWorldState.lastUpdate = new Date().toLocaleTimeString();
+
+    // Refresh chat area and player list if currently visible
+    const chatArea = document.getElementById('global-chat-area');
+    if (chatArea) {
+        chatArea.innerHTML = generateChatHTML();
+        chatArea.scrollTop = chatArea.scrollHeight;
+    }
+    const playerList = document.getElementById('chat-player-list');
+    if (playerList) {
+        playerList.innerHTML = generateOnlinePlayersHTML();
+    }
 }
 
 // Start periodic world updates
@@ -1715,9 +1746,8 @@ function showWelcomeMessage() {
     
     const welcomeMsg = messages[Math.floor(Math.random() * messages.length)];
     
-    setTimeout(() => {
-        alert(` ${welcomeMsg}`);
-    }, 1000);
+    // Show as a non-blocking log message instead of an alert
+    logAction(`🌐 ${welcomeMsg}`);
 }
 
 // Simulate online connection
@@ -1814,6 +1844,7 @@ function loadGlobalLeaderboard() {
 // Generate world data
 function generateNearbyPlayers() {
     const playerNames = ['CrimeBoss42', 'ShadowDealer', 'StreetKing', 'DarkVendor', 'NightCrawler', 'UrbanLegend'];
+    const colors = ['#3498db', '#e74c3c', '#2ecc71', '#f39c12', '#9b59b6', '#1abc9c'];
     return playerNames.slice(0, 3 + Math.floor(Math.random() * 3)).map((name, index) => ({
         id: `nearby_${index}`,
         name: name,
@@ -1821,7 +1852,8 @@ function generateNearbyPlayers() {
         reputation: Math.floor(Math.random() * 100),
         territory: Math.floor(Math.random() * 5),
         isOnline: true,
-        lastSeen: 'Now'
+        lastSeen: 'Now',
+        color: colors[index % colors.length]
     }));
 }
 
