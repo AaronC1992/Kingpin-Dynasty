@@ -482,12 +482,17 @@
                 </div>
             </div>
             <div class="section-header">Test Your Luck</div>
-            <div class="content-card">
-                <p>Place your bets.</p>
-                <button id="btn-slots" onclick="playSlotMachine()">Slots ($100)</button>
-                <button id="btn-roulette" onclick="playRoulette()">Roulette ($200)</button>
-                <button id="btn-blackjack" onclick="playBlackjack()">Blackjack ($250)</button>
-                <button id="btn-dice" onclick="playDiceGame()">Dice ($150)</button>
+            <div id="casino-balance" style="text-align: center; margin: 10px 0; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid #d4af37;">
+                <span style="color: #f1c40f; font-size: 1.2em; font-weight: bold;">💰 Wallet: $<span id="casino-wallet">0</span></span>
+            </div>
+            <div class="content-card" id="casino-game-select">
+                <p style="text-align:center; color:#bdc3c7;">Choose your game:</p>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 10px;">
+                    <button id="btn-blackjack" onclick="startBlackjack()" style="padding: 15px; border-radius: 10px; border: 2px solid #27ae60; background: rgba(39,174,96,0.2); color: #ecf0f1; cursor: pointer; font-size: 1.1em;">🃏 Blackjack</button>
+                    <button id="btn-slots" onclick="startSlots()" style="padding: 15px; border-radius: 10px; border: 2px solid #e67e22; background: rgba(230,126,34,0.2); color: #ecf0f1; cursor: pointer; font-size: 1.1em;">🎰 Slots</button>
+                    <button id="btn-roulette" onclick="startRoulette()" style="padding: 15px; border-radius: 10px; border: 2px solid #e74c3c; background: rgba(231,76,60,0.2); color: #ecf0f1; cursor: pointer; font-size: 1.1em;">🎡 Roulette</button>
+                    <button id="btn-dice" onclick="startDiceGame()" style="padding: 15px; border-radius: 10px; border: 2px solid #3498db; background: rgba(52,152,219,0.2); color: #ecf0f1; cursor: pointer; font-size: 1.1em;">🎲 Dice</button>
+                </div>
             </div>
             <div id="casino-game-area" style="margin-top: 15px;"></div>
             <div class="page-nav">

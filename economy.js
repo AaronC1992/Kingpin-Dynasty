@@ -52,7 +52,7 @@ export const storeItems = [
 export const realEstateProperties = [
     { 
         name: "Abandoned Warehouse", 
-        price: 2500, 
+        price: 50000, 
         type: "hideout", 
         gangCapacity: 3, 
         description: "A run-down warehouse on the edge of town. Perfect for small operations.",
@@ -61,57 +61,57 @@ export const realEstateProperties = [
     },
     { 
         name: "Basement Hideout", 
-        price: 6000, 
+        price: 120000, 
         type: "hideout", 
         gangCapacity: 5, 
         description: "A secure underground hideout with multiple escape routes.",
         power: 60,
-        income: 10
+        income: 500
     },
     { 
         name: "Criminal Safehouse", 
-        price: 12000, 
+        price: 300000, 
         type: "hideout", 
         gangCapacity: 8, 
         description: "A well-equipped safehouse with advanced security and communications.",
         power: 100,
-        income: 25
+        income: 1500
     },
     { 
         name: "Underground Bunker", 
-        price: 25000, 
+        price: 750000, 
         type: "compound", 
         gangCapacity: 15, 
         description: "A fortified underground complex for serious criminal enterprises.",
         power: 180,
-        income: 50
+        income: 5000
     },
     { 
         name: "Criminal Fortress", 
-        price: 50000, 
+        price: 1500000, 
         type: "compound", 
         gangCapacity: 25, 
         description: "An impenetrable fortress that serves as the ultimate criminal headquarters.",
         power: 300,
-        income: 100
+        income: 12000
     },
     { 
         name: "Luxury Penthouse", 
-        price: 80000, 
+        price: 3000000, 
         type: "mansion", 
         gangCapacity: 20, 
         description: "A high-class penthouse that provides legitimacy and luxury for your operations.",
         power: 250,
-        income: 150
+        income: 20000
     },
     { 
         name: "Private Island", 
-        price: 200000, 
+        price: 8000000, 
         type: "island", 
         gangCapacity: 50, 
         description: "Your own private island - the ultimate symbol of criminal success.",
         power: 500,
-        income: 300
+        income: 50000
     }
 ];
 

@@ -307,26 +307,26 @@ export function startEnergyRegeneration() {
 export const skillTreeDefinitions = {
   stealth: {
     name: "Stealth Mastery",
-    icon: "",
+    icon: "🕵️",
     color: "#9b59b6",
     branches: {
       infiltration: {
         name: "Infiltration",
-        icon: "",
+        icon: "🔓",
         description: "Master the art of breaking into secured locations",
         maxLevel: 10,
         benefits: level => `+${level * 5}% success on stealth jobs, +${level * 2}% lockpicking success`
       },
       escape: {
         name: "Escape Artist",
-        icon: "",
+        icon: "💨",
         description: "Become a master of getting out of sticky situations",
         maxLevel: 10,
         benefits: level => `+${level * 3}% breakout success, -${level * 2}% arrest chance`
       },
       surveillance: {
         name: "Surveillance",
-        icon: "",
+        icon: "👁️",
         description: "Gather intel and stay ahead of enemies",
         maxLevel: 10,
         benefits: level => `+${level * 4}% mission intel, +${level}% critical hit chance`
@@ -335,26 +335,26 @@ export const skillTreeDefinitions = {
   },
   violence: {
     name: "Combat Prowess",
-    icon: "",
+    icon: "⚔️",
     color: "#8b0000",
     branches: {
       firearms: {
         name: "Firearms",
-        icon: "",
+        icon: "🔫",
         description: "Master the use of guns and ranged weapons",
         maxLevel: 10,
         benefits: level => `+${level * 6}% combat job success, +${level * 3}% headshot chance`
       },
       melee: {
         name: "Melee Combat",
-        icon: "",
+        icon: "👊",
         description: "Excel in hand-to-hand combat situations",
         maxLevel: 10,
         benefits: level => `+${level * 4}% unarmed damage, +${level * 2}% disarm chance`
       },
       intimidation: {
         name: "Intimidation",
-        icon: "",
+        icon: "😈",
         description: "Use fear as your weapon",
         maxLevel: 10,
         benefits: level => `+${level * 5}% extortion success, +${level * 3}% reputation gain`
@@ -363,26 +363,26 @@ export const skillTreeDefinitions = {
   },
   charisma: {
     name: "Social Influence",
-    icon: "",
+    icon: "🗣️",
     color: "#c0a062",
     branches: {
       negotiation: {
         name: "Negotiation",
-        icon: "",
+        icon: "🤝",
         description: "Secure better deals and prices",
         maxLevel: 10,
         benefits: level => `+${level * 3}% better prices, +${level * 2}% bribe success`
       },
       leadership: {
         name: "Leadership",
-        icon: "",
+        icon: "👑",
         description: "Command respect and loyalty from your gang",
         maxLevel: 10,
         benefits: level => `+${level * 5}% gang loyalty, +${level}% gang member capacity`
       },
       manipulation: {
         name: "Manipulation",
-        icon: "",
+        icon: "🎭",
         description: "Control others through psychological tactics",
         maxLevel: 10,
         benefits: level => `+${level * 4}% information extraction, +${level * 2}% defection resistance`
@@ -391,26 +391,26 @@ export const skillTreeDefinitions = {
   },
   intelligence: {
     name: "Mental Acuity",
-    icon: "",
+    icon: "🧠",
     color: "#c0a062",
     branches: {
       hacking: {
         name: "Hacking",
-        icon: "",
+        icon: "💻",
         description: "Master digital infiltration and cyber warfare",
         maxLevel: 10,
         benefits: level => `+${level * 7}% hacking success, +${level * 3}% digital heist rewards`
       },
       planning: {
         name: "Strategic Planning",
-        icon: "",
+        icon: "📋",
         description: "Perfect preparation prevents poor performance",
         maxLevel: 10,
         benefits: level => `+${level * 4}% mission success, +${level * 2}% backup plan chance`
       },
       forensics: {
         name: "Forensics",
-        icon: "",
+        icon: "🔬",
         description: "Clean up evidence and avoid detection",
         maxLevel: 10,
         benefits: level => `+${level * 5}% evidence cleanup, -${level * 3}% investigation heat`
@@ -419,26 +419,26 @@ export const skillTreeDefinitions = {
   },
   luck: {
     name: "Fortune's Favor",
-    icon: "",
+    icon: "🍀",
     color: "#f39c12",
     branches: {
       gambling: {
         name: "Gambling",
-        icon: "",
+        icon: "🎰",
         description: "Turn the odds in your favor",
         maxLevel: 10,
         benefits: level => `+${level * 6}% casino winnings, +${level * 2}% jackpot chance`
       },
       fortune: {
         name: "Fortune",
-        icon: "",
+        icon: "🌟",
         description: "Improve random events and discoveries",
         maxLevel: 10,
         benefits: level => `+${level * 4}% positive events, +${level * 3}% rare item finds`
       },
       serendipity: {
         name: "Serendipity",
-        icon: "",
+        icon: "✨",
         description: "Find unexpected opportunities",
         maxLevel: 10,
         benefits: level => `+${level * 5}% bonus opportunities, +${level * 2}% special job unlocks`
@@ -447,26 +447,26 @@ export const skillTreeDefinitions = {
   },
   endurance: {
     name: "Physical Resilience",
-    icon: "",
+    icon: "💪",
     color: "#1abc9c",
     branches: {
       stamina: {
         name: "Stamina",
-        icon: "",
+        icon: "🏃",
         description: "Perform longer operations without fatigue",
         maxLevel: 10,
         benefits: level => `+${level * 3} max energy, -${level * 2}% energy costs`
       },
       recovery: {
         name: "Recovery",
-        icon: "",
+        icon: "❤️‍🩹",
         description: "Heal faster and recover energy more quickly",
         maxLevel: 10,
         benefits: level => `+${level * 5}% healing rate, +${level * 3}% energy regen`
       },
       resistance: {
         name: "Resistance",
-        icon: "",
+        icon: "🛡️",
         description: "Resist drugs, poisons, and environmental hazards",
         maxLevel: 10,
         benefits: level => `+${level * 4}% poison resistance, +${level * 3}% drug tolerance`
@@ -480,14 +480,14 @@ export const availablePerks = {
   // Stealth-based perks
   shadowWalker: {
     name: "Shadow Walker",
-    icon: "",
+    icon: "🌑",
     description: "Your stealth expertise is legendary",
     requirements: { playstyle: "stealthyJobs", count: 25, skills: { stealth: 15 } },
     effects: "25% chance to avoid all negative consequences from failed stealth jobs"
   },
   ghostProtocol: {
     name: "Ghost Protocol",
-    icon: "",
+    icon: "👻",
     description: "You leave no trace behind",
     requirements: { playstyle: "stealthyJobs", count: 50, skillTree: "stealth.surveillance", level: 5 },
     effects: "Automatically clean up evidence after jobs, reducing heat generation by 50%"
@@ -496,14 +496,14 @@ export const availablePerks = {
   // Violence-based perks
   fearMonger: {
     name: "Fear Monger",
-    icon: "",
+    icon: "😱",
     description: "Your reputation precedes you",
     requirements: { playstyle: "violentJobs", count: 25, skills: { violence: 15 } },
     effects: "Intimidation attempts have 30% higher success rate, enemies may flee before combat"
   },
   warMachine: {
     name: "War Machine",
-    icon: "",
+    icon: "💣",
     description: "Violence is your language",
     requirements: { playstyle: "violentJobs", count: 50, skillTree: "violence.firearms", level: 7 },
     effects: "Combat jobs pay 50% more, but attract 25% more police attention"
@@ -512,14 +512,14 @@ export const availablePerks = {
   // Charisma-based perks
   silverTongue: {
     name: "Silver Tongue",
-    icon: "",
+    icon: "👄",
     description: "You could sell ice to an eskimo",
     requirements: { playstyle: "diplomaticActions", count: 30, skills: { charisma: 18 } },
     effects: "All negotiation attempts automatically succeed on first try"
   },
   kingmaker: {
     name: "Kingmaker",
-    icon: "",
+    icon: "👑",
     description: "Leaders are made, not born",
     requirements: { playstyle: "diplomaticActions", count: 45, skillTree: "charisma.leadership", level: 8 },
     effects: "Gang members gain experience 100% faster, loyalty never decreases"
@@ -528,14 +528,14 @@ export const availablePerks = {
   // Intelligence-based perks
   mastermind: {
     name: "Mastermind",
-    icon: "",
+    icon: "🧪",
     description: "Always three steps ahead",
     requirements: { playstyle: "hackingAttempts", count: 20, skills: { intelligence: 20 } },
     effects: "25% chance for jobs to succeed automatically without risk"
   },
   digitalGod: {
     name: "Digital God",
-    icon: "",
+    icon: "🔱",
     description: "The internet bends to your will",
     requirements: { playstyle: "hackingAttempts", count: 40, skillTree: "intelligence.hacking", level: 9 },
     effects: "Can hack any system for massive payouts, but creates digital traces"
@@ -544,7 +544,7 @@ export const availablePerks = {
   // Luck-based perks
   fortuneSon: {
     name: "Fortune's Son",
-    icon: "",
+    icon: "🌟",
     description: "Lady Luck is your mistress",
     requirements: { playstyle: "gamblingWins", count: 15, skills: { luck: 12 } },
     effects: "Random events are always positive, critical failures become critical successes"
@@ -553,7 +553,7 @@ export const availablePerks = {
   // Mentorship perks
   masterTeacher: {
     name: "Master Teacher",
-    icon: "",
+    icon: "🎓",
     description: "Knowledge shared is power multiplied",
     requirements: { playstyle: "mentoringSessions", count: 10, mentors: 3 },
     effects: "Can teach skills to gang members, all skill gains increased by 25%"

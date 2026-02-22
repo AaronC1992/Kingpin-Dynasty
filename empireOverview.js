@@ -7,6 +7,7 @@
 
 import { player } from './player.js';
 import { crimeFamilies } from './factions.js';
+import { businessTypes } from './economy.js';
 
 export function showEmpireOverview() {
     // Create modal container
@@ -84,15 +85,46 @@ export function showEmpireOverview() {
 }
 
 function calculateDailyIncome() {
-    // Calculate estimated daily income from territories and faction bonuses
     let income = 0;
+
     // Territory income: $100 per block controlled
     income += (player.territory || 0) * 100;
+
+    // Business income (legitimate + illegal)
+    if (player.businesses && player.businesses.length > 0) {
+        player.businesses.forEach(business => {
+            const bt = businessTypes.find(t => t.id === business.type);
+            if (bt) {
+                const dailyIncome = Math.floor(bt.baseIncome * Math.pow(bt.incomeMultiplier, (business.level || 1) - 1));
+                income += dailyIncome;
+            }
+        });
+    }
+
+    // Protection racket income
+    if (player.protectionRackets && player.protectionRackets.length > 0) {
+        player.protectionRackets.forEach(racket => {
+            income += racket.weeklyIncome ? Math.floor(racket.weeklyIncome / 7) : 0;
+        });
+    }
+
+    // Gang tribute income (territory-based passive income)
+    if (player.territoryIncome) {
+        income += Math.floor(player.territoryIncome / 7); // Weekly → daily
+    }
+
     // Torrino Family passive: 5% daily interest on cash holdings
-    if (player.missions.factionReputation.torrino >= 10) {
+    if (player.missions && player.missions.factionReputation && player.missions.factionReputation.torrino >= 10) {
         income += Math.floor(player.money * 0.05);
     }
-    // TODO: Add business income, protection rackets, etc.
+
+    // Real estate passive income
+    if (player.realEstate && player.realEstate.ownedProperties) {
+        player.realEstate.ownedProperties.forEach(prop => {
+            income += prop.income || 0;
+        });
+    }
+
     return income;
 }
 

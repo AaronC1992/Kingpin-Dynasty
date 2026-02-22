@@ -23,6 +23,10 @@ export const storyCampaigns = {
                     { type: "earn_money", target: 500, current: 0, text: "Earn $500" }
                 ],
                 rewards: { money: 5000, experience: 100, reputation: 5 },
+                dialogue: {
+                    intro: "Every empire starts with a single step. The streets are watching — show them what you're made of.",
+                    success: "Not bad, kid. You've got guts. But guts alone won't build an empire."
+                },
                 nextChapter: 1
             },
             {
@@ -33,6 +37,10 @@ export const storyCampaigns = {
                     { type: "complete_faction_mission", target: 1, current: 0, text: "Complete 1 faction mission" }
                 ],
                 rewards: { money: 25000, experience: 200, reputation: 15 },
+                dialogue: {
+                    intro: "You can't do this alone. Every boss needs soldiers, and every soldier needs a reason to follow.",
+                    success: "Word on the street is you're putting together a crew. People are starting to pay attention."
+                },
                 nextChapter: 2
             },
             {
@@ -43,6 +51,10 @@ export const storyCampaigns = {
                     { type: "win_boss_battle", target: 1, current: 0, text: "Defeat a rival boss" }
                 ],
                 rewards: { money: 100000, experience: 500, reputation: 30 },
+                dialogue: {
+                    intro: "Lines on a map mean nothing without blood and money behind them. Time to carve out your slice of the city.",
+                    success: "Three blocks under your flag. A rival boss sent running. You're not just a player anymore — you're a threat."
+                },
                 nextChapter: 3
             },
             {
@@ -53,7 +65,164 @@ export const storyCampaigns = {
                     { type: "own_properties", target: 3, current: 0, text: "Own 3 properties" }
                 ],
                 rewards: { money: 500000, experience: 1000, reputation: 50 },
+                dialogue: {
+                    intro: "Reputation. Property. Power. The three pillars of any criminal dynasty. Time to build yours.",
+                    success: "Look at you — properties across the city, a name that opens doors and closes caskets. But this is just the beginning..."
+                },
                 nextChapter: null // Final chapter
+            }
+        ]
+    },
+
+    empireOfShadows: {
+        id: "empireOfShadows",
+        name: "Empire of Shadows",
+        description: "Build a criminal empire that operates from every shadow in the city",
+        currentChapter: 0,
+        unlocked: false,
+        unlockRequirements: { reputation: 50, completedCampaign: "risingThroughRanks" },
+        chapters: [
+            {
+                title: "The Laundry Problem",
+                description: "Your money is dirty and the feds are sniffing around. Time to go legitimate — on paper.",
+                objectives: [
+                    { type: "own_businesses", target: 2, current: 0, text: "Own 2 businesses" },
+                    { type: "launder_money", target: 100000, current: 0, text: "Launder $100,000" }
+                ],
+                rewards: { money: 250000, experience: 400, reputation: 20 },
+                dialogue: {
+                    intro: "\"Money's no good if you can't spend it,\" your accountant mutters, sliding a folder across the desk. \"The IRS has questions. We need fronts — and we need them yesterday.\"",
+                    success: "The books are clean. The businesses look legit. But your accountant's nervous smile tells you this is a tightrope walk.",
+                    choice: {
+                        prompt: "Your accountant suggests two approaches to the laundering operation:",
+                        options: [
+                            { text: "🏪 Go slow and careful — Small amounts through multiple businesses (Safer, less suspicion)", effect: "suspicion_decrease", value: -5 },
+                            { text: "💰 Push it all through fast — Maximum throughput, higher risk (More money, more heat)", effect: "money_bonus", value: 100000 }
+                        ]
+                    }
+                },
+                nextChapter: 1
+            },
+            {
+                title: "Rats in the Walls",
+                description: "Someone in your organization is feeding information to the police.",
+                objectives: [
+                    { type: "reach_level", target: 15, current: 0, text: "Reach level 15" },
+                    { type: "recruit_members", target: 8, current: 0, text: "Have 8 gang members" }
+                ],
+                rewards: { money: 500000, experience: 600, reputation: 25 },
+                dialogue: {
+                    intro: "\"Boss, we got a problem.\" Your lieutenant's face is grim. \"Two of our stash houses got raided last night. Same time. That ain't coincidence — someone's talking.\"",
+                    success: "The rat is found face-down in the river. Your crew tightens ranks. Trust is earned in blood now.",
+                    choice: {
+                        prompt: "You've identified the informant. How do you handle it?",
+                        options: [
+                            { text: "🔪 Make an example — Let everyone see what happens to rats (+Intimidation, +Suspicion)", effect: "intimidation_bonus", value: 10 },
+                            { text: "🤫 Quiet disappearance — No body, no questions, no drama (Safer, cleaner)", effect: "suspicion_decrease", value: -10 }
+                        ]
+                    }
+                },
+                nextChapter: 2
+            },
+            {
+                title: "The Five Families Summit",
+                description: "The crime families are meeting to divide the city. You need a seat at that table.",
+                objectives: [
+                    { type: "reach_reputation", target: 100, current: 0, text: "Reach 100 reputation" },
+                    { type: "complete_faction_mission", target: 5, current: 0, text: "Complete 5 faction missions" },
+                    { type: "control_territory", target: 5, current: 0, text: "Control 5 territories" }
+                ],
+                rewards: { money: 2000000, experience: 1500, reputation: 50 },
+                dialogue: {
+                    intro: "An unmarked envelope arrives at your safehouse. Inside: a gold-embossed card with a time, a place, and five words — \"Your presence is required. Come alone.\"",
+                    success: "You walk out of the summit as one of the five. The other bosses eye you with a mix of respect and calculation. Welcome to the big leagues.",
+                    choice: {
+                        prompt: "At the summit, you must choose your alliance carefully:",
+                        options: [
+                            { text: "🤝 Ally with the Torrinos — Old money, old power, old loyalty (+Torrino Rep)", effect: "faction_rep", value: { torrino: 25 } },
+                            { text: "🐻 Side with the Kozlovs — Brutal efficiency, expanding fast (+Kozlov Rep)", effect: "faction_rep", value: { kozlov: 25 } },
+                            { text: "🐉 Join the Chen network — Technology and global reach (+Chen Rep)", effect: "faction_rep", value: { chen: 25 } }
+                        ]
+                    }
+                },
+                nextChapter: 3
+            },
+            {
+                title: "Shadow King",
+                description: "Control the city from the shadows. True power is invisible.",
+                objectives: [
+                    { type: "own_properties", target: 5, current: 0, text: "Own 5 properties" },
+                    { type: "own_businesses", target: 5, current: 0, text: "Own 5 businesses" },
+                    { type: "earn_money", target: 5000000, current: 0, text: "Accumulate $5,000,000" }
+                ],
+                rewards: { money: 5000000, experience: 3000, reputation: 75, title: "Shadow King" },
+                dialogue: {
+                    intro: "\"They don't even know your name,\" your advisor whispers. \"The mayor dances on your strings. The police chief takes your calls. And yet — no one can touch you.\"",
+                    success: "The city breathes because you allow it. Every deal, every dollar, every decision flows through your invisible hand. You are the Shadow King."
+                },
+                nextChapter: null
+            }
+        ]
+    },
+
+    theDonsGambit: {
+        id: "theDonsGambit",
+        name: "The Don's Gambit",
+        description: "The ultimate power play — take the throne or lose everything",
+        currentChapter: 0,
+        unlocked: false,
+        unlockRequirements: { reputation: 120, completedCampaign: "empireOfShadows" },
+        chapters: [
+            {
+                title: "The Old Guard Falls",
+                description: "The current Don is dying. Every family smells blood in the water.",
+                objectives: [
+                    { type: "win_boss_battle", target: 2, current: 0, text: "Defeat 2 rival bosses" },
+                    { type: "reach_reputation", target: 150, current: 0, text: "Reach 150 reputation" }
+                ],
+                rewards: { money: 3000000, experience: 2000, reputation: 40 },
+                dialogue: {
+                    intro: "\"Don Castellano is on his deathbed,\" your consigliere informs you. \"Every family is positioning. The Torrinos think it's their birthright. The Kozlovs are sharpening knives. And the Chen Triad... they're already three moves ahead.\"",
+                    success: "Two rival bosses lie broken. The remaining families whisper your name with fear and respect."
+                },
+                nextChapter: 1
+            },
+            {
+                title: "Blood Money",
+                description: "Fund a war chest that will make the other families think twice about opposing you.",
+                objectives: [
+                    { type: "earn_money", target: 20000000, current: 0, text: "Accumulate $20,000,000" },
+                    { type: "own_businesses", target: 8, current: 0, text: "Own 8 businesses" },
+                    { type: "launder_money", target: 5000000, current: 0, text: "Launder $5,000,000" }
+                ],
+                rewards: { money: 10000000, experience: 3000, reputation: 50 },
+                dialogue: {
+                    intro: "\"Wars are won with money before they're won with bullets,\" your war advisor says, spreading financial reports across the table. \"We need a chest deep enough to drown our enemies in.\"",
+                    success: "Your war chest bulges. Mercenaries answer your calls. Politicians pocket your envelopes. The stage is set.",
+                    choice: {
+                        prompt: "With your war chest ready, how do you approach the other families?",
+                        options: [
+                            { text: "💰 Buy loyalty — Bribe key lieutenants to switch sides (Expensive but bloodless)", effect: "money_cost", value: -5000000 },
+                            { text: "⚔️ Show strength — Launch raids on rival operations (Free but increases heat)", effect: "suspicion_increase", value: 15 }
+                        ]
+                    }
+                },
+                nextChapter: 2
+            },
+            {
+                title: "The Coronation",
+                description: "The final power play. One will sit on the throne. The rest will kneel — or die.",
+                objectives: [
+                    { type: "control_territory", target: 10, current: 0, text: "Control 10 territories" },
+                    { type: "reach_reputation", target: 200, current: 0, text: "Reach 200 reputation" },
+                    { type: "win_boss_battle", target: 3, current: 0, text: "Defeat 3 total bosses" }
+                ],
+                rewards: { money: 50000000, experience: 10000, reputation: 100, title: "The Don" },
+                dialogue: {
+                    intro: "\"It's time,\" you say, standing at the window overlooking the city skyline. Below, your empire stretches to the horizon. Every light, every street, every soul — yours to command. The final meeting is tonight. Only one walks out as Don.\"",
+                    success: "They kneel. Every family, every boss, every soldier. The ring is kissed, the oath is sworn. You are The Don — and from dusk to dawn, this city answers to you."
+                },
+                nextChapter: null
             }
         ]
     }
@@ -92,7 +261,7 @@ export const factionMissions = {
         },
         {
             id: "torrino_2",
-            name: "Intimidate Rival Business",
+            name: "Intimidate Ritual Business",
             description: "A competing restaurant is cutting into family profits. Make them reconsider their location.",
             payout: [500000, 1000000],
             risk: "high",
@@ -103,6 +272,41 @@ export const factionMissions = {
             factionRep: 10,
             unlocked: false,
             story: "Old-school methods for old-school problems. Sometimes business negotiations require... persuasion."
+        },
+        {
+            id: "torrino_3",
+            name: "The Consigliere's Favor",
+            description: "Don Torrino's advisor needs a personal matter handled. A judge's family is being... difficult about a court case.",
+            payout: [800000, 1500000],
+            risk: "high",
+            jailChance: 35,
+            energyCost: 25,
+            requiredItems: ["Luxury Automobile"],
+            reputation: 40,
+            factionRep: 15,
+            unlocked: false,
+            story: "\"The judge rules tomorrow. We need him to remember who his friends are,\" the Consigliere says with a thin smile. \"Persuade the family. No blood — we're not animals.\""
+        },
+        {
+            id: "torrino_4",
+            name: "Sunday Dinner",
+            description: "The Don has invited you to the family's weekly dinner. But there's a test hidden in the hospitality.",
+            payout: [1200000, 2000000],
+            risk: "medium",
+            jailChance: 10,
+            energyCost: 15,
+            requiredItems: [],
+            reputation: 60,
+            factionRep: 20,
+            unlocked: false,
+            story: "\"You'll sit at our table. You'll eat our food. You'll answer our questions.\" The invitation is silk over steel. One wrong word and this dinner becomes your last.",
+            dialogue: {
+                intro: "The Torrino estate. White tablecloths, expensive wine, the smell of fresh pasta. Don Torrino sits at the head, watching you with eyes that have sentenced men to death.",
+                choices: [
+                    { text: "Be humble — respect the old ways", effect: "factionRep", value: 5 },
+                    { text: "Be bold — show you're an equal, not a servant", effect: "reputation", value: 10 }
+                ]
+            }
         }
     ],
     kozlov: [
@@ -147,6 +351,41 @@ export const factionMissions = {
             factionRep: 15,
             unlocked: false,
             story: "Big risks, bigger rewards. The Kozlovs trust only their most proven associates with this operation."
+        },
+        {
+            id: "kozlov_3",
+            name: "The Warehouse Job",
+            description: "Raid a rival gang's weapons cache hidden in an abandoned warehouse. Take everything.",
+            payout: [1000000, 1800000],
+            risk: "very high",
+            jailChance: 40,
+            energyCost: 30,
+            requiredItems: ["Tommy Gun", "Bulletproof Vest", "Bullets"],
+            reputation: 35,
+            factionRep: 12,
+            unlocked: false,
+            story: "\"We know where the Colombians keep their guns,\" Viktor growls, spreading a blueprint on the table. \"We go in hard, we go in fast, and we take everything that isn't bolted to the floor.\""
+        },
+        {
+            id: "kozlov_4",
+            name: "Red Winter",
+            description: "The Bratva's Moscow contact has gone silent. Find out what happened — and clean up the mess.",
+            payout: [2000000, 3500000],
+            risk: "extreme",
+            jailChance: 50,
+            energyCost: 40,
+            requiredItems: ["Private Airplane", "Bulletproof Vest"],
+            reputation: 70,
+            factionRep: 20,
+            unlocked: false,
+            story: "\"Dmitri hasn't called in three days,\" Viktor's face is stone. \"Either he's dead or he's turned. Either way, someone needs to visit Moscow.\"",
+            dialogue: {
+                intro: "A freezing warehouse in the industrial district. Viktor Kozlov stares at a map with red pins marking disappeared associates.",
+                choices: [
+                    { text: "Go in guns blazing — Bratva style", effect: "power", value: 5 },
+                    { text: "Investigate quietly first — gather intel", effect: "intelligence", value: 5 }
+                ]
+            }
         }
     ],
     chen: [
@@ -177,6 +416,55 @@ export const factionMissions = {
             factionRep: 10,
             unlocked: true,
             story: "The Chen Triad values intelligence and precision. Show them you can handle sophisticated operations."
+        },
+        {
+            id: "chen_2",
+            name: "Ghost in the Machine",
+            description: "Hack into the city's banking network and reroute funds through untraceable shell companies.",
+            payout: [900000, 1600000],
+            risk: "medium",
+            jailChance: 20,
+            energyCost: 18,
+            requiredItems: [],
+            reputation: 25,
+            factionRep: 8,
+            unlocked: false,
+            story: "\"The money never existed,\" Wei Chen says, adjusting his glasses. \"At least, that's what the banks will think. We just need someone to run the algorithm while our team handles the physical infiltration.\""
+        },
+        {
+            id: "chen_3",
+            name: "Silk Road 2.0",
+            description: "Establish a dark web marketplace for the Triad's international operations. Handle the logistics.",
+            payout: [1500000, 2800000],
+            risk: "high",
+            jailChance: 30,
+            energyCost: 25,
+            requiredItems: ["Laptop"],
+            reputation: 50,
+            factionRep: 15,
+            unlocked: false,
+            story: "The old ways of smuggling are dying. The Chen Triad sees the future: digital, borderless, invisible. They need someone to build the bridge between worlds."
+        },
+        {
+            id: "chen_4",
+            name: "The Dragon's Eye",
+            description: "Steal a legendary jade artifact from a museum vault — the Triad's ancestral treasure, stolen decades ago.",
+            payout: [3000000, 5000000],
+            risk: "extreme",
+            jailChance: 45,
+            energyCost: 35,
+            requiredItems: ["Bulletproof Vest", "Lockpicks"],
+            reputation: 75,
+            factionRep: 25,
+            unlocked: false,
+            story: "\"Our family's honor hangs in a glass case in Room 47,\" Wei says, his usual calm cracking for the first time. \"The Dragon's Eye was taken from us in 1949. It's time it came home.\"",
+            dialogue: {
+                intro: "Wei Chen shows you museum blueprints, security rotation schedules, and a centuries-old painting of the jade artifact. His eyes burn with rare emotion.",
+                choices: [
+                    { text: "Plan a stealth infiltration at night — patience and precision", effect: "stealth", value: 5 },
+                    { text: "Stage a distraction during a gala — chaos is its own kind of cover", effect: "charisma", value: 5 }
+                ]
+            }
         }
     ],
     morales: [
@@ -207,6 +495,55 @@ export const factionMissions = {
             factionRep: 12,
             unlocked: true,
             story: "The cartel's operations must be protected at all costs. Are you ready to defend their interests?"
+        },
+        {
+            id: "morales_2",
+            name: "The Tunnel Project",
+            description: "Oversee construction of a smuggling tunnel beneath the old industrial district.",
+            payout: [1000000, 1800000],
+            risk: "medium",
+            jailChance: 25,
+            energyCost: 20,
+            requiredItems: ["Gasoline"],
+            reputation: 30,
+            factionRep: 10,
+            unlocked: false,
+            story: "\"We need a supply line the feds can't see,\" El Jefe's lieutenant explains, unrolling excavation plans. \"Three hundred meters of tunnel, reinforced, ventilated, with rail. You're overseeing construction.\""
+        },
+        {
+            id: "morales_3",
+            name: "Festival of the Dead",
+            description: "During the annual street festival, the cartel moves its biggest shipment of the year. Ensure it arrives safely.",
+            payout: [2000000, 3500000],
+            risk: "extreme",
+            jailChance: 50,
+            energyCost: 35,
+            requiredItems: ["Tommy Gun", "Bulletproof Vest", "Luxury Automobile"],
+            reputation: 60,
+            factionRep: 18,
+            unlocked: false,
+            story: "\"Día de los Muertos. The whole city celebrates while we move product worth more than this neighborhood,\" El Jefe says, lighting a cigar. \"The DEA expects us to be quiet during the festival. We won't be.\""
+        },
+        {
+            id: "morales_4",
+            name: "El Jefe's Trust",
+            description: "El Jefe has a personal request — his daughter has been kidnapped by a rival cartel. Get her back alive.",
+            payout: [4000000, 6000000],
+            risk: "extreme",
+            jailChance: 55,
+            energyCost: 45,
+            requiredItems: ["Tommy Gun", "Bulletproof Vest", "Bullets"],
+            reputation: 80,
+            factionRep: 30,
+            unlocked: false,
+            story: "El Jefe's voice cracks for the first time you've ever heard. \"They have Isabella. Bring her home, and you are family. Fail, and...\" He doesn't finish the sentence. He doesn't need to.",
+            dialogue: {
+                intro: "A dimly lit study. El Jefe holds a photo of a young woman, his hand trembling. Maps, phone records, and ransom notes cover his desk.",
+                choices: [
+                    { text: "Pay the ransom and ambush the exchange", effect: "money_cost", value: -1000000 },
+                    { text: "Storm the compound — no negotiation with kidnappers", effect: "power", value: 5 }
+                ]
+            }
         }
     ]
 };
@@ -275,6 +612,48 @@ export const territoryMissions = [
             healthLoss: 15
         },
         story: "Rich neighborhoods mean rich targets. But suburban security is tight, and the police response is swift."
+    },
+    {
+        id: "chinatown_expansion",
+        name: "Chinatown Alliance",
+        description: "Negotiate or fight your way into Chinatown's tight-knit criminal ecosystem.",
+        territory: "Chinatown",
+        difficulty: "hard",
+        requiredGangMembers: 7,
+        energyCost: 30,
+        rewards: {
+            money: 3000000,
+            territory: 2,
+            reputation: 20,
+            passive_income: 150000
+        },
+        risks: {
+            jailChance: 40,
+            gangMemberLoss: 20,
+            healthLoss: 25
+        },
+        story: "Chinatown has been Chen territory for decades. To enter, you'll need an invitation — or an army."
+    },
+    {
+        id: "airport_expansion",
+        name: "Airport Corridor",
+        description: "Control the smuggling routes through the international airport's cargo terminals.",
+        territory: "Airport Industrial Zone",
+        difficulty: "extreme",
+        requiredGangMembers: 12,
+        energyCost: 45,
+        rewards: {
+            money: 6000000,
+            territory: 3,
+            reputation: 35,
+            passive_income: 350000
+        },
+        risks: {
+            jailChance: 55,
+            gangMemberLoss: 30,
+            healthLoss: 40
+        },
+        story: "The airport is the gateway to international operations. Control it and you control what comes in and out of this city."
     }
 ];
 
@@ -310,6 +689,11 @@ export const bossBattles = [
             healthLoss: 50
         },
         story: "Santos has been muscling in on your territory for months. It's time to send a message that echoes through every street corner.",
+        dialogue: {
+            intro: "\"You think you can just walk into MY city?\" Santos snarls, gold chains glinting. A dozen armed men flank him in the abandoned warehouse.",
+            victory: "Santos crashes to the ground, his empire shattering with him. His men scatter like roaches when the lights come on.",
+            defeat: "Santos' men drag you out, bloody but alive. \"Tell your boss,\" Santos laughs, \"this city has a king. And it ain't him.\""
+        },
         unlocked: false
     },
     {
@@ -341,6 +725,49 @@ export const bossBattles = [
             healthLoss: 40
         },
         story: "Morrison has been playing both sides for years. Now she's gotten greedy and threatens to bring down your entire operation.",
+        dialogue: {
+            intro: "\"You should have kept paying,\" Morrison says from behind her desk, badge gleaming. \"Now I have enough evidence to bury you. Unless... we renegotiate.\"",
+            victory: "The evidence burns. Morrison \"retires\" to a beach house you bought her. A new, more pliable chief takes her place.",
+            defeat: "Sirens wail as Morrison's officers close in. She stands at the window, smiling. \"I told you — you can't fight City Hall.\""
+        },
+        unlocked: false
+    },
+    {
+        id: "shadow_boss_phantom",
+        name: "The Phantom",
+        description: "A mysterious crime lord has been manipulating all the families from the shadows. Unmask and eliminate them.",
+        boss: {
+            name: "The Phantom",
+            power: 300,
+            health: 350,
+            gang_size: 30,
+            special_abilities: ["Shadow Network", "Double Agent", "Escape Routes"]
+        },
+        requirements: {
+            minPower: 200,
+            minGangMembers: 15,
+            minReputation: 100
+        },
+        energyCost: 60,
+        rewards: {
+            money: 25000000,
+            reputation: 75,
+            territory: 5,
+            experience: 2000,
+            unique_item: "The Phantom's Mask",
+            title: "Ghost Killer"
+        },
+        risks: {
+            jailChance: 75,
+            gangMemberLoss: 40,
+            healthLoss: 60
+        },
+        story: "For years, someone has been pulling strings — starting wars between families, manipulating the police, controlling judges. They call them The Phantom. No one has ever seen their face and lived.",
+        dialogue: {
+            intro: "A distorted voice crackles through the speaker: \"You've been entertaining, I'll give you that. But you're a pawn who thinks he's a king. Allow me to correct that misconception.\"",
+            victory: "The mask falls away revealing a face you recognize — someone you trusted. The betrayal stings, but their empire is now yours. Every shadow in this city answers to you.",
+            defeat: "\"Disappointing,\" the voice sighs as your vision fades. \"I expected more from someone with your reputation. Sleep now. When you wake, you'll find your empire... redistributed.\""
+        },
         unlocked: false
     }
 ];
@@ -348,6 +775,7 @@ export const bossBattles = [
 // Mission Progress Tracking
 export const missionProgress = {
     activeCampaign: "risingThroughRanks",
+    completedCampaigns: [],
     completedMissions: [],
     availableFactionMissions: {},
     unlockedTerritoryMissions: ["suburbs_expansion"],
@@ -359,3 +787,52 @@ export const missionProgress = {
         morales: 0
     }
 };
+
+// Helper: Check if a campaign should be unlocked based on player state
+export function checkCampaignUnlocks(playerState) {
+    const unlocked = [];
+    for (const [key, campaign] of Object.entries(storyCampaigns)) {
+        if (campaign.unlocked) continue;
+        if (!campaign.unlockRequirements) continue;
+        const req = campaign.unlockRequirements;
+        let meetsRequirements = true;
+        if (req.reputation && playerState.reputation < req.reputation) meetsRequirements = false;
+        if (req.completedCampaign && !(missionProgress.completedCampaigns || []).includes(req.completedCampaign)) meetsRequirements = false;
+        if (meetsRequirements) {
+            campaign.unlocked = true;
+            unlocked.push(campaign.name);
+        }
+    }
+    return unlocked;
+}
+
+// Helper: Check if faction missions should be unlocked based on faction rep
+export function checkFactionMissionUnlocks(factionName, factionRep) {
+    const missions = factionMissions[factionName];
+    if (!missions) return [];
+    const unlocked = [];
+    for (const mission of missions) {
+        if (mission.unlocked) continue;
+        if (factionRep >= mission.reputation) {
+            mission.unlocked = true;
+            unlocked.push(mission.name);
+        }
+    }
+    return unlocked;
+}
+
+// Helper: Check if boss battles should be unlocked based on player state
+export function checkBossBattleUnlocks(playerState) {
+    const unlocked = [];
+    for (const boss of bossBattles) {
+        if (boss.unlocked) continue;
+        const req = boss.requirements;
+        if (playerState.power >= req.minPower && 
+            (playerState.gangMembers || []).length >= req.minGangMembers && 
+            playerState.reputation >= req.minReputation) {
+            boss.unlocked = true;
+            unlocked.push(boss.name);
+        }
+    }
+    return unlocked;
+}
