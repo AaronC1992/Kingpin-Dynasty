@@ -1711,10 +1711,6 @@ function updateWorldState() {
     onlineWorldState.lastUpdate = new Date().toLocaleTimeString();
     updateConnectionStatus();
 }
-    if (Math.random() < 0.1) {
-        addWorldEvent(generateRandomWorldEvent());
-    }
-}
 
 // Show welcome message when connected
 function showWelcomeMessage() {
