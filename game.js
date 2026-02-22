@@ -4600,6 +4600,8 @@ function updateUI() {
 
   // Update right panel
   updateRightPanel();
+  updateRightPanelExtras();
+  updateQuickActions();
 
   if (player.inJail) {
     showJailScreen(); // Ensure jail screen is shown when in jail
@@ -4768,7 +4770,32 @@ function updateRightPanel() {
   if (document.getElementById("energy-text")) {
     document.getElementById("energy-text").innerText = `${player.energy}/${player.maxEnergy}`;
   }
-  
+}
+
+// Quick Actions panel — respects the progressive unlock system
+const quickActionIds = ['jobs', 'store', 'missions', 'gang', 'businesses', 'territory', 'casino', 'skills'];
+
+function updateQuickActions() {
+  const container = document.getElementById('quick-actions-list');
+  if (!container) return;
+
+  let html = `<button onclick="goBackToMainMenu()" class="quick-btn main-menu-btn">Command Center</button>`;
+
+  quickActionIds.forEach(id => {
+    const item = menuUnlockConfig.find(m => m.id === id);
+    if (item && isMenuItemUnlocked(item)) {
+      html += `<button onclick="${item.fn}" class="quick-btn">${item.label}</button>`;
+    }
+  });
+
+  html += `<button onclick="saveGame()" class="quick-btn save-btn">Save Records</button>`;
+
+  container.innerHTML = html;
+}
+window.updateQuickActions = updateQuickActions;
+
+// Update remaining right-panel elements (energy timer, quick buy labels, etc.)
+function updateRightPanelExtras() {
   // Update energy timer
   if (document.getElementById("energy-timer")) {
     if (player.energy < player.maxEnergy && !player.inJail) {

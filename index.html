@@ -875,24 +875,9 @@
         <div id="right-panel">
             <div id="quick-actions">
                 <h3>Quick Actions</h3>
-                <button onclick="goBackToMainMenu()" class="quick-btn main-menu-btn">
-                    Command Center
-                </button>
-                <button onclick="showJobs()" class="quick-btn">
-                    Jobs
-                </button>
-                <button onclick="showMissions()" class="quick-btn">
-                    Operations
-                </button>
-                <button onclick="showStore()" class="quick-btn">
-                    Black Market
-                </button>
-                <button onclick="showCommandCenter()" class="quick-btn">
-                    Command Center
-                </button>
-                <button onclick="saveGame()" class="quick-btn save-btn">
-                    Save Records
-                </button>
+                <div id="quick-actions-list">
+                    <!-- Populated dynamically by updateQuickActions() -->
+                </div>
             </div>
             
             <!-- Quick Stats removed -->
