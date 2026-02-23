@@ -1083,8 +1083,8 @@ async function handleServerMessage(message) {
         // ── Phase 1 Territory System ──────────────────────────────────
         case 'territory_spawn_result':
             if (message.success) {
-                player.currentTerritory = message.districtId;
-                logAction(`🏙️ Spawned in ${message.districtId}.`);
+                player.currentTerritory = message.district;
+                logAction(`🏙️ Spawned in ${message.district}.`);
             } else {
                 logAction(`⚠️ Territory spawn failed: ${message.error}`);
             }
@@ -1092,10 +1092,10 @@ async function handleServerMessage(message) {
 
         case 'territory_move_result':
             if (message.success) {
-                player.currentTerritory = message.districtId;
+                player.currentTerritory = message.district;
                 if (typeof message.money === 'number') player.money = message.money;
                 player.lastTerritoryMove = Date.now();
-                logAction(`🏙️ Relocated to ${message.districtId}.`);
+                logAction(`🏙️ Relocated to ${message.district}.`);
                 updateUI();
             } else {
                 // Revert local state on failure
@@ -1116,6 +1116,70 @@ async function handleServerMessage(message) {
             onlineWorldState.territories = message.territories || {};
             break;
 
+        // ── Phase 2: Territory ownership & conquest ────────────────────
+        case 'territory_claim_ownership_result':
+            if (message.success) {
+                if (typeof message.money === 'number') player.money = message.money;
+                onlineWorldState.territories = message.territories || onlineWorldState.territories;
+                logAction(`👑 Claimed ownership of ${message.district}!`);
+                if (window.ui) window.ui.toast(`You now own ${message.district.replace(/_/g, ' ')}! 👑`, 'success');
+                updateUI();
+            } else {
+                logAction(`⚠️ Claim failed: ${message.error}`);
+                if (window.ui) window.ui.toast(message.error || 'Claim failed.', 'error');
+            }
+            break;
+
+        case 'territory_ownership_changed':
+            onlineWorldState.territories = message.territories || onlineWorldState.territories;
+            if (message.method === 'assassination') {
+                addWorldEvent(`🎯 ${message.attacker} seized ${message.seized.join(', ')} from ${message.defender} via assassination!`);
+            } else if (message.method === 'war') {
+                addWorldEvent(`⚔️ ${message.attacker} conquered ${message.seized.join(', ')} from ${message.defender} in a gang war!`);
+            } else {
+                addWorldEvent(`👑 ${message.attacker} claimed ${message.seized.join(', ')}!`);
+            }
+            break;
+
+        case 'territory_war_result':
+            if (message.victory) {
+                onlineWorldState.territories = message.territories || onlineWorldState.territories;
+                logAction(`⚔️ Victory! Conquered ${message.district} from ${message.oldOwner}. Rep +${message.repGain}, lost ${message.gangMembersLost} members, HP -${message.healthDamage}.`);
+                if (typeof message.wantedLevel === 'number') player.wantedLevel = message.wantedLevel;
+                if (typeof message.energy === 'number') player.energy = message.energy;
+                if (typeof message.newHealth === 'number') player.health = message.newHealth;
+            } else {
+                logAction(`⚔️ Defeat! Failed to take ${message.district}. Lost ${message.gangMembersLost} members, HP -${message.healthDamage}.${message.jailed ? ' Arrested!' : ''}`);
+                if (typeof message.wantedLevel === 'number') player.wantedLevel = message.wantedLevel;
+                if (typeof message.energy === 'number') player.energy = message.energy;
+                if (typeof message.newHealth === 'number') player.health = message.newHealth;
+                if (message.jailed) {
+                    player.inJail = true;
+                    player.jailTime = message.jailTime || 0;
+                }
+            }
+            updateUI();
+            break;
+
+        case 'territory_war_defense_lost':
+            onlineWorldState.territories = message.territories || onlineWorldState.territories;
+            logAction(`⚔️ ${message.attackerName} conquered your territory ${message.district}!`);
+            if (window.ui) window.ui.toast(`${message.attackerName} seized ${message.district.replace(/_/g, ' ')} from you! ⚔️`, 'error');
+            break;
+
+        case 'territory_war_defense_held':
+            logAction(`⚔️ ${message.attackerName} attacked your territory ${message.district} but your defenses held!`);
+            if (window.ui) window.ui.toast(`You repelled ${message.attackerName}'s attack on ${message.district.replace(/_/g, ' ')}! 🛡️`, 'success');
+            break;
+
+        case 'territory_tax_income':
+            if (typeof message.amount === 'number') {
+                if (typeof message.newMoney === 'number') player.money = message.newMoney;
+                logAction(`💰 Tax income: $${message.amount.toLocaleString()} from ${message.from} (${message.district.replace(/_/g, ' ')}).`);
+                updateUI();
+            }
+            break;
+
         case 'job_result':
             // SERVER-AUTHORITATIVE job outcome (sent only to requesting client)
             if (message.success) {
@@ -1127,7 +1191,11 @@ async function handleServerMessage(message) {
                 if (message.jailed) player.jailTime = message.jailTime || player.jailTime;
                 // Log outcome
                 const earningsStr = message.earnings ? `+$${message.earnings.toLocaleString()}` : '';
-                logAction(` Job '${message.jobId}' completed ${earningsStr} (Rep +${message.repGain || 0}, Wanted +${message.wantedAdded || 0})`);
+                let taxStr = '';
+                if (message.taxAmount > 0) {
+                    taxStr = ` (Tax: -$${message.taxAmount.toLocaleString()} to ${message.taxOwnerName})`;
+                }
+                logAction(` Job '${message.jobId}' completed ${earningsStr}${taxStr} (Rep +${message.repGain || 0}, Wanted +${message.wantedAdded || 0})`);
                 if (message.jailed) {
                     logAction(` Arrested during job. Jail Time: ${player.jailTime}s`);
                     addWorldEvent(` Arrested during ${message.jobId} job.`);
@@ -3336,9 +3404,19 @@ function handleAssassinationResult(message) {
         window._assassinationCooldownUntil = Date.now() + (message.cooldownSeconds || 600) * 1000;
 
         if (typeof updateUI === 'function') updateUI();
+        // Territory seizure from assassination
+        const seizedTerritories = message.territoriesSeized || [];
+        if (seizedTerritories.length > 0) {
+            onlineWorldState.territories = message.territories || onlineWorldState.territories;
+            logAction(`👑 Seized ${seizedTerritories.join(', ')} from ${message.targetName}!`);
+        }
+
         logAction(`🎯 HIT SUCCESSFUL! Assassinated ${message.targetName} and stole $${(message.stolenAmount || 0).toLocaleString()} (${message.stealPercent}%)! +${message.repGain} rep. Took ${message.healthDamage || 0} damage.${gangLost > 0 ? ` Lost ${gangLost} gang member${gangLost > 1 ? 's' : ''}.` : ''}`);
 
         if (content) {
+            const seizedHTML = seizedTerritories.length > 0
+                ? `<div style="color: #ffd700; margin-top: 10px; font-size: 1.1em;">👑 Seized territories: ${seizedTerritories.map(t => t.replace(/_/g, ' ')).join(', ')}</div>`
+                : '';
             content.innerHTML = `
                 <div style="background: rgba(0,0,0,0.95); padding: 40px; border-radius: 15px; border: 3px solid #2ecc71; text-align: center;">
                     <div style="font-size: 4em; margin-bottom: 15px;">💀</div>
@@ -3353,6 +3431,7 @@ function handleAssassinationResult(message) {
                         <div style="color: #ff6666; margin-top: 4px;">+25 Wanted Level</div>
                         <div style="color: #ff4444; margin-top: 8px;">❤️ -${message.healthDamage || 0} Health (now ${message.newHealth || '?'})</div>
                         ${(message.gangMembersLost || 0) > 0 ? '<div style="color: #ff8800; margin-top: 4px;">💀 Lost ' + message.gangMembersLost + ' gang member' + (message.gangMembersLost > 1 ? 's' : '') + ' in the firefight</div>' : ''}
+                        ${seizedHTML}
                         <div style="color: #888; margin-top: 8px; font-size: 0.85em;">Hit chance was ${message.chance}% | ${message.bulletsUsed} bullets used</div>
                         <div style="color: #ff8800; margin-top: 4px; font-size: 0.85em;">⏳ Next hit available in 10 minutes</div>
                     </div>

@@ -586,6 +586,14 @@ function handleClientMessage(clientId, message, ws) {
             handleTerritoryInfo(clientId, message, ws);
             break;
 
+        case 'territory_claim_ownership':
+            handleTerritoryClaimOwnership(clientId, message);
+            break;
+
+        case 'territory_war':
+            handleTerritoryWar(clientId, message);
+            break;
+
         case 'heist_create':
             handleHeistCreate(clientId, message);
             break;
@@ -975,6 +983,285 @@ function handleTerritoryInfo(clientId, message, ws) {
         type: 'territory_info',
         territories: gameState.territories
     }));
+}
+
+// ==================== PHASE 2: TERRITORY OWNERSHIP CLAIM ====================
+// A player who meets MIN_CLAIM_LEVEL, lives in the district, and whose district
+// has no current owner can claim ownership. Costs money based on district index.
+const CLAIM_COSTS = [10000, 20000, 50000, 40000, 25000, 30000, 80000, 35000];
+const MIN_CLAIM_LVL = 10;
+
+function handleTerritoryClaimOwnership(clientId, message) {
+    const player = gameState.players.get(clientId);
+    const ps = gameState.playerStates.get(clientId);
+    if (!player || !ps) return;
+    const ws = clients.get(clientId);
+    const fail = (err) => { if (ws) ws.send(JSON.stringify({ type: 'territory_claim_ownership_result', success: false, error: err })); };
+
+    const districtId = message.district;
+    if (!districtId || !TERRITORY_IDS.includes(districtId)) return fail('Invalid district.');
+
+    const terr = gameState.territories[districtId];
+    if (!terr) return fail('Territory data missing.');
+    if (terr.owner) return fail(`This district is already owned by ${terr.owner}. Challenge them for control.`);
+
+    // Must live in the district
+    if (player.currentTerritory !== districtId) return fail('You must live in this district to claim it.');
+
+    // Level check
+    if ((player.level || 1) < MIN_CLAIM_LVL) return fail(`You need to be at least level ${MIN_CLAIM_LVL} to claim a territory.`);
+
+    // Cost check
+    const idx = TERRITORY_IDS.indexOf(districtId);
+    const cost = CLAIM_COSTS[idx] || 25000;
+    if ((player.money || 0) < cost) return fail(`Not enough money. Claiming costs $${cost.toLocaleString()}.`);
+
+    // ---- Claim the territory ----
+    player.money -= cost;
+    ps.money = player.money;
+    terr.owner = player.name;
+
+    console.log(`👑 ${player.name} claimed ownership of ${districtId} for $${cost.toLocaleString()}`);
+
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+            type: 'territory_claim_ownership_result',
+            success: true,
+            district: districtId,
+            cost: cost,
+            money: player.money,
+            territories: gameState.territories
+        }));
+    }
+
+    broadcastToAll({
+        type: 'territory_ownership_changed',
+        territories: gameState.territories,
+        attacker: player.name,
+        defender: null,
+        seized: [districtId],
+        method: 'claim'
+    });
+
+    addGlobalChatMessage('System', `👑 ${player.name} claimed ownership of ${districtId.replace(/_/g, ' ')}!`, '#d4af37');
+    broadcastPlayerStates();
+    scheduleWorldSave();
+}
+
+// ==================== PHASE 2: TERRITORY WAR (GANG WAR CONQUEST) ====================
+// A player attacks a district owned by another player. Server-authoritative power comparison.
+// Requires: ≥5 gang members, 40 energy, and target district must have an owner.
+const TERRITORY_WAR_COOLDOWN_MS = 30 * 60 * 1000; // 30 minutes
+const territoryWarCooldowns = new Map();
+
+function handleTerritoryWar(clientId, message) {
+    const attacker = gameState.players.get(clientId);
+    const attackerState = gameState.playerStates.get(clientId);
+    if (!attacker || !attackerState) return;
+    const ws = clients.get(clientId);
+    const fail = (err) => { if (ws) ws.send(JSON.stringify({ type: 'territory_war_result', success: false, error: err })); };
+
+    // Cooldown
+    const lastWar = territoryWarCooldowns.get(clientId) || 0;
+    const now = Date.now();
+    if (now - lastWar < TERRITORY_WAR_COOLDOWN_MS) {
+        const remaining = Math.ceil((TERRITORY_WAR_COOLDOWN_MS - (now - lastWar)) / 60000);
+        return fail(`Your crew needs to regroup. Wait ${remaining} more minute(s).`);
+    }
+
+    const districtId = message.district;
+    if (!districtId || !TERRITORY_IDS.includes(districtId)) return fail('Invalid district.');
+
+    const terr = gameState.territories[districtId];
+    if (!terr) return fail('Territory data missing.');
+    if (!terr.owner) return fail('This district has no owner. Claim it instead.');
+    if (terr.owner === attacker.name) return fail('You already own this district.');
+
+    // Jail check
+    if (attackerState.inJail) return fail('Can\'t wage war from behind bars.');
+
+    // Energy cost: 40
+    const energyCost = 40;
+    if ((attackerState.energy || 0) < energyCost) return fail('Not enough energy (40 required).');
+
+    // Validate client-reported resources (trust minimally, cap values)
+    const gangMembers = Math.max(0, Math.min(message.gangMembers || 0, 100));
+    const attackPower = Math.max(0, Math.min(message.power || 0, 5000));
+    const gangLoyalty = Math.max(0, Math.min(message.gangLoyalty || 100, 200));
+
+    if (gangMembers < 5) return fail('You need at least 5 gang members to wage a territory war.');
+
+    // Deduct energy
+    attackerState.energy = Math.max(0, (attackerState.energy || 100) - energyCost);
+
+    // Set cooldown
+    territoryWarCooldowns.set(clientId, now);
+
+    // ── Calculate attacker power ──
+    // Base: power stat + 10 per gang member + loyalty bonus
+    let attackScore = attackPower + (gangMembers * 10) + Math.floor(gangLoyalty * 0.5);
+    attackScore += Math.floor(Math.random() * 200); // Randomness (0-199)
+
+    // ── Calculate defender power ──
+    // Based on territory defenseRating + owner level/rep (if online)
+    let defenseScore = terr.defenseRating || 100;
+    // Find defender in online players
+    let defenderPlayer = null;
+    let defenderState = null;
+    let defenderId = null;
+    for (const [id, p] of gameState.players.entries()) {
+        if (p.name === terr.owner) {
+            defenderPlayer = p;
+            defenderState = gameState.playerStates.get(id);
+            defenderId = id;
+            break;
+        }
+    }
+    if (defenderPlayer) {
+        defenseScore += (defenderPlayer.level || 1) * 15;
+        defenseScore += Math.floor((defenderPlayer.reputation || 0) * 0.5);
+    } else {
+        // Offline defender — moderate NPC resistance
+        defenseScore += 150;
+    }
+    defenseScore += Math.floor(Math.random() * 200); // Randomness
+
+    const victory = attackScore > defenseScore;
+
+    // ── Gang member casualties (both sides take losses) ──
+    let gangMembersLost = 0;
+    const casualtyRate = victory ? 0.10 : 0.25;
+    for (let i = 0; i < gangMembers; i++) {
+        if (Math.random() < casualtyRate) gangMembersLost++;
+    }
+
+    // Health damage to attacker
+    const healthDamage = victory
+        ? 15 + Math.floor(Math.random() * 21) // 15-35 on win
+        : 25 + Math.floor(Math.random() * 31); // 25-55 on loss
+    attackerState.health = Math.max(1, (attackerState.health || 100) - healthDamage);
+
+    // Wanted level increase
+    attackerState.wantedLevel = Math.min(100, (attackerState.wantedLevel || 0) + (victory ? 20 : 12));
+
+    if (victory) {
+        // Transfer ownership
+        const oldOwner = terr.owner;
+        terr.owner = attacker.name;
+        terr.defenseRating = Math.max(50, (terr.defenseRating || 100) - 20); // Weakened after battle
+
+        // Attacker gains rep
+        const repGain = 15 + Math.floor(Math.random() * 10);
+        attacker.reputation = (attacker.reputation || 0) + repGain;
+        attackerState.reputation = attacker.reputation;
+
+        console.log(`⚔️ TERRITORY WAR: ${attacker.name} conquered ${districtId} from ${oldOwner} (ATK ${attackScore} > DEF ${defenseScore})`);
+
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({
+                type: 'territory_war_result',
+                success: true,
+                victory: true,
+                district: districtId,
+                oldOwner: oldOwner,
+                attackScore: attackScore,
+                defenseScore: defenseScore,
+                repGain: repGain,
+                gangMembersLost: gangMembersLost,
+                healthDamage: healthDamage,
+                newHealth: attackerState.health,
+                wantedLevel: attackerState.wantedLevel,
+                energy: attackerState.energy,
+                territories: gameState.territories
+            }));
+        }
+
+        // Notify defender
+        if (defenderId) {
+            const defWs = clients.get(defenderId);
+            if (defWs && defWs.readyState === WebSocket.OPEN) {
+                defWs.send(JSON.stringify({
+                    type: 'territory_war_defense_lost',
+                    district: districtId,
+                    attackerName: attacker.name,
+                    territories: gameState.territories
+                }));
+            }
+        }
+
+        broadcastToAll({
+            type: 'territory_ownership_changed',
+            territories: gameState.territories,
+            attacker: attacker.name,
+            defender: oldOwner,
+            seized: [districtId],
+            method: 'war'
+        });
+
+        addGlobalChatMessage('System', `⚔️ ${attacker.name} conquered ${districtId.replace(/_/g, ' ')} from ${oldOwner} in a gang war!`, '#8b0000');
+    } else {
+        // Defense holds — territory gets stronger
+        terr.defenseRating = Math.min(300, (terr.defenseRating || 100) + 10);
+
+        // Attacker loses rep
+        const repLoss = 5 + Math.floor(Math.random() * 5);
+        attacker.reputation = Math.max(0, (attacker.reputation || 0) - repLoss);
+        attackerState.reputation = attacker.reputation;
+
+        // 30% arrest chance on failure
+        let jailed = false;
+        let jailTime = 0;
+        if (Math.random() < 0.30) {
+            jailTime = 15 + Math.floor(Math.random() * 20);
+            attackerState.inJail = true;
+            attackerState.jailTime = jailTime;
+            jailed = true;
+        }
+
+        console.log(`⚔️ TERRITORY WAR FAILED: ${attacker.name} failed to take ${districtId} (ATK ${attackScore} ≤ DEF ${defenseScore})${jailed ? ' — ARRESTED' : ''}`);
+
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({
+                type: 'territory_war_result',
+                success: true,
+                victory: false,
+                district: districtId,
+                owner: terr.owner,
+                attackScore: attackScore,
+                defenseScore: defenseScore,
+                repLoss: repLoss,
+                gangMembersLost: gangMembersLost,
+                healthDamage: healthDamage,
+                newHealth: attackerState.health,
+                wantedLevel: attackerState.wantedLevel,
+                energy: attackerState.energy,
+                jailed: jailed,
+                jailTime: jailTime,
+                error: jailed
+                    ? `War for ${districtId.replace(/_/g, ' ')} failed! You were arrested.`
+                    : `War for ${districtId.replace(/_/g, ' ')} failed! ${terr.owner}'s forces held the line.`
+            }));
+        }
+
+        // Notify defender (positive)
+        if (defenderId) {
+            const defWs = clients.get(defenderId);
+            if (defWs && defWs.readyState === WebSocket.OPEN) {
+                defWs.send(JSON.stringify({
+                    type: 'territory_war_defense_held',
+                    district: districtId,
+                    attackerName: attacker.name
+                }));
+            }
+        }
+
+        if (jailed) {
+            addGlobalChatMessage('System', `⚔️ ${attacker.name} attacked ${districtId.replace(/_/g, ' ')} and was repelled — then arrested!`, '#e74c3c');
+        }
+    }
+
+    broadcastPlayerStates();
+    scheduleWorldSave();
 }
 
 // Heist creation handler
@@ -1688,7 +1975,43 @@ function handleJobIntent(clientId, message) {
 
     // Compute reward authoritatively
     const variance = 0.5 + Math.random(); // 0.5x - 1.5x
-    const earnings = Math.floor(jobDef.base * variance);
+    const grossEarnings = Math.floor(jobDef.base * variance);
+
+    // ── Phase 2: Territory Tax ──────────────────────────────────
+    let taxAmount = 0;
+    let taxOwnerName = null;
+    const playerTerritory = player.currentTerritory;
+    if (playerTerritory && gameState.territories[playerTerritory]) {
+        const terr = gameState.territories[playerTerritory];
+        if (terr.owner && terr.owner !== player.name) {
+            taxAmount = Math.floor(grossEarnings * TAX_RATE);
+            taxOwnerName = terr.owner;
+            terr.taxCollected = (terr.taxCollected || 0) + taxAmount;
+
+            // Credit tax to the territory owner
+            for (const [ownerId, ownerPlayer] of gameState.players.entries()) {
+                if (ownerPlayer.name === terr.owner) {
+                    ownerPlayer.money = (ownerPlayer.money || 0) + taxAmount;
+                    const ownerPs = gameState.playerStates.get(ownerId);
+                    if (ownerPs) { ownerPs.money = ownerPlayer.money; ownerPs.lastUpdate = Date.now(); }
+                    // Notify territory owner of tax income
+                    const ownerWs = clients.get(ownerId);
+                    if (ownerWs && ownerWs.readyState === WebSocket.OPEN) {
+                        ownerWs.send(JSON.stringify({
+                            type: 'territory_tax_income',
+                            from: player.name,
+                            district: playerTerritory,
+                            amount: taxAmount,
+                            newMoney: ownerPlayer.money,
+                            totalCollected: terr.taxCollected
+                        }));
+                    }
+                    break;
+                }
+            }
+        }
+    }
+    const earnings = grossEarnings - taxAmount;
     player.money += earnings;
     ps.money = player.money;
 
@@ -1718,6 +2041,9 @@ function handleJobIntent(clientId, message) {
             jobId,
             success: true,
             earnings,
+            grossEarnings,
+            taxAmount,
+            taxOwnerName,
             repGain,
             wantedAdded: jobDef.wanted,
             jailed,
@@ -2081,6 +2407,29 @@ function handleAssassinationAttempt(clientId, message) {
         // Attacker gets high wanted level
         attackerState.wantedLevel = Math.min(100, (attackerState.wantedLevel || 0) + 25);
 
+        // ── Phase 2: Territory conquest via assassination ──────────────
+        // If the target owns any territories, the attacker seizes them
+        let territoriesSeized = [];
+        for (const [tId, tData] of Object.entries(gameState.territories)) {
+            if (tData.owner === target.name) {
+                tData.owner = attacker.name;
+                territoriesSeized.push(tId);
+                console.log(`👑 TERRITORY SEIZED: ${attacker.name} took ${tId} from ${target.name} via assassination`);
+            }
+        }
+        if (territoriesSeized.length > 0) {
+            addGlobalChatMessage('System', `👑 ${attacker.name} seized ${territoriesSeized.length} territory(s) from ${target.name}!`, '#d4af37');
+            broadcastToAll({
+                type: 'territory_ownership_changed',
+                territories: gameState.territories,
+                attacker: attacker.name,
+                defender: target.name,
+                seized: territoriesSeized,
+                method: 'assassination'
+            });
+            scheduleWorldSave();
+        }
+
         console.log(`🎯 ASSASSINATION: ${attacker.name} killed ${target.name} and stole $${stolenAmount.toLocaleString()} (${stealPercent}%) | HP -${healthDamage} | ${gangMembersLost} gang lost`);
 
         // Notify attacker
@@ -2101,7 +2450,8 @@ function handleAssassinationAttempt(clientId, message) {
                 healthDamage: healthDamage,
                 newHealth: attackerState.health,
                 gangMembersLost: gangMembersLost,
-                cooldownSeconds: ASSASSINATION_COOLDOWN_MS / 1000
+                cooldownSeconds: ASSASSINATION_COOLDOWN_MS / 1000,
+                territoriesSeized: territoriesSeized
             }));
         }
 

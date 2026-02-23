@@ -174,6 +174,15 @@ export const MOVE_COOLDOWN_MS = 60 * 60 * 1000;
 /** Minimum level required to claim ownership of a territory */
 export const MIN_CLAIM_LEVEL = 10;
 
+/** Cost to claim each district (indexed same order as DISTRICTS) */
+export const CLAIM_COSTS = [10000, 20000, 50000, 40000, 25000, 30000, 80000, 35000];
+
+/** Minimum gang members required to wage territory war */
+export const MIN_WAR_GANG_SIZE = 5;
+
+/** Energy cost for waging territory war */
+export const WAR_ENERGY_COST = 40;
+
 // ────────────────────────────────────────────────────────────────────────
 // HELPERS
 // ────────────────────────────────────────────────────────────────────────
