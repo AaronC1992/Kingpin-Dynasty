@@ -3961,6 +3961,45 @@ function getRiskColor(riskLevel) {
 }
 
 // Territory Control Action Functions
+async function renewCorruption(officialId) {
+  const official = player.corruptedOfficials.find(o => o.id === officialId);
+  if (!official) {
+    showBriefNotification('Official not found!', 'danger');
+    return;
+  }
+
+  const target = corruptionTargets.find(t => t.id === official.targetId);
+  if (!target) {
+    showBriefNotification('Corruption target data missing!', 'danger');
+    return;
+  }
+
+  const renewalCost = Math.floor(target.baseCost * 0.6); // 60% of original cost to renew
+
+  if (player.money < renewalCost) {
+    showBriefNotification(`Need $${renewalCost.toLocaleString()} to renew the ${target.name} bribe!`, 'danger');
+    return;
+  }
+
+  if (await ui.confirm(`Renew ${target.name} bribe for $${renewalCost.toLocaleString()}?\n\nThis extends their loyalty by ${target.benefits.duration} more days.`)) {
+    player.money -= renewalCost;
+    official.expirationDate = Math.max(official.expirationDate, Date.now()) + (target.benefits.duration * 24 * 60 * 60 * 1000);
+
+    // Small risk on renewal too
+    if (Math.random() < 0.08) {
+      player.wantedLevel += Math.floor(Math.random() * 10) + 5;
+      showBriefNotification(`Bribe renewed, but someone may have noticed the exchange...`, 'warning');
+      logAction(`💼 ${target.name}'s loyalty renewed, but whispers travel fast in the shadows.`);
+    } else {
+      showBriefNotification(`${target.name}'s corruption renewed for ${target.benefits.duration} days!`, 'success');
+      logAction(`💼 ${target.name} remains loyal — for the right price. The machine keeps turning.`);
+    }
+
+    updateUI();
+    showCorruption();
+  }
+}
+
 async function corruptOfficial(targetId) {
   const target = corruptionTargets.find(t => t.id === targetId);
   if (!target) return;
@@ -20298,6 +20337,8 @@ window.startBossBattle = startBossBattle;
 
 // Business & Economy
 window.showBusinesses = showBusinesses;
+window.collectAllBusinessIncome = collectAllBusinessIncome;
+window.toggleBookieHire = toggleBookieHire;
 window.purchaseBusiness = purchaseBusiness;
 window.upgradeBusiness = upgradeBusiness;
 window.collectBusinessIncome = collectBusinessIncome;
@@ -20320,6 +20361,7 @@ window.closeVehiclePurchaseResult = closeVehiclePurchaseResult;
 
 // Gang & Territory
 window.showGang = showGang;
+window.boostMemberLoyalty = boostMemberLoyalty;
 window.getAverageLoyalty = getAverageLoyalty;
 window.calculateGangPower = calculateGangPower;
 window.generateGangOperationsHTML = generateGangOperationsHTML;
@@ -20344,6 +20386,7 @@ window.calculateTotalTerritoryIncome = calculateTotalTerritoryIncome;
 window.showProtectionRackets = showProtectionRackets;
 window.getAvailableBusinessesForProtection = getAvailableBusinessesForProtection;
 window.showCorruption = showCorruption;
+window.renewCorruption = renewCorruption;
 window.getHeatColor = getHeatColor;
 window.getRiskColor = getRiskColor;
 window.approachBusiness = approachBusiness;
@@ -20591,6 +20634,8 @@ window.sellStolenCar = sellStolenCar;
 window.showEmpireRating = showEmpireRating;
 window.showHallOfFame = showHallOfFame;
 window.showEmpireOverview = showEmpireOverview;
+window.showMap = showMap;
+window.showTerritoryInfo = showTerritoryInfo;
 window.showRivalsScreen = showRivalsScreen;
 window.showHospital = showHospital;
 window.showCasino = showCasino;
