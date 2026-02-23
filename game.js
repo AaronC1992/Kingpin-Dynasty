@@ -12652,9 +12652,23 @@ function resetPlayerForNewGame() {
 }
 
 // Function to start the game (always creates a NEW profile)
+// Requires cloud login before proceeding.
 function startGame() {
-  // Whenever the player clicks "Join the Family", we treat it as
-  // creating a brand-new profile, regardless of any loaded state.
+  const auth = getAuthState();
+  if (!auth.isLoggedIn) {
+    // Force the player to create an account or sign in first
+    showAuthModal({
+      required: true,
+      startOnRegister: true,
+      onAuth: () => {
+        // Account created/signed in — now start character creation
+        resetPlayerForNewGame();
+        showSimpleCharacterCreation();
+      }
+    });
+    return;
+  }
+  // Already logged in — proceed directly
   resetPlayerForNewGame();
   showSimpleCharacterCreation();
 }
@@ -16761,6 +16775,37 @@ function returnToIntroScreen() {
   
   logAction(`🏠 Returned to SafeHouse - ready to start a new criminal empire!`);
 }
+
+// ── Delete all local saves and return to title screen ──────────────────
+// Called after the server-side account deletion is complete.
+function deleteAllLocalSavesAndReset() {
+  // Wipe every game save slot from localStorage
+  for (let i = 1; i <= 10; i++) {
+    localStorage.removeItem(`gameSlot_${i}`);
+  }
+  localStorage.removeItem('saveSystemPrefs');
+
+  // Reset runtime state so nothing lingers
+  gameplayActive = false;
+  resetPlayerForNewGame();
+  stopJailTimer();
+
+  // Hide everything and show the title screen
+  const allScreens = document.querySelectorAll('.game-screen');
+  allScreens.forEach(s => (s.style.display = 'none'));
+  ['character-creation-screen', 'tutorial-screen', 'intro-narrative', 'menu', 'options-screen'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  document.getElementById('intro-screen').style.display = 'block';
+
+  // Update UI elements to reflect logged-out state
+  updateAuthStatusUI();
+  if (typeof window.showBriefNotification === 'function') {
+    window.showBriefNotification('Account deleted – returned to title', 3000);
+  }
+}
+window.deleteAllLocalSavesAndReset = deleteAllLocalSavesAndReset;
 
 // Function to confirm reset game
 async function confirmResetGame() {

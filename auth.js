@@ -145,7 +145,19 @@ export async function verifySession() {
 }
 
 // ── UI: Auth modal ─────────────────────────────────────────────
-export function showAuthModal(onSuccess) {
+// options: { required: bool, onAuth: fn, startOnRegister: bool }
+export function showAuthModal(onSuccessOrOpts) {
+    let onSuccess = null;
+    let required = false;
+    let startOnRegister = false;
+    if (typeof onSuccessOrOpts === 'function') {
+        onSuccess = onSuccessOrOpts;
+    } else if (onSuccessOrOpts && typeof onSuccessOrOpts === 'object') {
+        onSuccess = onSuccessOrOpts.onAuth || null;
+        required = !!onSuccessOrOpts.required;
+        startOnRegister = !!onSuccessOrOpts.startOnRegister;
+    }
+
     // Remove existing
     const old = document.getElementById('auth-modal-overlay');
     if (old) old.remove();
@@ -155,9 +167,9 @@ export function showAuthModal(onSuccess) {
     overlay.className = 'auth-overlay';
     overlay.innerHTML = `
         <div class="auth-modal">
-            <button class="auth-close" id="auth-close-btn">&times;</button>
-            <h2 class="auth-title" id="auth-modal-title">🔐 Sign In</h2>
-            <p class="auth-subtitle" id="auth-modal-subtitle">Play across all your devices</p>
+            <button class="auth-close" id="auth-close-btn" ${required ? 'style="display:none;"' : ''}>&times;</button>
+            <h2 class="auth-title" id="auth-modal-title">${startOnRegister ? '📝 Create Account' : '🔐 Sign In'}</h2>
+            <p class="auth-subtitle" id="auth-modal-subtitle">${required ? 'An account is required to play' : 'Play across all your devices'}</p>
             
             <div id="auth-form-area">
                 <div class="auth-field">
@@ -168,13 +180,13 @@ export function showAuthModal(onSuccess) {
                     <label for="auth-password">Password</label>
                     <input type="password" id="auth-password" placeholder="Enter password" maxlength="64" autocomplete="current-password" />
                 </div>
-                <div class="auth-field" id="auth-confirm-field" style="display:none;">
+                <div class="auth-field" id="auth-confirm-field" style="display:${startOnRegister ? 'block' : 'none'};">
                     <label for="auth-confirm">Confirm Password</label>
                     <input type="password" id="auth-confirm" placeholder="Confirm password" maxlength="64" autocomplete="new-password" />
                 </div>
                 <p class="auth-error" id="auth-error"></p>
-                <button class="auth-btn auth-btn-primary" id="auth-submit-btn">Sign In</button>
-                <p class="auth-toggle" id="auth-toggle">Don't have an account? <span class="auth-link" id="auth-switch-link">Create one</span></p>
+                <button class="auth-btn auth-btn-primary" id="auth-submit-btn">${startOnRegister ? 'Create Account' : 'Sign In'}</button>
+                <p class="auth-toggle" id="auth-toggle">${startOnRegister ? 'Already have an account? <span class="auth-link" id="auth-switch-link">Sign in</span>' : 'Don\'t have an account? <span class="auth-link" id="auth-switch-link">Create one</span>'}</p>
             </div>
 
             <div id="auth-logged-in-area" style="display:none;">
@@ -185,6 +197,8 @@ export function showAuthModal(onSuccess) {
                 <button class="auth-btn auth-btn-primary" id="auth-cloud-save-btn">☁️ Save to Cloud</button>
                 <button class="auth-btn auth-btn-secondary" id="auth-cloud-load-btn">📥 Load from Cloud</button>
                 <button class="auth-btn auth-btn-danger" id="auth-logout-btn">Sign Out</button>
+                <hr style="border-color: #333; margin: 15px 0;">
+                <button class="auth-btn auth-btn-danger" id="auth-delete-account-btn" style="border-color: #ff2222; margin-top: 5px;">🗑️ Delete Account & Save</button>
             </div>
         </div>
     `;
@@ -192,7 +206,7 @@ export function showAuthModal(onSuccess) {
     document.body.appendChild(overlay);
 
     // State
-    let isRegisterMode = false;
+    let isRegisterMode = !!startOnRegister;
 
     const closeBtn = document.getElementById('auth-close-btn');
     const submitBtn = document.getElementById('auth-submit-btn');
@@ -210,8 +224,10 @@ export function showAuthModal(onSuccess) {
 
     const close = () => overlay.remove();
 
-    closeBtn.onclick = close;
-    overlay.onclick = (e) => { if (e.target === overlay) close(); };
+    if (!required) {
+        closeBtn.onclick = close;
+        overlay.onclick = (e) => { if (e.target === overlay) close(); };
+    }
 
     // If already logged in, show account panel
     if (isLoggedIn) {
@@ -266,9 +282,15 @@ export function showAuthModal(onSuccess) {
             } else {
                 await login(user, pass);
             }
-            showLoggedInPanel();
             updateAuthStatusUI();
-            if (onSuccess) onSuccess();
+            if (required && onSuccess) {
+                // Required-mode: close modal and fire callback immediately
+                close();
+                onSuccess();
+            } else {
+                showLoggedInPanel();
+                if (onSuccess) onSuccess();
+            }
         } catch (err) {
             errorEl.textContent = err.message;
         } finally {
@@ -381,6 +403,31 @@ export function showAuthModal(onSuccess) {
             close();
             if (typeof window.showBriefNotification === 'function') {
                 window.showBriefNotification('Signed out', 2000);
+            }
+        };
+
+        // Delete account button
+        document.getElementById('auth-delete-account-btn').onclick = async () => {
+            if (!confirm('⚠️ WARNING: This will permanently delete your account and cloud save.\n\nThis cannot be undone!\n\nAre you sure?')) return;
+            if (!confirm('Are you REALLY sure? All progress will be lost forever.')) return;
+            const btn = document.getElementById('auth-delete-account-btn');
+            btn.disabled = true;
+            btn.textContent = '🗑️ Deleting...';
+            try {
+                await deleteAccount();
+                updateAuthStatusUI();
+                close();
+                // Wipe local saves and return to title screen
+                if (typeof window.deleteAllLocalSavesAndReset === 'function') {
+                    window.deleteAllLocalSavesAndReset();
+                }
+            } catch (err) {
+                btn.textContent = '❌ Delete failed';
+                console.error('Delete account error:', err);
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.textContent = '🗑️ Delete Account & Save';
+                }, 2000);
             }
         };
     }
