@@ -199,6 +199,16 @@ wss.on('close', function close() {
   clearInterval(interval);
 });
 
+// Bot names used for jail bot inmates
+const JAIL_BOT_NAMES = [
+    "Tony \"The Snake\" Marconi", "Vincent \"Vinny\" Romano",
+    "Marco \"The Bull\" Santangelo", "Sal \"Scarface\" DeLuca",
+    "Frank \"The Hammer\" Rossini", "Joey \"Two-Times\" Castellano",
+    "Nick \"The Knife\" Moretti", "Rocco \"Rocky\" Benedetto",
+    "Anthony \"Big Tony\" Genovese", "Michael \"Mikey\" Calabrese",
+    "Dominic \"Dom\" Torrino", "Carlo \"The Cat\" Bianchi"
+];
+
 // Game state
 const gameState = {
     players: new Map(),
@@ -209,6 +219,7 @@ const gameState = {
     cityEvents: [],
     tradeOffers: [],
     gangWars: [],
+    jailBots: [], // Server-managed bot inmates (max 3, 0 if 3+ real players in jail)
     serverStats: {
         startTime: Date.now(),
         totalConnections: 0,
@@ -354,8 +365,12 @@ wss.on('connection', (ws, req) => {
             gameState.players.delete(clientId);
             gameState.playerStates.delete(clientId);
             
-            // Broadcast updated player states
+            // Update jail bots (player leaving may change real-player-in-jail count)
+            updateJailBots();
+            
+            // Broadcast updated player states and jail roster
             broadcastPlayerStates();
+            broadcastJailRoster();
         }
         
         clients.delete(clientId);
@@ -417,6 +432,14 @@ function handleClientMessage(clientId, message, ws) {
             handleJailbreakAttempt(clientId, message);
             break;
             
+        case 'request_jail_roster':
+            sendJailRoster(clientId, ws);
+            break;
+            
+        case 'jailbreak_bot':
+            handleJailbreakBot(clientId, message);
+            break;
+            
         case 'request_world_state':
             sendWorldState(clientId, ws);
             break;
@@ -475,6 +498,9 @@ function handlePlayerConnect(clientId, message, ws) {
     
     console.log(`✅ Player registered: ${player.name} (ID: ${clientId}) ${playerState.inJail ? '[IN JAIL]' : ''}`);
     
+    // Update jail bots based on new jail population
+    updateJailBots();
+    
     // Send initial game state
     ws.send(JSON.stringify({
         type: 'world_update',
@@ -485,6 +511,9 @@ function handlePlayerConnect(clientId, message, ws) {
         globalChat: gameState.globalChat.slice(-10), // Last 10 messages
         playerStates: Object.fromEntries(gameState.playerStates)
     }));
+    
+    // Send jail roster immediately
+    sendJailRoster(clientId, ws);
     
     // Broadcast new player to others
     broadcastToAll({
@@ -806,6 +835,10 @@ function handlePlayerUpdate(clientId, message) {
         }
         
         playerState.previousInJail = playerState.inJail;
+        
+        // Jail population changed — update bot limits and broadcast roster
+        updateJailBots();
+        broadcastJailRoster();
     }
     
     // Broadcast updated player states to all clients
@@ -927,6 +960,215 @@ function handleJailbreakAttempt(clientId, message) {
     
     // Broadcast updated player states
     broadcastPlayerStates();
+    broadcastJailRoster();
+}
+
+// ==================== JAIL BOT MANAGEMENT ====================
+
+// Count how many real (non-bot) players are currently in jail
+function countRealPlayersInJail() {
+    let count = 0;
+    gameState.playerStates.forEach(state => {
+        if (state.inJail) count++;
+    });
+    return count;
+}
+
+// Ensure jail bots are within limits: max 3 total, 0 if 3+ real players in jail
+function updateJailBots() {
+    const realInJail = countRealPlayersInJail();
+
+    if (realInJail >= 3) {
+        // Remove all bots when enough real players occupy jail
+        gameState.jailBots = [];
+        return;
+    }
+
+    // Cap at 3 bots
+    while (gameState.jailBots.length > 3) {
+        gameState.jailBots.pop();
+    }
+
+    // Fill up to 3 bots
+    const needed = 3 - gameState.jailBots.length;
+    for (let i = 0; i < needed; i++) {
+        const name = JAIL_BOT_NAMES[Math.floor(Math.random() * JAIL_BOT_NAMES.length)];
+        const difficulty = Math.floor(Math.random() * 3) + 1; // 1-3
+        const securityLevel = ['Minimum', 'Medium', 'Maximum'][difficulty - 1];
+        gameState.jailBots.push({
+            botId: `bot_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+            name,
+            difficulty,
+            securityLevel,
+            sentence: Math.floor(Math.random() * 50) + 15,
+            breakoutSuccess: Math.max(20, 55 - (difficulty * 10)), // 45%, 35%, 25%
+            isBot: true
+        });
+    }
+}
+
+// Build the jail roster payload (real players + bots)
+function buildJailRoster() {
+    const realPlayers = [];
+    gameState.playerStates.forEach((state, id) => {
+        if (state.inJail) {
+            realPlayers.push({
+                playerId: id,
+                name: state.name,
+                jailTime: state.jailTime,
+                level: state.level || 1,
+                isBot: false
+            });
+        }
+    });
+    return {
+        type: 'jail_roster',
+        realPlayers,
+        bots: gameState.jailBots,
+        totalOnlineInJail: realPlayers.length
+    };
+}
+
+// Send jail roster to a specific client
+function sendJailRoster(clientId, ws) {
+    updateJailBots();
+    if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify(buildJailRoster()));
+    }
+}
+
+// Broadcast jail roster to all connected clients
+function broadcastJailRoster() {
+    updateJailBots();
+    broadcastToAll(buildJailRoster());
+}
+
+// Handle attempt to break out a jail bot
+function handleJailbreakBot(clientId, message) {
+    const helper = gameState.players.get(clientId);
+    const helperState = gameState.playerStates.get(clientId);
+
+    if (!helper || !helperState) return;
+
+    if (helperState.inJail) {
+        const ws = clients.get(clientId);
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({
+                type: 'jailbreak_bot_result',
+                success: false,
+                message: "You can't help others while you're locked up!"
+            }));
+        }
+        return;
+    }
+
+    const botIndex = gameState.jailBots.findIndex(b => b.botId === message.botId);
+    if (botIndex === -1) {
+        const ws = clients.get(clientId);
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({
+                type: 'jailbreak_bot_result',
+                success: false,
+                message: 'That inmate is no longer in jail.'
+            }));
+        }
+        return;
+    }
+
+    const bot = gameState.jailBots[botIndex];
+    const baseSuccess = bot.breakoutSuccess;
+    const stealthBonus = (helperState.skills?.stealth || 0) * 3;
+    const totalSuccess = Math.min(80, baseSuccess + stealthBonus);
+    const success = Math.random() * 100 < totalSuccess;
+    const ws = clients.get(clientId);
+
+    gameState.serverStats.jailbreakAttempts++;
+
+    if (success) {
+        // Remove bot from jail
+        gameState.jailBots.splice(botIndex, 1);
+        gameState.serverStats.successfulJailbreaks++;
+
+        const expReward = bot.difficulty * 15 + 10;
+        const cashReward = bot.difficulty * 75 + 50;
+        helperState.reputation = (helperState.reputation || 0) + Math.floor(bot.difficulty * 1.5);
+
+        console.log(`✅ Bot jailbreak: ${helper.name} freed ${bot.name}`);
+
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({
+                type: 'jailbreak_bot_result',
+                success: true,
+                botName: bot.name,
+                expReward,
+                cashReward,
+                message: `You freed ${bot.name}! +${expReward} XP, +$${cashReward}`
+            }));
+        }
+
+        addGlobalChatMessage('System', `🎉 ${helper.name} busted ${bot.name} out of jail!`, '#2ecc71');
+
+        broadcastToAll({
+            type: 'jailbreak_attempt',
+            playerId: clientId,
+            playerName: helper.name,
+            targetPlayerName: bot.name,
+            success: true
+        });
+
+        // Replenish bots after a delay
+        setTimeout(() => {
+            updateJailBots();
+            broadcastJailRoster();
+        }, 15000);
+    } else {
+        const arrestChance = 25;
+        if (Math.random() * 100 < arrestChance) {
+            helperState.inJail = true;
+            helperState.jailTime = 15 + Math.floor(Math.random() * 10);
+            helperState.wantedLevel = (helperState.wantedLevel || 0) + 1;
+
+            console.log(`💀 Bot jailbreak failed: ${helper.name} was arrested`);
+
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'jailbreak_bot_result',
+                    success: false,
+                    arrested: true,
+                    jailTime: helperState.jailTime,
+                    message: `Failed to break out ${bot.name} — you got caught!`
+                }));
+            }
+
+            addGlobalChatMessage('System', `💀 ${helper.name} was caught trying to break out ${bot.name}!`, '#e74c3c');
+            updateJailBots(); // Recheck — new real player in jail
+        } else {
+            console.log(`💀 Bot jailbreak failed: ${helper.name} escaped`);
+
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'jailbreak_bot_result',
+                    success: false,
+                    arrested: false,
+                    message: `Failed to break out ${bot.name}, but you slipped away undetected.`
+                }));
+            }
+
+            addGlobalChatMessage('System', `💀 ${helper.name} failed to break out ${bot.name} but escaped.`, '#f39c12');
+        }
+
+        broadcastToAll({
+            type: 'jailbreak_attempt',
+            playerId: clientId,
+            playerName: helper.name,
+            targetPlayerName: bot.name,
+            success: false,
+            helperArrested: helperState.inJail
+        });
+    }
+
+    broadcastPlayerStates();
+    broadcastJailRoster();
 }
 
 // ==================== JOB INTENT HANDLER (SERVER AUTHORITATIVE) ====================
@@ -1139,6 +1381,9 @@ function generateClientId() {
 
 server.listen(PORT, () => {
     console.log(`Server started on port ${PORT}`);
+    // Initialize jail bots on startup
+    updateJailBots();
+    console.log(`🔒 Jail bots initialized: ${gameState.jailBots.length} inmates`);
 });
 
 // ==================== GRACEFUL SHUTDOWN ====================

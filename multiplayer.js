@@ -115,6 +115,7 @@ let onlineWorldState = {
     activeHeists: [],
     tradeOffers: [],
     gangWars: [],
+    jailRoster: { realPlayers: [], bots: [], totalOnlineInJail: 0 },
     lastUpdate: null
 };
 
@@ -688,43 +689,109 @@ function handleServerMessage(message) {
             // Stats sync happens via next world_update
             break;
 
+        case 'jail_roster':
+            // Server-sent jail roster: real players in jail + bots
+            onlineWorldState.jailRoster = {
+                realPlayers: message.realPlayers || [],
+                bots: message.bots || [],
+                totalOnlineInJail: message.totalOnlineInJail || 0
+            };
+            updateJailVisibility();
+            // Also update the game.js prisoner lists if they exist
+            if (typeof updatePrisonerList === 'function') updatePrisonerList();
+            if (typeof updateJailbreakPrisonerList === 'function') updateJailbreakPrisonerList();
+            break;
+
+        case 'jailbreak_bot_result':
+            // Result of attempting to break out a jail bot
+            if (message.success) {
+                logAction(`🗝️ ${message.message}`);
+                if (message.expReward) player.experience += message.expReward;
+                if (message.cashReward) player.money += message.cashReward;
+                showSystemMessage(`🎉 ${message.message}`, '#2ecc71');
+            } else {
+                logAction(`💀 ${message.message}`);
+                if (message.arrested) {
+                    player.inJail = true;
+                    player.jailTime = message.jailTime || 15;
+                    showSystemMessage(`🚔 ${message.message}`, '#e74c3c');
+                } else {
+                    showSystemMessage(`💀 ${message.message}`, '#f39c12');
+                }
+            }
+            updateUI();
+            break;
+
         default:
             console.log('Unknown message type:', message.type);
     }
 }
 
-// Update jail visibility for online players
+// Update jail visibility for online players and bots
 function updateJailVisibility() {
-    // This function will be called when we receive player state updates
-    // It updates the UI to show which players are in jail
     const jailStatusContainer = document.getElementById('online-jail-status');
     if (!jailStatusContainer) return;
     
-    let jailHTML = '<h4 style="color: #8b0000; margin: 0 0 15px 0; font-family: \'Georgia\', serif;"> Made Men In The Can</h4>';
+    let jailHTML = '<h4 style="color: #8b0000; margin: 0 0 15px 0; font-family: \'Georgia\', serif;">🔒 Made Men In The Can</h4>';
     
     const playersInJail = Object.values(onlineWorldState.playerStates || {}).filter(p => p.inJail);
+    const bots = (onlineWorldState.jailRoster && onlineWorldState.jailRoster.bots) || [];
+    const isPlayerInJail = player && player.inJail;
     
-    if (playersInJail.length === 0) {
-        jailHTML += '<div style="color: #95a5a6; font-style: italic; text-align: center;">No players currently in jail</div>';
+    if (playersInJail.length === 0 && bots.length === 0) {
+        jailHTML += '<div style="color: #95a5a6; font-style: italic; text-align: center;">No inmates currently in jail</div>';
     } else {
+        // Show real online players in jail
         playersInJail.forEach(prisoner => {
             const timeLeft = Math.max(0, Math.ceil(prisoner.jailTime));
+            const isMe = prisoner.playerId === onlineWorldState.playerId;
             jailHTML += `
                 <div style="background: rgba(139, 0, 0, 0.2); padding: 10px; margin: 8px 0; border-radius: 6px; border-left: 4px solid #8b0000;">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <div>
-                            <strong style="color: #8b0000; font-family: \'Georgia\', serif;">${prisoner.name}</strong>
+                            <strong style="color: #8b0000; font-family: 'Georgia', serif;">🟢 ${escapeHTML(prisoner.name)}</strong>
                             <br><small style="color: #ecf0f1;">Time Left: ${timeLeft}s</small>
+                            <br><small style="color: #e74c3c;">Online Player</small>
                         </div>
                         <div>
-                            ${prisoner.playerId !== onlineWorldState.playerId ? `
-                                <button onclick="attemptPlayerJailbreak('${prisoner.playerId}', '${prisoner.name}')" 
+                            ${!isMe && !isPlayerInJail ? `
+                                <button onclick="attemptPlayerJailbreak('${prisoner.playerId}', '${escapeHTML(prisoner.name)}')" 
                                         style="background: #f39c12; color: white; border: none; padding: 6px 12px; 
                                                border-radius: 4px; cursor: pointer; font-size: 0.8em;">
-                                     Break Out
+                                    🔓 Break Out
+                                </button>
+                            ` : isMe ? `
+                                <span style="color: #95a5a6; font-style: italic;">You</span>
+                            ` : `
+                                <span style="color: #95a5a6; font-size: 0.8em;">Can't help from jail</span>
+                            `}
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        // Show jail bots
+        bots.forEach(bot => {
+            const difficultyColor = ['#2ecc71', '#f39c12', '#e74c3c'][bot.difficulty - 1] || '#f39c12';
+            const difficultyText = bot.securityLevel || ['Easy', 'Medium', 'Hard'][bot.difficulty - 1] || 'Unknown';
+            jailHTML += `
+                <div style="background: rgba(52, 73, 94, 0.4); padding: 10px; margin: 8px 0; border-radius: 6px; border-left: 4px solid ${difficultyColor};">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong style="color: #ecf0f1; font-family: 'Georgia', serif;">${escapeHTML(bot.name)}</strong>
+                            <br><small style="color: #95a5a6;">Sentence: ${bot.sentence}s</small>
+                            <br><small style="color: ${difficultyColor};">Difficulty: ${difficultyText}</small>
+                        </div>
+                        <div>
+                            ${!isPlayerInJail ? `
+                                <button onclick="attemptBotJailbreak('${bot.botId}', '${escapeHTML(bot.name)}')" 
+                                        style="background: #3498db; color: white; border: none; padding: 6px 12px; 
+                                               border-radius: 4px; cursor: pointer; font-size: 0.8em;">
+                                    🔓 Break Out (${bot.breakoutSuccess}%)
                                 </button>
                             ` : `
-                                <span style="color: #95a5a6; font-style: italic;">You</span>
+                                <span style="color: #95a5a6; font-size: 0.8em;">Can't help from jail</span>
                             `}
                         </div>
                     </div>
@@ -831,6 +898,50 @@ function attemptPlayerJailbreak(targetPlayerId, targetPlayerName) {
             alert('Connection lost before sending jailbreak intent.');
         }
         updateUI(); // Show reduced energy immediately; success/failure will arrive via server messages
+    }
+}
+
+// Request the jail roster from the server (real players + bots)
+function requestJailRoster() {
+    if (onlineWorldState.socket && onlineWorldState.socket.readyState === WebSocket.OPEN) {
+        onlineWorldState.socket.send(JSON.stringify({ type: 'request_jail_roster' }));
+    }
+}
+
+// Attempt to break out a jail bot (server-authoritative)
+function attemptBotJailbreak(botId, botName) {
+    if (!onlineWorldState.isConnected) {
+        alert("You need to be connected to the online world!");
+        return;
+    }
+
+    if (player.inJail) {
+        alert("You can't help others break out while you're in jail yourself!");
+        return;
+    }
+
+    if (player.energy < 15) {
+        alert("You need at least 15 energy to attempt a jailbreak!");
+        return;
+    }
+
+    const confirmBreakout = confirm(`Attempt to break ${botName} out of jail? This will cost 15 energy and has risks.`);
+
+    if (confirmBreakout) {
+        player.energy -= 15;
+        if (onlineWorldState.socket && onlineWorldState.socket.readyState === WebSocket.OPEN) {
+            onlineWorldState.socket.send(JSON.stringify({
+                type: 'jailbreak_bot',
+                botId,
+                botName,
+                helperPlayerId: onlineWorldState.playerId,
+                helperPlayerName: player.name || 'You'
+            }));
+            logAction(`🔓 Attempting to break out ${botName}...`);
+        } else {
+            alert('Connection lost before sending jailbreak intent.');
+        }
+        updateUI();
     }
 }
 

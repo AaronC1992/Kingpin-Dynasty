@@ -7838,6 +7838,11 @@ function showJailScreen() {
     }
   }
   
+  // Request fresh jail roster from server
+  if (typeof requestJailRoster === 'function') {
+    requestJailRoster();
+  }
+  
   // Display prisoner list
   updatePrisonerList();
   
@@ -7903,6 +7908,48 @@ function updatePrisonerList() {
   
   let prisonerHTML = "";
   
+  // === ONLINE SECTION: Show online players in jail + server bots ===
+  const roster = (typeof onlineWorldState !== 'undefined' && onlineWorldState.jailRoster) ? onlineWorldState.jailRoster : null;
+  const onlinePlayers = roster ? roster.realPlayers : [];
+  const bots = roster ? roster.bots : [];
+  const hasOnlineInmates = onlinePlayers.length > 0 || bots.length > 0;
+  
+  if (hasOnlineInmates) {
+    prisonerHTML += `<div style="margin-bottom: 15px; padding: 10px; background: rgba(192, 160, 98, 0.15); border-radius: 8px; border: 1px solid #c0a062;">
+      <h4 style="color: #c0a062; margin: 0 0 10px 0;">🌐 Online Inmates</h4>`;
+    
+    // Real online players
+    onlinePlayers.forEach(p => {
+      const isMe = (typeof onlineWorldState !== 'undefined') && p.playerId === onlineWorldState.playerId;
+      prisonerHTML += `
+        <div style="background: rgba(139, 0, 0, 0.2); padding: 12px; margin: 8px 0; border-radius: 6px; border-left: 4px solid #8b0000;">
+          <strong style="color: #8b0000;">🟢 ${p.name}</strong> - Time Left: ${Math.max(0, Math.ceil(p.jailTime))}s
+          <br><small style="color: #e74c3c;">Online Player • Level ${p.level || 1}</small>
+          ${isMe ? '<br><span style="color: #95a5a6; font-style: italic;">That\'s you!</span>' :
+            (player.inJail ? '<br><span style="color: #95a5a6; font-size: 0.85em;">Cannot help others while imprisoned yourself</span>' :
+            `<br><button onclick="attemptPlayerJailbreak('${p.playerId}', '${p.name}')" style="margin-top: 8px; background: #f39c12; color: white; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer;">🔓 Break Out</button>`)}
+        </div>
+      `;
+    });
+    
+    // Server bots
+    bots.forEach(bot => {
+      const difficultyColor = ['#2ecc71', '#f39c12', '#e74c3c'][bot.difficulty - 1] || '#f39c12';
+      const difficultyText = bot.securityLevel || ['Easy', 'Medium', 'Hard'][bot.difficulty - 1] || 'Unknown';
+      prisonerHTML += `
+        <div style="background: rgba(52, 73, 94, 0.4); padding: 12px; margin: 8px 0; border-radius: 6px; border-left: 4px solid ${difficultyColor};">
+          <strong style="color: #ecf0f1;">${bot.name}</strong> - Sentence: ${bot.sentence}s
+          <br><small style="color: ${difficultyColor};">Difficulty: ${difficultyText}</small>
+          ${player.inJail ? '<br><span style="color: #95a5a6; font-size: 0.85em;">Cannot help others while imprisoned yourself</span>' :
+            `<br><button onclick="attemptBotJailbreak('${bot.botId}', '${bot.name}')" style="margin-top: 8px; background: #3498db; color: white; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer;">🔓 Break Out (${bot.breakoutSuccess}%)</button>`}
+        </div>
+      `;
+    });
+    
+    prisonerHTML += `</div>`;
+  }
+  
+  // === LOCAL SECTION: Show offline/local bot prisoners ===
   jailPrisoners.forEach((prisoner, index) => {
     if (prisoner.isPlayer) {
       prisonerHTML += `
@@ -11256,6 +11303,11 @@ function showJailbreak() {
     generateJailbreakPrisoners();
   }
 
+  // Request fresh jail roster from server (online players + bots)
+  if (typeof requestJailRoster === 'function') {
+    requestJailRoster();
+  }
+
   document.getElementById("menu").style.display = "none";
   document.getElementById("jailbreak-screen").style.display = "block";
   updateJailbreakPrisonerList();
@@ -11268,14 +11320,83 @@ function updateJailbreakPrisonerList() {
   
   let prisonerHTML = "";
   
-  if (jailbreakPrisoners.length === 0) {
-    prisonerHTML = `
+  // === ONLINE SECTION: Show online jailed players + server bots ===
+  const roster = (typeof onlineWorldState !== 'undefined' && onlineWorldState.jailRoster) ? onlineWorldState.jailRoster : null;
+  const onlinePlayers = roster ? roster.realPlayers.filter(p => p.playerId !== (onlineWorldState.playerId || '')) : [];
+  const serverBots = roster ? roster.bots : [];
+  const hasOnlineTargets = onlinePlayers.length > 0 || serverBots.length > 0;
+  
+  if (hasOnlineTargets) {
+    prisonerHTML += `
+      <div style="margin-bottom: 20px; padding: 15px; background: rgba(192, 160, 98, 0.15); border-radius: 10px; border: 2px solid #c0a062;">
+        <h3 style="color: #c0a062; margin: 0 0 15px 0;">🌐 Online Inmates</h3>
+        <p style="color: #95a5a6; margin-bottom: 10px;">Break out real players or server inmates. Server-authoritative — costs 15 energy.</p>`;
+    
+    // Real online players in jail
+    onlinePlayers.forEach(p => {
+      const energyCheck = player.energy >= 15;
+      prisonerHTML += `
+        <div style="background: rgba(139, 0, 0, 0.2); padding: 15px; margin: 10px 0; border-radius: 8px; border: 2px solid #8b0000;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 250px;">
+              <h3 style="color: #8b0000; margin: 0 0 8px 0;">🟢 ${p.name}</h3>
+              <p><strong>Status:</strong> <span style="color: #e74c3c;">Online Player</span></p>
+              <p><strong>Time Left:</strong> ${Math.max(0, Math.ceil(p.jailTime))}s</p>
+              <p><strong>Level:</strong> ${p.level || 1}</p>
+              <p><strong>Energy Cost:</strong> 15</p>
+            </div>
+            <div style="text-align: center; min-width: 180px;">
+              <button onclick="attemptPlayerJailbreak('${p.playerId}', '${p.name}')" ${energyCheck ? '' : 'disabled'} 
+                      style="margin-top: 10px; width: 100%; background: ${energyCheck ? '#f39c12' : '#555'}; color: white; border: none; padding: 10px; border-radius: 4px; cursor: ${energyCheck ? 'pointer' : 'not-allowed'};">
+                ${energyCheck ? '🔓 Break Out Player' : 'Not Enough Energy'}
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    });
+    
+    // Server bots
+    serverBots.forEach(bot => {
+      const difficultyColor = ['#2ecc71', '#f39c12', '#e74c3c'][bot.difficulty - 1] || '#f39c12';
+      const difficultyText = bot.securityLevel || ['Minimum', 'Medium', 'Maximum'][bot.difficulty - 1] || 'Unknown';
+      const energyCheck = player.energy >= 15;
+      prisonerHTML += `
+        <div style="background: rgba(52, 73, 94, 0.5); padding: 15px; margin: 10px 0; border-radius: 8px; border: 2px solid ${difficultyColor};">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 250px;">
+              <h3 style="color: ${difficultyColor}; margin: 0 0 8px 0;">${bot.name}</h3>
+              <p><strong>Security:</strong> <span style="color: ${difficultyColor};">${difficultyText}</span></p>
+              <p><strong>Sentence:</strong> ${bot.sentence}s</p>
+              <p><strong>Energy Cost:</strong> 15</p>
+            </div>
+            <div style="text-align: center; min-width: 180px;">
+              <p><strong>Success Rate:</strong> <span style="color: #3498db">${bot.breakoutSuccess}%</span></p>
+              <button onclick="attemptBotJailbreak('${bot.botId}', '${bot.name}')" ${energyCheck ? '' : 'disabled'}
+                      style="margin-top: 10px; width: 100%; background: ${energyCheck ? '#3498db' : '#555'}; color: white; border: none; padding: 10px; border-radius: 4px; cursor: ${energyCheck ? 'pointer' : 'not-allowed'};">
+                ${energyCheck ? '🔓 Attempt Breakout' : 'Not Enough Energy'}
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    });
+    
+    prisonerHTML += `</div>`;
+  }
+  
+  // === LOCAL SECTION: Offline NPC prisoners ===
+  if (jailbreakPrisoners.length === 0 && !hasOnlineTargets) {
+    prisonerHTML += `
       <div style="text-align: center; padding: 20px; background: rgba(149, 165, 166, 0.3); border-radius: 8px; border: 1px solid #95a5a6;">
         <h4>🔍 No Active Targets</h4>
         <p>The jails are quiet tonight. Check back later or scout for new opportunities.</p>
       </div>
     `;
-  } else {
+  } else if (jailbreakPrisoners.length > 0) {
+    if (hasOnlineTargets) {
+      prisonerHTML += `<h3 style="color: #95a5a6; margin: 20px 0 10px 0;">📋 Local Intel (Offline)</h3>`;
+    }
     jailbreakPrisoners.forEach((prisoner, index) => {
       const difficultyColor = ["#2ecc71", "#f39c12", "#e67e22", "#e74c3c"][prisoner.difficulty - 1];
       const energyCheck = player.energy >= prisoner.energyCost;
