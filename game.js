@@ -34,7 +34,7 @@ import {
   startSnakeGame, restartSnake,
   startQuickDraw, startReactionTest, handleReactionClick
 } from './miniGames.js';
-import { DISTRICTS, getDistrict, MOVE_COOLDOWN_MS, MIN_CLAIM_LEVEL, CLAIM_COSTS, MIN_WAR_GANG_SIZE, WAR_ENERGY_COST } from './territories.js';
+import { DISTRICTS, getDistrict, MOVE_COOLDOWN_MS, MIN_CLAIM_LEVEL, CLAIM_COSTS, MIN_WAR_GANG_SIZE, WAR_ENERGY_COST, BUSINESS_TAX_RATE, getBusinessMultiplier } from './territories.js';
 
 // Expose to window for legacy compatibility
 window.player = player;
@@ -1821,6 +1821,12 @@ async function showBusinesses() {
           const upgradePrice = business.level < businessType.maxLevel ? 
             Math.floor(businessType.basePrice * Math.pow(businessType.upgradeMultiplier, business.level)) : null;
           
+          // Phase 3: district info
+          const bizDistrictId = business.districtId || player.currentTerritory;
+          const bizDistrict = bizDistrictId ? getDistrict(bizDistrictId) : null;
+          const bizMult = getBusinessMultiplier(bizDistrictId);
+          const bonusPct = Math.round((bizMult - 1) * 100);
+          
           // Unique upgrade flavor text for illegal businesses
           const upgradeFlavorText = {
             counterfeiting: ['Better printing plates', 'UV-resistant ink', 'Distribution network', 'Master engraver hired'],
@@ -1853,6 +1859,7 @@ async function showBusinesses() {
               <div style="background: rgba(0, 0, 0, 0.3); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
                 <p style="margin: 5px 0;"><strong>Level:</strong> ${business.level}/${businessType.maxLevel}</p>
                 <p style="margin: 5px 0;"><strong>Daily Income:</strong> $${currentIncome.toLocaleString()}${businessType.paysDirty ? ' <span style="color:#e74c3c;">(DIRTY MONEY)</span>' : ''}</p>
+                <p style="margin: 5px 0;"><strong>District:</strong> ${bizDistrict ? bizDistrict.name : 'Unassigned'}${bonusPct > 0 ? ` <span style="color:#2ecc71;">(+${bonusPct}% income bonus)</span>` : ''}</p>
                 <p style="margin: 5px 0;"><strong>Laundering Capacity:</strong> $${(businessType.launderingCapacity * business.level).toLocaleString()}</p>
                 <p style="margin: 5px 0;"><strong>Legitimacy:</strong> ${businessType.legitimacy}%</p>
                 ${businessType.paysDirty ? `<p style="margin: 5px 0; color: #e67e22;"><strong>Synergy:</strong> ${business.type === 'counterfeiting' ? '+3% laundering rate' : business.type === 'druglab' ? 'Drug trade goods discount + payout boost' : 'Stolen car sale bonus'}</p>` : ''}
@@ -1893,11 +1900,28 @@ async function showBusinesses() {
   }
   
   // Show available businesses for purchase
+  // Phase 3: district slot + bonus info
+  const curDistrictId = player.currentTerritory || null;
+  const curDistrict = curDistrictId ? getDistrict(curDistrictId) : null;
+  const curSlots = curDistrict ? curDistrict.maxBusinesses : 0;
+  const usedSlots = curDistrictId && player.businesses ? player.businesses.filter(b => b.districtId === curDistrictId).length : 0;
+  const curBizMult = getBusinessMultiplier(curDistrictId);
+  const curBonusPct = Math.round((curBizMult - 1) * 100);
+  
   businessHTML += `
     <h3>Available Businesses</h3>
+    ${curDistrict ? `
+    <div style="margin: 10px 0 15px 0; padding: 10px 14px; background: rgba(0,0,0,0.25); border: 1px solid #3498db; border-radius: 8px; color: #ecf0f1;">
+      <strong>Your District:</strong> ${curDistrict.name} &mdash; 
+      Slots: ${usedSlots}/${curSlots} used${curBonusPct > 0 ? ` | <span style="color:#2ecc71;">+${curBonusPct}% business income bonus</span>` : ''}
+    </div>` : `
+    <div style="margin: 10px 0 15px 0; padding: 10px 14px; background: rgba(0,0,0,0.25); border: 1px solid #e74c3c; border-radius: 8px; color: #e67e22;">
+      You must live in a district to purchase businesses. Use the Territory HUD to relocate.
+    </div>`}
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; margin: 20px 0;">
       ${businessTypes.map(businessType => {
         const owned = player.businesses && player.businesses.some(b => b.type === businessType.id);
+        const slotsFull = curSlots > 0 && usedSlots >= curSlots;
         return `
           <div style="background: rgba(52, 73, 94, 0.6); border-radius: 15px; padding: 20px; border: 2px solid ${owned ? '#95a5a6' : '#2ecc71'};">
             <h4 style="color: ${owned ? '#95a5a6' : '#2ecc71'}; margin-bottom: 10px;">${businessType.name}</h4>
@@ -1912,6 +1936,8 @@ async function showBusinesses() {
             
             ${owned ? 
               '<span style="color: #95a5a6; font-style: italic;">Already Owned</span>' :
+              slotsFull ? '<span style="color: #e67e22; font-style: italic;">District slots full</span>' :
+              !curDistrict ? '<span style="color: #e67e22; font-style: italic;">No district selected</span>' :
               `<button onclick="purchaseBusiness('${businessType.id}')" 
                   style="background: #2ecc71; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; width: 100%;"
                   ${player.money < businessType.basePrice ? 'disabled title="Not enough money"' : ''}>
@@ -1953,17 +1979,37 @@ async function purchaseBusiness(businessTypeId) {
     showBriefNotification("You already own this type of business!", 'warning');
     return;
   }
+
+  // Phase 3: Business placed in player's current district
+  const districtId = player.currentTerritory || null;
+  const district = districtId ? getDistrict(districtId) : null;
+
+  if (!district) {
+    showBriefNotification("You must live in a district before buying a business!", 'warning');
+    return;
+  }
+
+  // Enforce maxBusinesses per district
+  const bizInDistrict = player.businesses.filter(b => b.districtId === districtId).length;
+  if (bizInDistrict >= district.maxBusinesses) {
+    showBriefNotification(`${district.shortName} is full! Max ${district.maxBusinesses} businesses per district.`, 'warning');
+    return;
+  }
+
+  const bizBonus = getBusinessMultiplier(districtId);
+  const bonusLabel = bizBonus > 1.0 ? ` (${Math.round((bizBonus - 1) * 100)}% income bonus from ${district.shortName})` : '';
   
   player.money -= businessType.basePrice;
   player.businesses.push({
     type: businessTypeId,
     name: businessType.name,
     level: 1,
-    lastCollection: Date.now()
+    lastCollection: Date.now(),
+    districtId: districtId       // Phase 3: tied to district
   });
   
-  showBriefNotification(`Purchased ${businessType.name}! Income starts now.`, 'success');
-  logAction(`You sign the papers and shake hands on a new business venture. ${businessType.name} is now under your control - legitimate money incoming!`);
+  showBriefNotification(`Purchased ${businessType.name} in ${district.shortName}!${bonusLabel}`, 'success');
+  logAction(`You sign the papers and shake hands on a new business venture. ${businessType.name} is now under your control in ${district.shortName}${bonusLabel} - legitimate money incoming!`);
   
   updateUI();
   showBusinesses();
@@ -2058,24 +2104,52 @@ async function collectBusinessIncome(businessIndex) {
     return;
   }
   
-  const hourlyIncome = Math.floor(businessType.baseIncome * Math.pow(businessType.incomeMultiplier, business.level - 1) / 24);
-  const totalIncome = hourlyIncome * Math.min(hoursElapsed, 48); // Cap at 48 hours
+  // Phase 3: Apply district business multiplier
+  const bizMultiplier = getBusinessMultiplier(business.districtId || player.currentTerritory);
   
-  // Illegal businesses (Counterfeiting, Drug Lab, Chop Shop) pay dirty money; all other businesses pay clean money
+  const hourlyIncome = Math.floor(businessType.baseIncome * Math.pow(businessType.incomeMultiplier, business.level - 1) / 24);
+  const grossIncome = Math.floor(hourlyIncome * Math.min(hoursElapsed, 48) * bizMultiplier);
+
+  // Phase 3: Territory tax — if business is in an owned district and owner isn't the player
+  let taxAmount = 0;
+  let taxOwnerName = null;
+  const bizDistrict = business.districtId || player.currentTerritory;
+  const tState = (typeof onlineWorldState !== 'undefined' && onlineWorldState.territories) || {};
+  const terrData = tState[bizDistrict];
+  const myName = (typeof onlineWorldState !== 'undefined' && onlineWorldState.username) || '';
+  if (terrData && terrData.owner && terrData.owner !== myName) {
+    taxAmount = Math.floor(grossIncome * BUSINESS_TAX_RATE);
+    taxOwnerName = terrData.owner;
+    // Notify server to credit territory owner
+    if (typeof onlineWorldState !== 'undefined' && onlineWorldState.isConnected && onlineWorldState.socket) {
+      onlineWorldState.socket.send(JSON.stringify({
+        type: 'business_income_tax',
+        district: bizDistrict,
+        grossIncome: grossIncome,
+        taxAmount: taxAmount
+      }));
+    }
+  }
+
+  const netIncome = grossIncome - taxAmount;
+  
+  // Illegal businesses pay dirty money; all other businesses pay clean money
   if (businessType.paysDirty) {
-    player.dirtyMoney = (player.dirtyMoney || 0) + totalIncome;
+    player.dirtyMoney = (player.dirtyMoney || 0) + netIncome;
   } else {
-    player.money += totalIncome;
+    player.money += netIncome;
   }
   business.lastCollection = currentTime;
   
   // Track statistics
   updateStatistic('businessIncomeCollected');
-  updateStatistic('totalMoneyEarned', totalIncome);
+  updateStatistic('totalMoneyEarned', netIncome);
   
-  const dirtyLabel = businessType.paysDirty ? ' (dirty â€” must be laundered!)' : '';
-  showBriefNotification(`+$${totalIncome.toLocaleString()}${dirtyLabel} from ${business.name} (${hoursElapsed}h)`, 'success');
-  logAction(`${business.name} delivers another profitable period (+$${totalIncome.toLocaleString()}${dirtyLabel}).`);
+  const dirtyLabel = businessType.paysDirty ? ' (dirty \u2014 must be laundered!)' : '';
+  const bonusLabel = bizMultiplier > 1.0 ? ` [${Math.round((bizMultiplier - 1) * 100)}% district bonus]` : '';
+  const taxLabel = taxAmount > 0 ? ` [Tax: -$${taxAmount.toLocaleString()} to ${taxOwnerName}]` : '';
+  showBriefNotification(`+$${netIncome.toLocaleString()}${dirtyLabel} from ${business.name} (${hoursElapsed}h)${bonusLabel}${taxLabel}`, 'success');
+  logAction(`${business.name} delivers another profitable period (+$${netIncome.toLocaleString()}${dirtyLabel}${bonusLabel}${taxLabel}).`);
   
   updateUI();
   showBusinesses();
@@ -2087,8 +2161,11 @@ async function collectAllBusinessIncome() {
   
   let totalClean = 0;
   let totalDirty = 0;
+  let totalTax = 0;
   let collected = 0;
   const currentTime = Date.now();
+  const tState = (typeof onlineWorldState !== 'undefined' && onlineWorldState.territories) || {};
+  const myName = (typeof onlineWorldState !== 'undefined' && onlineWorldState.username) || '';
   
   for (let i = 0; i < player.businesses.length; i++) {
     const business = player.businesses[i];
@@ -2098,22 +2175,43 @@ async function collectAllBusinessIncome() {
     const lastCollection = business.lastCollection || currentTime;
     const hoursElapsed = Math.floor((currentTime - lastCollection) / (1000 * 60 * 60));
     if (hoursElapsed < 1) continue;
+
+    // Phase 3: district business multiplier
+    const bizMultiplier = getBusinessMultiplier(business.districtId || player.currentTerritory);
     
     const hourlyIncome = Math.floor(businessType.baseIncome * Math.pow(businessType.incomeMultiplier, business.level - 1) / 24);
-    const totalIncome = hourlyIncome * Math.min(hoursElapsed, 48);
+    const grossIncome = Math.floor(hourlyIncome * Math.min(hoursElapsed, 48) * bizMultiplier);
+
+    // Phase 3: territory tax
+    let taxAmount = 0;
+    const bizDistrict = business.districtId || player.currentTerritory;
+    const terrData = tState[bizDistrict];
+    if (terrData && terrData.owner && terrData.owner !== myName) {
+      taxAmount = Math.floor(grossIncome * BUSINESS_TAX_RATE);
+      if (typeof onlineWorldState !== 'undefined' && onlineWorldState.isConnected && onlineWorldState.socket) {
+        onlineWorldState.socket.send(JSON.stringify({
+          type: 'business_income_tax',
+          district: bizDistrict,
+          grossIncome: grossIncome,
+          taxAmount: taxAmount
+        }));
+      }
+    }
+    totalTax += taxAmount;
+    const netIncome = grossIncome - taxAmount;
     
     if (businessType.paysDirty) {
-      player.dirtyMoney = (player.dirtyMoney || 0) + totalIncome;
-      totalDirty += totalIncome;
+      player.dirtyMoney = (player.dirtyMoney || 0) + netIncome;
+      totalDirty += netIncome;
     } else {
-      player.money += totalIncome;
-      totalClean += totalIncome;
+      player.money += netIncome;
+      totalClean += netIncome;
     }
     business.lastCollection = currentTime;
     collected++;
     
     updateStatistic('businessIncomeCollected');
-    updateStatistic('totalMoneyEarned', totalIncome);
+    updateStatistic('totalMoneyEarned', netIncome);
   }
   
   if (collected === 0) {
@@ -2124,9 +2222,10 @@ async function collectAllBusinessIncome() {
   let msg = `Collected from ${collected} business${collected > 1 ? 'es' : ''}:`;
   if (totalClean > 0) msg += ` +$${totalClean.toLocaleString()} clean`;
   if (totalDirty > 0) msg += ` +$${totalDirty.toLocaleString()} dirty`;
+  if (totalTax > 0) msg += ` (-$${totalTax.toLocaleString()} tax)`;
   
   showBriefNotification(msg, 'success');
-  logAction(`ðŸ’° Collected all business income in one sweep. ${totalClean > 0 ? `$${totalClean.toLocaleString()} clean` : ''}${totalClean > 0 && totalDirty > 0 ? ', ' : ''}${totalDirty > 0 ? `$${totalDirty.toLocaleString()} dirty` : ''}.`);
+  logAction(`\ud83d\udcb0 Collected all business income in one sweep. ${totalClean > 0 ? `$${totalClean.toLocaleString()} clean` : ''}${totalClean > 0 && totalDirty > 0 ? ', ' : ''}${totalDirty > 0 ? `$${totalDirty.toLocaleString()} dirty` : ''}${totalTax > 0 ? ` (Tax: -$${totalTax.toLocaleString()})` : ''}.`);
   
   updateUI();
   showBusinesses();

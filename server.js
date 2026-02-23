@@ -657,6 +657,10 @@ function handleClientMessage(clientId, message, ws) {
         case 'job_intent':
             handleJobIntent(clientId, message);
             break;
+
+        case 'business_income_tax':
+            handleBusinessIncomeTax(clientId, message);
+            break;
             
         default:
             console.log(`⚠️ Unknown message type: ${message.type}`);
@@ -2069,6 +2073,60 @@ function handleJobIntent(clientId, message) {
     broadcastPlayerStates();
     persistedLeaderboard = generateLeaderboard();
     broadcastToAll({ type: 'player_ranked', leaderboard: persistedLeaderboard });
+    scheduleWorldSave();
+}
+
+// ── Phase 3: Business Income Tax Handler ────────────────────────
+function handleBusinessIncomeTax(clientId, message) {
+    const player = gameState.players.get(clientId);
+    if (!player) return;
+
+    const { district, grossIncome, taxAmount } = message;
+    if (!district || !taxAmount || taxAmount <= 0) return;
+
+    const terr = gameState.territories[district];
+    if (!terr || !terr.owner || terr.owner === player.name) return;
+
+    // Cap tax at 10% of grossIncome for safety
+    const safeTax = Math.min(taxAmount, Math.floor((grossIncome || 0) * 0.10));
+    if (safeTax <= 0) return;
+
+    terr.taxCollected = (terr.taxCollected || 0) + safeTax;
+
+    // Credit tax to territory owner
+    for (const [ownerId, ownerPlayer] of gameState.players.entries()) {
+        if (ownerPlayer.name === terr.owner) {
+            ownerPlayer.money = (ownerPlayer.money || 0) + safeTax;
+            const ownerPs = gameState.playerStates.get(ownerId);
+            if (ownerPs) { ownerPs.money = ownerPlayer.money; ownerPs.lastUpdate = Date.now(); }
+            // Notify territory owner
+            const ownerWs = clients.get(ownerId);
+            if (ownerWs && ownerWs.readyState === WebSocket.OPEN) {
+                ownerWs.send(JSON.stringify({
+                    type: 'territory_tax_income',
+                    from: player.name,
+                    district: district,
+                    amount: safeTax,
+                    source: 'business',
+                    newMoney: ownerPlayer.money,
+                    totalCollected: terr.taxCollected
+                }));
+            }
+            break;
+        }
+    }
+
+    // Acknowledge to sender
+    const ws = clients.get(clientId);
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+            type: 'business_income_tax_result',
+            success: true,
+            district: district,
+            taxAmount: safeTax
+        }));
+    }
+
     scheduleWorldSave();
 }
 

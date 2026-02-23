@@ -1,11 +1,11 @@
-// territories.js — Unified Territory System (Phase 1)
+// territories.js — Unified Territory System (Phases 1–3)
 // Single source of truth for all territory data.
 // Used by both client (game.js, multiplayer.js) and server (server.js).
 //
-// Every player lives in a territory. Territory owners collect a flat
-// 10 % tax on income earned by residents. Players can relocate at any time
-// (with a cooldown + cost). Territories can be conquered via assassination
-// or gang wars (Phase 2).
+// Phase 1: Spawn selection, relocation, HUD district display.
+// Phase 2: Territory ownership, 10% job-income tax, claim & conquest.
+// Phase 3: Businesses tied to districts — benefit multipliers, max-slot
+//          enforcement, business-income tax for territory owners.
 
 // ────────────────────────────────────────────────────────────────────────
 // DISTRICT DEFINITIONS — the 8 neighbourhoods of the city
@@ -183,9 +183,30 @@ export const MIN_WAR_GANG_SIZE = 5;
 /** Energy cost for waging territory war */
 export const WAR_ENERGY_COST = 40;
 
+/** Tax rate territory owners collect on business income earned in their district */
+export const BUSINESS_TAX_RATE = 0.10;
+
 // ────────────────────────────────────────────────────────────────────────
 // HELPERS
 // ────────────────────────────────────────────────────────────────────────
+
+/**
+ * Get the business income multiplier for a district.
+ * Returns the `benefits.business` value, defaulting to 1.0.
+ */
+export function getBusinessMultiplier(districtId) {
+  const d = DISTRICTS.find(dd => dd.id === districtId);
+  return (d && d.benefits && d.benefits.business) || 1.0;
+}
+
+/**
+ * Get the laundering capacity multiplier for a district.
+ * Returns the `benefits.laundering` value, defaulting to 1.0.
+ */
+export function getLaunderingMultiplier(districtId) {
+  const d = DISTRICTS.find(dd => dd.id === districtId);
+  return (d && d.benefits && d.benefits.laundering) || 1.0;
+}
 
 /** Look up a district definition by id */
 export function getDistrict(districtId) {

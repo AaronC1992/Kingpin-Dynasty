@@ -1175,8 +1175,16 @@ async function handleServerMessage(message) {
         case 'territory_tax_income':
             if (typeof message.amount === 'number') {
                 if (typeof message.newMoney === 'number') player.money = message.newMoney;
-                logAction(`💰 Tax income: $${message.amount.toLocaleString()} from ${message.from} (${message.district.replace(/_/g, ' ')}).`);
+                const taxSource = message.source === 'business' ? 'business income' : 'job';
+                logAction(`💰 Tax income: $${message.amount.toLocaleString()} from ${message.from}'s ${taxSource} (${message.district.replace(/_/g, ' ')}).`);
                 updateUI();
+            }
+            break;
+
+        case 'business_income_tax_result':
+            // Server confirmed business income tax was processed
+            if (message.success) {
+                console.log(`[Territory] Business tax $${message.taxAmount} processed for ${message.district}`);
             }
             break;
 
