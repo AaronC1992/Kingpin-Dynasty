@@ -1243,18 +1243,14 @@ function handleServerMessage(message) {
             break;
 
         case 'combat_result':
-            // Server-authoritative PvP combat outcome
+            // Server-authoritative PvP combat outcome — show result modal
             const isWinner = message.winner === (player.name || '');
             const isLoser = message.loser === (player.name || '');
-            if (isWinner) {
-                const repGain = message.repChange || 5;
-                logAction(` Victory! You defeated ${message.loser} and gained ${repGain} reputation!`);
-                addWorldEvent(` ${message.winner} defeated ${message.loser} in combat!`);
-            } else if (isLoser) {
-                logAction(` Defeat! ${message.winner} defeated you in combat.`);
-            } else {
-                addWorldEvent(` ${message.winner} defeated ${message.loser} in combat!`);
+            if (isWinner || isLoser) {
+                showPvpResultModal(message, isWinner);
             }
+            // Always log in world feed for other spectators
+            addWorldEvent(`⚔️ ${message.winner} defeated ${message.loser} in combat!`);
             // Stats sync happens via next world_update
             break;
 
@@ -1605,6 +1601,89 @@ function showSystemMessage(message, color = '#f39c12') {
         chatArea.appendChild(messageDiv);
         chatArea.scrollTop = chatArea.scrollHeight;
     }
+}
+
+// PvP combat result modal
+function showPvpResultModal(message, isWinner) {
+    let modal = document.getElementById('pvp-result-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'pvp-result-modal';
+        modal.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;width:480px;max-width:95%;background:rgba(0,0,0,0.95);border-radius:12px;font-family:Georgia,serif;color:#ecf0f1;padding:25px;';
+        document.body.appendChild(modal);
+    }
+
+    const repChange = message.repChange || 5;
+    const opponent = isWinner ? message.loser : message.winner;
+
+    if (isWinner) {
+        modal.style.border = '2px solid #2ecc71';
+        modal.style.boxShadow = '0 0 30px rgba(46,204,113,0.5)';
+        player.reputation = (player.reputation || 0) + repChange;
+
+        modal.innerHTML = `
+            <div style="text-align:center;">
+                <div style="font-size:3em;margin-bottom:10px;">🏆</div>
+                <h2 style="color:#2ecc71;margin:0;">VICTORY!</h2>
+                <p style="color:#888;margin:5px 0;">You defeated <strong style="color:#e74c3c;">${escapeHTML(opponent)}</strong></p>
+            </div>
+            <div style="margin:20px 0;padding:15px;background:rgba(46,204,113,0.1);border:1px solid #2ecc71;border-radius:8px;">
+                <div style="display:flex;justify-content:space-around;text-align:center;">
+                    <div>
+                        <div style="color:#2ecc71;font-size:1.5em;font-weight:bold;">+${repChange}</div>
+                        <div style="color:#888;font-size:0.85em;">Reputation</div>
+                    </div>
+                    <div>
+                        <div style="color:#f1c40f;font-size:1.5em;font-weight:bold;">⭐</div>
+                        <div style="color:#888;font-size:0.85em;">Street Cred</div>
+                    </div>
+                </div>
+            </div>
+            <div style="background:rgba(255,255,255,0.05);padding:12px;border-radius:6px;text-align:center;color:#888;font-style:italic;">
+                "Word on the street is you're not someone to mess with."
+            </div>
+            <div style="text-align:center;margin-top:15px;">
+                <button onclick="document.getElementById('pvp-result-modal').remove();" style="background:#2ecc71;color:#1a1a1a;padding:12px 35px;border:none;border-radius:6px;cursor:pointer;font-family:Georgia,serif;font-size:1em;font-weight:bold;">Claim Victory</button>
+            </div>
+        `;
+
+        logAction(`🏆 Victory! Defeated ${opponent} and gained ${repChange} reputation!`);
+    } else {
+        modal.style.border = '2px solid #e74c3c';
+        modal.style.boxShadow = '0 0 30px rgba(231,76,60,0.5)';
+        const repLoss = Math.min(player.reputation || 0, 3);
+        player.reputation = Math.max(0, (player.reputation || 0) - repLoss);
+
+        modal.innerHTML = `
+            <div style="text-align:center;">
+                <div style="font-size:3em;margin-bottom:10px;">💀</div>
+                <h2 style="color:#e74c3c;margin:0;">DEFEATED</h2>
+                <p style="color:#888;margin:5px 0;"><strong style="color:#2ecc71;">${escapeHTML(opponent)}</strong> came out on top</p>
+            </div>
+            <div style="margin:20px 0;padding:15px;background:rgba(231,76,60,0.1);border:1px solid #e74c3c;border-radius:8px;">
+                <div style="display:flex;justify-content:space-around;text-align:center;">
+                    <div>
+                        <div style="color:#e74c3c;font-size:1.5em;font-weight:bold;">-${repLoss}</div>
+                        <div style="color:#888;font-size:0.85em;">Reputation</div>
+                    </div>
+                    <div>
+                        <div style="color:#e74c3c;font-size:1.5em;font-weight:bold;">💔</div>
+                        <div style="color:#888;font-size:0.85em;">Pride</div>
+                    </div>
+                </div>
+            </div>
+            <div style="background:rgba(255,255,255,0.05);padding:12px;border-radius:6px;text-align:center;color:#888;font-style:italic;">
+                "You'll get them next time. Every Don takes a loss before they rise."
+            </div>
+            <div style="text-align:center;margin-top:15px;">
+                <button onclick="document.getElementById('pvp-result-modal').remove();" style="background:#e74c3c;color:#fff;padding:12px 35px;border:none;border-radius:6px;cursor:pointer;font-family:Georgia,serif;font-size:1em;">Dust Off</button>
+            </div>
+        `;
+
+        logAction(`💀 Defeated by ${opponent}. Lost ${repLoss} reputation.`);
+    }
+
+    if (typeof updateUI === 'function') updateUI();
 }
 
 // Sync player state to server
@@ -2457,16 +2536,6 @@ function showWelcomeMessage() {
     logAction(`🌐 ${welcomeMsg}`);
 }
 
-// Simulate online connection
-function simulateOnlineConnection() {
-    // In real implementation, this would create actual WebSocket connection
-    onlineWorldState.socket = {
-        send: (data) => console.log('Sending to server:', data),
-        close: () => console.log('Connection closed'),
-        readyState: 1 // OPEN
-    };
-}
-
 // Generate player ID
 function generatePlayerId() {
     return 'player_' + Math.random().toString(36).substr(2, 9).toUpperCase();
@@ -2554,27 +2623,6 @@ function loadGlobalLeaderboard() {
             </div>
         </div>
     `).join('');
-}
-
-// Generate world data — real data comes from the server
-function generateNearbyPlayers() {
-    return [];
-}
-
-function generateGlobalChatHistory() {
-    return [];
-}
-
-function generateCityEvents() {
-    return [];
-}
-
-function generateActiveHeists() {
-    return [];
-}
-
-function generateRandomWorldEvent() {
-    return '';
 }
 
 // World activity functions
@@ -2699,16 +2747,149 @@ function doDistrictJob(districtName) {
         alert("You need to be connected to the online world!");
         return;
     }
-    
+
+    if (player.inJail) {
+        showSystemMessage("You can't work while in jail!", '#e74c3c');
+        return;
+    }
+
     const district = onlineWorldState.cityDistricts[districtName];
-    const riskMultiplier = district.crimeLevel / 100;
-    
-    alert(` Looking for jobs in ${districtName}... Crime level affects difficulty and rewards.`);
-    
-    // Integrate with existing job system but with online world context
-    showJobs();
-    
-    logAction(` Searching for jobs in ${districtName} district (Crime Level: ${district.crimeLevel}%)`);
+    if (!district) {
+        showJobs();
+        return;
+    }
+
+    const crimeLevel = district.crimeLevel || 50;
+    const riskMultiplier = crimeLevel / 100;
+    const rewardMultiplier = 1 + (riskMultiplier * 0.5); // Higher crime = 0-50% more reward
+    const dangerMultiplier = 1 + (riskMultiplier * 0.4); // Higher crime = 0-40% more danger
+    const energyCost = 8;
+
+    if (player.energy < energyCost) {
+        showSystemMessage(`Not enough energy! Need ${energyCost} to work in ${districtName}.`, '#e74c3c');
+        return;
+    }
+
+    // District-specific job pools
+    const districtJobs = {
+        downtown: [
+            { name: 'Shake Down a Business', baseReward: [800, 2500], xp: 20, jailChance: 0.12, flavor: 'You walked into a shop and made the owner an offer he couldn\'t refuse.' },
+            { name: 'Run a Con on Tourists', baseReward: [500, 1800], xp: 15, jailChance: 0.08, flavor: 'The tourists never saw it coming — wallets, watches, the works.' },
+            { name: 'Intercept a Wire Transfer', baseReward: [2000, 5000], xp: 35, jailChance: 0.2, flavor: 'Your inside man at the bank tipped you off to a fat transfer.' }
+        ],
+        docks: [
+            { name: 'Hijack a Shipping Container', baseReward: [1500, 4000], xp: 30, jailChance: 0.18, flavor: 'The container was full of electronics — easy money on the black market.' },
+            { name: 'Smuggle Contraband', baseReward: [1000, 3000], xp: 25, jailChance: 0.15, flavor: 'You slipped the goods past customs in a fishing boat.' },
+            { name: 'Bribe a Dock Foreman', baseReward: [600, 1500], xp: 15, jailChance: 0.06, flavor: 'Now you\'ve got eyes and ears on every shipment that comes through.' }
+        ],
+        suburbs: [
+            { name: 'Burglarize a McMansion', baseReward: [1200, 3500], xp: 25, jailChance: 0.14, flavor: 'Rich family on vacation — their safe wasn\'t as secure as they thought.' },
+            { name: 'Run a Prescription Scam', baseReward: [400, 1200], xp: 12, jailChance: 0.08, flavor: 'Fake prescriptions across three pharmacies. Quick and clean.' },
+            { name: 'Steal Luxury Cars', baseReward: [2000, 5000], xp: 30, jailChance: 0.16, flavor: 'Three luxury cars boosted from driveways overnight.' }
+        ],
+        industrial: [
+            { name: 'Rob a Warehouse', baseReward: [1000, 3000], xp: 22, jailChance: 0.15, flavor: 'Cut the fence, loaded the van, gone in eight minutes flat.' },
+            { name: 'Steal Construction Equipment', baseReward: [800, 2000], xp: 18, jailChance: 0.1, flavor: 'Heavy machinery sells well to the right buyers.' },
+            { name: 'Cook Product in an Abandoned Factory', baseReward: [1500, 4500], xp: 30, jailChance: 0.22, flavor: 'Your chemist turned raw materials into serious street value.' }
+        ],
+        redlight: [
+            { name: 'Collect Protection Money', baseReward: [600, 2000], xp: 18, jailChance: 0.1, flavor: 'The clubs pay on time when you show up with muscle.' },
+            { name: 'Run an Underground Card Game', baseReward: [1000, 3500], xp: 22, jailChance: 0.12, flavor: 'You took the house cut and nobody dared complain.' },
+            { name: 'Fence Stolen Goods', baseReward: [800, 2500], xp: 20, jailChance: 0.09, flavor: 'Your fence moved the merch before dawn — cash in hand.' }
+        ]
+    };
+
+    const jobPool = districtJobs[districtName] || districtJobs.downtown;
+    const job = jobPool[Math.floor(Math.random() * jobPool.length)];
+
+    // Apply district crime level modifiers
+    const minReward = Math.floor(job.baseReward[0] * rewardMultiplier);
+    const maxReward = Math.floor(job.baseReward[1] * rewardMultiplier);
+    const adjustedJailChance = Math.min(0.5, job.jailChance * dangerMultiplier);
+    const adjustedXp = Math.floor(job.xp * rewardMultiplier);
+
+    // Deduct energy
+    player.energy -= energyCost;
+
+    // Check for arrest
+    const arrested = Math.random() < adjustedJailChance;
+
+    let resultModal = document.getElementById('district-job-modal');
+    if (!resultModal) {
+        resultModal = document.createElement('div');
+        resultModal.id = 'district-job-modal';
+        resultModal.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;width:520px;max-width:95%;background:rgba(0,0,0,0.95);border:2px solid #c0a062;border-radius:12px;font-family:Georgia,serif;color:#ecf0f1;box-shadow:0 0 25px rgba(192,160,98,0.4);padding:25px;';
+        document.body.appendChild(resultModal);
+    }
+
+    if (arrested) {
+        const jailTime = 10 + Math.floor(Math.random() * 15);
+        player.inJail = true;
+        player.jailTime = jailTime;
+        player.wantedLevel = Math.min(10, (player.wantedLevel || 0) + 1);
+
+        resultModal.innerHTML = `
+            <div style="text-align:center;">
+                <h3 style="color:#c0a062;margin:0 0 5px 0;">🏙️ ${districtName.charAt(0).toUpperCase() + districtName.slice(1)} District Job</h3>
+                <small style="color:#888;">Crime Level: ${crimeLevel}%</small>
+            </div>
+            <div style="margin:15px 0;padding:12px;background:rgba(231,76,60,0.15);border:1px solid #e74c3c;border-radius:8px;">
+                <p style="color:#e74c3c;font-weight:bold;margin:0 0 8px 0;">🚔 Busted!</p>
+                <p style="margin:0;color:#ccc;">You attempted: <strong>${job.name}</strong></p>
+                <p style="margin:8px 0 0 0;color:#e74c3c;">The cops were tipped off. You've been sentenced to ${jailTime} seconds in jail.</p>
+            </div>
+            <div style="text-align:center;margin-top:15px;">
+                <button onclick="document.getElementById('district-job-modal').remove();if(typeof showJailScreen==='function')showJailScreen();" style="background:#e74c3c;color:white;padding:10px 30px;border:none;border-radius:6px;cursor:pointer;font-family:Georgia,serif;font-size:1em;">Accept Your Fate</button>
+            </div>
+        `;
+
+        logAction(`🚔 Busted doing a ${job.name} in ${districtName}! Jailed for ${jailTime}s.`);
+        if (window.EventBus) EventBus.emit('jailStatusChanged', { inJail: true, jailTime: jailTime });
+        if (typeof updateJailTimer === 'function') updateJailTimer();
+    } else {
+        const earned = minReward + Math.floor(Math.random() * (maxReward - minReward));
+        player.money += earned;
+        player.reputation = (player.reputation || 0) + 1;
+        if (typeof gainExperience === 'function') {
+            gainExperience(adjustedXp);
+        } else {
+            player.experience = (player.experience || 0) + adjustedXp;
+        }
+
+        resultModal.innerHTML = `
+            <div style="text-align:center;">
+                <h3 style="color:#c0a062;margin:0 0 5px 0;">🏙️ ${districtName.charAt(0).toUpperCase() + districtName.slice(1)} District Job</h3>
+                <small style="color:#888;">Crime Level: ${crimeLevel}% (${crimeLevel > 60 ? 'High Risk / High Reward' : crimeLevel > 35 ? 'Moderate Risk' : 'Low Profile'})</small>
+            </div>
+            <div style="margin:15px 0;padding:12px;background:rgba(46,204,113,0.12);border:1px solid #2ecc71;border-radius:8px;">
+                <p style="color:#2ecc71;font-weight:bold;margin:0 0 8px 0;">✅ ${job.name}</p>
+                <p style="margin:0;color:#ccc;font-style:italic;">${job.flavor}</p>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:15px 0;">
+                <div style="text-align:center;padding:10px;background:rgba(255,255,255,0.05);border-radius:6px;">
+                    <div style="color:#2ecc71;font-size:1.2em;font-weight:bold;">+$${earned.toLocaleString()}</div>
+                    <div style="color:#888;font-size:0.8em;">Cash</div>
+                </div>
+                <div style="text-align:center;padding:10px;background:rgba(255,255,255,0.05);border-radius:6px;">
+                    <div style="color:#9b59b6;font-size:1.2em;font-weight:bold;">+${adjustedXp} XP</div>
+                    <div style="color:#888;font-size:0.8em;">Experience</div>
+                </div>
+                <div style="text-align:center;padding:10px;background:rgba(255,255,255,0.05);border-radius:6px;">
+                    <div style="color:#e67e22;font-size:1.2em;font-weight:bold;">-${energyCost}</div>
+                    <div style="color:#888;font-size:0.8em;">Energy</div>
+                </div>
+            </div>
+            <div style="text-align:center;margin-top:15px;">
+                <button onclick="document.getElementById('district-job-modal').remove();" style="background:#c0a062;color:#1a1a1a;padding:10px 30px;border:none;border-radius:6px;cursor:pointer;font-family:Georgia,serif;font-size:1em;font-weight:bold;">Collect</button>
+            </div>
+        `;
+
+        logAction(`💼 ${job.name} in ${districtName}: earned $${earned.toLocaleString()}, +${adjustedXp} XP`);
+        addWorldEvent(`💼 ${player.name || 'A player'} pulled off a job in ${districtName}!`);
+    }
+
+    if (typeof updateUI === 'function') updateUI();
+    if (typeof checkLevelUp === 'function') checkLevelUp();
 }
 
 function claimTerritory(districtName) {
@@ -3229,27 +3410,87 @@ function handleAssassinationSurvived(message) {
 // Player interaction functions
 function challengePlayer(playerName) {
     if (!onlineWorldState.isConnected) {
-        alert("You need to be connected to the online world!");
+        showSystemMessage('You need to be connected to the online world!', '#e74c3c');
         return;
     }
-    
-    const confirmChallenge = confirm(`Challenge ${playerName} to combat? This will cost energy and the winner gains reputation.`);
-    
-    if (confirmChallenge) {
-        // Send challenge to server for authoritative resolution
-        if (onlineWorldState.socket && onlineWorldState.socket.readyState === WebSocket.OPEN) {
-            onlineWorldState.socket.send(JSON.stringify({
-                type: 'player_challenge',
-                targetPlayer: playerName,
-                playerName: player.name,
-                level: player.level,
-                reputation: player.reputation
-            }));
-            logAction(` Challenged ${playerName} to combat! Awaiting outcome...`);
-        } else {
-            alert('Connection lost. Reconnecting...');
-            connectToOnlineWorld();
-        }
+
+    const energyCost = 5;
+    if (player.energy < energyCost) {
+        showSystemMessage(`Not enough energy! Need ${energyCost} to fight.`, '#e74c3c');
+        return;
+    }
+
+    if (player.inJail) {
+        showSystemMessage('You can\'t fight while in jail!', '#e74c3c');
+        return;
+    }
+
+    // Show challenge confirmation modal instead of confirm()
+    let modal = document.getElementById('pvp-challenge-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'pvp-challenge-modal';
+        modal.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;width:450px;max-width:95%;background:rgba(0,0,0,0.95);border:2px solid #8b0000;border-radius:12px;font-family:Georgia,serif;color:#ecf0f1;box-shadow:0 0 30px rgba(139,0,0,0.6);padding:25px;';
+        document.body.appendChild(modal);
+    }
+
+    // Find target player info from nearby players
+    const targetInfo = (onlineWorldState.nearbyPlayers || []).find(p => p.name === playerName);
+    const targetLevel = targetInfo ? (targetInfo.level || '?') : '?';
+    const targetRep = targetInfo ? (targetInfo.reputation || '?') : '?';
+
+    modal.innerHTML = `
+        <div style="text-align:center;">
+            <h3 style="color:#8b0000;margin:0;">⚔️ Challenge to Combat</h3>
+        </div>
+        <div style="margin:20px 0;display:grid;grid-template-columns:1fr auto 1fr;gap:15px;align-items:center;">
+            <div style="text-align:center;padding:15px;background:rgba(46,204,113,0.1);border:1px solid #2ecc71;border-radius:8px;">
+                <div style="color:#2ecc71;font-weight:bold;font-size:1.1em;">${escapeHTML(player.name || 'You')}</div>
+                <div style="color:#888;font-size:0.85em;margin-top:5px;">Lvl ${player.level || 1}</div>
+                <div style="color:#888;font-size:0.85em;">Rep: ${Math.floor(player.reputation || 0)}</div>
+            </div>
+            <div style="color:#8b0000;font-size:1.5em;font-weight:bold;">VS</div>
+            <div style="text-align:center;padding:15px;background:rgba(231,76,60,0.1);border:1px solid #e74c3c;border-radius:8px;">
+                <div style="color:#e74c3c;font-weight:bold;font-size:1.1em;">${escapeHTML(playerName)}</div>
+                <div style="color:#888;font-size:0.85em;margin-top:5px;">Lvl ${targetLevel}</div>
+                <div style="color:#888;font-size:0.85em;">Rep: ${targetRep}</div>
+            </div>
+        </div>
+        <div style="text-align:center;color:#888;font-size:0.85em;margin-bottom:15px;">Cost: ${energyCost} energy | Winner gains reputation</div>
+        <div style="display:flex;gap:10px;justify-content:center;">
+            <button onclick="executePvpChallenge('${escapeHTML(playerName)}', ${energyCost})" style="background:#8b0000;color:#fff;padding:12px 30px;border:none;border-radius:6px;cursor:pointer;font-family:Georgia,serif;font-size:1em;">⚔️ Fight</button>
+            <button onclick="document.getElementById('pvp-challenge-modal').remove();" style="background:#333;color:#c0a062;padding:12px 30px;border:1px solid #c0a062;border-radius:6px;cursor:pointer;font-family:Georgia,serif;font-size:1em;">Walk Away</button>
+        </div>
+    `;
+}
+
+function executePvpChallenge(playerName, energyCost) {
+    // Remove confirmation modal
+    const modal = document.getElementById('pvp-challenge-modal');
+    if (modal) modal.remove();
+
+    // Deduct energy
+    player.energy -= energyCost;
+    if (typeof updateUI === 'function') updateUI();
+
+    // Send challenge to server for authoritative resolution
+    if (onlineWorldState.socket && onlineWorldState.socket.readyState === WebSocket.OPEN) {
+        onlineWorldState.socket.send(JSON.stringify({
+            type: 'player_challenge',
+            targetPlayer: playerName,
+            playerName: player.name,
+            level: player.level,
+            reputation: player.reputation
+        }));
+
+        // Show a "waiting" notification
+        showSystemMessage(`⚔️ Engaging ${playerName} in combat...`, '#f39c12');
+        logAction(`⚔️ Challenged ${playerName} to combat!`);
+    } else {
+        // Refund energy on connection failure
+        player.energy += energyCost;
+        showSystemMessage('Connection lost. Try reconnecting.', '#e74c3c');
+        if (typeof updateUI === 'function') updateUI();
     }
 }
 
@@ -3297,95 +3538,139 @@ function saveOnlineWorldData() {
 
 function spectateWar(district) {
     if (!district) return;
+
+    // Try to pull real war data from server state
+    const wars = onlineWorldState.gangWars || [];
+    const warData = wars.find(w => w.district === district);
+    const attackerName = warData ? (warData.attacker || 'Unknown Crew') : 'Attacking Crew';
+    const defenderName = warData ? (warData.defender || 'District Defenders') : 'Local Defenders';
+
     // Create or reuse modal container
     let modal = document.getElementById('turf-war-spectator');
     if (!modal) {
         modal = document.createElement('div');
         modal.id = 'turf-war-spectator';
-        modal.style.position = 'fixed';
-        modal.style.top = '50%';
-        modal.style.left = '50%';
-        modal.style.transform = 'translate(-50%, -50%)';
-        modal.style.zIndex = '9999';
-        modal.style.width = '600px';
-        modal.style.maxWidth = '95%';
-        modal.style.background = 'rgba(0,0,0,0.92)';
-        modal.style.border = '2px solid #8b0000';
-        modal.style.borderRadius = '12px';
-        modal.style.fontFamily = 'Georgia, serif';
-        modal.style.color = '#ecf0f1';
-        modal.style.boxShadow = '0 0 25px rgba(139,0,0,0.7)';
+        modal.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;width:600px;max-width:95%;background:rgba(0,0,0,0.95);border:2px solid #8b0000;border-radius:12px;font-family:Georgia,serif;color:#ecf0f1;box-shadow:0 0 25px rgba(139,0,0,0.7);padding:20px;';
         document.body.appendChild(modal);
     }
     modal.innerHTML = '';
 
-    const attackerStrengthStart = 60 + Math.floor(Math.random()*40);
-    const defenderStrengthStart = 55 + Math.floor(Math.random()*45);
+    // Initial strengths influenced by war data if available
+    const attackerStrengthStart = (warData ? 70 : 60) + Math.floor(Math.random()*30);
+    const defenderStrengthStart = (warData ? 65 : 55) + Math.floor(Math.random()*35);
     let attackerStrength = attackerStrengthStart;
     let defenderStrength = defenderStrengthStart;
     let tick = 0;
-    const maxTicks = 12 + Math.floor(Math.random()*5); // variable length
+    const maxTicks = 12 + Math.floor(Math.random()*5);
+    let playerBet = null; // track if the player placed a bet
 
+    // Header with real names
     const header = document.createElement('div');
-    header.style.display = 'flex';
-    header.style.justifyContent = 'space-between';
-    header.style.alignItems = 'center';
+    header.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;';
     header.innerHTML = `
-        <h3 style="margin:0; color:#ff4444; text-shadow:2px 2px 6px #8b0000;"> Turf War: ${district}</h3>
-        <button style="background:#333; color:#c0a062; padding:6px 12px; border:1px solid #c0a062; border-radius:6px; cursor:pointer;" onclick="clearInterval(window._warSpectateInterval); document.getElementById('turf-war-spectator').remove();"> Close</button>
+        <div>
+            <h3 style="margin:0;color:#ff4444;text-shadow:2px 2px 6px #8b0000;">⚔️ Turf War: ${escapeHTML(district)}</h3>
+            <div style="font-size:0.85em;color:#ccc;margin-top:4px;"><span style="color:#ff4444;">${escapeHTML(attackerName)}</span> vs <span style="color:#00a884;">${escapeHTML(defenderName)}</span></div>
+        </div>
+        <button style="background:#333;color:#c0a062;padding:6px 12px;border:1px solid #c0a062;border-radius:6px;cursor:pointer;" onclick="clearInterval(window._warSpectateInterval);document.getElementById('turf-war-spectator').remove();">✕ Close</button>
     `;
     modal.appendChild(header);
 
+    // Betting section
+    const betSection = document.createElement('div');
+    betSection.id = 'war-bet-section';
+    betSection.style.cssText = 'margin:10px 0;padding:12px;background:rgba(192,160,98,0.1);border:1px solid #c0a062;border-radius:8px;text-align:center;';
+    const betAmount = Math.min(5000, Math.max(500, Math.floor(player.money * 0.05)));
+    betSection.innerHTML = `
+        <div style="color:#c0a062;font-weight:bold;margin-bottom:8px;">💰 Place a Bet ($${betAmount.toLocaleString()})</div>
+        <div style="display:flex;gap:10px;justify-content:center;">
+            <button id="bet-attacker-btn" onclick="window._placeWarBet('attacker')" style="background:#8b0000;color:#fff;padding:8px 18px;border:none;border-radius:5px;cursor:pointer;">${escapeHTML(attackerName)}</button>
+            <button id="bet-defender-btn" onclick="window._placeWarBet('defender')" style="background:#004d40;color:#fff;padding:8px 18px;border:none;border-radius:5px;cursor:pointer;">${escapeHTML(defenderName)}</button>
+            <button onclick="document.getElementById('war-bet-section').style.display='none';" style="background:#333;color:#888;padding:8px 12px;border:1px solid #555;border-radius:5px;cursor:pointer;">Skip</button>
+        </div>
+    `;
+    modal.appendChild(betSection);
+
+    // Place bet handler
+    window._placeWarBet = function(side) {
+        if (playerBet) return;
+        if (player.money < betAmount) {
+            showSystemMessage('Not enough cash to place a bet!', '#e74c3c');
+            return;
+        }
+        player.money -= betAmount;
+        playerBet = side;
+        betSection.innerHTML = `<div style="color:#c0a062;">💰 Bet placed: <strong>$${betAmount.toLocaleString()}</strong> on <strong>${side === 'attacker' ? escapeHTML(attackerName) : escapeHTML(defenderName)}</strong></div>`;
+        if (typeof updateUI === 'function') updateUI();
+    };
+
     const barsContainer = document.createElement('div');
-    barsContainer.style.margin = '15px 0 10px 0';
+    barsContainer.style.margin = '12px 0 10px 0';
     barsContainer.innerHTML = `
         <div style="margin-bottom:10px;">
-            <div style="display:flex; justify-content:space-between; font-size:0.85em; margin-bottom:3px;">
-                <span style="color:#c0a062;">Attacker Strength</span>
+            <div style="display:flex;justify-content:space-between;font-size:0.85em;margin-bottom:3px;">
+                <span style="color:#ff4444;">⚔️ ${escapeHTML(attackerName)}</span>
                 <span id="attacker-strength-val">${attackerStrength}</span>
             </div>
-            <div style="background:#222; height:16px; border:1px solid #444; border-radius:8px; overflow:hidden;">
-                <div id="attacker-bar" style="height:100%; width:${(attackerStrength/attackerStrengthStart)*100}%; background:linear-gradient(90deg,#8b0000,#ff4444);"></div>
+            <div style="background:#222;height:16px;border:1px solid #444;border-radius:8px;overflow:hidden;">
+                <div id="attacker-bar" style="height:100%;width:${(attackerStrength/attackerStrengthStart)*100}%;background:linear-gradient(90deg,#8b0000,#ff4444);transition:width 0.4s;"></div>
             </div>
         </div>
         <div>
-            <div style="display:flex; justify-content:space-between; font-size:0.85em; margin-bottom:3px;">
-                <span style="color:#c0a062;">Defender Strength</span>
+            <div style="display:flex;justify-content:space-between;font-size:0.85em;margin-bottom:3px;">
+                <span style="color:#00a884;">🛡️ ${escapeHTML(defenderName)}</span>
                 <span id="defender-strength-val">${defenderStrength}</span>
             </div>
-            <div style="background:#222; height:16px; border:1px solid #444; border-radius:8px; overflow:hidden;">
-                <div id="defender-bar" style="height:100%; width:${(defenderStrength/defenderStrengthStart)*100}%; background:linear-gradient(90deg,#004d40,#00a884);"></div>
+            <div style="background:#222;height:16px;border:1px solid #444;border-radius:8px;overflow:hidden;">
+                <div id="defender-bar" style="height:100%;width:${(defenderStrength/defenderStrengthStart)*100}%;background:linear-gradient(90deg,#004d40,#00a884);transition:width 0.4s;"></div>
             </div>
         </div>
     `;
     modal.appendChild(barsContainer);
 
     const logArea = document.createElement('div');
-    logArea.style.height = '180px';
-    logArea.style.overflowY = 'auto';
-    logArea.style.background = 'rgba(255,255,255,0.06)';
-    logArea.style.padding = '10px';
-    logArea.style.border = '1px solid #444';
-    logArea.style.borderRadius = '6px';
-    logArea.style.fontSize = '0.85em';
+    logArea.style.cssText = 'height:180px;overflow-y:auto;background:rgba(255,255,255,0.06);padding:10px;border:1px solid #444;border-radius:6px;font-size:0.85em;';
     logArea.id = 'war-event-log';
     modal.appendChild(logArea);
 
     const footer = document.createElement('div');
-    footer.style.marginTop = '12px';
-    footer.style.fontSize = '0.8em';
-    footer.style.color = '#95a5a6';
-    footer.innerHTML = 'Live engagement feed: dynamic swings, losses, morale shifts.';
+    footer.style.cssText = 'margin-top:12px;font-size:0.8em;color:#95a5a6;text-align:center;';
+    footer.innerHTML = 'Live engagement feed — watch the battle unfold...';
     modal.appendChild(footer);
+
+    // Combat event flavor text pools
+    const attackerEvents = [
+        `${attackerName}'s crew surges forward`,
+        `${attackerName} sends in a second wave`,
+        `A Molotov from ${attackerName}'s side ignites the barricade`,
+        `${attackerName}'s enforcer takes out a key defender`,
+        `${attackerName} flanks from the alley`
+    ];
+    const defenderEvents = [
+        `${defenderName} dig in behind cover`,
+        `${defenderName} call for backup`,
+        `A sniper from ${defenderName} pins down the assault`,
+        `${defenderName} launch a counter-charge`,
+        `${defenderName} set up a chokepoint`
+    ];
+    const swingEvents = [
+        'A car explodes, sending both sides scrambling!',
+        'Sirens in the distance — both sides regroup.',
+        'A civilian runs through the crossfire causing chaos.',
+        'Reinforcements arrive from an unexpected ally!',
+        'Someone shoots out the streetlights — darkness falls.'
+    ];
 
     function log(msg) {
         const line = document.createElement('div');
+        line.style.cssText = 'margin:3px 0;padding:2px 0;border-bottom:1px solid rgba(255,255,255,0.05);';
         line.textContent = msg;
         logArea.appendChild(line);
         logArea.scrollTop = logArea.scrollHeight;
     }
 
-    log(` You begin watching the clash for ${district}...`);
+    log(`You take position on a rooftop overlooking ${district}...`);
+    log(`${attackerName} moves in on ${defenderName}'s turf.`);
 
     const attackerBar = () => document.getElementById('attacker-bar');
     const defenderBar = () => document.getElementById('defender-bar');
@@ -3395,62 +3680,80 @@ function spectateWar(district) {
     const interval = setInterval(() => {
         tick++;
 
-        // Random exchanges
-        const attackerHit = Math.random() < 0.55; // attacker slightly aggressive
+        const attackerHit = Math.random() < 0.55;
         const defenderHit = Math.random() < 0.5;
 
         if (attackerHit) {
             const dmg = 3 + Math.floor(Math.random()*6);
             defenderStrength = Math.max(0, defenderStrength - dmg);
-            log(` Attacker pushes forward (-${dmg} defender strength)`);
+            log(`${attackerEvents[Math.floor(Math.random()*attackerEvents.length)]} (-${dmg})`);
         }
         if (defenderHit) {
             const dmg = 2 + Math.floor(Math.random()*6);
             attackerStrength = Math.max(0, attackerStrength - dmg);
-            log(` Counter-fire from defenders (-${dmg} attacker strength)`);
+            log(`${defenderEvents[Math.floor(Math.random()*defenderEvents.length)]} (-${dmg})`);
         }
 
-        // Momentum swings
         if (Math.random() < 0.15) {
             const swingTarget = Math.random() < 0.5 ? 'attacker' : 'defender';
             const swing = 4 + Math.floor(Math.random()*5);
+            log(swingEvents[Math.floor(Math.random()*swingEvents.length)]);
             if (swingTarget === 'attacker') {
                 attackerStrength += swing;
-                log(` Sudden reinforcements bolster attackers (+${swing})`);
             } else {
                 defenderStrength += swing;
-                log(` Hidden reserves fortify defenders (+${swing})`);
             }
         }
 
-        // Update bars (null-safe after modal close)
         const ab = attackerBar();
         const db = defenderBar();
         const av = attackerVal();
         const dv = defenderVal();
         if (!ab || !db) { clearInterval(interval); return; }
-        ab.style.width = `${(attackerStrength/attackerStrengthStart)*100}%`;
-        db.style.width = `${(defenderStrength/defenderStrengthStart)*100}%`;
-        if (av) av.textContent = attackerStrength;
-        if (dv) dv.textContent = defenderStrength;
+        ab.style.width = `${Math.max(0,(attackerStrength/attackerStrengthStart)*100)}%`;
+        db.style.width = `${Math.max(0,(defenderStrength/defenderStrengthStart)*100)}%`;
+        if (av) av.textContent = Math.max(0, attackerStrength);
+        if (dv) dv.textContent = Math.max(0, defenderStrength);
 
-        // Check end conditions
         if (attackerStrength <= 0 || defenderStrength <= 0 || tick >= maxTicks) {
             clearInterval(interval);
             let outcome;
+            let winningSide;
             if (attackerStrength === defenderStrength) {
-                outcome = 'Stalemate — both sides withdraw';
+                outcome = 'Stalemate — both sides withdraw, licking their wounds.';
+                winningSide = null;
             } else if (attackerStrength > defenderStrength) {
-                outcome = 'Attackers overwhelm defenders — territory likely to flip';
-                addWorldEvent?.(` Attackers appear victorious in ${district}!`);
+                outcome = `${attackerName} overwhelms the defense — the district is theirs!`;
+                winningSide = 'attacker';
+                addWorldEvent?.(`⚔️ ${attackerName} seized ${district} from ${defenderName}!`);
             } else {
-                outcome = 'Defenders hold firm — control remains';
-                addWorldEvent?.(` Defenders repel assault in ${district}.`);
+                outcome = `${defenderName} holds firm — ${attackerName} retreats into the night.`;
+                winningSide = 'defender';
+                addWorldEvent?.(`🛡️ ${defenderName} repelled ${attackerName}'s assault on ${district}.`);
             }
-            log(` Battle concludes: ${outcome}`);
-            log(` Final Strength — A:${attackerStrength} D:${defenderStrength}`);
-            setTimeout(() => { footer.innerHTML = outcome; }, 500);
-            logAction?.(` Spectated turf war in ${district} (${outcome})`);
+            log(`--- Battle concludes ---`);
+            log(outcome);
+
+            // Resolve bet
+            let betResult = '';
+            if (playerBet) {
+                if (winningSide === playerBet) {
+                    const winnings = betAmount * 2;
+                    player.money += winnings;
+                    betResult = `<div style="margin-top:10px;padding:10px;background:rgba(46,204,113,0.2);border:1px solid #2ecc71;border-radius:6px;color:#2ecc71;text-align:center;">💰 You won the bet! +$${winnings.toLocaleString()}</div>`;
+                    logAction(`💰 Won $${winnings.toLocaleString()} betting on the turf war in ${district}!`);
+                } else if (winningSide === null) {
+                    player.money += betAmount; // refund on stalemate
+                    betResult = `<div style="margin-top:10px;padding:10px;background:rgba(241,196,15,0.2);border:1px solid #f1c40f;border-radius:6px;color:#f1c40f;text-align:center;">🤝 Stalemate — bet refunded ($${betAmount.toLocaleString()})</div>`;
+                } else {
+                    betResult = `<div style="margin-top:10px;padding:10px;background:rgba(231,76,60,0.2);border:1px solid #e74c3c;border-radius:6px;color:#e74c3c;text-align:center;">💸 You lost the bet. -$${betAmount.toLocaleString()}</div>`;
+                    logAction(`💸 Lost $${betAmount.toLocaleString()} betting on the turf war in ${district}.`);
+                }
+                if (typeof updateUI === 'function') updateUI();
+            }
+
+            footer.innerHTML = `<div style="color:#c0a062;font-weight:bold;">${outcome}</div>${betResult}`;
+            logAction?.(`⚔️ Spectated turf war in ${district}: ${outcome}`);
         }
     }, 1000);
     window._warSpectateInterval = interval;
@@ -3459,6 +3762,166 @@ function spectateWar(district) {
 // Removed placeholder challengeForTerritory(district); full implementation defined later.
 
 function participateInEvent(eventType, district) {
-    alert(` Participating in ${eventType.replace('_', ' ')} event in ${district}...`);
-    logAction(` Joined city event: ${eventType} in ${district}`);
+    if (!onlineWorldState.isConnected) {
+        alert("You need to be connected to the online world!");
+        return;
+    }
+
+    // Energy cost to participate
+    const energyCost = 10;
+    if (player.energy < energyCost) {
+        showSystemMessage(`Not enough energy! Need ${energyCost} energy to participate.`, '#e74c3c');
+        return;
+    }
+
+    // Define event outcomes based on type
+    const eventOutcomes = {
+        police_raid: {
+            title: 'Police Raid',
+            icon: '🚔',
+            scenarios: [
+                { text: 'You slipped through the police barricade and looted an evidence lockup.', moneyMin: 800, moneyMax: 3000, xp: 30, repGain: 3, successChance: 0.5, riskText: 'But a detective spotted you fleeing the scene.', healthLoss: 15, wantedGain: 1 },
+                { text: 'Chaos erupted and you picked pockets in the confusion.', moneyMin: 300, moneyMax: 1200, xp: 15, repGain: 1, successChance: 0.65, riskText: 'A stray baton caught you across the ribs.', healthLoss: 10, wantedGain: 0 },
+                { text: 'You tipped off a rival gang and the cops took them down instead.', moneyMin: 500, moneyMax: 2000, xp: 25, repGain: 5, successChance: 0.55, riskText: 'The rival gang figured out who snitched.', healthLoss: 20, wantedGain: 0 }
+            ]
+        },
+        market_crash: {
+            title: 'Market Crash',
+            icon: '📉',
+            scenarios: [
+                { text: 'You bought seized assets at rock-bottom prices and flipped them.', moneyMin: 1500, moneyMax: 5000, xp: 35, repGain: 2, successChance: 0.6, riskText: 'Turns out the assets were flagged — you lost some to seizure.', healthLoss: 0, wantedGain: 1 },
+                { text: 'You shorted a corrupt businessman\'s portfolio through your contacts.', moneyMin: 2000, moneyMax: 6000, xp: 40, repGain: 4, successChance: 0.45, riskText: 'The businessman sent enforcers to collect.', healthLoss: 15, wantedGain: 0 },
+                { text: 'You laundered cash through panicking banks while no one was looking.', moneyMin: 1000, moneyMax: 4000, xp: 20, repGain: 1, successChance: 0.55, riskText: 'A suspicious teller flagged the transactions.', healthLoss: 0, wantedGain: 2 }
+            ]
+        },
+        gang_meeting: {
+            title: 'Gang Meeting',
+            icon: '🤝',
+            scenarios: [
+                { text: 'You impressed the bosses and received a cut of their operation.', moneyMin: 600, moneyMax: 2500, xp: 30, repGain: 6, successChance: 0.5, riskText: 'A rival at the meeting took offense and jumped you after.', healthLoss: 20, wantedGain: 0 },
+                { text: 'You brokered a deal between two factions and took a commission.', moneyMin: 1000, moneyMax: 3500, xp: 35, repGain: 8, successChance: 0.45, riskText: 'One side felt you favored the other — they want payback.', healthLoss: 10, wantedGain: 0 },
+                { text: 'You gathered intel on upcoming operations while making connections.', moneyMin: 200, moneyMax: 800, xp: 45, repGain: 4, successChance: 0.7, riskText: 'Someone noticed you eavesdropping a bit too much.', healthLoss: 5, wantedGain: 0 }
+            ]
+        },
+        turf_war: {
+            title: 'Turf War',
+            icon: '⚔️',
+            scenarios: [
+                { text: 'You fought alongside the winning side and claimed spoils.', moneyMin: 1200, moneyMax: 4000, xp: 40, repGain: 5, successChance: 0.45, riskText: 'You caught a bullet in the crossfire.', healthLoss: 25, wantedGain: 1 },
+                { text: 'You looted abandoned stash houses during the fighting.', moneyMin: 800, moneyMax: 3000, xp: 20, repGain: 2, successChance: 0.6, riskText: 'A straggler caught you raiding their stash.', healthLoss: 15, wantedGain: 0 },
+                { text: 'You supplied weapons to both sides and took profit from the carnage.', moneyMin: 2000, moneyMax: 5000, xp: 30, repGain: 3, successChance: 0.5, riskText: 'Both sides realized you were playing them.', healthLoss: 30, wantedGain: 1 }
+            ]
+        }
+    };
+
+    // Default for unknown event types
+    const eventData = eventOutcomes[eventType] || {
+        title: eventType.replace(/_/g, ' '),
+        icon: '🎯',
+        scenarios: [
+            { text: 'You got involved and made some connections.', moneyMin: 300, moneyMax: 1500, xp: 20, repGain: 2, successChance: 0.55, riskText: 'Things didn\'t go entirely smooth.', healthLoss: 10, wantedGain: 0 }
+        ]
+    };
+
+    // Pick a random scenario
+    const scenario = eventData.scenarios[Math.floor(Math.random() * eventData.scenarios.length)];
+
+    // Deduct energy
+    player.energy -= energyCost;
+
+    // Level bonus: higher level = slightly better success chance
+    const levelBonus = Math.min(0.15, (player.level || 1) * 0.01);
+    const success = Math.random() < (scenario.successChance + levelBonus);
+
+    // Build the result modal
+    let modal = document.getElementById('event-participation-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'event-participation-modal';
+        modal.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;width:550px;max-width:95%;background:rgba(0,0,0,0.95);border:2px solid #9b59b6;border-radius:12px;font-family:Georgia,serif;color:#ecf0f1;box-shadow:0 0 25px rgba(155,89,182,0.5);padding:25px;';
+        document.body.appendChild(modal);
+    }
+
+    if (success) {
+        const moneyEarned = scenario.moneyMin + Math.floor(Math.random() * (scenario.moneyMax - scenario.moneyMin));
+        player.money += moneyEarned;
+        player.reputation = (player.reputation || 0) + scenario.repGain;
+        if (typeof gainExperience === 'function') {
+            gainExperience(scenario.xp);
+        } else {
+            player.experience = (player.experience || 0) + scenario.xp;
+        }
+
+        modal.innerHTML = `
+            <div style="text-align:center;">
+                <h3 style="color:#9b59b6;margin:0 0 5px 0;">${eventData.icon} ${eventData.title}</h3>
+                <small style="color:#888;">District: ${district.charAt(0).toUpperCase() + district.slice(1)}</small>
+            </div>
+            <div style="margin:20px 0;padding:15px;background:rgba(46,204,113,0.15);border:1px solid #2ecc71;border-radius:8px;">
+                <p style="color:#2ecc71;font-weight:bold;margin:0 0 8px 0;">✅ Success!</p>
+                <p style="margin:0;color:#ccc;">${scenario.text}</p>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:15px 0;">
+                <div style="text-align:center;padding:10px;background:rgba(255,255,255,0.05);border-radius:6px;">
+                    <div style="color:#2ecc71;font-size:1.2em;font-weight:bold;">+$${moneyEarned.toLocaleString()}</div>
+                    <div style="color:#888;font-size:0.8em;">Cash</div>
+                </div>
+                <div style="text-align:center;padding:10px;background:rgba(255,255,255,0.05);border-radius:6px;">
+                    <div style="color:#9b59b6;font-size:1.2em;font-weight:bold;">+${scenario.xp} XP</div>
+                    <div style="color:#888;font-size:0.8em;">Experience</div>
+                </div>
+                <div style="text-align:center;padding:10px;background:rgba(255,255,255,0.05);border-radius:6px;">
+                    <div style="color:#f1c40f;font-size:1.2em;font-weight:bold;">+${scenario.repGain}</div>
+                    <div style="color:#888;font-size:0.8em;">Reputation</div>
+                </div>
+            </div>
+            <div style="text-align:center;margin-top:15px;">
+                <button onclick="document.getElementById('event-participation-modal').remove();" style="background:#9b59b6;color:white;padding:10px 30px;border:none;border-radius:6px;cursor:pointer;font-family:Georgia,serif;font-size:1em;">Collect Rewards</button>
+            </div>
+        `;
+
+        logAction(`${eventData.icon} ${eventData.title} in ${district}: earned $${moneyEarned.toLocaleString()}, +${scenario.xp} XP, +${scenario.repGain} rep`);
+        addWorldEvent(`${eventData.icon} ${player.name || 'A player'} profited from the ${eventData.title.toLowerCase()} in ${district}!`);
+    } else {
+        // Failure — still get partial rewards but take a hit
+        const partialMoney = Math.floor(scenario.moneyMin * 0.3);
+        player.money += partialMoney;
+        player.health = Math.max(1, (player.health || 100) - scenario.healthLoss);
+        player.wantedLevel = Math.min(10, (player.wantedLevel || 0) + scenario.wantedGain);
+
+        modal.innerHTML = `
+            <div style="text-align:center;">
+                <h3 style="color:#9b59b6;margin:0 0 5px 0;">${eventData.icon} ${eventData.title}</h3>
+                <small style="color:#888;">District: ${district.charAt(0).toUpperCase() + district.slice(1)}</small>
+            </div>
+            <div style="margin:20px 0;padding:15px;background:rgba(231,76,60,0.15);border:1px solid #e74c3c;border-radius:8px;">
+                <p style="color:#e74c3c;font-weight:bold;margin:0 0 8px 0;">❌ Things went south...</p>
+                <p style="margin:0 0 8px 0;color:#ccc;">${scenario.text.split('.')[0]}... but ${scenario.riskText.toLowerCase()}</p>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr ${scenario.wantedGain > 0 ? '1fr' : ''};gap:10px;margin:15px 0;">
+                <div style="text-align:center;padding:10px;background:rgba(255,255,255,0.05);border-radius:6px;">
+                    <div style="color:#e67e22;font-size:1.2em;font-weight:bold;">+$${partialMoney.toLocaleString()}</div>
+                    <div style="color:#888;font-size:0.8em;">Salvaged</div>
+                </div>
+                <div style="text-align:center;padding:10px;background:rgba(255,255,255,0.05);border-radius:6px;">
+                    <div style="color:#e74c3c;font-size:1.2em;font-weight:bold;">-${scenario.healthLoss} HP</div>
+                    <div style="color:#888;font-size:0.8em;">Health</div>
+                </div>
+                ${scenario.wantedGain > 0 ? `
+                <div style="text-align:center;padding:10px;background:rgba(255,255,255,0.05);border-radius:6px;">
+                    <div style="color:#e74c3c;font-size:1.2em;font-weight:bold;">+${scenario.wantedGain} ⭐</div>
+                    <div style="color:#888;font-size:0.8em;">Wanted</div>
+                </div>` : ''}
+            </div>
+            <div style="text-align:center;margin-top:15px;">
+                <button onclick="document.getElementById('event-participation-modal').remove();" style="background:#e74c3c;color:white;padding:10px 30px;border:none;border-radius:6px;cursor:pointer;font-family:Georgia,serif;font-size:1em;">Dust Yourself Off</button>
+            </div>
+        `;
+
+        logAction(`${eventData.icon} ${eventData.title} in ${district}: went wrong! ${scenario.riskText} -${scenario.healthLoss} HP`);
+    }
+
+    // Update UI
+    if (typeof updateUI === 'function') updateUI();
+    if (typeof checkLevelUp === 'function') checkLevelUp();
 }
