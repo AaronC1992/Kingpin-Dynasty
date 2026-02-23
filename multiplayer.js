@@ -54,6 +54,10 @@ let onlineWorldState = {
     },
     nearbyPlayers: [],
     globalChat: [],
+    // Multiplayer area-control zones — controlled by real players or NPC gangs.
+    // These are broad city zones for PvP territory control, separate from the
+    // economic districtTypes in game.js (single-player neighborhoods) and the
+    // TERRITORIES in expanded-systems.js (single-player gang war zones).
     cityDistricts: {
         downtown: { 
             controlledBy: null, 

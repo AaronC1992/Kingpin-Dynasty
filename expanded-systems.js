@@ -238,6 +238,10 @@ export function updateMemberLoyalty(member, change, reason = "") {
 
 // ==================== 2. TERRITORY WARS & DEFENSE ====================
 
+// Territory war zones — used by the single-player gang war system.
+// These are large-scale strategic zones, separate from the economic districtTypes
+// in game.js (which are detailed neighborhoods the player can buy/manage).
+// See also: multiplayer.js cityDistricts (5 multiplayer area-control zones).
 export const TERRITORIES = [
     {
         id: "downtown",

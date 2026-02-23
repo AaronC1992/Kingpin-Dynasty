@@ -123,7 +123,10 @@ export function generateAvailableRecruits() {
         const cost = baseCost + (experienceLevel * 500) + Math.floor(Math.random() * 500); // Random variance
         const tributeMultiplier = 1 + (experienceLevel * 0.3); // Higher level = more tribute
         
-        // Determine specialization using the new specialist roles
+        // Determine specialization using legacy role IDs
+        // NOTE: When gangRolesEnabled, recruitment in game.js overrides this with
+        // the expanded role system (bruiser/fixer/hacker/etc.) and derives the
+        // correct specialization via EXPANDED_TO_SPECIALIZATION mapping.
         const specializations = ["muscle", "thief", "dealer", "driver", "enforcer", "technician"];
         const specialization = specializations[Math.floor(Math.random() * specializations.length)];
         
@@ -169,6 +172,7 @@ export function generateRandomEncounter() {
         const cost = baseCost + (experienceLevel * 800) + Math.floor(Math.random() * 1000);
         const tributeMultiplier = 1 + (experienceLevel * 0.3);
         
+        // Legacy specialization IDs — overridden during recruitment when gangRolesEnabled
         const specializations = ["muscle", "thief", "dealer", "driver", "enforcer", "technician"];
         const specialization = specializations[Math.floor(Math.random() * specializations.length)];
         

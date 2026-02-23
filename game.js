@@ -965,7 +965,32 @@ async function startBossBattle(battleId) {
 
 // ==================== GANG MANAGEMENT OVERHAUL ====================
 
-// Specialist Roles for Gang Members
+// --- Unified Role System ---
+// GANG_MEMBER_ROLES (expanded-systems.js) is the canonical role definition.
+// specialistRoles below maps those roles to operation/training mechanics.
+// Members store BOTH: .role (expanded key) and .specialization (operations key).
+// The mapping keeps them consistent — no more conflicting role assignments.
+
+const EXPANDED_TO_SPECIALIZATION = {
+  bruiser:    'muscle',
+  fixer:      'dealer',      // Connected, handles dealing/networking ops
+  hacker:     'technician',  // Tech specialist
+  enforcer:   'enforcer',
+  driver:     'driver',
+  scout:      'thief',       // Stealth/surveillance → theft ops
+  accountant: 'technician'   // Numbers/money → tech ops
+};
+
+const SPECIALIZATION_TO_EXPANDED = {
+  muscle:     'bruiser',
+  dealer:     'fixer',
+  technician: 'hacker',
+  enforcer:   'enforcer',
+  driver:     'driver',
+  thief:      'scout'
+};
+
+// Specialist Roles for Gang Members (operations & training mechanics)
 const specialistRoles = [
   {
     id: "muscle",
@@ -1275,10 +1300,14 @@ const betrayalEvents = [
 // ==================== TERRITORY CONTROL SYSTEM ====================
 
 // District Types with Different Benefits
+// CANONICAL territory data — the Territory Map and all territory functions reference this.
+// See also: expanded-systems.js TERRITORIES (5 war zones for gang wars)
+//           multiplayer.js cityDistricts (5 zones for multiplayer area control)
 const districtTypes = [
   {
     id: "residential_low",
     name: "Low-Income Residential",
+    icon: "🏘️",
     description: "Working-class neighborhoods with modest protection opportunities",
     baseIncome: 150,
     maxBusinesses: 3,
@@ -1296,6 +1325,7 @@ const districtTypes = [
   {
     id: "residential_middle",
     name: "Middle-Class Residential",
+    icon: "🏡",
     description: "Suburban areas with better protection money potential",
     baseIncome: 300,
     maxBusinesses: 5,
@@ -1313,6 +1343,7 @@ const districtTypes = [
   {
     id: "residential_upscale",
     name: "Upscale Residential",
+    icon: "🏛️",
     description: "Wealthy neighborhoods with high-value targets but heavy security",
     baseIncome: 600,
     maxBusinesses: 4,
@@ -1330,6 +1361,7 @@ const districtTypes = [
   {
     id: "commercial_downtown",
     name: "Downtown Commercial",
+    icon: "🏙️",
     description: "Business district with shops, restaurants, and offices",
     baseIncome: 800,
     maxBusinesses: 8,
@@ -1347,6 +1379,7 @@ const districtTypes = [
   {
     id: "commercial_shopping",
     name: "Shopping District",
+    icon: "🏬",
     description: "Retail area with stores, malls, and consumer businesses",
     baseIncome: 500,
     maxBusinesses: 6,
@@ -1364,6 +1397,7 @@ const districtTypes = [
   {
     id: "industrial_warehouse",
     name: "Warehouse District",
+    icon: "🏭",
     description: "Industrial area perfect for smuggling and large operations",
     baseIncome: 400,
     maxBusinesses: 4,
@@ -1381,6 +1415,7 @@ const districtTypes = [
   {
     id: "industrial_port",
     name: "Port District",
+    icon: "⚓",
     description: "Docks and shipping facilities for international operations",
     baseIncome: 1000,
     maxBusinesses: 5,
@@ -1399,6 +1434,7 @@ const districtTypes = [
   {
     id: "entertainment_nightlife",
     name: "Nightlife District",
+    icon: "🌃",
     description: "Bars, clubs, and entertainment venues",
     baseIncome: 700,
     maxBusinesses: 6,
@@ -2708,11 +2744,13 @@ function getAverageLoyalty() {
 }
 
 // Calculate total gang power
+// Accepts members with either legacy specialization or expanded role
 function calculateGangPower() {
   let totalPower = 0;
   player.gang.gangMembers.forEach(member => {
-    const role = specialistRoles.find(r => r.id === member.specialization);
-    if (role) {
+    const hasLegacyRole = specialistRoles.find(r => r.id === member.specialization);
+    const hasExpandedRole = member.role && EXPANDED_TO_SPECIALIZATION[member.role];
+    if (hasLegacyRole || hasExpandedRole) {
       totalPower += (member.experienceLevel * 20) + (member.loyalty * 0.5);
     }
   });
@@ -2732,15 +2770,16 @@ function generateGangOperationsHTML() {
         <h5>${operation.name}</h5>
         <p><small>${operation.description}</small></p>
         <div style="margin: 5px 0;">
-          <small><strong>Required:</strong> ${operation.requiredRole.charAt(0).toUpperCase() + operation.requiredRole.slice(1)}</small><br>
+          <small><strong>Required:</strong> ${(() => { const eKey = SPECIALIZATION_TO_EXPANDED[operation.requiredRole]; const eName = eKey && typeof ExpandedSystems !== 'undefined' && ExpandedSystems.ROLES && ExpandedSystems.ROLES[eKey] ? ExpandedSystems.ROLES[eKey].name : null; return eName || operation.requiredRole.charAt(0).toUpperCase() + operation.requiredRole.slice(1); })()}</small><br>
           <small><strong>Duration:</strong> ${operation.duration} hours</small><br>
           <small><strong>Reward:</strong> $${operation.rewards.money[0]}-${operation.rewards.money[1]}</small>
         </div>
         <select id="member-select-${operation.id}" style="margin: 5px 0; padding: 5px; width: 100%;">
-          <option value="">Select a ${operation.requiredRole}</option>
-          ${availableMembers.map(member => 
-            `<option value="${member.name}">${member.name} (Level ${member.experienceLevel}, ${member.loyalty}% loyal)</option>`
-          ).join('')}
+          <option value="">Select a member</option>
+          ${availableMembers.map(member => {
+            const eName = member.role && typeof ExpandedSystems !== 'undefined' && ExpandedSystems.ROLES && ExpandedSystems.ROLES[member.role] ? ExpandedSystems.ROLES[member.role].name : member.specialization;
+            return `<option value="${member.name}">${member.name} (${eName}, Lvl ${member.experienceLevel})</option>`;
+          }).join('')}
         </select>
         <button onclick="startGangOperation('${operation.id}')" 
             style="background: #e74c3c; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; margin-top: 5px; width: 100%;"
@@ -2755,13 +2794,17 @@ function generateGangOperationsHTML() {
 }
 
 // Get available members for a specific operation role
+// Checks both legacy specialization AND expanded role (via mapping)
 function getAvailableMembersForOperation(requiredRole) {
-  return player.gang.gangMembers.filter(member => 
-    member.specialization === requiredRole && 
-    !member.onOperation && 
-    !member.inTraining &&
-    member.loyalty > 20 // Minimum loyalty required
-  );
+  return player.gang.gangMembers.filter(member => {
+    const matchesSpecialization = member.specialization === requiredRole;
+    const expandedKey = SPECIALIZATION_TO_EXPANDED[requiredRole];
+    const matchesExpandedRole = expandedKey && member.role === expandedKey;
+    return (matchesSpecialization || matchesExpandedRole) &&
+      !member.onOperation && 
+      !member.inTraining &&
+      member.loyalty > 20;
+  });
 }
 
 // Check if operation is on cooldown
@@ -2783,6 +2826,10 @@ function generateGangMembersHTML() {
   
   player.gang.gangMembers.forEach((member, index) => {
     const role = specialistRoles.find(r => r.id === member.specialization);
+    // Prefer expanded role name (richer info) over legacy specialization name
+    const expandedRole = member.role && ExpandedSystems ? ExpandedSystems.ROLES[member.role] : null;
+    const roleName = expandedRole ? `${expandedRole.icon || ''} ${expandedRole.name}`.trim() : (role ? role.name : 'Unassigned');
+    const perkText = expandedRole && expandedRole.perk ? `<br><strong>Perk:</strong> <em>${expandedRole.perk.name}</em> — ${expandedRole.perk.effect}` : '';
     const statusText = member.onOperation ? 'On Operation' : 
              member.inTraining ? '🎓 In Training' : 
              '✅ Available';
@@ -2794,7 +2841,7 @@ function generateGangMembersHTML() {
       <div style="background: rgba(52, 73, 94, 0.6); padding: 15px; border-radius: 8px; border-left: 4px solid ${loyaltyColor};">
         <h5 style="margin: 0 0 10px 0;">${member.name}</h5>
         <div style="font-size: 0.9em;">
-          <strong>Role:</strong> ${role ? role.name : 'Unassigned'}<br>
+          <strong>Role:</strong> ${roleName}${perkText}<br>
           <strong>Level:</strong> ${member.experienceLevel}<br>
           <strong>Loyalty:</strong> <span style="color: ${loyaltyColor};">${member.loyalty}%</span><br>
           <strong>Status:</strong> ${statusText}<br>
@@ -2846,9 +2893,10 @@ function generateTrainingProgramsHTML() {
         
         <select id="training-member-${program.id}" style="width: 100%; padding: 5px; margin: 5px 0;">
           <option value="">Select a member</option>
-          ${availableMembers.map(member => 
-            `<option value="${member.name}">${member.name} (${member.specialization})</option>`
-          ).join('')}
+          ${availableMembers.map(member => {
+            const eName = member.role && typeof ExpandedSystems !== 'undefined' && ExpandedSystems.ROLES && ExpandedSystems.ROLES[member.role] ? ExpandedSystems.ROLES[member.role].name : member.specialization;
+            return `<option value="${member.name}">${member.name} (${eName})</option>`;
+          }).join('')}
         </select>
         
         <button onclick="enrollInTraining('${program.id}')" 
@@ -2866,12 +2914,16 @@ function generateTrainingProgramsHTML() {
 }
 
 // Get available members for training
+// Checks both legacy specialization AND expanded role (via mapping)
 function getAvailableMembersForTraining(availableFor) {
-  return player.gang.gangMembers.filter(member => 
-    availableFor.includes(member.specialization) && 
-    !member.onOperation && 
-    !member.inTraining
-  );
+  return player.gang.gangMembers.filter(member => {
+    const matchesSpecialization = availableFor.includes(member.specialization);
+    const mappedSpec = EXPANDED_TO_SPECIALIZATION[member.role];
+    const matchesExpandedRole = mappedSpec && availableFor.includes(mappedSpec);
+    return (matchesSpecialization || matchesExpandedRole) &&
+      !member.onOperation &&
+      !member.inTraining;
+  });
 }
 
 // Start a gang operation
@@ -3016,26 +3068,42 @@ function handleOperationArrest(member, operation) {
   updateUI();
 }
 
-// Assign or change a gang member's specialist role
+// Assign or change a gang member's role (unified: sets both expanded role + specialization)
 async function assignRole(memberIndex) {
   const member = player.gang.gangMembers[memberIndex];
   if (!member) return;
   
-  let roleOptions = specialistRoles.map(role => 
-    `<option value="${role.id}">${role.name} - ${role.description}</option>`
-  ).join('');
-  
-  const selectedRole = await ui.prompt(`Assign ${member.name} to a specialist role:<br><br>Available roles:<br>${specialistRoles.map(r => `${r.name}: ${r.description}`).join('<br>')}<br><br>Enter role ID (muscle, thief, dealer, enforcer, driver, technician):`);
-  
-  if (selectedRole && specialistRoles.find(r => r.id === selectedRole)) {
-    member.specialization = selectedRole;
-    member.loyalty += 3; // Small loyalty boost for getting a specialized role
+  // Build role list from expanded roles if available, fallback to legacy
+  let roleList, promptText;
+  if (ExpandedSystems && ExpandedSystems.CONFIG.gangRolesEnabled) {
+    const roles = ExpandedSystems.ROLES;
+    const roleKeys = Object.keys(roles);
+    promptText = `Assign ${member.name} to a role:<br><br>Available roles:<br>${roleKeys.map(k => `<strong>${k}</strong>: ${roles[k].name} — ${roles[k].description}${roles[k].perk ? ` (${roles[k].perk.effect})` : ''}`).join('<br>')}<br><br>Enter role ID (${roleKeys.join(', ')}):`;
     
-    showBriefNotification(`${member.name} assigned as ${specialistRoles.find(r => r.id === selectedRole).name}!`, 'success');
-    logAction(`${member.name} takes on the role of ${specialistRoles.find(r => r.id === selectedRole).name}. Specialization brings focus and loyalty to your organization.`);
+    const selectedRole = await ui.prompt(promptText);
+    if (selectedRole && roles[selectedRole]) {
+      member.role = selectedRole;
+      member.specialization = EXPANDED_TO_SPECIALIZATION[selectedRole] || member.specialization;
+      member.loyalty += 3;
+      
+      showBriefNotification(`${member.name} assigned as ${roles[selectedRole].name}!`, 'success');
+      logAction(`${member.name} takes on the role of ${roles[selectedRole].name}. Specialization brings focus and loyalty to your organization.`);
+      updateUI();
+      showGang();
+    }
+  } else {
+    // Legacy path
+    const selectedRole = await ui.prompt(`Assign ${member.name} to a specialist role:<br><br>Available roles:<br>${specialistRoles.map(r => `${r.name}: ${r.description}`).join('<br>')}<br><br>Enter role ID (muscle, thief, dealer, enforcer, driver, technician):`);
     
-    updateUI();
-    showGang();
+    if (selectedRole && specialistRoles.find(r => r.id === selectedRole)) {
+      member.specialization = selectedRole;
+      member.loyalty += 3;
+      
+      showBriefNotification(`${member.name} assigned as ${specialistRoles.find(r => r.id === selectedRole).name}!`, 'success');
+      logAction(`${member.name} takes on the role of ${specialistRoles.find(r => r.id === selectedRole).name}. Specialization brings focus and loyalty to your organization.`);
+      updateUI();
+      showGang();
+    }
   }
 }
 
@@ -4275,7 +4343,11 @@ async function initiateTurfWar(districtId) {
 }
 
 function manageTerritoryDetails(territoryId) {
-  const territory = player.territories.find(t => t.id === territoryId);
+  // territoryId may be a districtId from the map OR a territory.id — check both
+  let territory = player.territories.find(t => t.id === territoryId);
+  if (!territory) {
+    territory = player.territories.find(t => t.districtId === territoryId);
+  }
   if (!territory) return;
   
   const district = districtTypes.find(d => d.id === territory.districtId);
@@ -8122,254 +8194,210 @@ function breakoutPrisoner(prisonerIndex) {
   }
 }
 
-// TikTakToe Game Variables
-let tiktaktoeBoard = ['', '', '', '', '', '', '', '', ''];
-let tiktaktoeCurrentPlayer = 'X';
-let tiktaktoeGameActive = false;
+// ==================== UNIFIED TIKTAKTOE ENGINE ====================
+// Single game engine used by both jail and mini-games screens.
+// Each context holds its own state, DOM selectors, and reward callbacks.
 
-// TikTakToe Game Functions
-function startTikTakToe() {
-  // Initialize game
-  tiktaktoeBoard = ['', '', '', '', '', '', '', '', ''];
-  tiktaktoeCurrentPlayer = 'X';
-  tiktaktoeGameActive = true;
-  
-  // Show game board and hide start screen
-  document.getElementById('tiktaktoe-start').style.display = 'none';
-  document.getElementById('tiktaktoe-game').style.display = 'block';
-  
-  // Update UI
-  updateTikTakToeDisplay();
-  
-  // Clear board
-  const cells = document.querySelectorAll('.tiktaktoe-cell');
+const TTT_WIN_PATTERNS = [
+  [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
+  [0, 3, 6], [1, 4, 7], [2, 5, 8], // Columns
+  [0, 4, 8], [2, 4, 6]              // Diagonals
+];
+
+const tttContexts = {
+  jail: {
+    board: ['', '', '', '', '', '', '', '', ''],
+    currentPlayer: 'X',
+    active: false,
+    cellSelector: '.tiktaktoe-cell',
+    startId: 'tiktaktoe-start',
+    gameId: 'tiktaktoe-game',
+    playerLabelId: 'current-player',
+    statusId: 'game-status',
+    opponentName: 'Cellmate',
+    onStart: () => {
+      logAction(`🎮 You challenge a cellmate to TikTakToe. Time to see who has the sharper mind in this concrete jungle!`);
+    },
+    onWin: () => {
+      const timeReduction = Math.min(10, Math.floor(player.jailTime * 0.2));
+      player.jailTime -= timeReduction;
+      if (!player.gangRespect) player.gangRespect = 0;
+      player.gangRespect = Math.min(100, player.gangRespect + 2);
+      const msg = `🎉 Victory! You outsmarted your cellmate with superior strategy. Word spreads fast - your sentence is reduced by ${timeReduction} seconds and you gain +2 Gang Respect!`;
+      logAction(`🏆 TikTakToe victory! You proved your mental superiority over your cellmate. Sentence reduced by ${timeReduction}s. Gang Respect +2. Even in confinement, the criminal mastermind shines.`);
+      return msg;
+    },
+    onLose: () => {
+      const msg = `😔 Defeat! Your cellmate outplayed you this time. Sometimes the student becomes the teacher.`;
+      logAction(`💭 TikTakToe defeat! Your cellmate's cunning exceeded your own this round. A humbling reminder that every criminal has something to learn.`);
+      return msg;
+    },
+    onTie: () => {
+      if (!player.gangRespect) player.gangRespect = 0;
+      player.gangRespect = Math.min(100, player.gangRespect + 1);
+      const msg = `🤝 Stalemate! Neither you nor your cellmate could claim victory. Respect earned on both sides (+1 Gang Respect).`;
+      logAction(`🤝 TikTakToe stalemate! Both players showed equal skill in this battle of wits. Gang Respect +1. Honor among thieves indeed.`);
+      return msg;
+    },
+    onQuit: () => {
+      alert(`You forfeit the game and walk away. Your cellmate chuckles at your strategic retreat.`);
+      logAction(`🏃 You quit the TikTakToe game mid-match. Sometimes knowing when to fold is the mark of a true strategist.`);
+    }
+  },
+  minigame: {
+    board: ['', '', '', '', '', '', '', '', ''],
+    currentPlayer: 'X',
+    active: false,
+    cellSelector: '.mg-tiktaktoe-cell',
+    startId: 'mg-tiktaktoe-start',
+    gameId: 'mg-tiktaktoe-game',
+    playerLabelId: 'mg-current-player',
+    statusId: 'mg-game-status',
+    opponentName: 'AI',
+    onStart: () => {},
+    onWin: () => {
+      player.money += 100;
+      gainExperience('intelligence', 50);
+      updateStatistic('miniGamesWon');
+      updateStatistic('totalMoneyEarned', 100);
+      updateUI();
+      const msg = `🎉 Victory! You've proven your strategic superiority and earned $100! Your mind is as sharp as your criminal instincts! (Intelligence +50 XP)`;
+      logAction(`🏆 TikTakToe victory! Your strategic thinking pays off with $100 earned and increased Intelligence.`);
+      return msg;
+    },
+    onLose: () => {
+      const msg = `😔 Defeat! The AI outmaneuvered you this time. Even master criminals can learn from failure.`;
+      logAction(`💭 TikTakToe defeat! The AI proves its worth, but every loss is a lesson learned.`);
+      return msg;
+    },
+    onTie: () => {
+      const msg = `🤝 Stalemate! Neither player could claim victory. A battle of equals!`;
+      logAction(`🤝 TikTakToe stalemate! Sometimes the greatest victories are knowing when to call it even.`);
+      return msg;
+    },
+    onQuit: () => {}
+  }
+};
+
+// --- Core TikTakToe engine (context-based, zero duplication) ---
+
+function tttStart(ctx) {
+  ctx.board = ['', '', '', '', '', '', '', '', ''];
+  ctx.currentPlayer = 'X';
+  ctx.active = true;
+  document.getElementById(ctx.startId).style.display = 'none';
+  document.getElementById(ctx.gameId).style.display = 'block';
+  tttUpdateDisplay(ctx);
+  const cells = document.querySelectorAll(ctx.cellSelector);
   cells.forEach(cell => {
     cell.textContent = '';
     cell.disabled = false;
     cell.style.background = '#34495e';
   });
-  
-  logAction(`🎮 You challenge a cellmate to TikTakToe. Time to see who has the sharper mind in this concrete jungle!`);
+  ctx.onStart();
 }
 
-function makeMove(cellIndex) {
-  if (!tiktaktoeGameActive || tiktaktoeBoard[cellIndex] !== '') {
-    return;
-  }
-  
-  // Player move
-  tiktaktoeBoard[cellIndex] = 'X';
-  const cell = document.querySelectorAll('.tiktaktoe-cell')[cellIndex];
+function tttMakeMove(ctx, cellIndex) {
+  if (!ctx.active || ctx.board[cellIndex] !== '') return;
+  ctx.board[cellIndex] = 'X';
+  const cell = document.querySelectorAll(ctx.cellSelector)[cellIndex];
   cell.textContent = 'X';
   cell.style.color = '#2ecc71';
   cell.disabled = true;
-  
-  // Check for game end
-  const result = checkTikTakToeWinner();
-  if (result) {
-    endTikTakToeGame(result);
-    return;
-  }
-  
-  // Switch to AI turn
-  tiktaktoeCurrentPlayer = 'O';
-  updateTikTakToeDisplay();
-  
-  // AI move after short delay
-  setTimeout(() => {
-    makeAIMove();
-  }, 500);
+  const result = tttCheckWinner(ctx);
+  if (result) { tttEnd(ctx, result); return; }
+  ctx.currentPlayer = 'O';
+  tttUpdateDisplay(ctx);
+  setTimeout(() => tttMakeAIMove(ctx), 500);
 }
 
-function makeAIMove() {
-  if (!tiktaktoeGameActive) return;
-  
-  // Simple AI: Try to win, block player, or make random move
-  let aiMove = findBestAIMove();
-  
-  if (aiMove !== -1) {
-    tiktaktoeBoard[aiMove] = 'O';
-    const cell = document.querySelectorAll('.tiktaktoe-cell')[aiMove];
-    cell.textContent = 'O';
-    cell.style.color = '#e74c3c';
-    cell.disabled = true;
-    
-    // Check for game end
-    const result = checkTikTakToeWinner();
-    if (result) {
-      endTikTakToeGame(result);
-      return;
-    }
-    
-    // Switch back to player
-    tiktaktoeCurrentPlayer = 'X';
-    updateTikTakToeDisplay();
-  }
+function tttMakeAIMove(ctx) {
+  if (!ctx.active) return;
+  const aiMove = tttFindBestMove(ctx);
+  if (aiMove === -1) return;
+  ctx.board[aiMove] = 'O';
+  const cell = document.querySelectorAll(ctx.cellSelector)[aiMove];
+  cell.textContent = 'O';
+  cell.style.color = '#e74c3c';
+  cell.disabled = true;
+  const result = tttCheckWinner(ctx);
+  if (result) { tttEnd(ctx, result); return; }
+  ctx.currentPlayer = 'X';
+  tttUpdateDisplay(ctx);
 }
 
-function findBestAIMove() {
-  // First, try to win
+function tttFindBestMove(ctx) {
   for (let i = 0; i < 9; i++) {
-    if (tiktaktoeBoard[i] === '') {
-      tiktaktoeBoard[i] = 'O';
-      if (checkWinningMove('O')) {
-        tiktaktoeBoard[i] = '';
-        return i;
-      }
-      tiktaktoeBoard[i] = '';
+    if (ctx.board[i] === '') {
+      ctx.board[i] = 'O';
+      if (tttCheckWinningMove(ctx, 'O')) { ctx.board[i] = ''; return i; }
+      ctx.board[i] = '';
     }
   }
-  
-  // Second, try to block player from winning
   for (let i = 0; i < 9; i++) {
-    if (tiktaktoeBoard[i] === '') {
-      tiktaktoeBoard[i] = 'X';
-      if (checkWinningMove('X')) {
-        tiktaktoeBoard[i] = '';
-        return i;
-      }
-      tiktaktoeBoard[i] = '';
+    if (ctx.board[i] === '') {
+      ctx.board[i] = 'X';
+      if (tttCheckWinningMove(ctx, 'X')) { ctx.board[i] = ''; return i; }
+      ctx.board[i] = '';
     }
   }
-  
-  // Third, take center if available
-  if (tiktaktoeBoard[4] === '') {
-    return 4;
-  }
-  
-  // Fourth, take corners
-  const corners = [0, 2, 6, 8];
-  for (let corner of corners) {
-    if (tiktaktoeBoard[corner] === '') {
-      return corner;
-    }
-  }
-  
-  // Finally, take any available space
-  for (let i = 0; i < 9; i++) {
-    if (tiktaktoeBoard[i] === '') {
-      return i;
-    }
-  }
-  
+  if (ctx.board[4] === '') return 4;
+  for (const c of [0, 2, 6, 8]) { if (ctx.board[c] === '') return c; }
+  for (let i = 0; i < 9; i++) { if (ctx.board[i] === '') return i; }
   return -1;
 }
 
-function checkWinningMove(player) {
-  const winPatterns = [
-    [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
-    [0, 3, 6], [1, 4, 7], [2, 5, 8], // Columns
-    [0, 4, 8], [2, 4, 6] // Diagonals
-  ];
-  
-  return winPatterns.some(pattern => 
-    pattern.every(index => tiktaktoeBoard[index] === player)
-  );
+function tttCheckWinningMove(ctx, mark) {
+  return TTT_WIN_PATTERNS.some(p => p.every(i => ctx.board[i] === mark));
 }
 
-function checkTikTakToeWinner() {
-  const winPatterns = [
-    [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
-    [0, 3, 6], [1, 4, 7], [2, 5, 8], // Columns
-    [0, 4, 8], [2, 4, 6] // Diagonals
-  ];
-  
-  // Check for winner
-  for (let pattern of winPatterns) {
-    const [a, b, c] = pattern;
-    if (tiktaktoeBoard[a] && 
-      tiktaktoeBoard[a] === tiktaktoeBoard[b] && 
-      tiktaktoeBoard[a] === tiktaktoeBoard[c]) {
-      return tiktaktoeBoard[a];
+function tttCheckWinner(ctx) {
+  for (const [a, b, c] of TTT_WIN_PATTERNS) {
+    if (ctx.board[a] && ctx.board[a] === ctx.board[b] && ctx.board[a] === ctx.board[c]) {
+      return ctx.board[a];
     }
   }
-  
-  // Check for tie
-  if (tiktaktoeBoard.every(cell => cell !== '')) {
-    return 'tie';
-  }
-  
+  if (ctx.board.every(cell => cell !== '')) return 'tie';
   return null;
 }
 
-function endTikTakToeGame(result) {
-  tiktaktoeGameActive = false;
-  
-  let message = '';
-  
-  if (result === 'X') {
-    // Player wins - reduce sentence and boost gang respect
-    const timeReduction = Math.min(10, Math.floor(player.jailTime * 0.2));
-    player.jailTime -= timeReduction;
-    
-    if (!player.gangRespect) player.gangRespect = 0;
-    player.gangRespect = Math.min(100, player.gangRespect + 2);
-    
-    message = `🎉 Victory! You outsmarted your cellmate with superior strategy. Word spreads fast - your sentence is reduced by ${timeReduction} seconds and you gain +2 Gang Respect!`;
-    logAction(`🏆 TikTakToe victory! You proved your mental superiority over your cellmate. Sentence reduced by ${timeReduction}s. Gang Respect +2. Even in confinement, the criminal mastermind shines.`);
-  } else if (result === 'O') {
-    // AI wins
-    message = `😔 Defeat! Your cellmate outplayed you this time. Sometimes the student becomes the teacher.`;
-    logAction(`� TikTakToe defeat! Your cellmate's cunning exceeded your own this round. A humbling reminder that every criminal has something to learn.`);
-  } else {
-    // Tie - small gang respect boost
-    if (!player.gangRespect) player.gangRespect = 0;
-    player.gangRespect = Math.min(100, player.gangRespect + 1);
-    
-    message = `🤝 Stalemate! Neither you nor your cellmate could claim victory. Respect earned on both sides (+1 Gang Respect).`;
-    logAction(`🤝 TikTakToe stalemate! Both players showed equal skill in this battle of wits. Gang Respect +1. Honor among thieves indeed.`);
-  }
-  
+function tttEnd(ctx, result) {
+  ctx.active = false;
+  let message;
+  if (result === 'X') message = ctx.onWin();
+  else if (result === 'O') message = ctx.onLose();
+  else message = ctx.onTie();
   alert(message);
-  
-  // Disable all cells
-  const cells = document.querySelectorAll('.tiktaktoe-cell');
-  cells.forEach(cell => {
-    cell.disabled = true;
-  });
-  
-  // Reset game after 3 seconds
-  setTimeout(() => {
-    resetTikTakToe();
-  }, 3000);
+  document.querySelectorAll(ctx.cellSelector).forEach(cell => { cell.disabled = true; });
+  setTimeout(() => tttReset(ctx), 3000);
 }
 
-function updateTikTakToeDisplay() {
-  const currentPlayerElement = document.getElementById('current-player');
-  const gameStatusElement = document.getElementById('game-status');
-  
-  if (tiktaktoeCurrentPlayer === 'X') {
-    currentPlayerElement.textContent = 'Your turn (X)';
-    currentPlayerElement.style.color = '#2ecc71';
-    gameStatusElement.textContent = 'Make your move!';
+function tttUpdateDisplay(ctx) {
+  const label = document.getElementById(ctx.playerLabelId);
+  const status = document.getElementById(ctx.statusId);
+  if (ctx.currentPlayer === 'X') {
+    label.textContent = 'Your turn (X)';
+    label.style.color = '#2ecc71';
+    status.textContent = 'Make your move!';
   } else {
-    currentPlayerElement.textContent = 'Cellmate\'s turn (O)';
-    currentPlayerElement.style.color = '#e74c3c';
-    gameStatusElement.textContent = 'Waiting for cellmate...';
+    label.textContent = `${ctx.opponentName}'s turn (O)`;
+    label.style.color = '#e74c3c';
+    status.textContent = `Waiting for ${ctx.opponentName.toLowerCase()}...`;
   }
 }
 
-function quitTikTakToe() {
-  if (tiktaktoeGameActive) {
-    // If quitting mid-game, just end it
-    alert(`You forfeit the game and walk away. Your cellmate chuckles at your strategic retreat.`);
-    logAction(`🏃 You quit the TikTakToe game mid-match. Sometimes knowing when to fold is the mark of a true strategist.`);
-  }
-  
-  resetTikTakToe();
+function tttQuit(ctx) {
+  if (ctx.active) ctx.onQuit();
+  tttReset(ctx);
 }
 
-function resetTikTakToe() {
-  tiktaktoeGameActive = false;
-  tiktaktoeBoard = ['', '', '', '', '', '', '', '', ''];
-  tiktaktoeCurrentPlayer = 'X';
-  
-  // Show start screen and hide game
-  document.getElementById('tiktaktoe-start').style.display = 'block';
-  document.getElementById('tiktaktoe-game').style.display = 'none';
-  
-  // Clear and reset board
-  const cells = document.querySelectorAll('.tiktaktoe-cell');
+function tttReset(ctx) {
+  ctx.active = false;
+  ctx.board = ['', '', '', '', '', '', '', '', ''];
+  ctx.currentPlayer = 'X';
+  document.getElementById(ctx.startId).style.display = 'block';
+  document.getElementById(ctx.gameId).style.display = 'none';
+  const cells = document.querySelectorAll(ctx.cellSelector);
   cells.forEach(cell => {
     cell.textContent = '';
     cell.disabled = false;
@@ -8378,11 +8406,15 @@ function resetTikTakToe() {
   });
 }
 
+// --- Public API wrappers (Jail TikTakToe — called from index.html) ---
+function startTikTakToe()       { tttStart(tttContexts.jail); }
+function makeMove(cellIndex)    { tttMakeMove(tttContexts.jail, cellIndex); }
+function makeAIMove()           { tttMakeAIMove(tttContexts.jail); }
+function quitTikTakToe()        { tttQuit(tttContexts.jail); }
+function resetTikTakToe()       { tttReset(tttContexts.jail); }
+
 // Mini Games System
 let currentMiniGame = null;
-let mgTikTakToeBoard = ['', '', '', '', '', '', '', '', ''];
-let mgTikTakToeCurrentPlayer = 'X';
-let mgTikTakToeGameActive = false;
 
 // Mini Games Variables for other games
 let numberGuessingTarget = 0;
@@ -9772,240 +9804,22 @@ function resetCurrentMiniGame() {
   }
 }
 
-// TikTakToe Mini Game Functions (Modified for Mini Games Screen)
+// TikTakToe Mini Game Functions — delegates to unified engine
 function startMiniGameTikTakToe() {
   currentMiniGame = 'tiktaktoe';
   document.getElementById("minigame-tiktaktoe").style.display = "block";
   mgResetTikTakToe();
-  
-  // Scroll to the game area
   setTimeout(() => {
-    document.getElementById("minigame-tiktaktoe").scrollIntoView({ 
-      behavior: 'smooth', 
-      block: 'start' 
-    });
+    document.getElementById("minigame-tiktaktoe").scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, 100);
-  
   logAction("🎯 You sit down for a strategic game of TikTakToe. Time to prove your tactical superiority!");
 }
 
-function mgStartTikTakToe() {
-  mgTikTakToeBoard = ['', '', '', '', '', '', '', '', ''];
-  mgTikTakToeCurrentPlayer = 'X';
-  mgTikTakToeGameActive = true;
-  
-  document.getElementById('mg-tiktaktoe-start').style.display = 'none';
-  document.getElementById('mg-tiktaktoe-game').style.display = 'block';
-  
-  mgUpdateTikTakToeDisplay();
-  
-  const cells = document.querySelectorAll('.mg-tiktaktoe-cell');
-  cells.forEach(cell => {
-    cell.textContent = '';
-    cell.disabled = false;
-    cell.style.background = '#34495e';
-  });
-}
-
-function mgMakeMove(cellIndex) {
-  if (!mgTikTakToeGameActive || mgTikTakToeBoard[cellIndex] !== '') {
-    return;
-  }
-  
-  mgTikTakToeBoard[cellIndex] = 'X';
-  const cell = document.querySelectorAll('.mg-tiktaktoe-cell')[cellIndex];
-  cell.textContent = 'X';
-  cell.style.color = '#2ecc71';
-  cell.disabled = true;
-  
-  const result = mgCheckTikTakToeWinner();
-  if (result) {
-    mgEndTikTakToeGame(result);
-    return;
-  }
-  
-  mgTikTakToeCurrentPlayer = 'O';
-  mgUpdateTikTakToeDisplay();
-  
-  setTimeout(() => {
-    mgMakeAIMove();
-  }, 500);
-}
-
-function mgMakeAIMove() {
-  if (!mgTikTakToeGameActive) return;
-  
-  let aiMove = mgFindBestAIMove();
-  
-  if (aiMove !== -1) {
-    mgTikTakToeBoard[aiMove] = 'O';
-    const cell = document.querySelectorAll('.mg-tiktaktoe-cell')[aiMove];
-    cell.textContent = 'O';
-    cell.style.color = '#e74c3c';
-    cell.disabled = true;
-    
-    const result = mgCheckTikTakToeWinner();
-    if (result) {
-      mgEndTikTakToeGame(result);
-      return;
-    }
-    
-    mgTikTakToeCurrentPlayer = 'X';
-    mgUpdateTikTakToeDisplay();
-  }
-}
-
-function mgFindBestAIMove() {
-  // Same AI logic as before
-  for (let i = 0; i < 9; i++) {
-    if (mgTikTakToeBoard[i] === '') {
-      mgTikTakToeBoard[i] = 'O';
-      if (mgCheckWinningMove('O')) {
-        mgTikTakToeBoard[i] = '';
-        return i;
-      }
-      mgTikTakToeBoard[i] = '';
-    }
-  }
-  
-  for (let i = 0; i < 9; i++) {
-    if (mgTikTakToeBoard[i] === '') {
-      mgTikTakToeBoard[i] = 'X';
-      if (mgCheckWinningMove('X')) {
-        mgTikTakToeBoard[i] = '';
-        return i;
-      }
-      mgTikTakToeBoard[i] = '';
-    }
-  }
-  
-  if (mgTikTakToeBoard[4] === '') {
-    return 4;
-  }
-  
-  const corners = [0, 2, 6, 8];
-  for (let corner of corners) {
-    if (mgTikTakToeBoard[corner] === '') {
-      return corner;
-    }
-  }
-  
-  for (let i = 0; i < 9; i++) {
-    if (mgTikTakToeBoard[i] === '') {
-      return i;
-    }
-  }
-  
-  return -1;
-}
-
-function mgCheckWinningMove(player) {
-  const winPatterns = [
-    [0, 1, 2], [3, 4, 5], [6, 7, 8],
-    [0, 3, 6], [1, 4, 7], [2, 5, 8],
-    [0, 4, 8], [2, 4, 6]
-  ];
-  
-  return winPatterns.some(pattern => 
-    pattern.every(index => mgTikTakToeBoard[index] === player)
-  );
-}
-
-function mgCheckTikTakToeWinner() {
-  const winPatterns = [
-    [0, 1, 2], [3, 4, 5], [6, 7, 8],
-    [0, 3, 6], [1, 4, 7], [2, 5, 8],
-    [0, 4, 8], [2, 4, 6]
-  ];
-  
-  for (let pattern of winPatterns) {
-    const [a, b, c] = pattern;
-    if (mgTikTakToeBoard[a] && 
-      mgTikTakToeBoard[a] === mgTikTakToeBoard[b] && 
-      mgTikTakToeBoard[a] === mgTikTakToeBoard[c]) {
-      return mgTikTakToeBoard[a];
-    }
-  }
-  
-  if (mgTikTakToeBoard.every(cell => cell !== '')) {
-    return 'tie';
-  }
-  
-  return null;
-}
-
-function mgEndTikTakToeGame(result) {
-  mgTikTakToeGameActive = false;
-  
-  let message = '';
-  
-  if (result === 'X') {
-    // Player wins
-    player.money += 100;
-    gainExperience('intelligence', 50);
-    
-    // Track statistics
-    updateStatistic('miniGamesWon');
-    updateStatistic('totalMoneyEarned', 100);
-    
-    updateUI();
-    message = `🎉 Victory! You've proven your strategic superiority and earned $100! Your mind is as sharp as your criminal instincts! (Intelligence +50 XP)`;
-    logAction(`🏆 TikTakToe victory! Your strategic thinking pays off with $100 earned and increased Intelligence.`);
-  } else if (result === 'O') {
-    message = `😔 Defeat! The AI outmaneuvered you this time. Even master criminals can learn from failure.`;
-    logAction(`💭 TikTakToe defeat! The AI proves its worth, but every loss is a lesson learned.`);
-  } else {
-    message = `🤝 Stalemate! Neither player could claim victory. A battle of equals!`;
-    logAction(`🤝 TikTakToe stalemate! Sometimes the greatest victories are knowing when to call it even.`);
-  }
-  
-  alert(message);
-  
-  const cells = document.querySelectorAll('.mg-tiktaktoe-cell');
-  cells.forEach(cell => {
-    cell.disabled = true;
-  });
-  
-  setTimeout(() => {
-    mgResetTikTakToe();
-  }, 3000);
-}
-
-function mgUpdateTikTakToeDisplay() {
-  const currentPlayerElement = document.getElementById('mg-current-player');
-  const gameStatusElement = document.getElementById('mg-game-status');
-  
-  if (mgTikTakToeCurrentPlayer === 'X') {
-    currentPlayerElement.textContent = 'Your turn (X)';
-    currentPlayerElement.style.color = '#2ecc71';
-    gameStatusElement.textContent = 'Make your move!';
-  } else {
-    currentPlayerElement.textContent = 'AI\'s turn (O)';
-    currentPlayerElement.style.color = '#e74c3c';
-    gameStatusElement.textContent = 'AI is thinking...';
-  }
-}
-
-function mgQuitTikTakToe() {
-  mgResetTikTakToe();
-}
-
-function mgResetTikTakToe() {
-  mgTikTakToeGameActive = false;
-  mgTikTakToeBoard = ['', '', '', '', '', '', '', '', ''];
-  mgTikTakToeCurrentPlayer = 'X';
-  
-  document.getElementById('mg-tiktaktoe-start').style.display = 'block';
-  document.getElementById('mg-tiktaktoe-game').style.display = 'none';
-  
-  const cells = document.querySelectorAll('.mg-tiktaktoe-cell');
-  cells.forEach(cell => {
-    cell.textContent = '';
-    cell.disabled = false;
-    cell.style.background = '#34495e';
-    cell.style.color = 'white';
-  });
-}
+function mgStartTikTakToe()          { tttStart(tttContexts.minigame); }
+function mgMakeMove(cellIndex)       { tttMakeMove(tttContexts.minigame, cellIndex); }
+function mgMakeAIMove()              { tttMakeAIMove(tttContexts.minigame); }
+function mgQuitTikTakToe()           { tttReset(tttContexts.minigame); }
+function mgResetTikTakToe()          { tttReset(tttContexts.minigame); }
 
 // Number Guessing Game
 function startNumberGuessing() {
@@ -11725,10 +11539,10 @@ function recruitMember(index) {
       // Generate expanded gang member with role
       newMember = ExpandedSystems.generateGangMember(null, recruit.name);
       
-      // Merge with legacy data
+      // Merge with legacy data & derive specialization from expanded role
       newMember.experienceLevel = recruit.experienceLevel;
       newMember.tributeMultiplier = recruit.tributeMultiplier;
-      newMember.specialization = recruit.specialization;
+      newMember.specialization = EXPANDED_TO_SPECIALIZATION[newMember.role] || recruit.specialization;
       newMember.onOperation = false;
       newMember.inTraining = false;
       newMember.arrested = false;
@@ -17097,21 +16911,8 @@ function showMap() {
     
     <div class="map-container">`;
   
-  // Get all district types for the map
-  const allDistricts = [
-    {id: 'downtown', name: 'Downtown', icon: '🏙️', baseIncome: 5000, acquisitionCost: 50000},
-    {id: 'warehouse', name: 'Warehouse District', icon: '🏭', baseIncome: 3000, acquisitionCost: 30000},
-    {id: 'residential', name: 'Residential', icon: '🏘️', baseIncome: 2000, acquisitionCost: 20000},
-    {id: 'commercial', name: 'Commercial', icon: '🏬', baseIncome: 4000, acquisitionCost: 40000},
-    {id: 'docks', name: 'The Docks', icon: '⚓', baseIncome: 6000, acquisitionCost: 60000},
-    {id: 'chinatown', name: 'Chinatown', icon: '🏮', baseIncome: 3500, acquisitionCost: 35000},
-    {id: 'industrial', name: 'Industrial Zone', icon: '🏗️', baseIncome: 4500, acquisitionCost: 45000},
-    {id: 'uptown', name: 'Uptown', icon: '🏛️', baseIncome: 7000, acquisitionCost: 70000},
-    {id: 'suburbs', name: 'Suburbs', icon: '🏡', baseIncome: 2500, acquisitionCost: 25000},
-    {id: 'redlight', name: 'Red Light District', icon: '🌃', baseIncome: 5500, acquisitionCost: 55000},
-    {id: 'university', name: 'University District', icon: '🎓', baseIncome: 3000, acquisitionCost: 30000},
-    {id: 'airport', name: 'Airport Area', icon: '✈️', baseIncome: 8000, acquisitionCost: 80000}
-  ];
+  // Derive map tiles from the canonical districtTypes (single source of truth)
+  const allDistricts = districtTypes;
   
   allDistricts.forEach(district => {
     const isControlled = player.territories && player.territories.some(t => t.districtId === district.id);
@@ -17171,17 +16972,11 @@ function showMap() {
 }
 
 function showTerritoryInfo(districtId) {
-  const districtInfo = {
-    'downtown': {name: 'Downtown', description: 'The heart of the city with high-value targets and heavy police presence.'},
-    'warehouse': {name: 'Warehouse District', description: 'Industrial area perfect for smuggling operations and storage.'},
-    'residential': {name: 'Residential', description: 'Quiet neighborhoods ideal for protection rackets.'},
-    'commercial': {name: 'Commercial', description: 'Shopping areas with steady income from businesses.'},
-    'docks': {name: 'The Docks', description: 'Import/export hub for international criminal activities.'},
-    'chinatown': {name: 'Chinatown', description: 'Cultural district with unique criminal opportunities.'},
-  };
-  
-  const info = districtInfo[districtId] || {name: 'Unknown Territory', description: 'No information available.'};
-  alert(`${info.name}\n\n${info.description}\n\nThis territory is currently not available for acquisition.`);
+  // Look up from the canonical districtTypes array instead of a separate hardcoded list
+  const district = districtTypes.find(d => d.id === districtId);
+  const name = district ? district.name : 'Unknown Territory';
+  const desc = district ? district.description : 'No information available.';
+  alert(`${name}\n\n${desc}\n\nThis territory is currently not available for acquisition.`);
 }
 
 // Calendar System
@@ -18222,6 +18017,19 @@ function initializeMissingData() {
   }
   if (!player.unlocksNotified) {
     player.unlocksNotified = [];
+  }
+
+  // v1.3.9 — Gang role migration: ensure members with expanded roles have derived specialization
+  if (player.gang && player.gang.gangMembers) {
+    player.gang.gangMembers.forEach(member => {
+      if (member.role && EXPANDED_TO_SPECIALIZATION[member.role]) {
+        // Ensure specialization is derived from expanded role
+        const expected = EXPANDED_TO_SPECIALIZATION[member.role];
+        if (!member.specialization || member.specialization !== expected) {
+          member.specialization = expected;
+        }
+      }
+    });
   }
 }
 
