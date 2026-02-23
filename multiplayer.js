@@ -27,7 +27,6 @@ const onlineWorld = {
         JOB_COMPLETE: 'job_complete',
         TERRITORY_TAKEN: 'territory_taken',
         GANG_WAR_STARTED: 'gang_war_started',
-        TRADE_OFFER: 'trade_offer',
         GLOBAL_CHAT: 'global_chat',
         HEIST_BROADCAST: 'heist_broadcast',
         PLAYER_RANKED: 'player_ranked',
@@ -208,30 +207,6 @@ function showActiveHeists() {
     `;
 }
 
-// Show the trade market
-function showTradeMarket() {
-    const content = document.getElementById('multiplayer-content');
-    if (!content) return;
-    
-    if (typeof hideAllScreens === 'function') hideAllScreens();
-    const mpScreen = document.getElementById("multiplayer-screen");
-    if (mpScreen) mpScreen.style.display = 'block';
-    
-    content.innerHTML = `
-        <div style="background: rgba(0,0,0,0.95); padding: 30px; border-radius: 15px; border: 3px solid #27ae60;">
-            <h2 style="color: #27ae60; text-align: center; font-family: 'Georgia', serif;"> Black Market Trading</h2>
-            <p style="color: #ccc; text-align: center;">Buy and sell contraband with other players.</p>
-            <div style="background: rgba(0,0,0,0.5); padding: 20px; border-radius: 10px; margin: 20px 0; text-align: center;">
-                <p style="color: #888; font-style: italic;">No items listed for trade. List some of yours to get started!</p>
-                <button onclick="listItemForSale()" style="margin-top: 10px; background: #27ae60; color: #fff; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">List Item for Sale</button>
-            </div>
-            <div style="text-align: center; margin-top: 20px;">
-                <button onclick="goBackToMainMenu()" style="background: #333; color: #c0a062; padding: 12px 25px; border: 1px solid #c0a062; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">Back</button>
-            </div>
-        </div>
-    `;
-}
-
 // Show gang wars / turf war battles
 function showGangWars() {
     const content = document.getElementById('multiplayer-content');
@@ -283,7 +258,6 @@ function showNearbyPlayers() {
                 </div>
                 <div>
                     <button onclick="challengePlayer('${p.name}')" style="background: #8b0000; color: #fff; padding: 5px 12px; border: none; border-radius: 4px; cursor: pointer; margin: 0 3px;">Fight</button>
-                    <button onclick="tradeWithPlayer('${p.name}')" style="background: #27ae60; color: #fff; padding: 5px 12px; border: none; border-radius: 4px; cursor: pointer; margin: 0 3px;">Trade</button>
                 </div>
             </div>
         `).join('')
@@ -292,7 +266,7 @@ function showNearbyPlayers() {
     content.innerHTML = `
         <div style="background: rgba(0,0,0,0.95); padding: 30px; border-radius: 15px; border: 3px solid #f39c12;">
             <h2 style="color: #f39c12; text-align: center; font-family: 'Georgia', serif;"> Local Crew</h2>
-            <p style="color: #ccc; text-align: center;">Players in your area. Challenge, trade, or recruit them.</p>
+            <p style="color: #ccc; text-align: center;">Players in your area. Challenge or recruit them.</p>
             ${playersHTML}
             <div style="text-align: center; margin-top: 20px;">
                 <button onclick="goBackToMainMenu()" style="background: #333; color: #c0a062; padding: 12px 25px; border: 1px solid #c0a062; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">Back</button>
@@ -1765,9 +1739,6 @@ function showOnlineWorld() {
                 <button onclick="showActiveHeists()" style="background: #333; color: #8b0000; padding: 15px; border: 1px solid #8b0000; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">
                      Big Scores<br><small style="color: #ccc;">Join ongoing jobs</small>
                 </button>
-                <button onclick="showTradeMarket()" style="background: #333; color: #27ae60; padding: 15px; border: 1px solid #27ae60; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">
-                     Black Market<br><small style="color: #ccc;">Buy/sell contraband</small>
-                </button>
                 <button onclick="showGangWars()" style="background: #333; color: #8b0000; padding: 15px; border: 1px solid #8b0000; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">
                      Turf Wars<br><small style="color: #ccc;">Fight for territory</small>
                 </button>
@@ -1966,7 +1937,7 @@ function showWelcomeMessage() {
         "Welcome to the criminal underworld! The city awaits your influence.",
         "Other players are active. Watch your back and seize opportunities.",
         "Territory wars are brewing. Choose your alliances wisely.",
-        "The market is volatile. Check trade opportunities with other players.",
+        "The streets are dangerous. Keep your weapons loaded and your eyes open.",
         "A new criminal empire rises. Will it be yours?"
     ];
     
@@ -2193,7 +2164,7 @@ function updateQuickChatDisplay() {
 function simulateGlobalChatResponse() {
     const responses = [
         { player: 'CrimeBoss42', message: 'Nice move!', color: '#3498db' },
-        { player: 'ShadowDealer', message: 'Anyone want to trade?', color: '#e74c3c' },
+        { player: 'ShadowDealer', message: 'Watch your back out there...', color: '#e74c3c' },
         { player: 'StreetKing', message: 'The docks are heating up', color: '#f39c12' }
     ];
     
@@ -2291,9 +2262,6 @@ function findPlayersInDistrict(districtName) {
                             <div style="display: flex; gap: 10px;">
                                 <button onclick="challengePlayer('${p.name}')" style="background: #8b0000; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-family: 'Georgia', serif;">
                                      Challenge
-                                </button>
-                                <button onclick="tradeWithPlayer('${p.name}')" style="background: #27ae60; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-family: 'Georgia', serif;">
-                                     Trade
                                 </button>
                                 <button onclick="inviteToHeist('${p.name}')" style="background: #f39c12; color: #000; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-family: 'Georgia', serif;">
                                      Invite
@@ -2775,16 +2743,6 @@ function challengePlayer(playerName) {
     }
 }
 
-function tradeWithPlayer(playerName) {
-    if (!onlineWorldState.isConnected) {
-        alert("You need to be connected to the online world!");
-        return;
-    }
-    
-    alert(` Trade request sent to ${playerName}! (In a real implementation, this would open direct trade negotiations)`);
-    logAction(` Sent trade request to ${playerName}`);
-}
-
 function inviteToHeist(playerName) {
     if (!onlineWorldState.isConnected) {
         alert("You need to be connected to the online world!");
@@ -2876,20 +2834,6 @@ function joinHeist(heistId) {
 
 function manageHeist(heistId) {
     alert(" Heist management panel would open here (start heist, kick players, etc.)");
-}
-
-function buyFromPlayer(item, price) {
-    if (player.money >= price) {
-        player.money -= price;
-        alert(` Purchased ${item} for $${price.toLocaleString()}!`);
-        logAction(` Bought ${item} from player for $${price.toLocaleString()}`);
-    } else {
-        alert(" Not enough money!");
-    }
-}
-
-function listItemForSale() {
-    alert(" Item listing interface would open here (select item, set price, etc.)");
 }
 
 function spectateWar(district) {
