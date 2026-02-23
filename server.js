@@ -1552,8 +1552,8 @@ function handleAssassinationAttempt(clientId, message) {
     const targetLevel = target.level || 1;
     chance -= Math.min(targetLevel * 0.3, 10);
 
-    // Clamp to 5%-55% — always risky, never guaranteed
-    chance = Math.max(5, Math.min(chance, 55));
+    // Clamp to 5%-20% — always risky, never guaranteed
+    chance = Math.max(5, Math.min(chance, 20));
 
     // Deduct energy
     attackerState.energy = Math.max(0, (attackerState.energy || 100) - energyCost);

@@ -2381,7 +2381,7 @@ function showAssassination() {
     estimatedChance += Math.min(totalVehicles * 2, 6);
     estimatedChance += Math.min(gangCount * 0.5, 10);
     estimatedChance += Math.min((player.power || 0) * 0.002, 5);
-    estimatedChance = Math.max(5, Math.min(Math.round(estimatedChance), 55));
+    estimatedChance = Math.max(5, Math.min(Math.round(estimatedChance), 20));
 
     // Get online players (not self, not in jail)
     const onlinePlayers = Object.values(onlineWorldState.playerStates || {}).filter(
