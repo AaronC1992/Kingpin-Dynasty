@@ -10697,7 +10697,7 @@ const menuUnlockConfig = [
   { id: 'casino',      fn: 'showCasino()',            label: 'Gambling',       tip: 'Slots, roulette & card games',     level: 0 },
   { id: 'fence',       fn: 'showFence()',             label: 'The Fence',      tip: 'Sell stolen goods at premium rates',level: 7 },
   { id: 'gangmgmt',    fn: 'showGangManagementScreen()', label: 'Crew Details', tip: 'Train, equip & assign your gang', level: 8 },
-  { id: 'jailbreak',   fn: 'showJailbreak()',         label: 'Breakout',       tip: 'Break allies out of prison',       level: 8 },
+  { id: 'jailbreak',   fn: 'showJailbreak()',         label: 'Breakout',       tip: 'Break allies out of prison',       level: 0 },
 
   // === LATE GAME (Level 10-15) ===
   { id: 'businesses',  fn: 'showBusinesses()',        label: 'Fronts',         tip: 'Buy & manage businesses',          level: 10 },
