@@ -13320,6 +13320,7 @@ const tutorialSteps = [
       </div>
       <p>You're about to embark on a journey from street-level thug to criminal mastermind. This world is unforgiving, but with cunning, courage, and the right strategy, you can rise to the top.</p>
       <p><strong>Your Goal:</strong> Build your criminal empire, gain reputation, manage your gang, acquire territory, run businesses, and become the most powerful name in the underworld.</p>
+      <p><strong>Your Account:</strong> You've signed in with a secure account. Your progress is <strong>cloud-saved</strong> automatically — you can pick up right where you left off from any device. Your character name is unique across all players.</p>
       <p><strong>Warning:</strong> Every choice has consequences. Poor planning could land you in jail, bankrupt, or worse. Death is permanent — there are no second chances. Make every move count!</p>
       <p style="margin-top: 20px; padding: 15px; background: rgba(52, 152, 219, 0.2); border-radius: 8px; border: 1px solid #3498db;">
         <strong>This tutorial covers all the major game systems. Pay attention — mastering these mechanics is the difference between surviving and thriving!</strong>
@@ -13583,11 +13584,18 @@ const tutorialSteps = [
     `
   },
   {
-    title: "Saves & Hotkeys",
+    title: "Saves, Cloud Sync & Hotkeys",
     showUI: "none",
     content: `
       <h3>Protecting Your Empire & Fast Navigation</h3>
-      <p><strong>Save System:</strong></p>
+      <p><strong>Cloud Save System:</strong></p>
+      <ul>
+        <li><strong>Automatic cloud saves</strong> — your progress is synced to the server whenever you complete key actions</li>
+        <li><strong>Play anywhere</strong> — sign in on any device and your empire is waiting for you</li>
+        <li><strong>Unique character names</strong> — no two players can share the same name</li>
+        <li><strong>Account management</strong> — change your password or delete your account from the title screen</li>
+      </ul>
+      <p><strong>Local Save System:</strong></p>
       <ul>
         <li><strong>10 manual save slots</strong> + auto-save slot + emergency save on browser close</li>
         <li><strong>Auto-save</strong> runs every 60 seconds</li>
@@ -13605,7 +13613,7 @@ const tutorialSteps = [
         <tr><td style="padding: 4px 8px; color: #3498db;"><strong>F5</strong> — Save System</td><td style="padding: 4px 8px; color: #3498db;"><strong>F7</strong> — Competition</td><td></td></tr>
       </table>
       <p style="background: rgba(46, 204, 113, 0.2); padding: 10px; border-radius: 5px; margin-top: 15px;">
-        <strong>Tip:</strong> Use multiple save slots and JSON exports to protect your progress!
+        <strong>Tip:</strong> Cloud saves keep you safe, but local save slots and JSON exports give you extra backup options!
       </p>
     `
   },
@@ -13636,6 +13644,7 @@ const tutorialSteps = [
       <h3>Ready to Rule the Underworld</h3>
       <p>You now understand all the major systems that will define your criminal career:</p>
       <ul>
+        <li><strong>Account & Cloud Saves:</strong> Your progress is synced automatically — play on any device</li>
         <li><strong>Build Power:</strong> Jobs > Money > Equipment > Gang > Territory > Businesses</li>
         <li><strong>Develop Skills:</strong> Invest 3 skill points per level into base skills and 18 specialized branches</li>
         <li><strong>Expand Empire:</strong> Buy properties, recruit gang, capture territory, set up rackets</li>

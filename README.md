@@ -2,9 +2,9 @@
 
 A deep criminal empire-building browser game where you rise from street thug to legendary kingpin. Build your crew, claim territory, run businesses, and outmanoeuvre rival crime families — all from your browser.
 
-## **[PLAY NOW - Live Demo](https://aaronc1992.github.io/Mafia-Born/)**
+## **[PLAY NOW](https://mafiaborn.com/)**
 
-No installation required. Click above and start playing instantly.
+No installation required. Click above and start playing instantly in your browser.
 
 ---
 
@@ -12,7 +12,7 @@ No installation required. Click above and start playing instantly.
 
 Mafia Born is a single-page browser game built with pure HTML5, CSS3, and JavaScript. You create a character, grind jobs, recruit a gang, purchase properties and businesses, and navigate a world of rival factions, law enforcement, and dynamic events — all while managing clean and dirty money to fund your criminal empire.
 
-The game features persistent progression via local storage, a full save/load system, progressive feature unlocking, customisable quick actions, and both local and online multiplayer modes.
+The game features persistent progression via local storage and cloud saves, a full account system with secure login, progressive feature unlocking, customisable quick actions, and both local and online multiplayer modes.
 
 ---
 
@@ -64,6 +64,12 @@ The game features persistent progression via local storage, a full save/load sys
 - **Customisable quick actions panel** — choose which shortcut buttons appear on your screen via Settings > Personalization
 - **Title screen** with options to start fresh, resume, access the tutorial, or reset all data
 
+### Account & Cloud Saves
+- **Secure account system** with login and registration
+- **Cloud save/load** — your progress is saved to the server so you can pick up from any device
+- **Unique character names** — enforced across all players
+- **Auto cloud-save** on key actions to prevent progress loss
+
 ### Multiplayer
 - **Local multiplayer** — 2-4 players on the same device with competitive, cooperative, and territory war modes
 - **Online multiplayer** — real-time rooms via Node.js/WebSocket server with chat, trading, alliances, and leaderboards
@@ -72,7 +78,9 @@ The game features persistent progression via local storage, a full save/load sys
 
 ## Getting Started
 
-Just open [the live demo](https://aaronc1992.github.io/Mafia-Born/) in any modern browser. For online multiplayer, run the server locally:
+Just open [the live site](https://mafiaborn.com/) in any modern browser — no install needed. Create an account to unlock cloud saves and online features.
+
+To run the server locally for development:
 
 ```bash
 npm install
@@ -87,7 +95,7 @@ npm start
 |-------|-----------|
 | Client | HTML5 + CSS3 + JavaScript (zero dependencies) |
 | Server | Node.js + WebSocket |
-| Storage | Browser localStorage |
+| Storage | Browser localStorage + cloud saves via REST API |
 | Mobile | Responsive design with dedicated mobile layout |
 
 Compatible with Chrome, Firefox, Safari, Edge, and their mobile counterparts.
@@ -96,7 +104,8 @@ Compatible with Chrome, Firefox, Safari, Edge, and their mobile counterparts.
 
 ## Save System
 
-- 10 manual save slots plus auto-save and emergency save on browser close
+- **Cloud saves** — sign in to save and load your progress from any device
+- 10 manual local save slots plus auto-save and emergency save on browser close
 - Export and import saves as JSON files
 - Full persistence of all progress, achievements, and legacy data
 - Save migration for older saves — new features auto-initialize on load
