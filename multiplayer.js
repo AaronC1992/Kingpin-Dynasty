@@ -1638,46 +1638,7 @@ function syncPlayerState() {
     }
 }
 
-// ==================== SERVER-AUTHORITATIVE JOB INTENT ====================
-// Send a job intent to the server. The server decides earnings, reputation, wanted level, jail outcome, and energy.
-// Temporary mapping: collapse many local job types into limited server prototypes.
-function sendJobIntent(localJob) {
-    if (!onlineWorldState.isConnected || !onlineWorldState.socket || onlineWorldState.socket.readyState !== WebSocket.OPEN) {
-        return false;
-    }
-    // Map local job risk to a prototype jobId recognized by server.
-    // This is a placeholder until full job catalog mirrored server-side.
-    let jobId;
-    const risk = (localJob.risk || '').toLowerCase();
-    if (risk === 'low') jobId = 'pickpocket';
-    else if (risk === 'medium') jobId = 'carTheft';
-    else jobId = 'bankRobbery'; // high / very high / extreme / legendary bucket for now
-
-    onlineWorldState.socket.send(JSON.stringify({
-        type: 'job_intent',
-        jobId
-    }));
-    logAction(` Job intent sent (${localJob.name} → ${jobId}). Awaiting authoritative result...`);
-    return true;
-}
-
 // ==================== GLOBAL CHAT SYSTEM ====================
-
-// Debug test function
-function testGlobalFunctions() {
-    console.log('=== DEBUGGING GLOBAL FUNCTIONS ===');
-    console.log('showGlobalChat exists:', typeof showGlobalChat);
-    console.log('window.showGlobalChat exists:', typeof window.showGlobalChat);
-    console.log('Attempting to call showGlobalChat...');
-    try {
-        showGlobalChat();
-        console.log('showGlobalChat called successfully');
-    } catch (e) {
-        console.error('Error calling showGlobalChat:', e);
-    }
-}
-
-// Show dedicated global chat screen
 // ==================== PVP ARENA SCREEN ====================
 
 function showPVP() {
@@ -1876,7 +1837,6 @@ function showWorldChat() {
 }
 
 function showGlobalChat() {
-    console.log('showGlobalChat called'); // Debug log
     
     // Hide all screens using game.js function, or fallback
     if (typeof hideAllScreens === 'function') {
@@ -1969,7 +1929,6 @@ function showGlobalChat() {
         </div>
     `;
     
-    console.log('Setting chat HTML'); // Debug log
     multiplayerScreen.innerHTML = chatHTML;
     multiplayerScreen.style.display = 'block';
     
@@ -1989,7 +1948,6 @@ function showGlobalChat() {
         }
     }
     
-    console.log('Global chat screen should now be visible'); // Debug log
 }
 
 // Generate chat HTML

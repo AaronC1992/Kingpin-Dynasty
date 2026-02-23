@@ -7,7 +7,6 @@
  * - Skills and skill trees (stealth, violence, charisma, intelligence, luck, endurance)
  * - Jail status and breakout mechanics
  * - Gang, territory, and business management
- * - Legacy and retirement systems
  * - Player progression functions (XP, level up, energy regeneration)
  */
 

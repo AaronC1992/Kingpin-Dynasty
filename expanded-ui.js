@@ -608,55 +608,6 @@ window.closeScreen = function() {
   }
 };
 
-// Start rival AI turns
-let rivalTurnInterval = null;
-
-export function startRivalAISystem() {
-  if (!ExpandedSystems.CONFIG.rivalKingpinsEnabled) return;
-  
-  if (rivalTurnInterval) clearInterval(rivalTurnInterval);
-  
-  rivalTurnInterval = setInterval(() => {
-    const rivals = player.rivalKingpins || [];
-    const territories = player.territoriesEx || [];
-    
-    rivals.forEach(rival => {
-      const actions = ExpandedSystems.processRivalTurn(rival, territories, player);
-      
-      actions.forEach(action => {
-        if (typeof action === 'string') {
-          GameLogging.logEvent(action);
-        } else if (action.type === 'territory_attack') {
-          // Process territory attack
-          const result = ExpandedSystems.processTerritoryAttack(
-            action.territory,
-            action.attacker,
-            action.attackStrength,
-            player
-          );
-          
-          // Show alert
-          showTerritoryAttackAlert(result);
-        }
-      });
-    });
-  }, ExpandedSystems.CONFIG.rivalGrowthInterval);
-}
-
-function showTerritoryAttackAlert(result) {
-  const message = result.lostTerritory ? 
-    ` TERRITORY LOST! ${result.attacker} has taken ${result.territory}!
-    Casualties: ${result.casualties.join(', ') || 'None'}
-    Injured: ${result.injuredDefenders.join(', ') || 'None'}` :
-    ` ATTACK REPELLED! Successfully defended ${result.territory} against ${result.attacker}!
-    Reward: $${result.rewards.money}, +${result.rewards.respect} respect
-    Injured: ${result.injuredDefenders.join(', ') || 'None'}`;
-  
-  alert(message);
-  GameLogging.logEvent(message);
-  updateUI();
-}
-
 // Export all UI functions
 export default {
   showGangManagementScreen,
@@ -664,8 +615,7 @@ export default {
   showInteractiveEvent,
   checkAndTriggerInteractiveEvent,
   showRivalActivityScreen,
-  showRelationshipsScreen,
-  startRivalAISystem
+  showRelationshipsScreen
 };
 
 // Expose to window

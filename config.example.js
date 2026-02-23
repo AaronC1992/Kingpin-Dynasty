@@ -54,7 +54,6 @@ const config = {
     territoryConquest: true,
     pvpCombat: true,
     jailbreak: true,
-    tradeMarket: true,
     heists: true
   }
 };
