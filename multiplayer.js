@@ -704,6 +704,18 @@ function handleServerMessage(message) {
             }
             break;
             
+        case 'assassination_result':
+            handleAssassinationResult(message);
+            break;
+
+        case 'assassination_victim':
+            handleAssassinationVictim(message);
+            break;
+
+        case 'assassination_survived':
+            handleAssassinationSurvived(message);
+            break;
+
         case 'combat_result':
             // Server-authoritative PvP combat outcome
             const isWinner = message.winner === (player.name || '');
@@ -1158,7 +1170,7 @@ function showPVP() {
             </div>
             
             <!-- PVP Actions Grid -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin: 30px 0;">
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; margin: 30px 0;">
                 
                 <!-- Whack Rival Don -->
                 <div style="background: linear-gradient(180deg, rgba(139, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.8) 100%); padding: 25px; border-radius: 15px; border: 2px solid #8b0000; cursor: pointer; transition: transform 0.2s;" onclick="showWhackRivalDon()" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
@@ -1188,6 +1200,23 @@ function showPVP() {
                                  Weekly dirty money income<br>
                                  Battle NPC or player gangs<br>
                                  Risk: Lose assigned resources
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Assassination Contract -->
+                <div style="background: linear-gradient(180deg, rgba(75, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0.9) 100%); padding: 25px; border-radius: 15px; border: 2px solid #ff4444; cursor: pointer; transition: transform 0.2s;" onclick="showAssassination()" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <div style="text-align: center;">
+                        <div style="font-size: 4em; margin-bottom: 15px;">🎯</div>
+                        <h3 style="color: #ff4444; margin: 0 0 10px 0; font-family: 'Georgia', serif; font-size: 1.5em;">Assassination</h3>
+                        <p style="color: #ff8888; margin: 0 0 15px 0; font-size: 0.95em;">Hunt rivals for a cut of their wealth</p>
+                        <div style="background: rgba(0, 0, 0, 0.6); padding: 12px; border-radius: 8px; margin-top: 15px;">
+                            <div style="color: #ccc; font-size: 0.85em; line-height: 1.6;">
+                                🔫 Requires guns, bullets & vehicle<br>
+                                💰 Steal 8-20% of target's cash<br>
+                                🎲 Low odds — stack the deck<br>
+                                🚔 Risk: Arrest on failure
                             </div>
                         </div>
                     </div>
@@ -1729,6 +1758,9 @@ function showOnlineWorld() {
                 </button>
                 <button onclick="showWhackRivalDon()" style="background: linear-gradient(180deg, #8b0000 0%, #5a0000 100%); color: #ff4444; padding: 15px; border: 1px solid #ff0000; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif; font-weight: bold;">
                      Whack Rival Don<br><small style="color: #ffaaaa;">HIGH RISK - PERMADEATH</small>
+                </button>
+                <button onclick="showAssassination()" style="background: linear-gradient(180deg, #4b0000 0%, #1a0000 100%); color: #ff4444; padding: 15px; border: 1px solid #ff4444; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif; font-weight: bold;">
+                    🎯 Assassination<br><small style="color: #ff8888;">Hunt rivals for their cash</small>
                 </button>
                 <button onclick="showActiveHeists()" style="background: #333; color: #8b0000; padding: 15px; border: 1px solid #8b0000; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">
                      Big Scores<br><small style="color: #ccc;">Join ongoing jobs</small>
@@ -2311,6 +2343,315 @@ function showCityEvents() {
     `;
     
     document.getElementById("multiplayer-content").innerHTML = eventsHTML;
+}
+
+// ==================== ASSASSINATION SYSTEM ====================
+
+function showAssassination() {
+    if (!onlineWorldState.isConnected) {
+        alert('You must be connected to the online world to order a hit.');
+        return;
+    }
+
+    const content = document.getElementById('multiplayer-content');
+    if (!content) return;
+
+    if (typeof hideAllScreens === 'function') hideAllScreens();
+    const mpScreen = document.getElementById('multiplayer-screen');
+    if (mpScreen) mpScreen.style.display = 'block';
+
+    // Gather player's assassination resources
+    const guns = (player.inventory || []).filter(i => i.type === 'gun');
+    const vehicles = (player.inventory || []).filter(i => i.type === 'car' || i.type === 'vehicle');
+    const stolenCars = player.stolenCars || [];
+    const totalVehicles = vehicles.length + stolenCars.length;
+    const bestGun = guns.reduce((best, g) => (g.power || 0) > (best.power || 0) ? g : best, { name: 'None', power: 0 });
+    const gangCount = (player.gang && player.gang.members) || 0;
+    const bullets = player.ammo || 0;
+    const hasGun = guns.length > 0;
+    const hasBullets = bullets >= 3;
+    const hasVehicle = totalVehicles > 0;
+    const canAttempt = hasGun && hasBullets && hasVehicle;
+
+    // Calculate estimated chance (mirror server logic approximately)
+    let estimatedChance = 8;
+    estimatedChance += Math.min(bullets * 0.5, 15);
+    estimatedChance += Math.min((bestGun.power || 0) * 0.05, 6);
+    estimatedChance += Math.min((guns.length - 1) * 1, 5);
+    estimatedChance += Math.min(totalVehicles * 2, 6);
+    estimatedChance += Math.min(gangCount * 0.5, 10);
+    estimatedChance += Math.min((player.power || 0) * 0.002, 5);
+    estimatedChance = Math.max(5, Math.min(Math.round(estimatedChance), 55));
+
+    // Get online players (not self, not in jail)
+    const onlinePlayers = Object.values(onlineWorldState.playerStates || {}).filter(
+        p => p.playerId !== onlineWorldState.playerId && !p.inJail
+    );
+
+    const requirementColor = (met) => met ? '#2ecc71' : '#e74c3c';
+    const requirementIcon = (met) => met ? '✅' : '❌';
+
+    let targetListHTML;
+    if (onlinePlayers.length === 0) {
+        targetListHTML = '<p style="color: #888; text-align: center; font-style: italic;">No valid targets online right now.</p>';
+    } else {
+        targetListHTML = onlinePlayers.map(p => `
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; margin: 8px 0; background: rgba(139, 0, 0, 0.15); border-radius: 8px; border: 1px solid #5a0000;">
+                <div>
+                    <strong style="color: #ff4444; font-family: 'Georgia', serif;">${escapeHTML(p.name)}</strong>
+                    <br><small style="color: #999;">Level ${p.level || 1} | ${p.reputation || 0} rep</small>
+                </div>
+                <button onclick="attemptAssassination('${escapeHTML(p.name)}')" 
+                    style="background: ${canAttempt ? 'linear-gradient(180deg, #8b0000 0%, #3a0000 100%)' : '#333'}; color: ${canAttempt ? '#ff4444' : '#666'}; padding: 10px 20px; border: 1px solid ${canAttempt ? '#ff0000' : '#555'}; border-radius: 6px; cursor: ${canAttempt ? 'pointer' : 'not-allowed'}; font-family: 'Georgia', serif; font-weight: bold;"
+                    ${canAttempt ? '' : 'disabled'}>
+                    🎯 Order Hit
+                </button>
+            </div>
+        `).join('');
+    }
+
+    content.innerHTML = `
+        <div style="background: rgba(0,0,0,0.95); padding: 30px; border-radius: 15px; border: 3px solid #8b0000;">
+            <div style="text-align: center; margin-bottom: 25px;">
+                <div style="font-size: 3em;">🎯</div>
+                <h2 style="color: #ff4444; font-family: 'Georgia', serif; font-size: 2em; margin: 10px 0 5px 0;">Assassination Contract</h2>
+                <p style="color: #ff6666; font-style: italic; margin: 0;">Send a message they can't refuse. Hunt a rival and take their wealth.</p>
+            </div>
+
+            <!-- Requirements Box -->
+            <div style="background: rgba(0,0,0,0.6); padding: 20px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #555;">
+                <h3 style="color: #c0a062; margin: 0 0 15px 0; font-family: 'Georgia', serif;">📋 Requirements</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+                    <div style="background: rgba(0,0,0,0.4); padding: 12px; border-radius: 8px; border: 1px solid ${requirementColor(hasGun)};">
+                        <div style="color: ${requirementColor(hasGun)}; font-weight: bold;">${requirementIcon(hasGun)} Firearm</div>
+                        <div style="color: #ccc; font-size: 0.85em; margin-top: 5px;">${hasGun ? escapeHTML(bestGun.name) + ' (+' + bestGun.power + ')' : 'Need a gun from the Store'}</div>
+                    </div>
+                    <div style="background: rgba(0,0,0,0.4); padding: 12px; border-radius: 8px; border: 1px solid ${requirementColor(hasBullets)};">
+                        <div style="color: ${requirementColor(hasBullets)}; font-weight: bold;">${requirementIcon(hasBullets)} Bullets (3+)</div>
+                        <div style="color: #ccc; font-size: 0.85em; margin-top: 5px;">You have: ${bullets} rounds</div>
+                    </div>
+                    <div style="background: rgba(0,0,0,0.4); padding: 12px; border-radius: 8px; border: 1px solid ${requirementColor(hasVehicle)};">
+                        <div style="color: ${requirementColor(hasVehicle)}; font-weight: bold;">${requirementIcon(hasVehicle)} Getaway Vehicle</div>
+                        <div style="color: #ccc; font-size: 0.85em; margin-top: 5px;">${totalVehicles} vehicle${totalVehicles !== 1 ? 's' : ''} available</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Odds Breakdown -->
+            <div style="background: rgba(139, 0, 0, 0.15); padding: 20px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #5a0000;">
+                <h3 style="color: #ff4444; margin: 0 0 15px 0; font-family: 'Georgia', serif;">🎲 Your Odds</h3>
+                <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+                    <div style="flex: 1; background: rgba(0,0,0,0.4); border-radius: 8px; height: 30px; overflow: hidden;">
+                        <div style="background: linear-gradient(90deg, #8b0000, #ff4444); height: 100%; width: ${estimatedChance}%; border-radius: 8px; transition: width 0.3s;"></div>
+                    </div>
+                    <div style="color: #ff4444; font-weight: bold; font-size: 1.3em; min-width: 50px;">${estimatedChance}%</div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.85em;">
+                    <div style="color: #ccc;">🔫 Guns: <span style="color: #c0a062;">${guns.length}</span> <small style="color: #888;">(+${Math.min((guns.length - 1) * 1, 5)}%)</small></div>
+                    <div style="color: #ccc;">💣 Bullets: <span style="color: #c0a062;">${bullets}</span> <small style="color: #888;">(+${Math.min(Math.round(bullets * 0.5), 15)}%)</small></div>
+                    <div style="color: #ccc;">🚗 Vehicles: <span style="color: #c0a062;">${totalVehicles}</span> <small style="color: #888;">(+${Math.min(totalVehicles * 2, 6)}%)</small></div>
+                    <div style="color: #ccc;">👥 Gang: <span style="color: #c0a062;">${gangCount}</span> <small style="color: #888;">(+${Math.min(Math.round(gangCount * 0.5), 10)}%)</small></div>
+                    <div style="color: #ccc;">💪 Power: <span style="color: #c0a062;">${player.power || 0}</span> <small style="color: #888;">(+${Math.min(Math.round((player.power || 0) * 0.002), 5)}%)</small></div>
+                    <div style="color: #ccc;">⚡ Base Chance: <span style="color: #888;">8%</span></div>
+                </div>
+                <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #5a0000;">
+                    <div style="color: #ff6666; font-size: 0.85em;">⚠️ Costs 30 energy + 3-5 bullets per attempt. 40% arrest chance on failure.</div>
+                    <div style="color: #c0a062; font-size: 0.85em; margin-top: 4px;">💰 Steal 8-20% of target's cash on success.</div>
+                </div>
+            </div>
+
+            <!-- Target List -->
+            <div style="background: rgba(0,0,0,0.6); padding: 20px; border-radius: 10px; border: 1px solid #555;">
+                <h3 style="color: #c0a062; margin: 0 0 15px 0; font-family: 'Georgia', serif;">🎯 Select Target</h3>
+                ${targetListHTML}
+            </div>
+
+            <div style="text-align: center; margin-top: 20px;">
+                <button onclick="goBackToMainMenu()" style="background: #333; color: #c0a062; padding: 12px 25px; border: 1px solid #c0a062; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">Back</button>
+            </div>
+        </div>
+    `;
+}
+
+function attemptAssassination(targetName) {
+    if (!onlineWorldState.isConnected || !onlineWorldState.socket || onlineWorldState.socket.readyState !== WebSocket.OPEN) {
+        alert('Not connected to the server!');
+        return;
+    }
+
+    // Validate local requirements
+    const guns = (player.inventory || []).filter(i => i.type === 'gun');
+    const vehicles = (player.inventory || []).filter(i => i.type === 'car' || i.type === 'vehicle');
+    const stolenCars = player.stolenCars || [];
+    const totalVehicles = vehicles.length + stolenCars.length;
+    const bestGun = guns.reduce((best, g) => (g.power || 0) > (best.power || 0) ? g : best, { name: 'None', power: 0 });
+    const gangCount = (player.gang && player.gang.members) || 0;
+    const bullets = player.ammo || 0;
+
+    if (guns.length < 1) { alert('You need at least one gun!'); return; }
+    if (bullets < 3) { alert('You need at least 3 bullets!'); return; }
+    if (totalVehicles < 1) { alert('You need a getaway vehicle!'); return; }
+    if ((player.energy || 0) < 30) { alert('Not enough energy! You need 30 energy.'); return; }
+
+    const confirmHit = confirm(
+        `⚠️ ORDER HIT ON ${targetName}?\n\n` +
+        `This will cost:\n` +
+        `• 30 Energy\n` +
+        `• 3-5 Bullets\n\n` +
+        `Success is NOT guaranteed. You could get arrested.\n` +
+        `Proceed?`
+    );
+    if (!confirmHit) return;
+
+    // Send assassination intent to server
+    onlineWorldState.socket.send(JSON.stringify({
+        type: 'assassination_attempt',
+        targetPlayer: targetName,
+        bullets: bullets,
+        gunCount: guns.length,
+        bestGunPower: bestGun.power || 0,
+        vehicleCount: totalVehicles,
+        gangMembers: gangCount,
+        power: player.power || 0
+    }));
+
+    logAction(`🎯 Sent a hitman after ${targetName}... awaiting results.`);
+
+    // Show waiting state
+    const content = document.getElementById('multiplayer-content');
+    if (content) {
+        content.innerHTML = `
+            <div style="background: rgba(0,0,0,0.95); padding: 60px 30px; border-radius: 15px; border: 3px solid #8b0000; text-align: center;">
+                <div style="font-size: 4em; margin-bottom: 20px;">🎯</div>
+                <h2 style="color: #ff4444; font-family: 'Georgia', serif;">Hit in Progress...</h2>
+                <p style="color: #ff6666; font-style: italic;">Your crew is moving on ${escapeHTML(targetName)}. Stand by.</p>
+                <div style="margin-top: 20px;">
+                    <div style="display: inline-block; width: 40px; height: 40px; border: 3px solid #8b0000; border-top-color: #ff4444; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                </div>
+                <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+            </div>
+        `;
+    }
+}
+
+// Handle assassination results from server
+function handleAssassinationResult(message) {
+    const content = document.getElementById('multiplayer-content');
+
+    if (message.success) {
+        // Deduct bullets locally
+        player.ammo = Math.max(0, (player.ammo || 0) - (message.bulletsUsed || 3));
+
+        // Sync authoritative money/rep from server
+        if (typeof message.newMoney === 'number') player.money = message.newMoney;
+        if (typeof message.newReputation === 'number') player.reputation = message.newReputation;
+        if (typeof message.wantedLevel === 'number') player.wantedLevel = message.wantedLevel;
+        player.energy = Math.max(0, (player.energy || 0) - 30);
+
+        if (typeof updateUI === 'function') updateUI();
+        logAction(`🎯 HIT SUCCESSFUL! Assassinated ${message.targetName} and stole $${(message.stolenAmount || 0).toLocaleString()} (${message.stealPercent}%)! +${message.repGain} rep.`);
+
+        if (content) {
+            content.innerHTML = `
+                <div style="background: rgba(0,0,0,0.95); padding: 40px; border-radius: 15px; border: 3px solid #2ecc71; text-align: center;">
+                    <div style="font-size: 4em; margin-bottom: 15px;">💀</div>
+                    <h2 style="color: #2ecc71; font-family: 'Georgia', serif; font-size: 2em;">HIT SUCCESSFUL</h2>
+                    <p style="color: #ccc; font-size: 1.1em; margin: 15px 0;">
+                        ${escapeHTML(message.targetName)} has been eliminated.
+                    </p>
+                    <div style="background: rgba(46, 204, 113, 0.15); padding: 20px; border-radius: 10px; margin: 20px auto; max-width: 350px; border: 1px solid #2ecc71;">
+                        <div style="color: #2ecc71; font-size: 1.5em; font-weight: bold; margin-bottom: 10px;">+$${(message.stolenAmount || 0).toLocaleString()}</div>
+                        <div style="color: #ccc;">Stole ${message.stealPercent}% of their wealth</div>
+                        <div style="color: #c0a062; margin-top: 8px;">+${message.repGain} Reputation</div>
+                        <div style="color: #ff6666; margin-top: 4px;">+25 Wanted Level</div>
+                        <div style="color: #888; margin-top: 8px; font-size: 0.85em;">Hit chance was ${message.chance}% | ${message.bulletsUsed} bullets used</div>
+                    </div>
+                    <div style="margin-top: 25px;">
+                        <button onclick="showAssassination()" style="background: #8b0000; color: #fff; padding: 12px 25px; border: 1px solid #ff0000; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif; margin-right: 10px;">🎯 Another Hit</button>
+                        <button onclick="goBackToMainMenu()" style="background: #333; color: #c0a062; padding: 12px 25px; border: 1px solid #c0a062; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">Back</button>
+                    </div>
+                </div>
+            `;
+        }
+    } else {
+        // Failed
+        player.ammo = Math.max(0, (player.ammo || 0) - (message.bulletsUsed || 3));
+        player.energy = Math.max(0, (player.energy || 0) - 30);
+        if (typeof message.wantedLevel === 'number') player.wantedLevel = message.wantedLevel;
+
+        if (message.arrested) {
+            player.inJail = true;
+            player.jailTime = message.jailTime || 25;
+            player.breakoutAttempts = 3;
+            if (window.EventBus) EventBus.emit('jailStatusChanged', { inJail: true, jailTime: player.jailTime });
+            if (typeof updateJailTimer === 'function') updateJailTimer();
+            if (typeof generateJailPrisoners === 'function') generateJailPrisoners();
+        }
+
+        if (typeof updateUI === 'function') updateUI();
+        logAction(`🎯 HIT FAILED on ${message.targetName}!${message.arrested ? ' ARRESTED!' : ''} -${message.repLoss} rep.`);
+
+        if (content) {
+            content.innerHTML = `
+                <div style="background: rgba(0,0,0,0.95); padding: 40px; border-radius: 15px; border: 3px solid ${message.arrested ? '#ff0000' : '#ff8800'}; text-align: center;">
+                    <div style="font-size: 4em; margin-bottom: 15px;">${message.arrested ? '🚔' : '💨'}</div>
+                    <h2 style="color: ${message.arrested ? '#ff4444' : '#ff8800'}; font-family: 'Georgia', serif; font-size: 2em;">
+                        ${message.arrested ? 'HIT FAILED — ARRESTED!' : 'HIT FAILED — ESCAPED'}
+                    </h2>
+                    <p style="color: #ccc; font-size: 1.1em; margin: 15px 0;">
+                        ${escapeHTML(message.error || 'The hit didn\'t go as planned.')}
+                    </p>
+                    <div style="background: rgba(139, 0, 0, 0.2); padding: 20px; border-radius: 10px; margin: 20px auto; max-width: 350px; border: 1px solid #8b0000;">
+                        <div style="color: #ff4444;">-${message.repLoss || 0} Reputation</div>
+                        <div style="color: #ff8800; margin-top: 4px;">+15 Wanted Level</div>
+                        <div style="color: #888; margin-top: 4px;">${message.bulletsUsed || 3} bullets wasted</div>
+                        ${message.arrested ? '<div style="color: #ff0000; margin-top: 8px; font-weight: bold;">Jail Time: ' + (message.jailTime || 25) + ' seconds</div>' : ''}
+                        <div style="color: #888; margin-top: 8px; font-size: 0.85em;">Hit chance was ${message.chance}%</div>
+                    </div>
+                    <div style="margin-top: 25px;">
+                        ${message.arrested
+                            ? '<button onclick="if(typeof showJailScreen===\'function\') showJailScreen();" style="background: #8b0000; color: #fff; padding: 12px 25px; border: 1px solid #ff0000; border-radius: 8px; cursor: pointer; font-family: \'Georgia\', serif;">Go to Jail</button>'
+                            : '<button onclick="showAssassination()" style="background: #8b0000; color: #fff; padding: 12px 25px; border: 1px solid #ff0000; border-radius: 8px; cursor: pointer; font-family: \'Georgia\', serif; margin-right: 10px;">🎯 Try Again</button><button onclick="goBackToMainMenu()" style="background: #333; color: #c0a062; padding: 12px 25px; border: 1px solid #c0a062; border-radius: 8px; cursor: pointer; font-family: \'Georgia\', serif;">Back</button>'
+                        }
+                    </div>
+                </div>
+            `;
+        }
+
+        // If arrested, auto-redirect to jail screen after a moment
+        if (message.arrested && typeof showJailScreen === 'function') {
+            setTimeout(() => showJailScreen(), 3000);
+        }
+    }
+}
+
+function handleAssassinationVictim(message) {
+    // You were assassinated by someone — show notification
+    if (typeof message.newMoney === 'number') player.money = message.newMoney;
+    if (typeof updateUI === 'function') updateUI();
+
+    const stolenStr = (message.stolenAmount || 0).toLocaleString();
+    logAction(`💀 You were assassinated by ${message.attackerName}! They stole $${stolenStr} (${message.stealPercent}%) of your cash!`);
+    addWorldEvent(`💀 ${message.attackerName} assassinated you and stole $${stolenStr}!`);
+
+    // Show prominent notification
+    if (typeof showBriefNotification === 'function') {
+        showBriefNotification(`💀 ASSASSINATED by ${message.attackerName}! Lost $${stolenStr}!`, 6000);
+    } else {
+        alert(`💀 You were assassinated by ${message.attackerName}!\n\nThey stole $${stolenStr} (${message.stealPercent}%) of your cash!`);
+    }
+}
+
+function handleAssassinationSurvived(message) {
+    // Someone tried to kill you and failed
+    logAction(`🛡️ ${message.attackerName} sent a hitman after you, but the attempt FAILED!`);
+    addWorldEvent(`🛡️ Survived an assassination attempt by ${message.attackerName}!`);
+
+    if (typeof showBriefNotification === 'function') {
+        showBriefNotification(`🛡️ Survived a hit from ${message.attackerName}!`, 5000);
+    } else {
+        alert(`🛡️ Someone tried to assassinate you!\n\n${message.attackerName} sent a hitman, but you survived!`);
+    }
 }
 
 // Player interaction functions

@@ -452,6 +452,10 @@ function handleClientMessage(clientId, message, ws) {
         // ==================== SERVER-AUTHORITATIVE INTENTS (FIRST PASS) ====================
         // Clients now send INTENT messages only. The server validates and computes outcomes.
         // Future gameplay actions should follow this pattern: client -> intent, server -> authoritative result.
+        case 'assassination_attempt':
+            handleAssassinationAttempt(clientId, message);
+            break;
+
         case 'job_intent':
             handleJobIntent(clientId, message);
             break;
@@ -1429,6 +1433,257 @@ function addGlobalChatMessage(sender, message, color = '#ffffff') {
 }
 
 // Helper to generate leaderboard
+// ==================== ASSASSINATION SYSTEM ====================
+function handleAssassinationAttempt(clientId, message) {
+    const attacker = gameState.players.get(clientId);
+    const attackerState = gameState.playerStates.get(clientId);
+    if (!attacker || !attackerState) return;
+
+    const targetName = message.targetPlayer;
+    if (!targetName || typeof targetName !== 'string') return;
+
+    // Find target by name
+    let targetId = null;
+    let target = null;
+    let targetState = null;
+    for (const [id, p] of gameState.players.entries()) {
+        if (p.name === targetName && id !== clientId) {
+            targetId = id;
+            target = p;
+            targetState = gameState.playerStates.get(id);
+            break;
+        }
+    }
+    if (!target || !targetState) {
+        const ws = clients.get(clientId);
+        if (ws && ws.readyState === 1) {
+            ws.send(JSON.stringify({ type: 'assassination_result', success: false, error: 'Target not found or offline.' }));
+        }
+        return;
+    }
+
+    // Can't assassinate someone in jail
+    if (targetState.inJail) {
+        const ws = clients.get(clientId);
+        if (ws && ws.readyState === 1) {
+            ws.send(JSON.stringify({ type: 'assassination_result', success: false, error: 'Target is in jail — protected by the feds.' }));
+        }
+        return;
+    }
+
+    // Attacker can't be in jail
+    if (attackerState.inJail) {
+        const ws = clients.get(clientId);
+        if (ws && ws.readyState === 1) {
+            ws.send(JSON.stringify({ type: 'assassination_result', success: false, error: 'You can\'t plan a hit from behind bars.' }));
+        }
+        return;
+    }
+
+    // Energy check (costs 30 energy)
+    const energyCost = 30;
+    if ((attackerState.energy || 0) < energyCost) {
+        const ws = clients.get(clientId);
+        if (ws && ws.readyState === 1) {
+            ws.send(JSON.stringify({ type: 'assassination_result', success: false, error: 'Not enough energy. You need 30 energy to plan a hit.' }));
+        }
+        return;
+    }
+
+    // Validate client-reported resources (trust minimally, cap bonuses)
+    const bulletsSent = Math.max(0, Math.min(message.bullets || 0, 999));
+    const gunCount = Math.max(0, Math.min(message.gunCount || 0, 50));
+    const bestGunPower = Math.max(0, Math.min(message.bestGunPower || 0, 300));
+    const vehicleCount = Math.max(0, Math.min(message.vehicleCount || 0, 20));
+    const gangMembers = Math.max(0, Math.min(message.gangMembers || 0, 100));
+    const attackerLevel = attacker.level || 1;
+    const attackPower = Math.max(0, Math.min(message.power || 0, 5000));
+
+    // Must have at least 1 gun, 3 bullets, and 1 vehicle
+    if (gunCount < 1) {
+        const ws = clients.get(clientId);
+        if (ws && ws.readyState === 1) {
+            ws.send(JSON.stringify({ type: 'assassination_result', success: false, error: 'You need at least one gun to attempt a hit.' }));
+        }
+        return;
+    }
+    if (bulletsSent < 3) {
+        const ws = clients.get(clientId);
+        if (ws && ws.readyState === 1) {
+            ws.send(JSON.stringify({ type: 'assassination_result', success: false, error: 'You need at least 3 bullets to attempt a hit.' }));
+        }
+        return;
+    }
+    if (vehicleCount < 1) {
+        const ws = clients.get(clientId);
+        if (ws && ws.readyState === 1) {
+            ws.send(JSON.stringify({ type: 'assassination_result', success: false, error: 'You need a getaway vehicle to attempt a hit.' }));
+        }
+        return;
+    }
+
+    // ---- Calculate success chance ----
+    // Base: 8% — this is HARD to pull off
+    let chance = 8;
+
+    // Bullets: +0.5% per bullet, max +15% (30 bullets)
+    chance += Math.min(bulletsSent * 0.5, 15);
+
+    // Best gun power: +0.05% per power point, max +6% (120 power sniper)
+    chance += Math.min(bestGunPower * 0.05, 6);
+
+    // Extra guns: +1% per extra gun after the first, max +5%
+    chance += Math.min((gunCount - 1) * 1, 5);
+
+    // Vehicles: +2% per vehicle, max +6% (3 vehicles)
+    chance += Math.min(vehicleCount * 2, 6);
+
+    // Gang members: +0.5% per member, max +10% (20 members)
+    chance += Math.min(gangMembers * 0.5, 10);
+
+    // Level advantage: +0.5% per level above target, max +5%
+    const levelDiff = attackerLevel - (target.level || 1);
+    if (levelDiff > 0) chance += Math.min(levelDiff * 0.5, 5);
+
+    // Total power bonus: +0.002% per power, max +5%
+    chance += Math.min(attackPower * 0.002, 5);
+
+    // Target defense: higher level targets are harder
+    const targetLevel = target.level || 1;
+    chance -= Math.min(targetLevel * 0.3, 10);
+
+    // Clamp to 5%-55% — always risky, never guaranteed
+    chance = Math.max(5, Math.min(chance, 55));
+
+    // Deduct energy
+    attackerState.energy = Math.max(0, (attackerState.energy || 100) - energyCost);
+
+    // Consume 3 bullets regardless (shots fired)
+    const bulletsUsed = Math.min(bulletsSent, 5);
+
+    // Roll the dice
+    const roll = Math.random() * 100;
+    const success = roll < chance;
+
+    if (success) {
+        // Steal 8-20% of target's money
+        const stealPercent = 8 + Math.floor(Math.random() * 13); // 8-20
+        const stolenAmount = Math.floor((target.money || 0) * (stealPercent / 100));
+
+        target.money = Math.max(0, (target.money || 0) - stolenAmount);
+        targetState.money = target.money;
+        attacker.money = (attacker.money || 0) + stolenAmount;
+        attackerState.money = attacker.money;
+
+        // Attacker gains reputation
+        const repGain = 10 + Math.floor(Math.random() * 15);
+        attacker.reputation = (attacker.reputation || 0) + repGain;
+        attackerState.reputation = attacker.reputation;
+
+        // Target loses some reputation
+        target.reputation = Math.max(0, (target.reputation || 0) - 5);
+        targetState.reputation = target.reputation;
+
+        // Attacker gets high wanted level
+        attackerState.wantedLevel = Math.min(100, (attackerState.wantedLevel || 0) + 25);
+
+        console.log(`🎯 ASSASSINATION: ${attacker.name} killed ${target.name} and stole $${stolenAmount.toLocaleString()} (${stealPercent}%)`);
+
+        // Notify attacker
+        const atkWs = clients.get(clientId);
+        if (atkWs && atkWs.readyState === 1) {
+            atkWs.send(JSON.stringify({
+                type: 'assassination_result',
+                success: true,
+                targetName: target.name,
+                stolenAmount: stolenAmount,
+                stealPercent: stealPercent,
+                repGain: repGain,
+                bulletsUsed: bulletsUsed,
+                chance: Math.round(chance),
+                newMoney: attacker.money,
+                newReputation: attacker.reputation,
+                wantedLevel: attackerState.wantedLevel
+            }));
+        }
+
+        // Notify target
+        const tgtWs = clients.get(targetId);
+        if (tgtWs && tgtWs.readyState === 1) {
+            tgtWs.send(JSON.stringify({
+                type: 'assassination_victim',
+                attackerName: attacker.name,
+                stolenAmount: stolenAmount,
+                stealPercent: stealPercent,
+                newMoney: target.money
+            }));
+        }
+
+        // Broadcast to everyone
+        addGlobalChatMessage('System', `🎯 ${attacker.name} successfully assassinated ${target.name} and stole $${stolenAmount.toLocaleString()}!`, '#8b0000');
+
+        persistedLeaderboard = generateLeaderboard();
+        broadcastToAll({ type: 'player_ranked', leaderboard: persistedLeaderboard });
+    } else {
+        // Failed — attacker might get arrested (40% chance)
+        const arrested = Math.random() < 0.40;
+
+        // Attacker loses some reputation
+        const repLoss = 3 + Math.floor(Math.random() * 5);
+        attacker.reputation = Math.max(0, (attacker.reputation || 0) - repLoss);
+        attackerState.reputation = attacker.reputation;
+
+        // Wanted level increases regardless
+        attackerState.wantedLevel = Math.min(100, (attackerState.wantedLevel || 0) + 15);
+
+        let jailTime = 0;
+        if (arrested) {
+            jailTime = 20 + Math.floor(Math.random() * 20); // 20-39 seconds
+            attackerState.inJail = true;
+            attackerState.jailTime = jailTime;
+            updateJailBots();
+        }
+
+        console.log(`🎯 ASSASSINATION FAILED: ${attacker.name} failed to kill ${target.name}${arrested ? ' and was ARRESTED' : ''}`);
+
+        // Notify attacker
+        const atkWs = clients.get(clientId);
+        if (atkWs && atkWs.readyState === 1) {
+            atkWs.send(JSON.stringify({
+                type: 'assassination_result',
+                success: false,
+                targetName: target.name,
+                arrested: arrested,
+                jailTime: jailTime,
+                repLoss: repLoss,
+                bulletsUsed: bulletsUsed,
+                chance: Math.round(chance),
+                wantedLevel: attackerState.wantedLevel,
+                error: arrested
+                    ? `Hit on ${target.name} failed! You were spotted and arrested.`
+                    : `Hit on ${target.name} failed! You escaped but lost reputation.`
+            }));
+        }
+
+        // Notify target they were targeted
+        const tgtWs = clients.get(targetId);
+        if (tgtWs && tgtWs.readyState === 1) {
+            tgtWs.send(JSON.stringify({
+                type: 'assassination_survived',
+                attackerName: attacker.name
+            }));
+        }
+
+        // Broadcast
+        if (arrested) {
+            addGlobalChatMessage('System', `🎯 ${attacker.name} botched a hit on ${target.name} and was arrested!`, '#8b0000');
+        }
+    }
+
+    broadcastPlayerStates();
+    scheduleWorldSave();
+}
+
 function generateLeaderboard() {
     return Array.from(gameState.players.values())
         .sort((a, b) => b.reputation - a.reputation)
