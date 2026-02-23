@@ -1,10 +1,9 @@
 import { initOnboarding, updateTracker } from './onboarding.js';
 import { applyDailyPassives, getDrugIncomeMultiplier, getViolenceHeatMultiplier, getWeaponPriceMultiplier } from './passiveManager.js';
 import { showEmpireOverview } from './empireOverview.js';
-import { checkRetirement, triggerEnding, showRetirementMenu } from './legacy.js';
 import { player, gainExperience, checkLevelUp, regenerateEnergy, startEnergyRegenTimer, startEnergyRegeneration, skillTreeDefinitions, availablePerks, achievements } from './player.js';
 import { jobs, stolenCarTypes } from './jobs.js';
-import { crimeFamilies, criminalHallOfFame, retirementOutcomes, factionEffects, potentialMentors } from './factions.js';
+import { crimeFamilies, factionEffects, potentialMentors } from './factions.js';
 import { storyCampaigns, factionMissions, territoryMissions, bossBattles, missionProgress } from './missions.js';
 import { narrationVariations, getRandomNarration } from './narration.js';
 import { storeItems, realEstateProperties, businessTypes, loanOptions, launderingMethods } from './economy.js';
@@ -22,8 +21,6 @@ window.player = player;
 window.jobs = jobs;
 window.stolenCarTypes = stolenCarTypes;
 window.crimeFamilies = crimeFamilies;
-window.criminalHallOfFame = criminalHallOfFame;
-window.retirementOutcomes = retirementOutcomes;
 window.storyCampaigns = storyCampaigns;
 window.factionMissions = factionMissions;
 window.territoryMissions = territoryMissions;
@@ -10748,7 +10745,6 @@ const menuUnlockConfig = [
 
   // === ENDGAME (Level 15+) ===
   { id: 'empire',      fn: 'showEmpireRating()',      label: 'Empire Rating',  tip: 'Track your criminal empire score', level: 15 },
-  { id: 'halloffame',  fn: 'showHallOfFame()',        label: 'Made Men',       tip: 'Hall of Fame & fallen legends',    level: 15 },
   { id: 'empOverview', fn: 'showEmpireOverview()',     label: 'Empire Overview', tip: 'Full empire status dashboard',    level: 10 },
 
   // === WORLD CHAT (Always Available) ===
@@ -11262,21 +11258,10 @@ function buildCharacterShowcaseHTML() {
           <h3 style="color: #9b59b6; margin: 0 0 15px 0;">⏰ Career Timeline</h3>
           <div style="display: grid; gap: 8px;">
             <div style="display: flex; justify-content: space-between;"><span>Play Time:</span><span style="color: #9b59b6; font-weight: bold;">${formatPlaytime(showcase.playTime)}</span></div>
-            <div style="display: flex; justify-content: space-between;"><span>Generation:</span><span style="color: #9b59b6;">${showcase.generation}</span></div>
             <div style="display: flex; justify-content: space-between;"><span>Challenges:</span><span style="color: #9b59b6;">${showcase.challengesCompleted}</span></div>
           </div>
         </div>
       </div>
-      
-      ${showcase.legacyFamily && showcase.legacyFamily.length > 0 ? `
-        <div style="background: rgba(243, 156, 18, 0.2); padding: 20px; border-radius: 15px; border: 2px solid #f39c12; margin-bottom: 30px;">
-          <h3 style="color: #f39c12; margin: 0 0 15px 0;">👨‍👩‍👧‍👦 Criminal Legacy</h3>
-          <p style="color: #ecf0f1; margin: 0;">
-            Part of the ${showcase.legacyFamily[0]} criminal dynasty. 
-            Previous generations: ${showcase.legacyFamily.join(', ')}
-          </p>
-        </div>
-      ` : ''}
     </div>
   `;
 }
@@ -12172,7 +12157,7 @@ function showLevelUpEffects() {
     25: { title: 'Crime Lord',         bonus: 100000, msg: 'Your empire spans the underworld.' },
     30: { title: 'Shadow King',        bonus: 200000, msg: 'Even the cops pay tribute to you.' },
     40: { title: 'Legend of the Streets', bonus: 500000, msg: 'Songs are written about your reign.' },
-    50: { title: 'Mafia Born',    bonus: 1000000, msg: 'You ARE the dynasty. History remembers.' }
+    50: { title: 'Mafia Born',    bonus: 1000000, msg: 'You ARE the legend. History remembers.' }
   };
   
   const milestone = milestones[player.level];
@@ -12906,7 +12891,7 @@ function showIntroNarrative() {
         </p>
         
         <p style="margin-bottom: 15px; color: #f39c12;">
-          <strong>Your empire awaits:</strong> Start small with street jobs, recruit loyal gang members, buy properties to expand your influence, and maybe one day your name will earn a place in the Hall of Fame. Compete with other criminal masterminds and leave a legacy that spans generations.
+          <strong>Your empire awaits:</strong> Start small with street jobs, recruit loyal gang members, buy properties to expand your influence, and rise to become the most feared name in the underworld. Compete with other criminal masterminds and build an empire that will never be forgotten.
         </p>
         
         <p style="margin-bottom: 20px; color: #3498db;">
@@ -13251,8 +13236,8 @@ const tutorialSteps = [
               box-shadow: 0 5px 15px rgba(0,0,0,0.5); border: 2px solid #e74c3c;" />
       </div>
       <p>You're about to embark on a journey from street-level thug to criminal mastermind. This world is unforgiving, but with cunning, courage, and the right strategy, you can rise to the top.</p>
-      <p><strong>Your Goal:</strong> Build your criminal empire, gain reputation, manage your gang, acquire territory, run businesses, and leave a lasting legacy in the underworld.</p>
-      <p><strong>Warning:</strong> Every choice has consequences. Poor planning could land you in jail, bankrupt, or worse. But smart players can build empires that span generations — and when you fall, your heir carries on the legacy!</p>
+      <p><strong>Your Goal:</strong> Build your criminal empire, gain reputation, manage your gang, acquire territory, run businesses, and become the most powerful name in the underworld.</p>
+      <p><strong>Warning:</strong> Every choice has consequences. Poor planning could land you in jail, bankrupt, or worse. Death is permanent — there are no second chances. Make every move count!</p>
       <p style="margin-top: 20px; padding: 15px; background: rgba(52, 152, 219, 0.2); border-radius: 8px; border: 1px solid #3498db;">
         <strong>This tutorial covers all the major game systems. Pay attention — mastering these mechanics is the difference between surviving and thriving!</strong>
       </p>
@@ -13501,24 +13486,16 @@ const tutorialSteps = [
     `
   },
   {
-    title: "Empire Rating & Legacy",
+    title: "Empire Rating & Endgame",
     showUI: "menu",
     content: `
       <h3>The Endgame</h3>
       <p><strong>Empire Rating</strong> (max 10,000 points) measures your overall criminal success across 6 categories: Money, Gang, Territory, Business, Reputation, and Skills.</p>
       <p><strong>Grades:</strong> D > C > B > A > A+ > S > S+ > <span style="color: #f1c40f;">LEGENDARY</span> (9,000+)</p>
-      <p><strong>🏛️ The Don's Legacy:</strong></p>
-      <ul>
-        <li>When you die, a <strong>successor from your bloodline</strong> can pick up where you left off</li>
-        <li>Your heir inherits a percentage of your <strong>wealth, businesses, properties, and loyal gang members</strong></li>
-        <li>Stats, skills, and level <strong>reset</strong> — but the family fortune endures</li>
-        <li>Each generation inherits <strong>more</strong> (15% base, +5% per generation, max 50%)</li>
-        <li>Or choose to <strong>Start a New Life</strong> from scratch with no inheritance</li>
-      </ul>
-      <p>Fallen characters enter the <strong>Hall of Fallen Kingpins</strong> — build a dynasty that spans generations!</p>
+      <p><strong>☠️ Permadeath:</strong> Death is final. When you die, your empire dies with you. There are no heirs, no second chances — just the cold truth of the streets. Make every decision count.</p>
       <p><strong>Weekly Challenges:</strong> 3 random challenges per week with tiered rewards — Bronze ($50K) to Platinum ($500K).</p>
       <p style="background: rgba(212, 175, 55, 0.2); padding: 10px; border-radius: 5px; margin-top: 15px;">
-        <strong>Long-term Goal:</strong> Build an empire worthy of Legendary status and grow a dynasty whose name echoes through the underworld!
+        <strong>Long-term Goal:</strong> Build an empire worthy of Legendary status — rise from street thug to criminal legend!
       </p>
     `
   },
@@ -13541,7 +13518,7 @@ const tutorialSteps = [
         <tr><td style="padding: 4px 8px; color: #3498db;"><strong>K</strong> — Skills</td><td style="padding: 4px 8px; color: #3498db;"><strong>C</strong> — Cars</td><td style="padding: 4px 8px; color: #3498db;"><strong>B</strong> — Businesses</td></tr>
         <tr><td style="padding: 4px 8px; color: #3498db;"><strong>T</strong> — Territory</td><td style="padding: 4px 8px; color: #3498db;"><strong>M</strong> — Map</td><td style="padding: 4px 8px; color: #3498db;"><strong>L</strong> — Calendar</td></tr>
         <tr><td style="padding: 4px 8px; color: #3498db;"><strong>Z</strong> — Statistics</td><td style="padding: 4px 8px; color: #3498db;"><strong>R</strong> — Empire Rating</td><td style="padding: 4px 8px; color: #3498db;"><strong>O</strong> — Empire Overview</td></tr>
-        <tr><td style="padding: 4px 8px; color: #3498db;"><strong>H</strong> — Hall of Fame</td><td style="padding: 4px 8px; color: #3498db;"><strong>E</strong> — Buy Energy Drink</td><td style="padding: 4px 8px; color: #3498db;"><strong>ESC</strong> — SafeHouse</td></tr>
+        <tr><td style="padding: 4px 8px; color: #3498db;"><strong>E</strong> — Buy Energy Drink</td><td style="padding: 4px 8px; color: #3498db;"><strong>ESC</strong> — SafeHouse</td><td></td></tr>
         <tr><td style="padding: 4px 8px; color: #3498db;"><strong>F5</strong> — Save System</td><td style="padding: 4px 8px; color: #3498db;"><strong>F7</strong> — Competition</td><td></td></tr>
       </table>
       <p style="background: rgba(46, 204, 113, 0.2); padding: 10px; border-radius: 5px; margin-top: 15px;">
@@ -13560,7 +13537,7 @@ const tutorialSteps = [
         <li><strong>Level 2-3:</strong> Expertise (Skills), Motor Pool (Cars), Properties, Operations (Missions)</li>
         <li><strong>Level 5-8:</strong> The Family (Gang), Legal Aid, Events, Pastimes, The Fence, Crew Details, Breakout</li>
         <li><strong>Level 10-12:</strong> Fronts (Businesses), Turf Wars, Territory Map, Shylock (Loans), Empire Overview, The Wash (Laundering)</li>
-        <li><strong>Level 15+:</strong> Empire Rating, Made Men (Hall of Fame)</li>
+        <li><strong>Level 15+:</strong> Empire Rating, Achievements</li>
       </ul>
       <p>You'll see a notification when new features unlock. Locked features are hidden from menus until you reach the required level.</p>
       <p><strong>Customisable Quick Actions:</strong> The right side panel shows shortcut buttons for your most-used actions. Head to <strong>Settings > Personalization</strong> to choose which buttons appear. Only unlocked features can be added.</p>
@@ -13583,14 +13560,14 @@ const tutorialSteps = [
         <li><strong>Challenge Bosses:</strong> Take down rival leaders for unique weapons and territory</li>
         <li><strong>Run Businesses:</strong> Generate passive income and launder your dirty money</li>
         <li><strong>Complete Challenges:</strong> Weekly competitions, story campaign, and achievements</li>
-        <li><strong>Leave a Legacy:</strong> Build your dynasty — when you fall, your heir inherits your empire and carries the family name forward</li>
+        <li><strong>Survive:</strong> Death is permanent — play smart, manage risk, and build the most powerful empire you can</li>
       </ul>
       <p style="background: rgba(231, 76, 60, 0.2); padding: 15px; border-radius: 8px; margin-top: 20px;">
         <strong>Remember:</strong> Every choice matters. Manage risk vs reward, watch your wanted level, keep your gang loyal, and always have an escape plan!
       </p>
       <p style="text-align: center; margin-top: 30px; padding: 20px; background: rgba(46, 204, 113, 0.2); border-radius: 10px; border: 2px solid #2ecc71;">
         <strong style="font-size: 1.3em; color: #2ecc71;">From street thug to criminal legend...</strong><br>
-        <span style="font-size: 1.1em; color: #ecf0f1;">Your dynasty begins now. Make every decision count.</span>
+        <span style="font-size: 1.1em; color: #ecf0f1;">Your empire begins now. Make every decision count.</span>
       </p>
     `
   }
@@ -14779,12 +14756,17 @@ function healAtHospital(healType) {
 // Function to show the death screen
 function showDeathScreen(causeOfDeath) {
   // PERMADEATH: Delete the save file
-  if (typeof SAVE_SYSTEM !== 'undefined' && SAVE_SYSTEM.currentSlot) {
+  if (typeof SAVE_SYSTEM !== 'undefined' && SAVE_SYSTEM.currentSlot != null) {
     try {
       localStorage.removeItem(`gameSlot_${SAVE_SYSTEM.currentSlot}`);
       
       // Disable autosave to prevent resurrection
       SAVE_SYSTEM.autoSaveEnabled = false;
+      if (autoSaveIntervalId) {
+        clearInterval(autoSaveIntervalId);
+        autoSaveIntervalId = null;
+      }
+      saveSaveSystemPrefs();
     } catch (e) {
       console.error("Failed to delete save on death:", e);
     }
@@ -14845,95 +14827,17 @@ function showDeathScreen(causeOfDeath) {
     `;
   }
 
-  // Hall of Fame - save to localStorage
-  const hallOfFame = JSON.parse(localStorage.getItem('kingpinHallOfFame') || '[]');
-  hallOfFame.push({
-    name: player.name || 'Unknown',
-    level: player.level,
-    title: legacyTitle,
-    money: player.money || 0,
-    cause: cause,
-    date: new Date().toLocaleDateString()
-  });
-  hallOfFame.sort((a, b) => b.level - a.level || b.money - a.money);
-  if (hallOfFame.length > 10) hallOfFame.length = 10; // Keep top 10
-  localStorage.setItem('kingpinHallOfFame', JSON.stringify(hallOfFame));
-
-  const hofEl = document.getElementById('death-hall-of-fame');
-  if (hofEl && hallOfFame.length > 0) {
-    hofEl.innerHTML = `
-      <div class="hof-section">
-        <h4>🏛️ Hall of Fallen Kingpins</h4>
-        <div class="hof-list">
-          ${hallOfFame.map((entry, i) => `
-            <div class="hof-entry ${entry.name === player.name && entry.date === new Date().toLocaleDateString() ? 'hof-current' : ''}">
-              <span class="hof-rank">#${i + 1}</span>
-              <span class="hof-name">${entry.name}</span>
-              <span class="hof-detail">Lv.${entry.level} ${entry.title}</span>
-              <span class="hof-money">$${entry.money.toLocaleString()}</span>
-            </div>
-          `).join('')}
-        </div>
-      </div>
-    `;
-  }
-
-  // ==================== LEGACY SUCCESSOR OFFER ====================
-  // Calculate what the heir would inherit
-  const generationNum = (player.legacy ? player.legacy.generationNumber : 1);
-  const inheritancePct = Math.min(0.5, 0.15 + (generationNum - 1) * 0.05); // 15% base, +5% per generation, max 50%
-  const inheritedMoney = Math.floor((player.money || 0) * inheritancePct);
-  const inheritedBusinesses = (player.businesses || []).slice(0, Math.min(player.businesses ? player.businesses.length : 0, Math.ceil(generationNum / 2))); // inherit more businesses with later generations
-  const inheritedProperties = (player.realEstate && player.realEstate.ownedProperties) ? player.realEstate.ownedProperties.slice(0, 1) : []; // keep 1 property
-  const inheritedGangCount = Math.min(player.gang ? player.gang.members : 0, Math.floor(generationNum * 1.5)); // a few loyal members stay
-  const previousChars = player.legacy && player.legacy.previousCharacters ? [...player.legacy.previousCharacters, player.name] : [player.name];
-
-  const legacyEl = document.getElementById('death-legacy-offer');
-  if (legacyEl) {
-    legacyEl.innerHTML = `
-      <div style="margin: 20px auto; max-width: 600px; padding: 25px; background: linear-gradient(135deg, rgba(212, 175, 55, 0.15), rgba(44, 62, 80, 0.9)); border: 2px solid #d4af37; border-radius: 15px; text-align: center;">
-        <h3 style="color: #d4af37; font-size: 1.6em; margin-bottom: 10px;">🏛️ The Don's Legacy</h3>
-        <p style="color: #bdc3c7; margin-bottom: 15px; font-style: italic;">
-          "Blood is thicker than water. The family name lives on."
+  // Permadeath — show restart button
+  const restartArea = document.getElementById('death-legacy-offer');
+  if (restartArea) {
+    restartArea.innerHTML = `
+      <div style="margin: 25px auto; max-width: 500px; text-align: center;">
+        <p style="color: #bdc3c7; margin-bottom: 20px; font-style: italic;">
+          "Every empire falls. Will you build another?"
         </p>
-        <p style="color: #ecf0f1; margin-bottom: 20px;">
-          Someone from the ${player.name || 'Unknown'} bloodline steps up to carry the torch.
-          <br>Stats and skills reset, but the family fortune endures.
-        </p>
-        
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; text-align: left;">
-          <div style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px;">
-            <span style="color: #2ecc71;">💰 Inheritance</span><br>
-            <strong style="color: #ecf0f1;">$${inheritedMoney.toLocaleString()}</strong>
-            <span style="color: #7f8c8d; font-size: 0.85em;"> (${Math.round(inheritancePct * 100)}%)</span>
-          </div>
-          <div style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px;">
-            <span style="color: #9b59b6;">🏭 Businesses</span><br>
-            <strong style="color: #ecf0f1;">${inheritedBusinesses.length} kept</strong>
-          </div>
-          <div style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px;">
-            <span style="color: #3498db;">🏠 Properties</span><br>
-            <strong style="color: #ecf0f1;">${inheritedProperties.length} kept</strong>
-          </div>
-          <div style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px;">
-            <span style="color: #e74c3c;">👥 Loyal Members</span><br>
-            <strong style="color: #ecf0f1;">${inheritedGangCount} remain</strong>
-          </div>
-        </div>
-        
-        <p style="color: #95a5a6; font-size: 0.85em; margin-bottom: 20px;">
-          Generation ${generationNum + 1} of the ${previousChars[0] || 'Unknown'} dynasty
-          ${previousChars.length > 1 ? '<br>Lineage: ' + previousChars.join(' → ') + ' → ???' : ''}
-        </p>
-        
-        <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
-          <button onclick="continueAsSuccessor()" style="background: linear-gradient(45deg, #d4af37, #b8960c); color: #000; padding: 15px 30px; border: none; border-radius: 10px; font-size: 1.2em; font-weight: bold; cursor: pointer; text-transform: uppercase; letter-spacing: 1px;">
-            🏛️ Continue the Legacy
-          </button>
-          <button onclick="restartGame()" style="background: linear-gradient(45deg, #7f8c8d, #5d6d7e); color: #ecf0f1; padding: 15px 30px; border: none; border-radius: 10px; font-size: 1.1em; cursor: pointer;">
-            🔄 Start a New Life
-          </button>
-        </div>
+        <button onclick="restartGame()" style="background: linear-gradient(45deg, #e74c3c, #c0392b); color: #ecf0f1; padding: 18px 40px; border: none; border-radius: 12px; font-size: 1.3em; font-weight: bold; cursor: pointer; text-transform: uppercase; letter-spacing: 1px;">
+          🔄 Start a New Life
+        </button>
       </div>
     `;
   }
@@ -14942,106 +14846,7 @@ function showDeathScreen(causeOfDeath) {
   document.getElementById("death-screen").style.display = "flex";
 }
 
-// ==================== LEGACY SUCCESSOR SYSTEM ====================
-// Continue the game as an heir from the fallen character's bloodline
-
-function continueAsSuccessor() {
-  // Capture inheritance before reset
-  const generationNum = (player.legacy ? player.legacy.generationNumber : 1);
-  const inheritancePct = Math.min(0.5, 0.15 + (generationNum - 1) * 0.05);
-  const inheritedMoney = Math.floor((player.money || 0) * inheritancePct);
-  const inheritedBusinesses = (player.businesses || []).slice(0, Math.min(player.businesses ? player.businesses.length : 0, Math.ceil(generationNum / 2)));
-  const inheritedProperties = (player.realEstate && player.realEstate.ownedProperties) ? player.realEstate.ownedProperties.slice(0, 1) : [];
-  const inheritedGangCount = Math.min(player.gang ? player.gang.members : 0, Math.floor(generationNum * 1.5));
-  const previousChars = player.legacy && player.legacy.previousCharacters ? [...player.legacy.previousCharacters, player.name] : [player.name];
-  const familyRep = (player.legacy ? player.legacy.familyReputation : 0) + Math.floor((player.reputation || 0) * 0.1);
-  const fallenName = player.name || 'Unknown';
-
-  // Save legacy data to localStorage so it survives the reset
-  const legacyData = {
-    generationNumber: generationNum + 1,
-    previousCharacters: previousChars,
-    familyReputation: familyRep,
-    inheritance: {
-      money: inheritedMoney,
-      businesses: inheritedBusinesses,
-      properties: inheritedProperties,
-      gangCount: inheritedGangCount
-    }
-  };
-  localStorage.setItem('criminalLegacy', JSON.stringify(legacyData));
-
-  // Reset player for new character
-  resetPlayerForNewGame();
-  stopJailTimer();
-  
-  // Clear jail prisoners
-  jailPrisoners = [];
-  jailbreakPrisoners = [];
-  
-  // Reset achievements
-  achievements.forEach(achievement => achievement.unlocked = false);
-  
-  // Reset weekly challenges
-  if (typeof weeklyChallenges !== 'undefined') {
-    weeklyChallenges.length = 0;
-  }
-
-  // Apply the legacy inheritance
-  player.money = inheritedMoney;
-  player.businesses = inheritedBusinesses;
-  if (inheritedProperties.length > 0) {
-    player.realEstate.ownedProperties = inheritedProperties;
-  }
-  // Set gang count and generate loyal legacy members
-  player.gang.members = inheritedGangCount;
-  player.gang.gangMembers = [];
-  for (let i = 0; i < inheritedGangCount; i++) {
-    player.gang.gangMembers.push(generateLegacyGangMember());
-  }
-
-  // Store legacy info on the player
-  player.legacy = {
-    generationNumber: generationNum + 1,
-    previousCharacters: previousChars,
-    familyReputation: familyRep,
-    inheritanceBonus: inheritedMoney,
-    permanentPerks: [],
-    availableLegacyPoints: 0
-  };
-
-  // Give a small reputation boost from the family name
-  player.reputation = Math.min(familyRep * 5, 500);
-
-  // Hide death screen, show character creation for the heir
-  document.getElementById("death-screen").style.display = "none";
-
-  // Show character creation — the heir needs a name and portrait
-  showSuccessorCreation(fallenName, generationNum + 1);
-}
-
-// Show a character creation screen themed for the successor
-async function showSuccessorCreation(fallenName, generation) {
-  // Hide main screens
-  document.getElementById("menu").style.display = "none";
-  
-  const playerName = await ui.prompt(`The ${fallenName} family needs a new leader.\nGeneration ${generation} — what is the successor's name?`);
-  
-  if (!playerName || playerName.trim() === "") {
-    // Default to a family name
-    player.name = fallenName + " Jr.";
-  } else {
-    player.name = playerName.trim();
-  }
-
-  // Initialize playtime tracking
-  player.startTime = Date.now();
-  
-  // Show portrait selection, then finish up
-  showPortraitSelection();
-}
-
-// Function to restart the game (fresh start, no inheritance)
+// Function to restart the game (fresh start — permadeath)
 function restartGame() {
   resetPlayerForNewGame();
   stopJailTimer();
@@ -15057,9 +14862,6 @@ function restartGame() {
   if (typeof weeklyChallenges !== 'undefined') {
     weeklyChallenges.length = 0;
   }
-  
-  // Clear legacy data for a completely fresh start
-  localStorage.removeItem('criminalLegacy');
   
   updateUI();
   logAction("🔄 The slate is wiped clean. Back to the bottom of the food chain, but every kingpin started somewhere. Time to climb again.");
@@ -15137,7 +14939,6 @@ function showAchievements() {
   
   achievementsHTML += `
     <div style="text-align: center; margin-top: 20px;">
-      <button onclick="showHallOfFame()" style="background: linear-gradient(45deg, #f39c12, #e67e22); color: white; padding: 12px 25px; border: none; border-radius: 8px; cursor: pointer; margin-right: 10px;">🏛️ Hall of Fame</button>
       <button onclick="goBackToMainMenu()" style="background: linear-gradient(45deg, #95a5a6, #7f8c8d); color: white; padding: 12px 25px; border: none; border-radius: 8px; cursor: pointer;">🏠 SafeHouse</button>
     </div>
   `;
@@ -16668,7 +16469,8 @@ window.cancelLoadFromIntro = cancelLoadFromIntro;
 
 // Helper function to check for slot saves
 function checkForSlotSaves() {
-  for (let i = 1; i <= 10; i++) {
+  // Check all slots including auto-save (slot 0)
+  for (let i = 0; i <= 10; i++) {
     if (localStorage.getItem(`gameSlot_${i}`)) {
       return true;
     }
@@ -16681,13 +16483,16 @@ function findMostRecentSaveSlot() {
   let mostRecentSlot = null;
   let mostRecentTime = 0;
   
-  for (let i = 1; i <= 10; i++) {
+  // Check all slots including auto-save (slot 0)
+  for (let i = 0; i <= 10; i++) {
     const saveEntryStr = localStorage.getItem(`gameSlot_${i}`);
     if (saveEntryStr) {
       try {
         const saveEntry = JSON.parse(saveEntryStr);
-        if (saveEntry.timestamp > mostRecentTime) {
-          mostRecentTime = saveEntry.timestamp;
+        // Use saveDate (ISO string) since that's what saveGameToSlot stores
+        const saveTime = saveEntry.saveDate ? new Date(saveEntry.saveDate).getTime() : 0;
+        if (saveTime > mostRecentTime) {
+          mostRecentTime = saveTime;
           mostRecentSlot = i;
         }
       } catch (e) {
@@ -17001,7 +16806,6 @@ function initGame() {
   // until the player actually enters the game (see activateGameplaySystems).
   initializeSaveSystem(); // Initialize save system
   initializeInterfaceImprovements(); // Initialize interface improvements (hotkeys)
-  initializeLegacyBonuses(); // Initialize legacy system bonuses
 
   // Silently determine season & weather without logging
   updateCurrentSeason();
@@ -17123,7 +16927,6 @@ function initializeHotkeys() {
       'z': () => showStatistics(),
       'r': () => showEmpireRating(),
       'o': () => showEmpireOverview(), // New hotkey for Empire Overview
-      'h': () => showHallOfFame(),
       'f5': () => showSaveSystem(),
       'f7': () => showCompetition(),
       'e': () => buyEnergyDrink(),
@@ -17788,177 +17591,6 @@ function getEmpireRatingGrade(score) {
   return { grade: "D", color: "#7f8c8d", description: "Street Criminal" };
 }
 
-// Check retirement eligibility
-function checkRetirementEligibility() {
-  const rating = calculateEmpireRating();
-  const eligibleOptions = [];
-  
-  for (const [key, outcome] of Object.entries(retirementOutcomes)) {
-    let eligible = true;
-    const reqs = outcome.requirements;
-    
-    // All funds are now clean-only in player.money; dirty is separate
-    if (reqs.cleanMoney && player.money < reqs.cleanMoney) eligible = false;
-    if (reqs.money && player.money < reqs.money) eligible = false;
-    if (reqs.businessEmpire && (!player.businesses || player.businesses.length < reqs.businessEmpire)) eligible = false;
-    if (reqs.lowHeat && player.wantedLevel > 20) eligible = false;
-    if (reqs.privateAirplane && !player.inventory.some(item => item.name === "Private Airplane")) eligible = false;
-    if (reqs.lowWantedLevel && player.wantedLevel > 10) eligible = false;
-    if (reqs.gangMembers && (!player.gang.gangMembers || player.gang.gangMembers.length < reqs.gangMembers)) eligible = false;
-    if (reqs.territories && player.territory < reqs.territories) eligible = false;
-    if (reqs.businesses && (!player.businesses || player.businesses.length < reqs.businesses)) eligible = false;
-    if (reqs.empireRating && rating.totalScore < reqs.empireRating) eligible = false;
-    
-    if (eligible) {
-      eligibleOptions.push({ key, ...outcome });
-    }
-  }
-  
-  player.retirementPlan.available = eligibleOptions.length > 0;
-  return eligibleOptions;
-}
-
-// Execute retirement plan
-function executeRetirement(retirementKey) {
-  const outcome = retirementOutcomes[retirementKey];
-  if (!outcome) return;
-  
-  // Calculate final character data for hall of fame
-  const rating = calculateEmpireRating();
-  const characterData = {
-    name: player.name || "Anonymous Criminal",
-    retirementType: outcome.name,
-    empireRating: rating.totalScore,
-    finalMoney: player.money,
-    gangSize: player.gang.gangMembers ? player.gang.gangMembers.length : player.gang.members,
-    territories: player.territory,
-    businesses: player.businesses ? player.businesses.length : 0,
-    reputation: Math.floor(player.reputation),
-    level: player.level,
-    playTime: Date.now() - player.startTime,
-    retirementDate: new Date().toISOString(),
-    statistics: player.statistics ? {...player.statistics} : {},
-    generationNumber: player.legacy ? player.legacy.generationNumber : 1
-  };
-  
-  // Add to criminal hall of fame
-  addToHallOfFame(characterData);
-  
-  // Apply legacy bonuses to next character
-  applyLegacyBonus(outcome.legacyBonus);
-  
-  // Show retirement screen
-  showRetirementOutcome(characterData, outcome);
-}
-
-// Add character to hall of fame
-function addToHallOfFame(characterData) {
-  if (!criminalHallOfFame) {
-    criminalHallOfFame = [];
-  }
-  
-  criminalHallOfFame.push(characterData);
-  
-  // Keep only top 50 characters to prevent storage bloat
-  criminalHallOfFame.sort((a, b) => b.empireRating - a.empireRating);
-  criminalHallOfFame = criminalHallOfFame.slice(0, 50);
-  
-  // Save to localStorage
-  localStorage.setItem('criminalHallOfFame', JSON.stringify(criminalHallOfFame));
-}
-
-// Apply legacy bonus to new character
-function applyLegacyBonus(legacyBonus) {
-  const legacyData = {
-    bonuses: legacyBonus,
-    familyReputation: (player.legacy ? player.legacy.familyReputation : 0) + (legacyBonus.familyReputation || 0),
-    generationNumber: (player.legacy ? player.legacy.generationNumber : 1) + 1,
-    previousCharacters: player.legacy ? [...player.legacy.previousCharacters, player.name] : [player.name]
-  };
-  
-  localStorage.setItem('criminalLegacy', JSON.stringify(legacyData));
-}
-
-// Initialize legacy bonuses for new character
-function initializeLegacyBonuses() {
-  const legacyData = JSON.parse(localStorage.getItem('criminalLegacy'));
-  if (!legacyData) return;
-  
-  player.legacy = {
-    inheritanceBonus: 0,
-    familyReputation: legacyData.familyReputation || 0,
-    generationNumber: legacyData.generationNumber || 1,
-    previousCharacters: legacyData.previousCharacters || []
-  };
-  
-  // Apply bonuses from previous character
-  const bonuses = legacyData.bonuses;
-  if (bonuses) {
-    if (bonuses.startingMoney) {
-      player.money += bonuses.startingMoney;
-      player.legacy.inheritanceBonus += bonuses.startingMoney;
-    }
-    if (bonuses.skillBonus) {
-      Object.keys(player.skills).forEach(skill => {
-        player.skills[skill] += bonuses.skillBonus;
-      });
-    }
-    if (bonuses.inheritedGang) {
-      player.gang.members += bonuses.inheritedGang;
-      for (let i = 0; i < bonuses.inheritedGang; i++) {
-        const member = generateLegacyGangMember();
-        player.gang.gangMembers.push(member);
-      }
-    }
-    if (bonuses.inheritedTerritory) {
-      player.territory += bonuses.inheritedTerritory;
-    }
-    if (bonuses.inheritedBusiness) {
-      // Add inherited businesses
-      for (let i = 0; i < bonuses.inheritedBusiness; i++) {
-        const business = generateLegacyBusiness();
-        player.businesses.push(business);
-      }
-    }
-  }
-  
-  // Log legacy start
-  if (player.legacy.generationNumber > 1) {
-    logAction(`🏛️ Generation ${player.legacy.generationNumber} begins! The ${player.legacy.previousCharacters[player.legacy.previousCharacters.length - 1]} family legacy continues with ${player.name}.`);
-  }
-}
-
-// Generate legacy gang member
-function generateLegacyGangMember() {
-  const names = ["Tony Jr.", "Little Mike", "Cousin Sal", "Family Friend", "Inherited Muscle"];
-  return {
-    name: names[Math.floor(Math.random() * names.length)],
-    skill: "Inherited Loyalty",
-    loyalty: 80 + Math.floor(Math.random() * 20), // 80-100 loyalty
-    power: 15 + Math.floor(Math.random() * 10), // 15-25 power
-    experienceLevel: 3 + Math.floor(Math.random() * 4), // 3-7 experience
-    tributeMultiplier: 1.2, // Better tribute than normal
-    joinedDate: Date.now()
-  };
-}
-
-// Generate legacy business
-function generateLegacyBusiness() {
-  const legacyBusinesses = [
-    { type: "restaurant", name: "Family Restaurant", level: 2 },
-    { type: "garage", name: "Inherited Garage", level: 2 },
-    { type: "warehouse", name: "Family Warehouse", level: 1 }
-  ];
-  
-  const template = legacyBusinesses[Math.floor(Math.random() * legacyBusinesses.length)];
-  return {
-    type: template.type,
-    name: template.name,
-    level: template.level,
-    lastCollection: Date.now() - (1000 * 60 * 60 * Math.floor(Math.random() * 12)) // 0-12 hours ago
-  };
-}
-
 // Show Criminal Empire Rating screen
 function showEmpireRating() {
   hideAllScreens();
@@ -17966,8 +17598,6 @@ function showEmpireRating() {
   
   const rating = calculateEmpireRating();
   const grade = getEmpireRatingGrade(rating.totalScore);
-  const genNum = player.legacy ? player.legacy.generationNumber : 1;
-  const prevChars = player.legacy && player.legacy.previousCharacters ? player.legacy.previousCharacters : [];
   
   const content = `
     <div style="max-width: 1000px; margin: 0 auto;">
@@ -18035,104 +17665,7 @@ function showEmpireRating() {
         </div>
       </div>
       
-      ${genNum > 1 ? `
-        <div style="margin-top: 30px; padding: 20px; background: rgba(212, 175, 55, 0.15); border-radius: 15px; border: 2px solid #d4af37;">
-          <h3 style="color: #d4af37; text-align: center;">🏛️ The Don's Legacy — Generation ${genNum}</h3>
-          <p style="text-align: center; color: #ecf0f1;">The ${prevChars[0] || 'Unknown'} dynasty endures through blood and ambition.</p>
-          <p style="text-align: center; color: #bdc3c7; font-size: 0.9em;">
-            Lineage: ${[...prevChars, player.name].join(' → ')}
-          </p>
-          <p style="text-align: center; color: #95a5a6; font-size: 0.85em; margin-top: 10px;">
-            Family Reputation: ${player.legacy.familyReputation || 0} | If you fall, an heir may carry the torch.
-          </p>
-        </div>
-      ` : `
-        <div style="margin-top: 30px; padding: 20px; background: rgba(212, 175, 55, 0.1); border-radius: 15px; border: 1px solid #d4af37;">
-          <h3 style="color: #d4af37; text-align: center;">🏛️ The Don's Legacy</h3>
-          <p style="text-align: center; color: #bdc3c7;">
-            Should you fall, a successor from your bloodline may rise to inherit a share of your empire.<br>
-            Build your fortune — the more you accumulate, the more your heir inherits.
-          </p>
-        </div>
-      `}
-      
       <div style="text-align: center; margin-top: 30px;">
-        <button onclick="showHallOfFame()" style="background: linear-gradient(45deg, #f39c12, #e67e22); color: white; padding: 15px 30px; border: none; border-radius: 12px; font-size: 1.2em; font-weight: bold; cursor: pointer; margin-right: 15px;">
-          🏆 Hall of Fame
-        </button>
-        <button onclick="goBackToMainMenu()" style="background: linear-gradient(45deg, #95a5a6, #7f8c8d); color: white; padding: 15px 30px; border: none; border-radius: 12px; font-size: 1.2em; font-weight: bold; cursor: pointer;">
-          🏠Back to SafeHouse
-        </button>
-      </div>
-    </div>
-  `;
-  
-  document.getElementById('statistics-content').innerHTML = content;
-}
-
-// Show Criminal Hall of Fame
-function showHallOfFame() {
-  hideAllScreens();
-  document.getElementById('statistics-screen').style.display = 'block';
-  
-  const hallOfFame = JSON.parse(localStorage.getItem('criminalHallOfFame')) || [];
-  
-  const content = `
-    <div style="max-width: 1200px; margin: 0 auto;">
-      <h2 style="text-align: center; color: #f39c12; font-size: 2.5em; margin-bottom: 20px;">
-        🏆 Criminal Hall of Fame 🏆
-      </h2>
-      <p style="text-align: center; color: #bdc3c7; margin-bottom: 30px;">
-        Legends of the underworld - characters who built empires and chose their destiny
-      </p>
-      
-      ${hallOfFame.length === 0 ? `
-        <div style="text-align: center; padding: 50px; background: rgba(0,0,0,0.3); border-radius: 15px;">
-          <h3 style="color: #95a5a6;">No legends yet...</h3>
-          <p style="color: #7f8c8d;">Build your empire and retire to become the first legend!</p>
-        </div>
-      ` : `
-        <div style="display: grid; gap: 15px;">
-          ${hallOfFame.map((character, index) => {
-            const grade = getEmpireRatingGrade(character.empireRating);
-            const playTimeHours = Math.floor((character.playTime || 0) / (1000 * 60 * 60));
-            return `
-              <div style="padding: 20px; background: rgba(0,0,0,0.4); border-radius: 15px; border: 2px solid ${grade.color}; display: grid; grid-template-columns: auto 1fr auto; gap: 20px; align-items: center;">
-                <div style="text-align: center;">
-                  <h2 style="color: ${grade.color}; margin: 0; font-size: 2em;">#${index + 1}</h2>
-                  <p style="color: ${grade.color}; margin: 5px 0; font-weight: bold;">${grade.grade}</p>
-                </div>
-                
-                <div>
-                  <h3 style="color: #ecf0f1; margin: 0 0 10px 0;">
-                    ${character.name} ${character.generationNumber > 1 ? `(Gen ${character.generationNumber})` : ''}
-                  </h3>
-                  <p style="color: #3498db; margin: 5px 0; font-weight: bold;">${character.retirementType}</p>
-                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-top: 10px;">
-                    <div><span style="color: #2ecc71;">💰</span> $${character.finalMoney.toLocaleString()}</div>
-                    <div><span style="color: #e74c3c;">👥</span> ${character.gangSize} members</div>
-                    <div><span style="color: #f39c12;">🏛️</span> ${character.territories} territories</div>
-                    <div><span style="color: #9b59b6;">🏭</span> ${character.businesses} businesses</div>
-                    <div><span style="color: #3498db;">⭐</span> ${character.reputation} reputation</div>
-                    <div><span style="color: #1abc9c;">📈</span> Level ${character.level}</div>
-                  </div>
-                </div>
-                
-                <div style="text-align: center;">
-                  <h2 style="color: ${grade.color}; margin: 0; font-size: 1.8em;">${character.empireRating.toLocaleString()}</h2>
-                  <p style="color: #bdc3c7; margin: 5px 0; font-size: 0.9em;">Empire Score</p>
-                  <p style="color: #95a5a6; margin: 5px 0; font-size: 0.8em;">${playTimeHours}h played</p>
-                </div>
-              </div>
-            `;
-          }).join('')}
-        </div>
-      `}
-      
-      <div style="text-align: center; margin-top: 30px;">
-        <button onclick="showEmpireRating()" style="background: linear-gradient(45deg, #3498db, #2980b9); color: white; padding: 15px 30px; border: none; border-radius: 12px; font-size: 1.2em; font-weight: bold; cursor: pointer; margin-right: 15px;">
-          ⭐ Current Rating
-        </button>
         <button onclick="showAchievements()" style="background: linear-gradient(45deg, #f39c12, #e67e22); color: white; padding: 15px 30px; border: none; border-radius: 12px; font-size: 1.2em; font-weight: bold; cursor: pointer; margin-right: 15px;">
           🏆 Achievements
         </button>
@@ -18144,111 +17677,6 @@ function showHallOfFame() {
   `;
   
   document.getElementById('statistics-content').innerHTML = content;
-}
-
-// Confirm retirement choice
-function confirmRetirement(retirementKey) {
-  const outcome = retirementOutcomes[retirementKey];
-  if (!outcome) return;
-  
-  const confirmMessage = `Are you sure you want to retire with "${outcome.name}"?\n\nThis will end your current character's story and start a new generation with legacy bonuses.\n\nThis action cannot be undone!`;
-  
-  if (confirm(confirmMessage)) {
-    executeRetirement(retirementKey);
-  }
-}
-
-// Show retirement outcome screen
-function showRetirementOutcome(characterData, outcome) {
-  const grade = getEmpireRatingGrade(characterData.empireRating);
-  
-  // Create retirement screen overlay
-  const retirementHTML = `
-    <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 2000; overflow-y: auto; padding: 20px; box-sizing: border-box;">
-      <div style="max-width: 800px; margin: 50px auto; padding: 40px; background: linear-gradient(135deg, rgba(44, 62, 80, 0.98) 0%, rgba(52, 73, 94, 0.98) 100%); border-radius: 20px; border: 3px solid ${grade.color}; text-align: center; color: white;">
-        <h1 style="color: ${grade.color}; font-size: 3em; margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.8);">
-          🌅 ${outcome.name}
-        </h1>
-        
-        <h2 style="color: #ecf0f1; margin-bottom: 30px;">
-          The ${characterData.name} Legacy Ends
-        </h2>
-        
-        <div style="padding: 30px; background: rgba(0,0,0,0.4); border-radius: 15px; margin-bottom: 30px;">
-          <h3 style="color: ${grade.color}; margin-bottom: 20px;">Final Empire Rating: ${grade.grade}</h3>
-          <p style="font-size: 2em; color: ${grade.color}; margin: 0;">${characterData.empireRating.toLocaleString()} Points</p>
-        </div>
-        
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 30px;">
-          <div style="background: rgba(46, 204, 113, 0.2); padding: 15px; border-radius: 10px;">
-            <h4 style="color: #2ecc71; margin: 0;">💰 Final Wealth</h4>
-            <p style="margin: 5px 0; font-size: 1.2em;">$${characterData.finalMoney.toLocaleString()}</p>
-          </div>
-          <div style="background: rgba(231, 76, 60, 0.2); padding: 15px; border-radius: 10px;">
-            <h4 style="color: #e74c3c; margin: 0;">👥 Gang Size</h4>
-            <p style="margin: 5px 0; font-size: 1.2em;">${characterData.gangSize} members</p>
-          </div>
-          <div style="background: rgba(243, 156, 18, 0.2); padding: 15px; border-radius: 10px;">
-            <h4 style="color: #f39c12; margin: 0;">🏛️ Territories</h4>
-            <p style="margin: 5px 0; font-size: 1.2em;">${characterData.territories}</p>
-          </div>
-          <div style="background: rgba(155, 89, 182, 0.2); padding: 15px; border-radius: 10px;">
-            <h4 style="color: #9b59b6; margin: 0;">🏭 Businesses</h4>
-            <p style="margin: 5px 0; font-size: 1.2em;">${characterData.businesses}</p>
-          </div>
-        </div>
-        
-        <div style="padding: 20px; background: rgba(46, 204, 113, 0.2); border-radius: 15px; margin-bottom: 30px;">
-          <h3 style="color: #2ecc71; margin-bottom: 15px;">🎁 Legacy Bonuses for Next Character</h3>
-          <div style="text-align: left;">
-            ${Object.entries(outcome.legacyBonus).map(([key, value]) => {
-              const bonusText = {
-                startingMoney: `Starting Money: +$${value.toLocaleString()}`,
-                businessDiscount: `Business Discount: ${(value * 100)}%`,
-                familyReputation: `Family Reputation: +${value}`,
-                skillBonus: `All Skills: +${value}`,
-                luxuryStart: `Luxury Starting Items`,
-                inheritedGang: `Inherited Gang Members: ${value}`,
-                inheritedTerritory: `Inherited Territories: ${value}`,
-                inheritedBusiness: `Inherited Businesses: ${value}`,
-                legendaryStart: `Legendary Starting Package`,
-                allSkillsBonus: `All Skills: +${value}`,
-                startingEmpire: `Starting Empire Package`
-              };
-              return `<p style="margin: 5px 0; color: #ecf0f1;">• ${bonusText[key] || `${key}: ${value}`}</p>`;
-            }).join('')}
-          </div>
-        </div>
-        
-        <p style="color: #bdc3c7; margin-bottom: 30px; font-style: italic;">
-          "${outcome.description}"
-        </p>
-        
-        <button onclick="startNewGeneration()" style="background: linear-gradient(45deg, #2ecc71, #27ae60); color: white; padding: 20px 40px; border: none; border-radius: 15px; font-size: 1.5em; font-weight: bold; cursor: pointer;">
-          🌟 Begin New Generation
-        </button>
-      </div>
-    </div>
-  `;
-  
-  // Add to document
-  const retirementScreen = document.createElement('div');
-  retirementScreen.id = 'retirement-outcome-screen';
-  retirementScreen.innerHTML = retirementHTML;
-  document.body.appendChild(retirementScreen);
-}
-
-// Start new generation
-function startNewGeneration() {
-  // Clear current game data but preserve legacy
-  const currentLegacy = JSON.parse(localStorage.getItem('criminalLegacy'));
-  
-  // Clear all game saves
-  localStorage.removeItem('gameState');
-  localStorage.removeItem('playerData');
-  
-  // Restart the game
-  location.reload();
 }
 
 // ==================== END LONG-TERM GOALS SYSTEM ====================
@@ -18286,8 +17714,14 @@ function initializeSaveSystem() {
 }
 
 // Auto-save functionality
+let autoSaveIntervalId = null;
+
 function startAutoSave() {
-  setInterval(() => {
+  // Clear any existing interval first to prevent stacking
+  if (autoSaveIntervalId) {
+    clearInterval(autoSaveIntervalId);
+  }
+  autoSaveIntervalId = setInterval(() => {
     if (SAVE_SYSTEM.autoSaveEnabled && player && player.name) {
       autoSave();
     }
@@ -18313,7 +17747,9 @@ function autoSave() {
 function emergencySave() {
   try {
     if (player && player.name) {
-      saveGameToSlot(-1, `Emergency - ${player.name}`, true); // Slot -1 is emergency save
+      // Save to current slot (or slot 0 as fallback) so the save is actually loadable
+      const targetSlot = (SAVE_SYSTEM.currentSlot != null && SAVE_SYSTEM.currentSlot >= 0) ? SAVE_SYSTEM.currentSlot : 0;
+      saveGameToSlot(targetSlot, `Emergency - ${player.name}`, true);
     }
   } catch (error) {
     console.error("Emergency save failed:", error);
@@ -18447,11 +17883,6 @@ function exportSaveData() {
       const data = localStorage.getItem(key);
       if (data) allSaves[key] = data;
     }
-    // Also export hall of fame and legacy
-    const hof = localStorage.getItem('criminalHallOfFame');
-    if (hof) allSaves['criminalHallOfFame'] = hof;
-    const legacy = localStorage.getItem('criminalLegacy');
-    if (legacy) allSaves['criminalLegacy'] = legacy;
     
     const blob = new Blob([JSON.stringify(allSaves, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -18496,9 +17927,12 @@ function importSaveData() {
           return;
         }
         
-        // Import all data
+        // Import all data — only allow known save-related keys
+        const allowedKeyPrefixes = ['gameSlot_', 'saveSystemPrefs'];
         Object.entries(allSaves).forEach(([key, value]) => {
-          localStorage.setItem(key, value);
+          if (allowedKeyPrefixes.some(prefix => key.startsWith(prefix))) {
+            localStorage.setItem(key, value);
+          }
         });
         
         showBriefNotification('📦 Save data imported! Refreshing...', 'success');
@@ -18536,12 +17970,6 @@ function createSaveData() {
     currentEvents: (typeof currentEvents !== 'undefined') ? currentEvents : [],
     eventHistory: (typeof eventHistory !== 'undefined') ? eventHistory : [],
     
-    // Criminal hall of fame (shared across saves)
-    hallOfFame: JSON.parse(localStorage.getItem('criminalHallOfFame') || '[]'),
-    
-    // Legacy data (shared across saves)
-    legacy: JSON.parse(localStorage.getItem('criminalLegacy') || 'null'),
-    
     // Save metadata
     saveVersion: "1.0",
     saveTimestamp: Date.now()
@@ -18554,14 +17982,22 @@ function validateSaveData(saveData) {
   if (!saveData || typeof saveData !== 'object') return false;
   if (!saveData.player || typeof saveData.player !== 'object') return false;
   if (!saveData.player.name || typeof saveData.player.name !== 'string') return false;
-  if (typeof saveData.player.money !== 'number') return false;
-  if (typeof saveData.player.level !== 'number') return false;
+  if (typeof saveData.player.money !== 'number' || saveData.player.money < 0) return false;
+  if (typeof saveData.player.level !== 'number' || saveData.player.level < 1) return false;
+  if (typeof saveData.player.health !== 'number') return false;
+  if (!Array.isArray(saveData.player.inventory)) return false;
+  if (!saveData.player.gang || typeof saveData.player.gang !== 'object') return false;
+  if (!saveData.player.skills || typeof saveData.player.skills !== 'object') return false;
   
   return true;
 }
 
 function applySaveData(saveData) {
-  // Apply player data
+  // Clear existing player properties to prevent stale data from mixing with loaded save
+  for (const key of Object.keys(player)) {
+    delete player[key];
+  }
+  // Apply saved player data onto clean player object
   Object.assign(player, saveData.player);
   
   // Apply achievements
@@ -18632,11 +18068,6 @@ function initializeMissingData() {
     calculateEmpireRating();
   }
   
-  // Initialize legacy if missing
-  if (!player.legacy) {
-    initializeLegacyBonuses();
-  }
-
   // v1.3.0 — Dirty Money system migration for older saves
   if (player.dirtyMoney === undefined || player.dirtyMoney === null) {
     player.dirtyMoney = 0;
@@ -18793,7 +18224,7 @@ function showSaveSystem() {
                       <div><span style="color: #f39c12;">🏆</span> ${slot.empireRating.toLocaleString()}</div>
                     </div>
                     <p style="color: #95a5a6; margin: 5px 0 0 0; font-size: 0.9em;">
-                      ${formatTimestamp(new Date(slot.saveDate).getTime())} • ${formatPlaytime(slot.playtime)}
+                      ${formatTimestamp(new Date(slot.saveDate).getTime())} • ${slot.playtime || 'Unknown'}
                     </p>
                   </div>
                   
@@ -19406,8 +18837,7 @@ function createCharacterShowcase() {
     
     // Character story elements
     playTime: playTime,
-    generation: player.legacy ? player.legacy.generationNumber : 1,
-    legacyFamily: player.legacy ? player.legacy.previousCharacters : [],
+
     
     // Challenge completions
     challengesCompleted: WEEKLY_CHALLENGES.completedChallenges.length,
@@ -19567,26 +18997,12 @@ function displayImportedShowcase(showcase) {
               <span style="color: #9b59b6; font-weight: bold;">${formatPlaytime(showcase.playTime)}</span>
             </div>
             <div style="display: flex; justify-content: space-between;">
-              <span>Generation:</span>
-              <span style="color: #9b59b6;">${showcase.generation}</span>
-            </div>
-            <div style="display: flex; justify-content: space-between;">
               <span>Challenges:</span>
               <span style="color: #9b59b6;">${showcase.challengesCompleted}</span>
             </div>
           </div>
         </div>
       </div>
-      
-      ${showcase.legacyFamily && showcase.legacyFamily.length > 0 ? `
-        <div style="background: rgba(243, 156, 18, 0.2); padding: 20px; border-radius: 15px; border: 2px solid #f39c12; margin-bottom: 30px;">
-          <h3 style="color: #f39c12; margin: 0 0 15px 0;">👨‍👩‍👧‍👦 Criminal Legacy</h3>
-          <p style="color: #ecf0f1; margin: 0;">
-            Part of the ${showcase.legacyFamily[0]} criminal dynasty. 
-            Previous generations: ${showcase.legacyFamily.join(', ')}
-          </p>
-        </div>
-      ` : ''}
       
       <div style="text-align: center; margin-top: 30px;">
         <button onclick="goBackToMainMenu()" style="background: linear-gradient(45deg, #95a5a6, #7f8c8d); color: white; padding: 15px 30px; border: none; border-radius: 12px; font-size: 1.2em; font-weight: bold; cursor: pointer;">
@@ -20159,26 +19575,12 @@ function showCharacterShowcase() {
               <span style="color: #9b59b6; font-weight: bold;">${formatPlaytime(showcase.playTime)}</span>
             </div>
             <div style="display: flex; justify-content: space-between;">
-              <span>Generation:</span>
-              <span style="color: #9b59b6;">${showcase.generation}</span>
-            </div>
-            <div style="display: flex; justify-content: space-between;">
               <span>Challenges:</span>
               <span style="color: #9b59b6;">${showcase.challengesCompleted}</span>
             </div>
           </div>
         </div>
       </div>
-      
-      ${showcase.legacyFamily && showcase.legacyFamily.length > 0 ? `
-        <div style="background: rgba(243, 156, 18, 0.2); padding: 20px; border-radius: 15px; border: 2px solid #f39c12; margin-bottom: 30px;">
-          <h3 style="color: #f39c12; margin: 0 0 15px 0;">👨‍👩‍👧‍👦 Criminal Legacy</h3>
-          <p style="color: #ecf0f1; margin: 0;">
-            Part of the ${showcase.legacyFamily[0]} criminal dynasty. 
-            Previous generations: ${showcase.legacyFamily.join(', ')}
-          </p>
-        </div>
-      ` : ''}
       
       <div style="text-align: center; margin-top: 30px;">
         <button onclick="showRivalsScreen()" style="background: linear-gradient(45deg, #e74c3c, #c0392b); color: white; padding: 15px 30px; border: none; border-radius: 12px; font-size: 1.2em; font-weight: bold; cursor: pointer; margin-right: 15px;">
@@ -20586,7 +19988,6 @@ window.confirmResetGame = confirmResetGame;
 window.showSaveSystem = showSaveSystem;
 window.showOptions = showOptions;
 window.restartGame = restartGame;
-window.continueAsSuccessor = continueAsSuccessor;
 window.forceNewGame = forceNewGame;
 window.saveToSlot = saveToSlot;
 window.loadGameFromSlot = loadGameFromSlot;
@@ -20632,7 +20033,6 @@ window.sellItem = sellItem;
 window.selectCar = selectCar;
 window.sellStolenCar = sellStolenCar;
 window.showEmpireRating = showEmpireRating;
-window.showHallOfFame = showHallOfFame;
 window.showEmpireOverview = showEmpireOverview;
 window.showMap = showMap;
 window.showTerritoryInfo = showTerritoryInfo;

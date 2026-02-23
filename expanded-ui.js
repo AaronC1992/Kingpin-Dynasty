@@ -8,7 +8,7 @@
  * - Territory map and defense assignments
  * - Interactive event choices
  * - Rival kingpin activity tracking
- * - Legacy perk shop
+ * - Respect/relationships display
  * - Respect/relationship viewer
  */
 
@@ -514,75 +514,6 @@ function formatSpecialAbility(ability) {
   return abilities[ability] || ability;
 }
 
-// ==================== LEGACY PERK SHOP UI ====================
-
-export function showLegacyPerkShop() {
-  const availablePoints = player.legacy?.availableLegacyPoints || 0;
-  const unlockedPerks = player.legacy?.permanentPerks || [];
-  
-  let html = `
-    <div class="expanded-screen legacy-shop-screen">
-      <h2> Legacy Perk Shop</h2>
-      <p class="subtitle">Permanent upgrades that carry over between runs</p>
-      
-      <div class="legacy-points">
-        <h3> Available Legacy Points: ${availablePoints}</h3>
-      </div>
-      
-      <div class="perks-grid">
-        ${Object.values(ExpandedSystems.LEGACY_PERKS).map(perk => {
-          const isUnlocked = unlockedPerks.includes(perk.id);
-          const canAfford = availablePoints >= perk.cost;
-          
-          return `
-            <div class="perk-card ${isUnlocked ? 'unlocked' : ''} ${canAfford ? '' : 'locked'}">
-              <h3>${perk.icon} ${perk.name}</h3>
-              <p>${perk.description}</p>
-              <div class="perk-cost"> Cost: ${perk.cost} LP</div>
-              
-              ${isUnlocked ? `
-                <div class="perk-status"> UNLOCKED</div>
-              ` : canAfford ? `
-                <button onclick="purchaseLegacyPerk('${perk.id}')">Purchase</button>
-              ` : `
-                <div class="perk-status"> Not enough Legacy Points</div>
-              `}
-            </div>
-          `;
-        }).join('')}
-      </div>
-      
-      <button onclick="closeScreen()">← Back</button>
-    </div>
-  `;
-  
-  showCustomScreen(html);
-}
-
-window.purchaseLegacyPerk = function(perkId) {
-  const perk = ExpandedSystems.LEGACY_PERKS[perkId];
-  if (!perk) return;
-  
-  if (!player.legacy) player.legacy = { permanentPerks: [], availableLegacyPoints: 0 };
-  
-  if (player.legacy.availableLegacyPoints < perk.cost) {
-    alert("Not enough Legacy Points!");
-    return;
-  }
-  
-  if (player.legacy.permanentPerks.includes(perkId)) {
-    alert("Already unlocked!");
-    return;
-  }
-  
-  player.legacy.availableLegacyPoints -= perk.cost;
-  player.legacy.permanentPerks.push(perkId);
-  
-  GameLogging.logEvent(` Unlocked Legacy Perk: ${perk.name}!`);
-  showLegacyPerkShop();
-  updateUI();
-};
-
 // ==================== RESPECT/RELATIONSHIPS UI ====================
 
 export function showRelationshipsScreen() {
@@ -733,7 +664,6 @@ export default {
   showInteractiveEvent,
   checkAndTriggerInteractiveEvent,
   showRivalActivityScreen,
-  showLegacyPerkShop,
   showRelationshipsScreen,
   startRivalAISystem
 };
@@ -747,5 +677,4 @@ window.showRivalActivityScreen = () => {
     window.showRivalsScreen();
   }
 };
-window.showLegacyPerkShop = showLegacyPerkShop;
 window.showRelationshipsScreen = showRelationshipsScreen;

@@ -8,8 +8,7 @@
  * 2. Territory Wars & Defense
  * 3. Interactive Random Events
  * 4. Rival AI Kingpins
- * 5. Permanent Legacy Perks
- * 6. Respect-Based Relationship System
+ * 5. Respect-Based Relationship System
  * 
  * All features integrate with existing systems without replacing them.
  */
@@ -21,13 +20,11 @@ export const EXPANDED_SYSTEMS_CONFIG = {
     territoryWarsEnabled: true,
     interactiveEventsEnabled: true,
     rivalKingpinsEnabled: true,
-    legacyPerksEnabled: true,
     respectSystemEnabled: true,
     
     // Balance settings
     rivalGrowthInterval: 120000, // 2 minutes between rival actions
     territoryAttackChance: 0.15, // 15% chance of attack per check
-    legacyPointsMultiplier: 1.0,
     respectDecayRate: 0.95, // Respect naturally decays to neutral over time
 };
 
@@ -987,154 +984,7 @@ export function processRivalTurn(rival, allTerritories, player) {
     return actions;
 }
 
-// ==================== 5. PERMANENT LEGACY PERKS ====================
-
-export const LEGACY_PERKS = {
-    hustlers_edge: {
-        id: "hustlers_edge",
-        name: "Hustler's Edge",
-        description: "+15% XP gain from all sources",
-        cost: 100,
-        effect: { xpMultiplier: 1.15 },
-        icon: ""
-    },
-    family_ties: {
-        id: "family_ties",
-        name: "Family Ties",
-        description: "Start with 3 loyal gang members",
-        cost: 150,
-        effect: { startingGangMembers: 3 },
-        icon: ""
-    },
-    laundering_genius: {
-        id: "laundering_genius",
-        name: "Laundering Genius",
-        description: "Launder money 25% faster with 10% less loss",
-        cost: 200,
-        effect: { launderSpeed: 1.25, launderLoss: 0.9 },
-        icon: ""
-    },
-    heat_resistant: {
-        id: "heat_resistant",
-        name: "Heat Resistant",
-        description: "Heat decays 50% faster",
-        cost: 175,
-        effect: { heatDecay: 1.5 },
-        icon: ""
-    },
-    natural_leader: {
-        id: "natural_leader",
-        name: "Natural Leader",
-        description: "+5 max gang capacity",
-        cost: 125,
-        effect: { maxGangBonus: 5 },
-        icon: ""
-    },
-    strategic_mind: {
-        id: "strategic_mind",
-        name: "Strategic Mind",
-        description: "+10% success chance on all jobs",
-        cost: 250,
-        effect: { jobSuccessBonus: 0.1 },
-        icon: ""
-    },
-    old_money: {
-        id: "old_money",
-        name: "Old Money",
-        description: "Start each run with $10,000",
-        cost: 200,
-        effect: { startingMoney: 10000 },
-        icon: ""
-    },
-    iron_will: {
-        id: "iron_will",
-        name: "Iron Will",
-        description: "+25% breakout success chance",
-        cost: 150,
-        effect: { breakoutBonus: 0.25 },
-        icon: ""
-    },
-    master_recruiter: {
-        id: "master_recruiter",
-        name: "Master Recruiter",
-        description: "Recruited gang members have +5 to all stats",
-        cost: 225,
-        effect: { recruitStatBonus: 5 },
-        icon: "⭐"
-    },
-    territory_expert: {
-        id: "territory_expert",
-        name: "Territory Expert",
-        description: "+20% income from all territories",
-        cost: 175,
-        effect: { territoryIncomeBonus: 1.2 },
-        icon: ""
-    }
-};
-
-// Calculate legacy points earned from a run
-export function calculateLegacyPoints(player) {
-    let points = 0;
-    
-    // Wealth (1 point per $10,000, max 500)
-    points += Math.min(Math.floor(player.money / 10000), 500);
-    
-    // Territories (50 points each)
-    if (player.territories) {
-        points += player.territories.filter(t => t.controlledBy === "player").length * 50;
-    }
-    
-    // Gang strength (5 points per active member)
-    if (player.gang.gangMembers) {
-        points += player.gang.gangMembers.filter(m => m.status === "active").length * 5;
-    }
-    
-    // Respect/Reputation (1 point per 10 respect, max 200)
-    points += Math.min(Math.floor(player.reputation / 10), 200);
-    
-    // Level (10 points per level)
-    points += player.level * 10;
-    
-    // Businesses (25 points each)
-    if (player.businesses) {
-        points += player.businesses.length * 25;
-    }
-    
-    // Apply multiplier from config
-    points = Math.floor(points * EXPANDED_SYSTEMS_CONFIG.legacyPointsMultiplier);
-    
-    return points;
-}
-
-// Apply legacy perks to a new game
-export function applyLegacyPerks(player, unlockedPerks) {
-    unlockedPerks.forEach(perkId => {
-        const perk = LEGACY_PERKS[perkId];
-        if (!perk) return;
-        
-        const effect = perk.effect;
-        
-        if (effect.startingMoney) {
-            player.money += effect.startingMoney;
-        }
-        
-        if (effect.startingGangMembers) {
-            for (let i = 0; i < effect.startingGangMembers; i++) {
-                const member = generateGangMember();
-                player.gang.gangMembers.push(member);
-                player.gang.members++;
-            }
-        }
-        
-        if (effect.maxGangBonus) {
-            player.realEstate.maxGangMembers += effect.maxGangBonus;
-        }
-        
-        // Other effects are applied dynamically during gameplay
-    });
-}
-
-// ==================== 6. RESPECT-BASED RELATIONSHIP SYSTEM ====================
+// ==================== 5. RESPECT-BASED RELATIONSHIP SYSTEM ====================
 
 // Initialize respect for all factions/rivals
 export function initializeRespectSystem(player) {
@@ -1260,12 +1110,6 @@ export function initializeExpandedSystems(player) {
         player.rivalKingpins = JSON.parse(JSON.stringify(RIVAL_KINGPINS));
     }
     
-    // Legacy system
-    if (!player.legacy.permanentPerks) {
-        player.legacy.permanentPerks = [];
-        player.legacy.availableLegacyPoints = 0;
-    }
-    
     // Respect system removed — factions use streetReputation in player.js
     // initializeRespectSystem(player);
     
@@ -1286,7 +1130,6 @@ export default {
     TERRITORIES: TERRITORIES,
     EVENTS: INTERACTIVE_EVENTS,
     RIVALS: RIVAL_KINGPINS,
-    LEGACY_PERKS: LEGACY_PERKS,
     
     // Gang functions
     generateGangMember,
@@ -1304,10 +1147,6 @@ export default {
     
     // Rival functions
     processRivalTurn,
-    
-    // Legacy functions
-    calculateLegacyPoints,
-    applyLegacyPerks,
     
     // Respect functions
     initializeRespectSystem,

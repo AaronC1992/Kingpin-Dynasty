@@ -1,9 +1,8 @@
 /**
  * factions.js
  * 
- * Manages crime family factions, their reputations, and legacy/retirement systems.
- * Contains the crimeFamilies object with each family's details, retirement outcome data,
- * and the Criminal Hall of Fame legacy system.
+ * Manages crime family factions and their reputations.
+ * Contains the crimeFamilies object with each family's details.
  */
 
 // Crime Families and Factions
@@ -103,71 +102,6 @@ export const crimeFamilies = {
             baseReward: 1000,
             xpReward: 65,
             cooldown: 24
-        }
-    }
-};
-
-// Criminal Hall of Fame - Legacy System
-export let criminalHallOfFame = JSON.parse(localStorage.getItem('criminalHallOfFame')) || [];
-
-// Retirement outcomes and legacy bonuses
-export const retirementOutcomes = {
-    legitimate: {
-        name: "Going Legitimate",
-        description: "Clean up your act and start fresh",
-        requirements: {
-            cleanMoney: 1000000,
-            businessEmpire: 5,
-            lowHeat: true
-        },
-        legacyBonus: {
-            startingMoney: 10000,
-            businessDiscount: 0.2,
-            familyReputation: 50
-        }
-    },
-    exile: {
-        name: "Exile to Paradise",
-        description: "Flee to a tropical island with your wealth",
-        requirements: {
-            money: 5000000,
-            privateAirplane: true,
-            lowWantedLevel: true
-        },
-        legacyBonus: {
-            startingMoney: 50000,
-            skillBonus: 1,
-            luxuryStart: true
-        }
-    },
-    familyBusiness: {
-        name: "Family Business Empire",
-        description: "Pass the empire to the next generation",
-        requirements: {
-            gangMembers: 20,
-            territories: 15,
-            businesses: 15
-        },
-        legacyBonus: {
-            inheritedGang: 5,
-            inheritedTerritory: 3,
-            inheritedBusiness: 2,
-            familyReputation: 100
-        }
-    },
-    undergroundKing: {
-        name: "Underground Kingpin",
-        description: "Rule the criminal underworld forever",
-        requirements: {
-            empireRating: 10000,
-            allFactions: true,
-            criminalMastermind: true
-        },
-        legacyBonus: {
-            legendaryStart: true,
-            allSkillsBonus: 2,
-            startingEmpire: true,
-            familyReputation: 200
         }
     }
 };

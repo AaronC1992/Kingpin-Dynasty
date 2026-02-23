@@ -160,19 +160,6 @@ export const player = {
     businessPower: 0,
     reputationPower: 0,
     skillPower: 0
-  },
-  legacy: {
-    inheritanceBonus: 0, // Bonus from previous Dons
-    familyReputation: 0, // Name recognition
-    generationNumber: 1, // Which generation this Don is
-    previousCharacters: [] // Array of previous Dons
-  },
-  retirementPlan: {
-    available: false,
-    legitimateAssets: 0,
-    cleanMoney: 0,
-    familyConnections: 0,
-    exitStrategy: null
   }
 };
 

@@ -118,7 +118,6 @@ export const EXPANDED_SYSTEMS_CONFIG = {
     territoryWarsEnabled: true,       // Turn off territory attacks
     interactiveEventsEnabled: true,   // Turn off choice events
     rivalKingpinsEnabled: true,       // Turn off AI rivals
-    legacyPerksEnabled: true,         // Turn off perk shop
     collectiblesEnabled: true,        // Turn off vault
     respectSystemEnabled: true,       // Turn off respect system
 };

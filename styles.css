@@ -853,39 +853,6 @@ button:disabled {
 .obit-label { color: #95a5a6; font-size: 0.85em; }
 .obit-value { color: #ecf0f1; font-weight: bold; font-size: 0.9em; }
 
-/* Hall of Fame */
-.hof-section {
-    max-width: 500px;
-    width: 90%;
-    margin: 15px auto;
-}
-.hof-section h4 {
-    color: #d4af37;
-    text-align: center;
-    margin-bottom: 10px;
-    font-size: 1.2em;
-}
-.hof-list {
-    background: rgba(20, 20, 20, 0.8);
-    border: 1px solid #333;
-    border-radius: 8px;
-    overflow: hidden;
-}
-.hof-entry {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 12px;
-    border-bottom: 1px solid #222;
-    font-size: 0.9em;
-}
-.hof-entry:last-child { border-bottom: none; }
-.hof-current { background: rgba(192, 57, 43, 0.2); }
-.hof-rank { color: #d4af37; font-weight: bold; width: 30px; }
-.hof-name { color: #ecf0f1; flex: 1; }
-.hof-detail { color: #95a5a6; font-size: 0.85em; }
-.hof-money { color: #2ecc71; font-weight: bold; }
-
 /* ===== Hospital Services ===== */
 .hospital-services {
     display: flex;

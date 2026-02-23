@@ -148,7 +148,6 @@ export const RESPECT_MODIFIERS = {
         per_business_owned: 2,
         per_10_crew_members: 5,
         per_100k_wealth: 2,
-        per_legacy_perk: 4,
         per_collectible: 3,
         
         // Decay

@@ -1,353 +1,13 @@
-/**
+﻿/**
  * expanded-data-part2.js
  * 
  * ADDITIONAL COMPREHENSIVE DATA FOR EXPANDED SYSTEMS (Part 2)
  * 
  * Contains:
- * - Legacy perks (extended tree)
  * - Collectibles catalog (expanded)
  * - Respect modifier tables
  * - Gang archetypes and starting templates
  */
-
-// ==================== 5. LEGACY PERKS (EXTENDED) ====================
-
-export const LEGACY_PERKS = {
-    // ===== TIER 1: FOUNDATION PERKS (0-50 Legacy Points) =====
-    hustlers_edge: {
-        id: "hustlers_edge",
-        name: "Hustler's Edge",
-        tier: 1,
-        cost: 10,
-        description: "You know every shortcut, every angle, every way to squeeze extra profit from the streets. Built different from day one.",
-        icon: "",
-        effects: {
-            incomeMultiplier: 1.10,
-            jobSuccessBonus: 0.05
-        },
-        requirements: {}
-    },
-    
-    family_ties: {
-        id: "family_ties",
-        name: "Family Ties",
-        tier: 1,
-        cost: 15,
-        description: "Blood is thicker than water. Your crew's loyalty runs deep, passed down from your father's generation.",
-        icon: "",
-        effects: {
-            gangLoyaltyBonus: 15,
-            loyaltyDecayReduction: 0.25
-        },
-        requirements: {}
-    },
-    
-    street_smart: {
-        id: "street_smart",
-        name: "Street Smart",
-        tier: 1,
-        cost: 12,
-        description: "You learned the game young. Reading people, spotting danger, knowing when to fold. These instincts can't be taught.",
-        icon: "",
-        effects: {
-            heatReduction: 0.10,
-            eventSuccessBonus: 0.10
-        },
-        requirements: {}
-    },
-    
-    born_leader: {
-        id: "born_leader",
-        name: "Born Leader",
-        tier: 1,
-        cost: 15,
-        description: "People naturally follow you. Even as a kid, you were organizing the neighborhood. It's in your blood.",
-        icon: "",
-        effects: {
-            maxGangMembers: 5,
-            recruitmentCostReduction: 0.10
-        },
-        requirements: {}
-    },
-    
-    // ===== TIER 2: SKILLED OPERATOR (50-150 Legacy Points) =====
-    money_laundering_genius: {
-        id: "laundering_genius",
-        name: "Money Laundering Genius",
-        tier: 2,
-        cost: 25,
-        description: "Your family's accountant taught you the art of making dirty money clean. You could launder cash in your sleep.",
-        icon: "",
-        effects: {
-            launderingSpeed: 1.30,
-            launderingLossReduction: 0.15
-        },
-        requirements: { legacyPoints: 50 }
-    },
-    
-    heat_resistant: {
-        id: "heat_resistant",
-        name: "Heat Resistant",
-        tier: 2,
-        cost: 30,
-        description: "Your family's lawyer has gotten you out of more jams than you can count. The feds know your name but can't make anything stick.",
-        icon: "",
-        effects: {
-            heatDecayMultiplier: 1.40,
-            jailTimeReduction: 0.25
-        },
-        requirements: { legacyPoints: 50 }
-    },
-    
-    natural_leader: {
-        id: "natural_leader",
-        name: "Natural Leader",
-        tier: 2,
-        cost: 35,
-        description: "Your father led with respect, not fear. You inherited that gift. Men would die for you.",
-        icon: "",
-        effects: {
-            maxGangMembers: 10,
-            gangEffectivenessBonus: 0.15,
-            respectGainMultiplier: 1.20
-        },
-        requirements: { legacyPoints: 75, prerequisite: "born_leader" }
-    },
-    
-    strategic_mind: {
-        id: "strategic_mind",
-        name: "Strategic Mind",
-        tier: 2,
-        cost: 40,
-        description: "Like a chess master, you see moves others don't. Your grandfather was the same – always three steps ahead.",
-        icon: "",
-        effects: {
-            jobPlanningBonus: 0.20,
-            eventPreviewDuration: 300,
-            territoryDefenseBonus: 0.15
-        },
-        requirements: { legacyPoints: 100 }
-    },
-    
-    old_money: {
-        id: "old_money",
-        name: "Old Money",
-        tier: 2,
-        cost: 50,
-        description: "Your family's been in the game for three generations. You started with connections and capital others can only dream of.",
-        icon: "",
-        effects: {
-            startingCash: 50000,
-            incomeMultiplier: 1.15,
-            businessPurchaseDiscount: 0.20
-        },
-        requirements: { legacyPoints: 120 }
-    },
-    
-    // ===== TIER 3: MASTER CRIMINAL (150-300 Legacy Points) =====
-    iron_will: {
-        id: "iron_will",
-        name: "Iron Will",
-        tier: 3,
-        cost: 60,
-        description: "Your family never breaks. The feds tried to flip your uncle for 15 years. He did his time and never said a word. You inherited that backbone.",
-        icon: "",
-        effects: {
-            gangLoyaltyBonus: 30,
-            betrayalChance: -0.50,
-            interrogationResistance: 0.75
-        },
-        requirements: { legacyPoints: 150, prerequisite: "family_ties" }
-    },
-    
-    master_recruiter: {
-        id: "master_recruiter",
-        name: "Master Recruiter",
-        tier: 3,
-        cost: 75,
-        description: "You can spot talent a mile away. The best soldiers, the smartest operators – they all want to work for you.",
-        icon: "",
-        effects: {
-            maxGangMembers: 20,
-            recruitmentCostReduction: 0.25,
-            specializedRecruitChance: 0.30,
-            gangStatBonus: 2
-        },
-        requirements: { legacyPoints: 175, prerequisite: "natural_leader" }
-    },
-    
-    territory_expert: {
-        id: "territory_expert",
-        name: "Territory Expert",
-        tier: 3,
-        cost: 70,
-        description: "Your family controlled half the city once. You know every street, every contact, every vulnerability. Time to reclaim your legacy.",
-        icon: "",
-        effects: {
-            territoryIncomeBonus: 0.25,
-            territoryClaimCostReduction: 0.30,
-            territoryDefenseBonus: 0.25,
-            maxTerritories: 5
-        },
-        requirements: { legacyPoints: 200 }
-    },
-    
-    shadow_empire: {
-        id: "shadow_empire",
-        name: "Shadow Empire",
-        tier: 3,
-        cost: 80,
-        description: "Your family built an empire that operated in the shadows. Legitimate fronts, offshore accounts, untraceable networks. You know the blueprint.",
-        icon: "",
-        effects: {
-            heatGenerationReduction: 0.30,
-            businessProfitBonus: 0.35,
-            federalInvestigationResistance: 0.40
-        },
-        requirements: { legacyPoints: 250, prerequisite: "laundering_genius" }
-    },
-    
-    // ===== TIER 4: DYNASTY (300+ Legacy Points) =====
-    untouchable: {
-        id: "untouchable",
-        name: "Untouchable",
-        tier: 4,
-        cost: 100,
-        description: "Your family has judges, senators, and police chiefs in their pocket. The law bends around you like gravity around a black hole.",
-        icon: "",
-        effects: {
-            jailChanceReduction: 0.60,
-            heatDecayMultiplier: 2.0,
-            policeRaidChance: -0.75,
-            corruptionEffectiveness: 1.50
-        },
-        requirements: { legacyPoints: 300, prerequisite: "heat_resistant" }
-    },
-    
-    kingpin_legacy: {
-        id: "kingpin_legacy",
-        name: "Kingpin Legacy",
-        tier: 4,
-        cost: 150,
-        description: "Your family name is legend. Your grandfather was a kingpin, your father expanded the empire, and now it's your turn to surpass them both.",
-        icon: "",
-        effects: {
-            respectGainMultiplier: 1.50,
-            maxGangMembers: 50,
-            allStatsBonus: 5,
-            incomeMultiplier: 1.25,
-            territoryLimit: 10,
-            specialDialogueOptions: true
-        },
-        requirements: { 
-            legacyPoints: 500, 
-            prerequisite: "master_recruiter",
-            territories: 5,
-            respect: 100
-        }
-    },
-    
-    empire_builder: {
-        id: "empire_builder",
-        name: "Empire Builder",
-        tier: 4,
-        cost: 120,
-        description: "You don't just run a gang – you build dynasties. Legitimate businesses, political connections, international operations. The whole package.",
-        icon: "",
-        effects: {
-            businessSlots: 10,
-            businessProfitBonus: 0.50,
-            internationalOperationsUnlocked: true,
-            politicalInfluenceGeneration: true
-        },
-        requirements: { legacyPoints: 400, money: 500000 }
-    },
-    
-    the_godfather: {
-        id: "the_godfather",
-        name: "The Godfather",
-        tier: 4,
-        cost: 200,
-        description: "Ultimate power. Ultimate respect. You ARE the law in this city. Your family's legacy spans generations, and your name will echo through history.",
-        icon: "",
-        effects: {
-            allBonusesDoubled: true,
-            immortalLegacy: true,
-            cityControl: true,
-            endGameUnlocked: true
-        },
-        requirements: { 
-            legacyPoints: 1000,
-            territories: 10,
-            respect: 200,
-            money: 2000000,
-            prerequisite: "kingpin_legacy"
-        }
-    },
-    
-    // ===== SPECIALIZED PERKS =====
-    assassins_creed: {
-        id: "assassins_creed",
-        name: "Assassin's Creed",
-        tier: 2,
-        cost: 35,
-        description: "Your family specialized in the wet work. You learned from the best killers in the business. Death follows your orders.",
-        icon: "",
-        effects: {
-            hitSuccessRate: 1.40,
-            enforcerEffectiveness: 1.30,
-            intimidationBonus: 0.50
-        },
-        requirements: { legacyPoints: 80 }
-    },
-    
-    smugglers_routes: {
-        id: "smugglers_routes",
-        name: "Smuggler's Routes",
-        tier: 2,
-        cost: 30,
-        description: "Your uncle ran guns across three borders. You know every route, every contact, every way to move contraband invisibly.",
-        icon: "",
-        effects: {
-            smugglingProfitBonus: 0.40,
-            smugglingSuccessRate: 0.25,
-            borderCrossingSpeed: 2.0
-        },
-        requirements: { legacyPoints: 90 }
-    },
-    
-    digital_age: {
-        id: "digital_age",
-        name: "Digital Age Kingpin",
-        tier: 3,
-        cost: 65,
-        description: "While old-timers were counting cash, your family was building digital empires. Cryptocurrency, hacking, cyber crime – you own the future.",
-        icon: "",
-        effects: {
-            hackerEffectiveness: 1.50,
-            digitalCrimeUnlocked: true,
-            cryptoLaunderingAvailable: true,
-            cyberIntelligenceBonus: 0.40
-        },
-        requirements: { legacyPoints: 180 }
-    },
-    
-    political_machine: {
-        id: "political_machine",
-        name: "Political Machine",
-        tier: 3,
-        cost: 70,
-        description: "Your family doesn't just bribe politicians – they OWN them. City council, DA's office, even the mayor... all in your pocket.",
-        icon: "",
-        effects: {
-            policeInterferenceReduction: 0.50,
-            legalProtection: 1.60,
-            zoningManipulation: true,
-            politicalFavorsAvailable: true
-        },
-        requirements: { legacyPoints: 220, money: 200000 }
-    }
-};
 
 // ==================== 6. COLLECTIBLES (EXPANDED CATALOG) ====================
 
@@ -394,7 +54,7 @@ export const COLLECTIBLE_CATEGORIES = {
             {
                 id: "porsche_959",
                 name: "Porsche 959",
-                description: "1980s supercar technology at its peak. Only 337 ever made. Yours is number 88 – lucky numbers.",
+                description: "1980s supercar technology at its peak. Only 337 ever made. Yours is number 88 â€“ lucky numbers.",
                 value: 180000,
                 rarity: "epic",
                 respectBonus: 30,
@@ -430,7 +90,7 @@ export const COLLECTIBLE_CATEGORIES = {
     
     exotic_weapons: {
         category: "Exotic Weapons",
-        description: "Rare, powerful, and dangerous tools of the trade. These aren't just guns – they're statements.",
+        description: "Rare, powerful, and dangerous tools of the trade. These aren't just guns â€“ they're statements.",
         icon: "",
         items: [
             {
@@ -559,7 +219,7 @@ export const COLLECTIBLE_CATEGORIES = {
             },
             {
                 id: "faberge_egg",
-                name: "Fabergé Imperial Egg",
+                name: "FabergÃ© Imperial Egg",
                 description: "Made for Russian royalty before the revolution. One of only 50 ever created. Encrusted with diamonds and rubies. Worth a fortune.",
                 value: 350000,
                 rarity: "legendary",
@@ -613,13 +273,13 @@ export const COLLECTIBLE_CATEGORIES = {
             {
                 id: "private_jet",
                 name: "Gulfstream G650 Private Jet",
-                description: "Your personal wings. Leather everything, gold fixtures, and most importantly – untraceable flight plans.",
+                description: "Your personal wings. Leather everything, gold fixtures, and most importantly â€“ untraceable flight plans.",
                 value: 650000,
                 rarity: "legendary",
                 respectBonus: 80,
                 mobilityBonus: 100,
                 findMethod: "Purchase through shell corporation",
-                displayEffect: "International operations unlocked, Escape options +50%, Travel speed ×3"
+                displayEffect: "International operations unlocked, Escape options +50%, Travel speed Ã—3"
             },
             {
                 id: "rolex_rainbow",
