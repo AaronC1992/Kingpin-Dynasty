@@ -188,8 +188,9 @@ function showActiveHeists() {
     let heistHTML = heists.length > 0 
         ? heists.map(h => `
             <div style="background: rgba(0,0,0,0.6); padding: 15px; border-radius: 8px; margin: 10px 0; border: 1px solid #8b0000;">
-                <div style="color: #c0a062; font-weight: bold;">${h.name || 'Unknown Heist'}</div>
-                <div style="color: #ccc; font-size: 0.9em;">Crew: ${h.members ? h.members.length : 0}/${h.maxMembers || 4}</div>
+                <div style="color: #c0a062; font-weight: bold;">${escapeHTML(h.target || h.name || 'Unknown Heist')}</div>
+                <div style="color: #ccc; font-size: 0.9em;">Crew: ${Array.isArray(h.participants) ? h.participants.length : (h.participants || 0)}/${h.maxParticipants || h.maxMembers || 4}</div>
+                <div style="color: #888; font-size: 0.85em;">Organized by: ${escapeHTML(h.organizer || 'Unknown')}</div>
                 <button onclick="joinHeist('${h.id}')" style="margin-top: 8px; background: #8b0000; color: #fff; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer;">Join Heist</button>
             </div>
         `).join('')
@@ -648,13 +649,32 @@ function handleServerMessage(message) {
             showSystemMessage(message.message || 'Jailbreak failed and you were arrested!', '#8b0000');
             break;
             
+        case 'connection_established':
+            // Store initial server data (leaderboard, events, etc.)
+            if (message.serverInfo) {
+                if (message.serverInfo.globalLeaderboard) {
+                    onlineWorldState.serverInfo.globalLeaderboard = message.serverInfo.globalLeaderboard;
+                }
+                if (message.serverInfo.cityEvents) {
+                    onlineWorldState.serverInfo.cityEvents = message.serverInfo.cityEvents;
+                }
+            }
+            if (message.playerId) {
+                onlineWorldState.playerId = message.playerId;
+            }
+            loadGlobalLeaderboard();
+            break;
+
         case 'heist_broadcast':
             onlineWorldState.activeHeists.push(message.heist);
             addWorldEvent(` ${message.playerName} is organizing a heist!`);
             break;
             
         case 'player_ranked':
-            // Update leaderboard
+            // Store server leaderboard data and refresh UI
+            if (message.leaderboard) {
+                onlineWorldState.serverInfo.globalLeaderboard = message.leaderboard;
+            }
             loadGlobalLeaderboard();
             break;
             
@@ -844,23 +864,23 @@ function updateOnlinePlayerList() {
     if (onlinePlayers.length === 0) {
         playersHTML += '<div style="color: #95a5a6; font-style: italic; text-align: center;">Loading player list...</div>';
     } else {
-        onlinePlayers.forEach(player => {
-            const statusIcon = player.inJail ? '' : '🟢';
-            const statusText = player.inJail ? 'In Jail' : 'Free';
-            const statusColor = player.inJail ? '#8b0000' : '#c0a062';
+        onlinePlayers.forEach(p => {
+            const statusIcon = p.inJail ? '' : '🟢';
+            const statusText = p.inJail ? 'In Jail' : 'Free';
+            const statusColor = p.inJail ? '#8b0000' : '#c0a062';
             
             playersHTML += `
                 <div style="background: rgba(52, 73, 94, 0.3); padding: 10px; margin: 8px 0; border-radius: 6px;">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <div>
-                            <strong style="color: ${player.playerId === onlineWorldState.playerId ? '#c0a062' : '#ecf0f1'}; font-family: 'Georgia', serif;">
-                                ${player.name} ${player.playerId === onlineWorldState.playerId ? '(You)' : ''}
+                            <strong style="color: ${p.playerId === onlineWorldState.playerId ? '#c0a062' : '#ecf0f1'}; font-family: 'Georgia', serif;">
+                                ${escapeHTML(p.name)} ${p.playerId === onlineWorldState.playerId ? '(You)' : ''}
                             </strong>
                             <br><small style="color: ${statusColor};">${statusIcon} ${statusText}</small>
                         </div>
                         <div style="text-align: right; font-size: 0.9em;">
-                            <div>Level ${player.level || 1}</div>
-                            <div style="color: #95a5a6;">${player.reputation || 0} rep</div>
+                            <div>Level ${p.level || 1}</div>
+                            <div style="color: #95a5a6;">${p.reputation || 0} rep</div>
                         </div>
                     </div>
                 </div>
@@ -1599,10 +1619,10 @@ function generateOnlinePlayersHTML() {
         return '<p style="color: #95a5a6; text-align: center;">Loading players...</p>';
     }
     
-    return onlineWorldState.nearbyPlayers.map(player => `
+    return onlineWorldState.nearbyPlayers.map(p => `
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 5px 8px; margin: 2px 0; background: rgba(52, 73, 94, 0.3); border-radius: 5px;">
-            <span style="color: ${player.color};"> ${player.name}</span>
-            <span style="color: #95a5a6; font-size: 12px;">Level ${player.level}</span>
+            <span style="color: ${p.color};"> ${escapeHTML(p.name)}</span>
+            <span style="color: #95a5a6; font-size: 12px;">Level ${p.level}</span>
         </div>
     `).join('');
 }
@@ -1992,24 +2012,32 @@ function loadGlobalLeaderboard() {
     const leaderboardElement = document.getElementById('global-leaderboard');
     if (!leaderboardElement) return;
     
-    // Simulate leaderboard data
-    const leaderboard = [
-        { rank: 1, name: 'DonVitoCorp', money: 2500000, reputation: 150 },
-        { rank: 2, name: 'ScarfaceKing', money: 1800000, reputation: 142 },
-        { rank: 3, name: 'MafiaQueen', money: 1650000, reputation: 138 },
-        { rank: 4, name: player.name || 'You', money: player.money, reputation: player.reputation },
-        { rank: 5, name: 'CrimeLord88', money: 1200000, reputation: 125 }
-    ];
+    // Use real server leaderboard data
+    const serverData = onlineWorldState.serverInfo.globalLeaderboard || [];
+    const playerName = player.name || 'You';
+    
+    // Build leaderboard from server data, ensure current player is included
+    let leaderboard = serverData.map((entry, i) => ({
+        rank: i + 1,
+        name: entry.name,
+        reputation: entry.reputation || 0,
+        territory: entry.territory || 0
+    }));
+    
+    // If no server data yet, show just the player
+    if (leaderboard.length === 0) {
+        leaderboard = [{ rank: 1, name: playerName, reputation: player.reputation || 0, territory: player.territory || 0 }];
+    }
     
     leaderboardElement.innerHTML = leaderboard.map(entry => `
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; margin: 5px 0; background: rgba(0, 0, 0, 0.3); border-radius: 5px; ${entry.name === (player.name || 'You') ? 'border: 2px solid #2ecc71;' : ''}">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; margin: 5px 0; background: rgba(0, 0, 0, 0.3); border-radius: 5px; ${entry.name === playerName ? 'border: 2px solid #2ecc71;' : ''}">
             <div>
                 <span style="color: ${entry.rank <= 3 ? '#f39c12' : '#ecf0f1'};">#${entry.rank}</span>
-                <strong style="margin-left: 10px; color: ${entry.name === (player.name || 'You') ? '#2ecc71' : '#ecf0f1'};">${entry.name}</strong>
+                <strong style="margin-left: 10px; color: ${entry.name === playerName ? '#2ecc71' : '#ecf0f1'};">${escapeHTML(entry.name)}</strong>
             </div>
             <div style="text-align: right; font-size: 0.9em;">
-                <div>$${entry.money.toLocaleString()}</div>
                 <div style="color: #95a5a6;">${entry.reputation} rep</div>
+                <div style="color: #95a5a6;">${entry.territory || 0} turf</div>
             </div>
         </div>
     `).join('');
@@ -2377,12 +2405,38 @@ function saveOnlineWorldData() {
 // Placeholder functions for missing interactions
 function joinHeist(heistId) {
     const heist = onlineWorldState.activeHeists.find(h => h.id === heistId);
-    if (heist && heist.participants < heist.maxParticipants) {
-        heist.participants++;
+    if (!heist) return;
+    
+    const participantCount = Array.isArray(heist.participants) ? heist.participants.length : (heist.participants || 0);
+    const maxCount = heist.maxParticipants || 4;
+    
+    if (participantCount >= maxCount) {
+        alert('This heist crew is full!');
+        return;
+    }
+    
+    // Check if already joined
+    if (Array.isArray(heist.participants) && heist.participants.includes(onlineWorldState.playerId)) {
+        alert('You already joined this heist!');
+        return;
+    }
+    
+    // Send join request to server
+    if (onlineWorldState.socket && onlineWorldState.socket.readyState === WebSocket.OPEN) {
+        onlineWorldState.socket.send(JSON.stringify({
+            type: 'heist_join',
+            heistId: heistId
+        }));
+        logAction(` Requested to join heist: ${heist.target}`);
+    } else {
+        // Offline fallback: locally update
+        if (Array.isArray(heist.participants)) {
+            heist.participants.push(onlineWorldState.playerId);
+        }
         alert(` Joined ${heist.target}! Get ready for action.`);
         logAction(` Joined heist: ${heist.target}`);
-        showActiveHeists(); // Refresh the display
     }
+    showActiveHeists();
 }
 
 function manageHeist(heistId) {
