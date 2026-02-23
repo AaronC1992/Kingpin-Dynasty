@@ -217,7 +217,6 @@ const gameState = {
     activeHeists: [],
     globalChat: [],
     cityEvents: [],
-    tradeOffers: [],
     gangWars: [],
     jailBots: [], // Server-managed bot inmates (max 3, 0 if 3+ real players in jail)
     serverStats: {
@@ -420,8 +419,20 @@ function handleClientMessage(clientId, message, ws) {
             handlePlayerChallenge(clientId, message);
             break;
             
-        case 'trade_offer':
-            handleTradeOffer(clientId, message);
+        case 'heist_start':
+            handleHeistStart(clientId, message);
+            break;
+
+        case 'heist_leave':
+            handleHeistLeave(clientId, message);
+            break;
+
+        case 'heist_cancel':
+            handleHeistCancel(clientId, message);
+            break;
+
+        case 'heist_invite':
+            handleHeistInvite(clientId, message);
             break;
             
         case 'player_update':
@@ -652,15 +663,22 @@ function handleHeistCreate(clientId, message) {
     const player = gameState.players.get(clientId);
     if (!player) return;
     
+    // Check if player already has an active heist
+    const existingHeist = gameState.activeHeists.find(h => h.organizerId === clientId);
+    if (existingHeist) return;
+
     const heist = {
         id: `heist_${Date.now()}_${clientId}`,
         target: message.target,
+        targetId: message.targetId || null,
         organizer: player.name,
         organizerId: clientId,
         participants: [clientId],
         maxParticipants: message.maxParticipants || 4,
+        minCrew: message.minCrew || 1,
         difficulty: message.difficulty || 'Medium',
         reward: message.reward || 100000,
+        successBase: message.successBase || 60,
         district: message.district,
         createdAt: Date.now()
     };
@@ -760,30 +778,99 @@ function handlePlayerChallenge(clientId, message) {
     }
 }
 
-// Trade offer handler
-function handleTradeOffer(clientId, message) {
+// Heist start handler (organizer manually starts)
+function handleHeistStart(clientId, message) {
+    const heist = gameState.activeHeists.find(h => h.id === message.heistId);
+    if (!heist) return;
+    
+    // Only organizer can start
+    if (heist.organizerId !== clientId) return;
+    
+    // Must have minimum crew
+    if (heist.participants.length < (heist.minCrew || 1)) return;
+    
+    console.log(`🚀 ${heist.organizer} launched heist: ${heist.target} with ${heist.participants.length} crew`);
+    executeHeist(heist);
+}
+
+// Heist leave handler
+function handleHeistLeave(clientId, message) {
+    const heist = gameState.activeHeists.find(h => h.id === message.heistId);
+    if (!heist) return;
+    
+    // Organizer can't leave, they must cancel
+    if (heist.organizerId === clientId) return;
+    
+    heist.participants = heist.participants.filter(pid => pid !== clientId);
+    
     const player = gameState.players.get(clientId);
-    if (!player) return;
+    console.log(`🚪 ${player ? player.name : clientId} left heist: ${heist.target}`);
     
-    const tradeOffer = {
-        id: `trade_${Date.now()}_${clientId}`,
-        fromPlayer: player.name,
-        fromPlayerId: clientId,
-        toPlayer: message.toPlayer,
-        item: message.item,
-        price: message.price,
-        createdAt: Date.now()
-    };
-    
-    gameState.tradeOffers.push(tradeOffer);
-    
-    console.log(`🤝 ${player.name} offered to trade ${message.item} for $${message.price}`);
-    
-    // Broadcast trade offer
     broadcastToAll({
-        type: 'trade_offer',
-        trade: tradeOffer
+        type: 'heist_update',
+        heist: heist,
+        action: 'player_left',
+        playerName: player ? player.name : 'Unknown'
     });
+}
+
+// Heist cancel handler (organizer only)
+function handleHeistCancel(clientId, message) {
+    const heistIdx = gameState.activeHeists.findIndex(h => h.id === message.heistId);
+    if (heistIdx < 0) return;
+    
+    const heist = gameState.activeHeists[heistIdx];
+    
+    // Only organizer can cancel
+    if (heist.organizerId !== clientId) return;
+    
+    gameState.activeHeists.splice(heistIdx, 1);
+    
+    console.log(`❌ ${heist.organizer} cancelled heist: ${heist.target}`);
+    
+    broadcastToAll({
+        type: 'heist_cancelled',
+        heistId: heist.id,
+        message: `❌ ${heist.organizer} cancelled the heist on ${heist.target}.`
+    });
+    
+    addGlobalChatMessage('System', `❌ ${heist.organizer} cancelled their heist on ${heist.target}.`, '#e67e22');
+}
+
+// Heist invite handler
+function handleHeistInvite(clientId, message) {
+    const heist = gameState.activeHeists.find(h => h.id === message.heistId);
+    if (!heist) return;
+    
+    // Only organizer can invite
+    if (heist.organizerId !== clientId) return;
+    
+    // Find target player by name
+    const targetEntry = Array.from(gameState.players.entries()).find(([_, p]) => p.name === message.targetPlayer);
+    if (!targetEntry) return;
+    
+    const [targetClientId, targetPlayer] = targetEntry;
+    
+    // Don't invite if already in the heist
+    if (heist.participants.includes(targetClientId)) return;
+    
+    // Don't invite if heist is full
+    if (heist.participants.length >= heist.maxParticipants) return;
+    
+    const organizer = gameState.players.get(clientId);
+    
+    // Send invite to the specific player
+    const targetWs = clients.get(targetClientId);
+    if (targetWs && targetWs.readyState === 1) {
+        targetWs.send(JSON.stringify({
+            type: 'heist_invite',
+            heistId: heist.id,
+            inviterName: organizer ? organizer.name : 'Unknown',
+            target: heist.target,
+            reward: heist.reward,
+            difficulty: heist.difficulty
+        }));
+    }
 }
 
 // Player update handler
@@ -1349,29 +1436,58 @@ function broadcastPlayerStates() {
     });
 }
 
-// Execute heist when full
+// Execute heist — uses difficulty-based success rate
 function executeHeist(heist) {
-    console.log(`🎯 Executing heist: ${heist.target}`);
+    console.log(`🎯 Executing heist: ${heist.target} (${heist.participants.length} crew)`);
     
-    // Simulate heist outcome
-    const success = Math.random() > 0.3; // 70% success rate
+    // Use difficulty-based success rate from heist data, fallback to 60%
+    const baseSuccess = (heist.successBase || 60) / 100;
+    // Crew size bonus: +5% per extra member beyond 1
+    const crewBonus = (heist.participants.length - 1) * 0.05;
+    const successChance = Math.min(baseSuccess + crewBonus, 0.95);
+    const success = Math.random() < successChance;
+    
+    // Get participant names for the world message
+    const participantNames = heist.participants.map(pid => {
+        const p = gameState.players.get(pid);
+        return p ? p.name : 'Unknown';
+    }).join(', ');
     
     if (success) {
         const rewardPerPlayer = Math.floor(heist.reward / heist.participants.length);
+        const repGain = Math.floor(10 + (heist.reward / 100000) * 5);
         
         heist.participants.forEach(participantId => {
             const participant = gameState.players.get(participantId);
             if (participant) {
                 participant.money += rewardPerPlayer;
-                participant.reputation += 10;
+                participant.reputation += repGain;
+            }
+            
+            // Send personalized result to each participant
+            const ws = clients.get(participantId);
+            if (ws && ws.readyState === 1) {
+                ws.send(JSON.stringify({
+                    type: 'heist_completed',
+                    heistId: heist.id,
+                    success: true,
+                    involved: true,
+                    reward: rewardPerPlayer,
+                    repGain: repGain,
+                    target: heist.target,
+                    crewSize: heist.participants.length,
+                    worldMessage: `💰 Heist on ${heist.target} was successful! Crew: ${participantNames}`
+                }));
             }
         });
         
+        // Broadcast to non-participants
         broadcastToAll({
             type: 'heist_completed',
-            heist: heist,
+            heistId: heist.id,
             success: true,
-            reward: rewardPerPlayer
+            involved: false,
+            worldMessage: `💰 Heist on ${heist.target} was successful! Crew: ${participantNames}`
         });
         
         addGlobalChatMessage('System', `🎉 Heist successful! ${heist.target} netted $${heist.reward.toLocaleString()}!`, '#2ecc71');
@@ -1379,18 +1495,38 @@ function executeHeist(heist) {
         broadcastToAll({ type: 'player_ranked', leaderboard: persistedLeaderboard });
         scheduleWorldSave();
     } else {
-        // Failed heist
+        // Failed heist — reputation loss and possible heat
+        const repLoss = Math.floor(5 + (heist.reward / 200000) * 3);
+        
         heist.participants.forEach(participantId => {
             const participant = gameState.players.get(participantId);
             if (participant) {
-                participant.reputation = Math.max(0, participant.reputation - 5);
+                participant.reputation = Math.max(0, participant.reputation - repLoss);
+            }
+            
+            // Send personalized result to each participant
+            const ws = clients.get(participantId);
+            if (ws && ws.readyState === 1) {
+                ws.send(JSON.stringify({
+                    type: 'heist_completed',
+                    heistId: heist.id,
+                    success: false,
+                    involved: true,
+                    repLoss: repLoss,
+                    target: heist.target,
+                    crewSize: heist.participants.length,
+                    worldMessage: `🚔 Heist on ${heist.target} failed! The crew barely escaped.`
+                }));
             }
         });
         
+        // Broadcast to non-participants
         broadcastToAll({
             type: 'heist_completed',
-            heist: heist,
-            success: false
+            heistId: heist.id,
+            success: false,
+            involved: false,
+            worldMessage: `🚔 Heist on ${heist.target} failed! The crew barely escaped.`
         });
         
         addGlobalChatMessage('System', `💀 Heist failed! ${heist.target} was too well defended.`, '#e74c3c');

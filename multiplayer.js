@@ -112,7 +112,6 @@ let onlineWorldState = {
         }
     },
     activeHeists: [],
-    tradeOffers: [],
     gangWars: [],
     jailRoster: { realPlayers: [], bots: [], totalOnlineInJail: 0 },
     lastUpdate: null
@@ -174,7 +173,20 @@ function showWhackRivalDon() {
     updateOnlinePlayerList();
 }
 
-// Show active heists available to join
+// ==================== HEIST SYSTEM ====================
+
+// Heist target definitions with difficulty, reward, and requirements
+const HEIST_TARGETS = [
+    { id: 'jewelry_store', name: '💎 Jewelry Store', difficulty: 'Easy', reward: 50000, minLevel: 1, minCrew: 1, maxCrew: 3, successBase: 75 },
+    { id: 'bank_vault', name: '🏦 Bank Vault', difficulty: 'Medium', reward: 150000, minLevel: 5, minCrew: 2, maxCrew: 4, successBase: 60 },
+    { id: 'armored_truck', name: '🚛 Armored Truck', difficulty: 'Medium', reward: 200000, minLevel: 8, minCrew: 2, maxCrew: 4, successBase: 55 },
+    { id: 'casino_heist', name: '🎰 Casino Vault', difficulty: 'Hard', reward: 400000, minLevel: 12, minCrew: 3, maxCrew: 5, successBase: 40 },
+    { id: 'art_museum', name: '🖼️ Art Museum', difficulty: 'Hard', reward: 350000, minLevel: 10, minCrew: 2, maxCrew: 4, successBase: 45 },
+    { id: 'federal_reserve', name: '🏛️ Federal Reserve', difficulty: 'Extreme', reward: 800000, minLevel: 18, minCrew: 4, maxCrew: 6, successBase: 25 },
+    { id: 'drug_cartel', name: '💊 Cartel Warehouse', difficulty: 'Extreme', reward: 600000, minLevel: 15, minCrew: 3, maxCrew: 5, successBase: 30 },
+];
+
+// Show active heists available to join + create new heist
 function showActiveHeists() {
     const content = document.getElementById('multiplayer-content');
     if (!content) return;
@@ -184,27 +196,509 @@ function showActiveHeists() {
     if (mpScreen) mpScreen.style.display = 'block';
     
     const heists = onlineWorldState.activeHeists || [];
-    let heistHTML = heists.length > 0 
-        ? heists.map(h => `
-            <div style="background: rgba(0,0,0,0.6); padding: 15px; border-radius: 8px; margin: 10px 0; border: 1px solid #8b0000;">
-                <div style="color: #c0a062; font-weight: bold;">${escapeHTML(h.target || h.name || 'Unknown Heist')}</div>
-                <div style="color: #ccc; font-size: 0.9em;">Crew: ${Array.isArray(h.participants) ? h.participants.length : (h.participants || 0)}/${h.maxParticipants || h.maxMembers || 4}</div>
-                <div style="color: #888; font-size: 0.85em;">Organized by: ${escapeHTML(h.organizer || 'Unknown')}</div>
-                <button onclick="joinHeist('${h.id}')" style="margin-top: 8px; background: #8b0000; color: #fff; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer;">Join Heist</button>
-            </div>
-        `).join('')
-        : '<p style="color: #888; text-align: center; font-style: italic;">No active heists right now. Check back later!</p>';
+    const myPlayerId = onlineWorldState.playerId;
+    
+    // Check if player already has an active heist
+    const myHeist = heists.find(h => h.organizerId === myPlayerId);
+    
+    let heistListHTML;
+    if (heists.length > 0) {
+        heistListHTML = heists.map(h => {
+            const participantCount = Array.isArray(h.participants) ? h.participants.length : (h.participants || 0);
+            const maxCount = h.maxParticipants || 4;
+            const isMyHeist = h.organizerId === myPlayerId;
+            const alreadyJoined = Array.isArray(h.participants) && h.participants.includes(myPlayerId);
+            const isFull = participantCount >= maxCount;
+            const diffColor = h.difficulty === 'Easy' ? '#2ecc71' : h.difficulty === 'Medium' ? '#f39c12' : h.difficulty === 'Hard' ? '#e74c3c' : '#ff00ff';
+            
+            // Get participant names from playerStates
+            let crewNames = '';
+            if (Array.isArray(h.participants)) {
+                const names = h.participants.map(pid => {
+                    const ps = Object.values(onlineWorldState.playerStates || {}).find(p => p.playerId === pid);
+                    return ps ? escapeHTML(ps.name) : 'Unknown';
+                });
+                crewNames = names.join(', ');
+            }
+            
+            return `
+            <div style="background: rgba(0,0,0,0.6); padding: 18px; border-radius: 10px; margin: 12px 0; border: 1px solid ${isMyHeist ? '#c0a062' : '#5a0000'};">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px;">
+                    <div style="flex: 1; min-width: 200px;">
+                        <div style="color: #c0a062; font-weight: bold; font-size: 1.1em; font-family: 'Georgia', serif;">${escapeHTML(h.target || 'Unknown Heist')}</div>
+                        <div style="margin-top: 6px;">
+                            <span style="color: ${diffColor}; font-size: 0.85em; padding: 2px 8px; border: 1px solid ${diffColor}; border-radius: 4px;">${escapeHTML(h.difficulty || 'Unknown')}</span>
+                            <span style="color: #2ecc71; margin-left: 10px; font-size: 0.9em;">💰 $${(h.reward || 0).toLocaleString()}</span>
+                        </div>
+                        <div style="color: #ccc; font-size: 0.85em; margin-top: 8px;">
+                            👥 Crew: ${participantCount}/${maxCount} ${crewNames ? '— ' + crewNames : ''}
+                        </div>
+                        <div style="color: #888; font-size: 0.8em; margin-top: 4px;">Organized by: ${escapeHTML(h.organizer || 'Unknown')}</div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 6px; min-width: 130px;">
+                        ${isMyHeist ? `
+                            <button onclick="manageHeist('${h.id}')" style="background: linear-gradient(180deg, #c0a062, #8b7340); color: #000; padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer; font-family: 'Georgia', serif; font-weight: bold;">
+                                ⚙️ Manage
+                            </button>
+                            ${participantCount >= (h.minCrew || 1) ? `
+                            <button onclick="forceStartHeist('${h.id}')" style="background: linear-gradient(180deg, #27ae60, #1a7a40); color: #fff; padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer; font-family: 'Georgia', serif; font-weight: bold;">
+                                🚀 Launch!
+                            </button>` : `
+                            <div style="color: #ff8800; font-size: 0.8em; text-align: center;">Need ${h.minCrew || 1}+ crew</div>`}
+                        ` : alreadyJoined ? `
+                            <div style="color: #2ecc71; padding: 10px; text-align: center; font-weight: bold;">✅ Joined</div>
+                            <button onclick="leaveHeist('${h.id}')" style="background: #333; color: #ff4444; padding: 8px 15px; border: 1px solid #ff4444; border-radius: 6px; cursor: pointer; font-size: 0.85em;">
+                                Leave
+                            </button>
+                        ` : isFull ? `
+                            <div style="color: #888; padding: 10px; text-align: center;">Crew Full</div>
+                        ` : `
+                            <button onclick="joinHeist('${h.id}')" style="background: linear-gradient(180deg, #8b0000, #3a0000); color: #ff4444; padding: 10px 18px; border: 1px solid #ff0000; border-radius: 6px; cursor: pointer; font-family: 'Georgia', serif; font-weight: bold;">
+                                🤝 Join Crew
+                            </button>
+                        `}
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+    } else {
+        heistListHTML = '<p style="color: #888; text-align: center; font-style: italic; padding: 20px;">No active heists right now. Plan one yourself!</p>';
+    }
     
     content.innerHTML = `
         <div style="background: rgba(0,0,0,0.95); padding: 30px; border-radius: 15px; border: 3px solid #8b0000;">
-            <h2 style="color: #c0a062; text-align: center; font-family: 'Georgia', serif;"> Big Scores</h2>
-            <p style="color: #ccc; text-align: center;">Join other players on high-paying heists.</p>
-            ${heistHTML}
+            <div style="text-align: center; margin-bottom: 25px;">
+                <div style="font-size: 3em;">💰</div>
+                <h2 style="color: #c0a062; font-family: 'Georgia', serif; font-size: 2em; margin: 10px 0 5px 0;">Big Scores</h2>
+                <p style="color: #ccc; font-style: italic; margin: 0;">Plan heists, recruit crew, and hit high-value targets together.</p>
+            </div>
+
+            <!-- Create Heist Button -->
+            <div style="text-align: center; margin-bottom: 20px;">
+                ${myHeist
+                    ? '<div style="color: #ff8800; font-size: 0.9em;">⚠️ You already have an active heist. Manage or complete it first.</div>'
+                    : `<button onclick="showCreateHeist()" style="background: linear-gradient(180deg, #c0a062, #8b7340); color: #000; padding: 14px 30px; border: none; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif; font-size: 1.1em; font-weight: bold;">
+                        📋 Plan a Heist
+                    </button>`
+                }
+            </div>
+
+            <!-- Active Heists List -->
+            <div style="background: rgba(0,0,0,0.4); padding: 15px; border-radius: 10px; border: 1px solid #555;">
+                <h3 style="color: #c0a062; margin: 0 0 10px 0; font-family: 'Georgia', serif;">🔥 Active Heists</h3>
+                ${heistListHTML}
+            </div>
+
             <div style="text-align: center; margin-top: 20px;">
                 <button onclick="goBackToMainMenu()" style="background: #333; color: #c0a062; padding: 12px 25px; border: 1px solid #c0a062; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">Back</button>
             </div>
         </div>
     `;
+}
+
+// Show heist creation screen — pick a target
+function showCreateHeist() {
+    if (!onlineWorldState.isConnected) {
+        alert('You must be connected to the online world to plan a heist.');
+        return;
+    }
+
+    const content = document.getElementById('multiplayer-content');
+    if (!content) return;
+
+    const playerLevel = player.level || 1;
+
+    const targetsHTML = HEIST_TARGETS.map(t => {
+        const locked = playerLevel < t.minLevel;
+        const diffColor = t.difficulty === 'Easy' ? '#2ecc71' : t.difficulty === 'Medium' ? '#f39c12' : t.difficulty === 'Hard' ? '#e74c3c' : '#ff00ff';
+        
+        return `
+        <div style="background: rgba(0,0,0,0.6); padding: 16px; border-radius: 10px; margin: 10px 0; border: 1px solid ${locked ? '#333' : diffColor}; opacity: ${locked ? '0.5' : '1'};">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div style="flex: 1; min-width: 200px;">
+                    <div style="color: ${locked ? '#666' : '#c0a062'}; font-weight: bold; font-size: 1.05em;">${t.name}</div>
+                    <div style="margin-top: 6px; display: flex; gap: 10px; flex-wrap: wrap;">
+                        <span style="color: ${diffColor}; font-size: 0.8em; padding: 2px 6px; border: 1px solid ${diffColor}; border-radius: 4px;">${t.difficulty}</span>
+                        <span style="color: #2ecc71; font-size: 0.85em;">💰 $${t.reward.toLocaleString()}</span>
+                        <span style="color: #ccc; font-size: 0.85em;">👥 ${t.minCrew}-${t.maxCrew} crew</span>
+                    </div>
+                    <div style="color: #888; font-size: 0.8em; margin-top: 4px;">Base success: ${t.successBase}% | Requires Level ${t.minLevel}+</div>
+                </div>
+                <div>
+                    ${locked 
+                        ? `<div style="color: #666; font-size: 0.85em;">🔒 Level ${t.minLevel}</div>`
+                        : `<button onclick="createHeist('${t.id}')" style="background: linear-gradient(180deg, #8b0000, #3a0000); color: #ff4444; padding: 10px 20px; border: 1px solid #ff0000; border-radius: 6px; cursor: pointer; font-family: 'Georgia', serif; font-weight: bold;">
+                            📋 Plan This
+                        </button>`
+                    }
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+
+    content.innerHTML = `
+        <div style="background: rgba(0,0,0,0.95); padding: 30px; border-radius: 15px; border: 3px solid #c0a062;">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <div style="font-size: 3em;">📋</div>
+                <h2 style="color: #c0a062; font-family: 'Georgia', serif; font-size: 1.8em; margin: 10px 0 5px 0;">Plan a Heist</h2>
+                <p style="color: #ccc; font-style: italic; margin: 0;">Choose a target. Harder targets need bigger crews but pay more.</p>
+            </div>
+
+            ${targetsHTML}
+
+            <div style="text-align: center; margin-top: 20px;">
+                <button onclick="showActiveHeists()" style="background: #333; color: #c0a062; padding: 12px 25px; border: 1px solid #c0a062; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">← Back to Big Scores</button>
+            </div>
+        </div>
+    `;
+}
+
+// Create a heist and send to server
+function createHeist(targetId) {
+    if (!onlineWorldState.isConnected || !onlineWorldState.socket || onlineWorldState.socket.readyState !== WebSocket.OPEN) {
+        alert('Not connected to the server!');
+        return;
+    }
+
+    const target = HEIST_TARGETS.find(t => t.id === targetId);
+    if (!target) return;
+
+    if ((player.level || 1) < target.minLevel) {
+        alert(`You need to be Level ${target.minLevel} to plan this heist.`);
+        return;
+    }
+
+    // Check if already organizing a heist
+    const existingHeist = (onlineWorldState.activeHeists || []).find(h => h.organizerId === onlineWorldState.playerId);
+    if (existingHeist) {
+        alert('You already have an active heist! Complete or cancel it first.');
+        return;
+    }
+
+    if (!confirm(`Plan heist on ${target.name}?\n\nReward: $${target.reward.toLocaleString()} (split among crew)\nCrew needed: ${target.minCrew}-${target.maxCrew}\nBase success: ${target.successBase}%\n\nYou'll be the organizer. Other players can join.`)) {
+        return;
+    }
+
+    onlineWorldState.socket.send(JSON.stringify({
+        type: 'heist_create',
+        target: target.name,
+        targetId: target.id,
+        reward: target.reward,
+        difficulty: target.difficulty,
+        maxParticipants: target.maxCrew,
+        minCrew: target.minCrew,
+        successBase: target.successBase
+    }));
+
+    logAction(`📋 Planning heist: ${target.name}. Looking for crew...`);
+    
+    // Brief delay then show heists list
+    setTimeout(() => showActiveHeists(), 500);
+}
+
+// Manage your own heist
+function manageHeist(heistId) {
+    const heist = (onlineWorldState.activeHeists || []).find(h => h.id === heistId);
+    if (!heist) {
+        alert('Heist not found!');
+        return;
+    }
+
+    const content = document.getElementById('multiplayer-content');
+    if (!content) return;
+
+    const participantCount = Array.isArray(heist.participants) ? heist.participants.length : 0;
+    const maxCount = heist.maxParticipants || 4;
+    const minCrew = heist.minCrew || 1;
+    const canLaunch = participantCount >= minCrew;
+    const diffColor = heist.difficulty === 'Easy' ? '#2ecc71' : heist.difficulty === 'Medium' ? '#f39c12' : heist.difficulty === 'Hard' ? '#e74c3c' : '#ff00ff';
+
+    // Build crew list
+    let crewHTML = '';
+    if (Array.isArray(heist.participants)) {
+        crewHTML = heist.participants.map((pid, index) => {
+            const ps = Object.values(onlineWorldState.playerStates || {}).find(p => p.playerId === pid);
+            const name = ps ? escapeHTML(ps.name) : 'Unknown';
+            const level = ps ? ps.level || 1 : '?';
+            const isOrganizer = pid === heist.organizerId;
+            const isMe = pid === onlineWorldState.playerId;
+            
+            return `
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; margin: 6px 0; background: rgba(${isOrganizer ? '192,160,98' : '139,0,0'},0.15); border-radius: 6px; border: 1px solid ${isOrganizer ? '#c0a062' : '#3a0000'};">
+                <div>
+                    <span style="color: ${isOrganizer ? '#c0a062' : '#ff4444'}; font-weight: bold;">${name}</span>
+                    <span style="color: #888; font-size: 0.85em;"> Lvl ${level}</span>
+                    ${isOrganizer ? '<span style="color: #c0a062; font-size: 0.8em; margin-left: 8px;">👑 Leader</span>' : ''}
+                    ${isMe && !isOrganizer ? '<span style="color: #2ecc71; font-size: 0.8em; margin-left: 8px;">(You)</span>' : ''}
+                </div>
+                ${isOrganizer || !isMe ? '' : `
+                    <button onclick="leaveHeist('${heistId}')" style="background: #333; color: #ff4444; padding: 5px 12px; border: 1px solid #ff4444; border-radius: 4px; cursor: pointer; font-size: 0.85em;">Leave</button>
+                `}
+            </div>`;
+        }).join('');
+    }
+
+    // Empty slots
+    for (let i = participantCount; i < maxCount; i++) {
+        crewHTML += `
+        <div style="display: flex; justify-content: center; align-items: center; padding: 10px; margin: 6px 0; background: rgba(255,255,255,0.03); border-radius: 6px; border: 1px dashed #333;">
+            <span style="color: #555; font-style: italic;">Empty slot</span>
+        </div>`;
+    }
+
+    content.innerHTML = `
+        <div style="background: rgba(0,0,0,0.95); padding: 30px; border-radius: 15px; border: 3px solid #c0a062;">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <div style="font-size: 3em;">⚙️</div>
+                <h2 style="color: #c0a062; font-family: 'Georgia', serif; font-size: 1.8em; margin: 10px 0 5px 0;">Heist Management</h2>
+                <div style="color: #ccc; font-size: 1.1em; margin-top: 5px;">${escapeHTML(heist.target || 'Unknown')}</div>
+            </div>
+
+            <!-- Heist Details -->
+            <div style="background: rgba(0,0,0,0.5); padding: 20px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #555;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div style="color: #ccc;">Difficulty: <span style="color: ${diffColor}; font-weight: bold;">${escapeHTML(heist.difficulty || 'Unknown')}</span></div>
+                    <div style="color: #ccc;">Reward: <span style="color: #2ecc71; font-weight: bold;">$${(heist.reward || 0).toLocaleString()}</span></div>
+                    <div style="color: #ccc;">Per person: <span style="color: #2ecc71;">~$${participantCount > 0 ? Math.floor((heist.reward || 0) / participantCount).toLocaleString() : '?'}</span></div>
+                    <div style="color: #ccc;">Base success: <span style="color: #f39c12;">${heist.successBase || 60}%</span></div>
+                </div>
+            </div>
+
+            <!-- Crew -->
+            <div style="background: rgba(0,0,0,0.4); padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #555;">
+                <h3 style="color: #c0a062; margin: 0 0 10px 0; font-family: 'Georgia', serif;">👥 Crew (${participantCount}/${maxCount})</h3>
+                ${crewHTML}
+            </div>
+
+            <!-- Actions -->
+            <div style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
+                ${heist.organizerId === onlineWorldState.playerId ? `
+                    ${canLaunch ? `
+                        <button onclick="forceStartHeist('${heistId}')" style="background: linear-gradient(180deg, #27ae60, #1a7a40); color: #fff; padding: 14px 25px; border: none; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif; font-weight: bold; font-size: 1.05em;">
+                            🚀 Launch Heist!
+                        </button>
+                    ` : `
+                        <div style="color: #ff8800; padding: 14px; text-align: center;">Need at least ${minCrew} crew member${minCrew > 1 ? 's' : ''} to launch</div>
+                    `}
+                    <button onclick="cancelHeist('${heistId}')" style="background: #333; color: #ff4444; padding: 14px 20px; border: 1px solid #ff4444; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">
+                        ❌ Cancel Heist
+                    </button>
+                ` : `
+                    <button onclick="leaveHeist('${heistId}')" style="background: #333; color: #ff4444; padding: 14px 20px; border: 1px solid #ff4444; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">
+                        🚪 Leave Crew
+                    </button>
+                `}
+                <button onclick="showActiveHeists()" style="background: #333; color: #c0a062; padding: 14px 20px; border: 1px solid #c0a062; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">
+                    ← Back
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+// Force start a heist (organizer only)
+function forceStartHeist(heistId) {
+    if (!onlineWorldState.isConnected || !onlineWorldState.socket || onlineWorldState.socket.readyState !== WebSocket.OPEN) {
+        alert('Not connected!');
+        return;
+    }
+
+    const heist = (onlineWorldState.activeHeists || []).find(h => h.id === heistId);
+    if (!heist) return;
+
+    if (heist.organizerId !== onlineWorldState.playerId) {
+        alert('Only the organizer can launch the heist!');
+        return;
+    }
+
+    if (!confirm(`🚀 Launch the heist on ${heist.target}?\n\nThis cannot be undone. Your crew will move in immediately.`)) {
+        return;
+    }
+
+    onlineWorldState.socket.send(JSON.stringify({
+        type: 'heist_start',
+        heistId: heistId
+    }));
+
+    logAction(`🚀 Launching heist on ${heist.target}!`);
+}
+
+// Leave a heist you joined
+function leaveHeist(heistId) {
+    if (!onlineWorldState.isConnected || !onlineWorldState.socket || onlineWorldState.socket.readyState !== WebSocket.OPEN) {
+        alert('Not connected!');
+        return;
+    }
+
+    onlineWorldState.socket.send(JSON.stringify({
+        type: 'heist_leave',
+        heistId: heistId
+    }));
+
+    // Optimistic local update
+    const heist = (onlineWorldState.activeHeists || []).find(h => h.id === heistId);
+    if (heist && Array.isArray(heist.participants)) {
+        heist.participants = heist.participants.filter(pid => pid !== onlineWorldState.playerId);
+    }
+
+    logAction('🚪 Left the heist crew.');
+    showActiveHeists();
+}
+
+// Cancel a heist (organizer only)
+function cancelHeist(heistId) {
+    if (!onlineWorldState.isConnected || !onlineWorldState.socket || onlineWorldState.socket.readyState !== WebSocket.OPEN) {
+        alert('Not connected!');
+        return;
+    }
+
+    if (!confirm('Cancel this heist? All crew members will be dismissed.')) return;
+
+    onlineWorldState.socket.send(JSON.stringify({
+        type: 'heist_cancel',
+        heistId: heistId
+    }));
+
+    // Optimistic local removal
+    onlineWorldState.activeHeists = (onlineWorldState.activeHeists || []).filter(h => h.id !== heistId);
+    logAction('❌ Heist cancelled.');
+    showActiveHeists();
+}
+
+// Invite a specific player to your active heist
+function inviteToHeist(playerName) {
+    if (!onlineWorldState.isConnected || !onlineWorldState.socket || onlineWorldState.socket.readyState !== WebSocket.OPEN) {
+        alert("You need to be connected to the online world!");
+        return;
+    }
+
+    // Check if player has an active heist
+    const myHeist = (onlineWorldState.activeHeists || []).find(h => h.organizerId === onlineWorldState.playerId);
+    if (!myHeist) {
+        alert(`You don't have an active heist! Go to Big Scores and plan one first.`);
+        return;
+    }
+
+    const participantCount = Array.isArray(myHeist.participants) ? myHeist.participants.length : 0;
+    if (participantCount >= (myHeist.maxParticipants || 4)) {
+        alert('Your heist crew is already full!');
+        return;
+    }
+
+    onlineWorldState.socket.send(JSON.stringify({
+        type: 'heist_invite',
+        heistId: myHeist.id,
+        targetPlayer: playerName
+    }));
+
+    logAction(`📨 Sent heist invitation to ${playerName} for ${myHeist.target}`);
+    if (typeof showBriefNotification === 'function') {
+        showBriefNotification(`Heist invite sent to ${playerName}!`, 3000);
+    } else {
+        alert(`Heist invitation sent to ${playerName}!`);
+    }
+}
+
+// Join any heist by ID
+function joinHeist(heistId) {
+    const heist = (onlineWorldState.activeHeists || []).find(h => h.id === heistId);
+    if (!heist) {
+        alert('Heist not found!');
+        return;
+    }
+    
+    const participantCount = Array.isArray(heist.participants) ? heist.participants.length : 0;
+    const maxCount = heist.maxParticipants || 4;
+    
+    if (participantCount >= maxCount) {
+        alert('This heist crew is full!');
+        return;
+    }
+    
+    if (Array.isArray(heist.participants) && heist.participants.includes(onlineWorldState.playerId)) {
+        alert('You already joined this heist!');
+        return;
+    }
+    
+    if (onlineWorldState.socket && onlineWorldState.socket.readyState === WebSocket.OPEN) {
+        onlineWorldState.socket.send(JSON.stringify({
+            type: 'heist_join',
+            heistId: heistId
+        }));
+        logAction(`🤝 Requested to join heist: ${heist.target}`);
+        
+        // Optimistic local update
+        if (Array.isArray(heist.participants)) {
+            heist.participants.push(onlineWorldState.playerId);
+        }
+        showActiveHeists();
+    } else {
+        alert('Not connected to the server!');
+    }
+}
+
+// Show heist result popup
+function showHeistResult(result) {
+    // Remove any existing heist result modal
+    const existing = document.getElementById('heist-result-modal');
+    if (existing) existing.remove();
+    
+    const isSuccess = result.success;
+    const borderColor = isSuccess ? '#2ecc71' : '#e74c3c';
+    const bgGlow = isSuccess ? 'rgba(46, 204, 113, 0.15)' : 'rgba(231, 76, 60, 0.15)';
+    
+    const modal = document.createElement('div');
+    modal.id = 'heist-result-modal';
+    modal.style.cssText = `position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 10000; display: flex; align-items: center; justify-content: center; font-family: 'Georgia', serif;`;
+    
+    modal.innerHTML = `
+        <div style="background: linear-gradient(135deg, #1a1a2e 0%, #0d0d1a 100%); padding: 40px; border-radius: 15px; border: 3px solid ${borderColor}; max-width: 450px; width: 90%; text-align: center; box-shadow: 0 0 40px ${bgGlow};">
+            <div style="font-size: 4em; margin-bottom: 15px;">${isSuccess ? '💰' : '🚔'}</div>
+            <h2 style="color: ${borderColor}; margin: 0 0 10px 0; font-size: 1.8em;">${isSuccess ? 'HEIST SUCCESSFUL!' : 'HEIST FAILED!'}</h2>
+            <div style="color: #ccc; font-size: 1.1em; margin-bottom: 20px;">Target: ${escapeHTML(result.target || 'Unknown')}</div>
+            
+            <div style="background: rgba(0,0,0,0.4); padding: 20px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #333;">
+                ${isSuccess ? `
+                    <div style="color: #2ecc71; font-size: 1.3em; font-weight: bold; margin-bottom: 8px;">
+                        +$${(result.reward || 0).toLocaleString()}
+                    </div>
+                    <div style="color: #f39c12; font-size: 1em;">
+                        +${result.repGain || 0} Reputation
+                    </div>
+                ` : `
+                    <div style="color: #e74c3c; font-size: 1.3em; font-weight: bold; margin-bottom: 8px;">
+                        No Payout
+                    </div>
+                    <div style="color: #e74c3c; font-size: 1em;">
+                        -${result.repLoss || 0} Reputation
+                    </div>
+                `}
+                <div style="color: #888; font-size: 0.85em; margin-top: 10px;">
+                    Crew size: ${result.crewSize || '?'}
+                </div>
+            </div>
+            
+            <button onclick="document.getElementById('heist-result-modal').remove()" style="background: linear-gradient(180deg, ${isSuccess ? '#27ae60' : '#c0392b'}, ${isSuccess ? '#1a7a40' : '#7a1a1a'}); color: #fff; padding: 14px 35px; border: none; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif; font-size: 1.1em; font-weight: bold;">
+                ${isSuccess ? 'Collect & Continue' : 'Walk Away'}
+            </button>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Sync player money/rep from server
+    if (isSuccess && result.reward) {
+        if (typeof player !== 'undefined') {
+            player.money = (player.money || 0) + result.reward;
+            player.reputation = (player.reputation || 0) + (result.repGain || 0);
+            if (typeof updateUI === 'function') updateUI();
+        }
+    } else if (!isSuccess && result.repLoss) {
+        if (typeof player !== 'undefined') {
+            player.reputation = Math.max(0, (player.reputation || 0) - (result.repLoss || 0));
+            if (typeof updateUI === 'function') updateUI();
+        }
+    }
 }
 
 // Show gang wars / turf war battles
@@ -315,21 +809,22 @@ function challengeForTerritory(district) {
     logAction(` Challenging for control of ${district}...`);
 }
 
-// Start a heist in a specific district
+// Start a heist in a specific district — redirects to heist creation
 function startDistrictHeist(districtName) {
     if (!onlineWorldState.isConnected || !onlineWorldState.socket) {
         alert('You must be connected to the online world to start a heist.');
         return;
     }
     
-    onlineWorldState.socket.send(JSON.stringify({
-        type: 'heist_create',
-        district: districtName,
-        playerName: player.name,
-        level: player.level
-    }));
+    // Check if already organizing
+    const existingHeist = (onlineWorldState.activeHeists || []).find(h => h.organizerId === onlineWorldState.playerId);
+    if (existingHeist) {
+        alert('You already have an active heist! Complete or cancel it first.');
+        showActiveHeists();
+        return;
+    }
     
-    logAction(` Starting a heist in ${districtName}... looking for crew members.`);
+    showCreateHeist();
 }
 
 // ==================== CORE ONLINE WORLD FUNCTIONS ====================
@@ -641,7 +1136,67 @@ function handleServerMessage(message) {
 
         case 'heist_broadcast':
             onlineWorldState.activeHeists.push(message.heist);
-            addWorldEvent(` ${message.playerName} is organizing a heist!`);
+            addWorldEvent(`💰 ${message.playerName} is organizing a heist: ${message.heist ? message.heist.target : 'Unknown'}`);
+            break;
+
+        case 'heist_update':
+            // Server updated a heist (player joined, left, etc.)
+            if (message.heist) {
+                const hIdx = onlineWorldState.activeHeists.findIndex(h => h.id === message.heist.id);
+                if (hIdx >= 0) {
+                    onlineWorldState.activeHeists[hIdx] = message.heist;
+                } else {
+                    onlineWorldState.activeHeists.push(message.heist);
+                }
+            }
+            // Refresh heists screen if it's currently shown
+            if (document.getElementById('multiplayer-content') && document.getElementById('multiplayer-content').innerHTML.includes('Big Scores')) {
+                showActiveHeists();
+            }
+            break;
+
+        case 'heist_cancelled':
+            // Heist was removed (cancelled or completed)
+            if (message.heistId) {
+                onlineWorldState.activeHeists = onlineWorldState.activeHeists.filter(h => h.id !== message.heistId);
+            }
+            if (message.message) {
+                addWorldEvent(message.message);
+            }
+            // Refresh heists screen if shown
+            if (document.getElementById('multiplayer-content') && document.getElementById('multiplayer-content').innerHTML.includes('Big Scores')) {
+                showActiveHeists();
+            }
+            break;
+
+        case 'heist_completed':
+            // Heist finished — show results
+            if (message.heistId) {
+                onlineWorldState.activeHeists = onlineWorldState.activeHeists.filter(h => h.id !== message.heistId);
+            }
+            addWorldEvent(message.worldMessage || (message.success ? '💰 A heist was successful!' : '🚔 A heist has failed!'));
+            // Show result popup if player was involved
+            if (message.involved) {
+                showHeistResult(message);
+            }
+            // Refresh heists screen if shown
+            if (document.getElementById('multiplayer-content') && document.getElementById('multiplayer-content').innerHTML.includes('Big Scores')) {
+                showActiveHeists();
+            }
+            break;
+
+        case 'heist_invite':
+            // Someone invited you to a heist
+            if (message.heistId && message.inviterName) {
+                const acceptInvite = confirm(`📨 ${message.inviterName} invited you to a heist: ${message.target || 'Unknown'}!\n\nReward: $${(message.reward || 0).toLocaleString()}\nDifficulty: ${message.difficulty || 'Unknown'}\n\nJoin their crew?`);
+                if (acceptInvite && onlineWorldState.socket && onlineWorldState.socket.readyState === WebSocket.OPEN) {
+                    onlineWorldState.socket.send(JSON.stringify({
+                        type: 'heist_join',
+                        heistId: message.heistId
+                    }));
+                    logAction(`🤝 Accepted heist invitation from ${message.inviterName}`);
+                }
+            }
             break;
             
         case 'player_ranked':
@@ -2743,16 +3298,6 @@ function challengePlayer(playerName) {
     }
 }
 
-function inviteToHeist(playerName) {
-    if (!onlineWorldState.isConnected) {
-        alert("You need to be connected to the online world!");
-        return;
-    }
-    
-    alert(` Heist invitation sent to ${playerName}! They can join your next heist.`);
-    logAction(` Invited ${playerName} to join heist`);
-}
-
 // ==================== UTILITY FUNCTIONS ====================
 
 // Setup online world UI
@@ -2793,47 +3338,6 @@ function saveOnlineWorldData() {
         };
         localStorage.setItem('onlineWorldData', JSON.stringify(data));
     }
-}
-
-// Placeholder functions for missing interactions
-function joinHeist(heistId) {
-    const heist = onlineWorldState.activeHeists.find(h => h.id === heistId);
-    if (!heist) return;
-    
-    const participantCount = Array.isArray(heist.participants) ? heist.participants.length : (heist.participants || 0);
-    const maxCount = heist.maxParticipants || 4;
-    
-    if (participantCount >= maxCount) {
-        alert('This heist crew is full!');
-        return;
-    }
-    
-    // Check if already joined
-    if (Array.isArray(heist.participants) && heist.participants.includes(onlineWorldState.playerId)) {
-        alert('You already joined this heist!');
-        return;
-    }
-    
-    // Send join request to server
-    if (onlineWorldState.socket && onlineWorldState.socket.readyState === WebSocket.OPEN) {
-        onlineWorldState.socket.send(JSON.stringify({
-            type: 'heist_join',
-            heistId: heistId
-        }));
-        logAction(` Requested to join heist: ${heist.target}`);
-    } else {
-        // Offline fallback: locally update
-        if (Array.isArray(heist.participants)) {
-            heist.participants.push(onlineWorldState.playerId);
-        }
-        alert(` Joined ${heist.target}! Get ready for action.`);
-        logAction(` Joined heist: ${heist.target}`);
-    }
-    showActiveHeists();
-}
-
-function manageHeist(heistId) {
-    alert(" Heist management panel would open here (start heist, kick players, etc.)");
 }
 
 function spectateWar(district) {
