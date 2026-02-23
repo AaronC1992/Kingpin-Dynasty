@@ -307,14 +307,10 @@ export function showAuthModal(onSuccessOrOpts) {
                 }
             }
 
-            if (required && onSuccess) {
-                // Required-mode: close modal and fire callback immediately
-                close();
-                onSuccess();
-            } else {
-                showLoggedInPanel();
-                if (onSuccess) onSuccess();
-            }
+            // No cloud save (or new registration) — close modal so player
+            // can proceed from the title screen ("Join the Family", etc.)
+            close();
+            if (onSuccess) onSuccess();
         } catch (err) {
             errorEl.textContent = err.message;
         } finally {
@@ -500,6 +496,19 @@ export async function initAuth() {
             console.log('[auth] Saved session expired');
         } else {
             console.log(`[auth] Restored session for ${authUsername}`);
+            // Auto-load cloud save and jump straight into the game
+            try {
+                const save = await cloudLoad();
+                if (save && save.data && typeof window.applyCloudSave === 'function') {
+                    window.applyCloudSave(save);
+                    console.log('[auth] Cloud save auto-loaded on startup');
+                    if (typeof window.showBriefNotification === 'function') {
+                        setTimeout(() => window.showBriefNotification(`☁️ Welcome back, ${save.playerName || authUsername}!`, 'success'), 500);
+                    }
+                }
+            } catch (e) {
+                console.warn('[auth] No cloud save to auto-load on startup:', e.message);
+            }
         }
     }
     // Defer UI update to next tick so DOM is ready

@@ -16937,7 +16937,6 @@ function initGame() {
   // until the player actually enters the game (see activateGameplaySystems).
   initializeSaveSystem(); // Initialize save system
   initializeInterfaceImprovements(); // Initialize interface improvements (hotkeys)
-  initAuth(); // Initialize authentication & cloud save system
 
   // Silently determine season & weather without logging
   updateCurrentSeason();
@@ -16963,6 +16962,11 @@ function initGame() {
   // Show the title screen and let the player choose
   document.getElementById("menu").style.display = "none";
   document.getElementById("intro-screen").style.display = "block";
+  
+  // Initialize auth AFTER the intro screen is visible so that if a
+  // restored session triggers auto-cloud-load, the intro can be
+  // properly hidden and replaced with the game.
+  initAuth();
   
   // Add event listener for character name input
   const charNameInput = document.getElementById('character-name');
