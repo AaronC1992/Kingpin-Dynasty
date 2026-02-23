@@ -7,7 +7,7 @@ import { crimeFamilies, factionEffects, potentialMentors } from './factions.js';
 import { storyCampaigns, factionMissions, territoryMissions, bossBattles, missionProgress } from './missions.js';
 import { narrationVariations, getRandomNarration } from './narration.js';
 import { storeItems, realEstateProperties, businessTypes, loanOptions, launderingMethods } from './economy.js';
-import { prisonerNames, recruitNames, availableRecruits, randomEncounterRecruit, clearRandomEncounterRecruit, jailPrisoners, jailbreakPrisoners, generateJailPrisoners, generateJailbreakPrisoners, generateAvailableRecruits, generateRandomEncounter } from './generators.js';
+import { prisonerNames, recruitNames, availableRecruits, randomEncounterRecruit, clearRandomEncounterRecruit, jailPrisoners, jailbreakPrisoners, setJailPrisoners, setJailbreakPrisoners, generateJailPrisoners, generateJailbreakPrisoners, generateAvailableRecruits, generateRandomEncounter } from './generators.js';
 import { EventBus } from './eventBus.js';
 import { GameLogging } from './logging.js';
 import { ui, ModalSystem } from './ui-modal.js';
@@ -14242,7 +14242,7 @@ function updateJailTimer() {
 
       updateJailUI();
 
-      jailPrisoners = jailPrisoners.filter(prisoner => {
+      setJailPrisoners(jailPrisoners.filter(prisoner => {
         if (prisoner.isPlayer) {
           prisoner.sentence = player.jailTime;
           return true;
@@ -14254,7 +14254,7 @@ function updateJailTimer() {
           }
           return true;
         }
-      });
+      }));
     } else {
       stopJailTimer();
       player.inJail = false;
@@ -14944,8 +14944,8 @@ function restartGame() {
   stopJailTimer();
   
   // Clear jail prisoners
-  jailPrisoners = [];
-  jailbreakPrisoners = [];
+  setJailPrisoners([]);
+  setJailbreakPrisoners([]);
   
   // Reset achievements
   achievements.forEach(achievement => achievement.unlocked = false);

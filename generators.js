@@ -36,8 +36,10 @@ export let jailbreakPrisoners = [];
 export let availableRecruits = [];
 export let randomEncounterRecruit = null;
 
-// Setter — ES module imports are read-only, so other modules must use this
+// Setters — ES module imports are read-only, so other modules must use these
 export function clearRandomEncounterRecruit() { randomEncounterRecruit = null; }
+export function setJailPrisoners(arr) { jailPrisoners = arr; }
+export function setJailbreakPrisoners(arr) { jailbreakPrisoners = arr; }
 
 // Generate random prisoners in jail
 export function generateJailPrisoners() {
