@@ -621,20 +621,28 @@ function handleServerMessage(message) {
             break;
 
         case 'jailbreak_success':
-            // If we were freed, update local jail status
-            if (message.helperName) {
-                showSystemMessage(` ${message.helperName} freed you from jail!`, '#c0a062');
-            }
+            // We were freed from jail by another player!
             player.inJail = false;
             player.jailTime = 0;
+            if (typeof stopJailTimer === 'function') stopJailTimer();
+            if (window.EventBus) EventBus.emit('jailStatusChanged', { inJail: false, jailTime: 0 });
             updateUI();
+            if (typeof goBackToMainMenu === 'function') goBackToMainMenu();
+            // Show the freed popup with gift option
+            showFreedFromJailPopup(message.helperName, message.helperId);
             break;
 
         case 'jailbreak_failed_arrested':
-            // We got arrested during jailbreak attempt
-            showSystemMessage(message.message || 'Jailbreak failed and you were arrested.', '#8b0000');
-            // Jail state will sync on next world_update; avoid guessing remaining time here.
+            // We got arrested during jailbreak attempt — go straight to jail
+            player.inJail = true;
+            player.jailTime = message.jailTime || 15;
+            player.breakoutAttempts = 3;
+            if (window.EventBus) EventBus.emit('jailStatusChanged', { inJail: true, jailTime: player.jailTime });
+            if (typeof updateJailTimer === 'function') updateJailTimer();
+            if (typeof generateJailPrisoners === 'function') generateJailPrisoners();
             updateUI();
+            if (typeof showJailScreen === 'function') showJailScreen();
+            showSystemMessage(message.message || 'Jailbreak failed and you were arrested!', '#8b0000');
             break;
             
         case 'heist_broadcast':
@@ -709,17 +717,35 @@ function handleServerMessage(message) {
                 if (message.expReward) player.experience += message.expReward;
                 if (message.cashReward) player.money += message.cashReward;
                 showSystemMessage(`🎉 ${message.message}`, '#2ecc71');
+                updateUI();
             } else {
                 logAction(`💀 ${message.message}`);
                 if (message.arrested) {
+                    // Got caught — go straight to jail, no more breakout attempts
                     player.inJail = true;
                     player.jailTime = message.jailTime || 15;
+                    player.breakoutAttempts = 3;
+                    if (window.EventBus) EventBus.emit('jailStatusChanged', { inJail: true, jailTime: player.jailTime });
+                    if (typeof updateJailTimer === 'function') updateJailTimer();
+                    if (typeof generateJailPrisoners === 'function') generateJailPrisoners();
+                    updateUI();
+                    if (typeof showJailScreen === 'function') showJailScreen();
                     showSystemMessage(`🚔 ${message.message}`, '#e74c3c');
                 } else {
                     showSystemMessage(`💀 ${message.message}`, '#f39c12');
+                    updateUI();
                 }
             }
-            updateUI();
+            break;
+
+        case 'gift_received':
+            // Someone sent us money
+            if (message.amount) {
+                player.money += message.amount;
+                showSystemMessage(message.message || `You received a $${message.amount.toLocaleString()} gift!`, '#c0a062');
+                logAction(`💰 ${message.senderName || 'Someone'} sent you $${message.amount.toLocaleString()}!`);
+                updateUI();
+            }
             break;
 
         default:
@@ -942,6 +968,68 @@ function attemptBotJailbreak(botId, botName) {
             alert('Connection lost before sending jailbreak intent.');
         }
         updateUI();
+    }
+}
+
+// Show "You've been freed!" popup with option to send a gift
+function showFreedFromJailPopup(helperName, helperId) {
+    // Remove any existing popup
+    const existing = document.getElementById('freed-from-jail-popup');
+    if (existing) existing.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'freed-from-jail-popup';
+    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;';
+
+    const giftAmounts = [500, 1000, 2500, 5000];
+    let giftButtonsHTML = '';
+    if (helperId) {
+        giftButtonsHTML = `<p style="margin-top:12px;color:#c0a062;font-size:14px;">Want to send them a thank-you gift?</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:8px;">
+            ${giftAmounts.map(amt => `<button onclick="sendGiftMoney('${helperId}', ${amt})" 
+                style="padding:8px 14px;background:#2a5e2a;color:#c0a062;border:1px solid #c0a062;border-radius:5px;cursor:pointer;font-family:'Georgia',serif;font-size:13px;"
+                onmouseover="this.style.background='#3a7e3a'" onmouseout="this.style.background='#2a5e2a'"
+                >$${amt.toLocaleString()}</button>`).join('')}
+        </div>`;
+    }
+
+    overlay.innerHTML = `
+        <div style="background:linear-gradient(135deg,#1a1a2e,#16213e);border:2px solid #c0a062;border-radius:10px;padding:30px;max-width:420px;width:90%;text-align:center;">
+            <h2 style="color:#2ecc71;margin:0 0 10px 0;font-family:'Georgia',serif;">🔓 You're Free!</h2>
+            <p style="color:#e0d5c1;font-size:16px;line-height:1.5;">
+                <strong style="color:#c0a062;">${escapeHTML(helperName || 'A fellow gangster')}</strong> broke you out of jail!
+            </p>
+            ${giftButtonsHTML}
+            <button onclick="document.getElementById('freed-from-jail-popup').remove()" 
+                style="margin-top:20px;padding:10px 30px;background:#8b0000;color:#e0d5c1;border:1px solid #c0a062;border-radius:5px;cursor:pointer;font-family:'Georgia',serif;font-size:14px;display:block;width:80%;margin-left:auto;margin-right:auto;"
+                onmouseover="this.style.background='#a00000'" onmouseout="this.style.background='#8b0000'"
+                >Close</button>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+}
+
+// Send a gift of money to another player
+function sendGiftMoney(targetPlayerId, amount) {
+    if (player.money < amount) {
+        alert("You don't have enough money for that gift!");
+        return;
+    }
+    player.money -= amount;
+    if (onlineWorldState.socket && onlineWorldState.socket.readyState === WebSocket.OPEN) {
+        onlineWorldState.socket.send(JSON.stringify({
+            type: 'send_gift',
+            targetPlayerId: targetPlayerId,
+            amount: amount
+        }));
+    }
+    logAction(`💰 You sent $${amount.toLocaleString()} as a thank-you gift!`);
+    updateUI();
+    // Close the popup
+    const popup = document.getElementById('freed-from-jail-popup');
+    if (popup) popup.remove();
+    if (typeof showBriefNotification === 'function') {
+        showBriefNotification(`Gift of $${amount.toLocaleString()} sent!`, 'success');
     }
 }
 

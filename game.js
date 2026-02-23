@@ -20427,6 +20427,10 @@ window.showJailbreak = showJailbreak;
 window.updateJailbreakPrisonerList = updateJailbreakPrisonerList;
 window.attemptJailbreak = attemptJailbreak;
 window.refreshPrisoners = refreshPrisoners;
+window.stopJailTimer = stopJailTimer;
+window.updateJailTimer = updateJailTimer;
+window.generateJailPrisoners = generateJailPrisoners;
+window.showBriefNotification = showBriefNotification;
 window.showCourtHouse = showCourtHouse;
 window.resetWantedLevelCourtHouse = resetWantedLevelCourtHouse;
 

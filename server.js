@@ -439,6 +439,10 @@ function handleClientMessage(clientId, message, ws) {
         case 'jailbreak_bot':
             handleJailbreakBot(clientId, message);
             break;
+
+        case 'send_gift':
+            handleSendGift(clientId, message);
+            break;
             
         case 'request_world_state':
             sendWorldState(clientId, ws);
@@ -904,6 +908,7 @@ function handleJailbreakAttempt(clientId, message) {
             targetClient.send(JSON.stringify({
                 type: 'jailbreak_success',
                 helperName: helper.name,
+                helperId: clientId,
                 message: `${helper.name} successfully broke you out of jail!`
             }));
         }
@@ -935,6 +940,7 @@ function handleJailbreakAttempt(clientId, message) {
             if (helperClient && helperClient.readyState === WebSocket.OPEN) {
                 helperClient.send(JSON.stringify({
                     type: 'jailbreak_failed_arrested',
+                    jailTime: helperState.jailTime,
                     message: 'Jailbreak failed and you were caught! You\'ve been arrested.'
                 }));
             }
@@ -1169,6 +1175,34 @@ function handleJailbreakBot(clientId, message) {
 
     broadcastPlayerStates();
     broadcastJailRoster();
+}
+
+// ==================== GIFT / MONEY TRANSFER ====================
+function handleSendGift(senderId, message) {
+    const sender = gameState.players.get(senderId);
+    const senderState = gameState.playerStates.get(senderId);
+    if (!sender || !senderState) return;
+
+    const amount = parseInt(message.amount);
+    if (!amount || amount <= 0 || amount > 10000) return; // Cap gift at $10,000
+
+    const targetId = message.targetPlayerId;
+    const targetClient = clients.get(targetId);
+    const targetPlayer = gameState.players.get(targetId);
+    if (!targetClient || !targetPlayer) return;
+
+    // We trust the client already deducted money; just notify recipient
+    if (targetClient.readyState === WebSocket.OPEN) {
+        targetClient.send(JSON.stringify({
+            type: 'gift_received',
+            senderName: sender.name,
+            amount: amount,
+            message: `${sender.name} sent you $${amount.toLocaleString()} as a thank-you gift!`
+        }));
+    }
+
+    addGlobalChatMessage('System', `💰 ${sender.name} sent a $${amount.toLocaleString()} gift to ${targetPlayer.name}!`, '#c0a062');
+    console.log(`💰 Gift: ${sender.name} -> ${targetPlayer.name}: $${amount}`);
 }
 
 // ==================== JOB INTENT HANDLER (SERVER AUTHORITATIVE) ====================
