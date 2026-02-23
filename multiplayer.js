@@ -2360,6 +2360,23 @@ function showAssassination() {
     const mpScreen = document.getElementById('multiplayer-screen');
     if (mpScreen) mpScreen.style.display = 'block';
 
+    // Check cooldown
+    const lastAttemptTime = window._assassinationCooldownUntil || 0;
+    const now = Date.now();
+    const onCooldown = now < lastAttemptTime;
+    let cooldownHTML = '';
+    if (onCooldown) {
+        const remaining = Math.ceil((lastAttemptTime - now) / 1000);
+        const mins = Math.floor(remaining / 60);
+        const secs = remaining % 60;
+        cooldownHTML = `
+            <div style="background: rgba(255, 68, 68, 0.15); padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 2px solid #ff4444; text-align: center;">
+                <div style="color: #ff4444; font-weight: bold; font-size: 1.1em;">⏳ Cooldown Active</div>
+                <div style="color: #ff8888; margin-top: 5px;">Next hit available in: <strong>${mins}m ${secs}s</strong></div>
+            </div>
+        `;
+    }
+
     // Gather player's assassination resources
     const guns = (player.inventory || []).filter(i => i.type === 'gun');
     const vehicles = (player.inventory || []).filter(i => i.type === 'car' || i.type === 'vehicle');
@@ -2371,7 +2388,7 @@ function showAssassination() {
     const hasGun = guns.length > 0;
     const hasBullets = bullets >= 3;
     const hasVehicle = totalVehicles > 0;
-    const canAttempt = hasGun && hasBullets && hasVehicle;
+    const canAttempt = hasGun && hasBullets && hasVehicle && !onCooldown;
 
     // Calculate estimated chance (mirror server logic approximately)
     let estimatedChance = 8;
@@ -2455,10 +2472,14 @@ function showAssassination() {
                     <div style="color: #ccc;">⚡ Base Chance: <span style="color: #888;">8%</span></div>
                 </div>
                 <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #5a0000;">
-                    <div style="color: #ff6666; font-size: 0.85em;">⚠️ Costs 30 energy + 3-5 bullets per attempt. 40% arrest chance on failure.</div>
+                <div style="color: #ff6666; font-size: 0.85em;">⚠️ Costs 30 energy + 3-5 bullets. You WILL take heavy damage. 40% arrest chance on failure.</div>
+                    <div style="color: #ff6666; font-size: 0.85em; margin-top: 4px;">💀 Gang members sent may be killed in the firefight (20% each).</div>
                     <div style="color: #c0a062; font-size: 0.85em; margin-top: 4px;">💰 Steal 8-20% of target's cash on success.</div>
+                    <div style="color: #ff8800; font-size: 0.85em; margin-top: 4px;">⏳ 10 minute cooldown between attempts.</div>
                 </div>
             </div>
+
+            ${cooldownHTML}
 
             <!-- Target List -->
             <div style="background: rgba(0,0,0,0.6); padding: 20px; border-radius: 10px; border: 1px solid #555;">
@@ -2476,6 +2497,16 @@ function showAssassination() {
 function attemptAssassination(targetName) {
     if (!onlineWorldState.isConnected || !onlineWorldState.socket || onlineWorldState.socket.readyState !== WebSocket.OPEN) {
         alert('Not connected to the server!');
+        return;
+    }
+
+    // Check cooldown
+    const now = Date.now();
+    if (window._assassinationCooldownUntil && now < window._assassinationCooldownUntil) {
+        const remaining = Math.ceil((window._assassinationCooldownUntil - now) / 1000);
+        const mins = Math.floor(remaining / 60);
+        const secs = remaining % 60;
+        alert(`You must wait ${mins}m ${secs}s before attempting another hit.`);
         return;
     }
 
@@ -2497,7 +2528,10 @@ function attemptAssassination(targetName) {
         `⚠️ ORDER HIT ON ${targetName}?\n\n` +
         `This will cost:\n` +
         `• 30 Energy\n` +
-        `• 3-5 Bullets\n\n` +
+        `• 3-5 Bullets\n` +
+        `• You WILL take heavy health damage\n` +
+        `• Gang members may die in the firefight\n` +
+        `• 10 minute cooldown after attempt\n\n` +
         `Success is NOT guaranteed. You could get arrested.\n` +
         `Proceed?`
     );
@@ -2538,6 +2572,26 @@ function attemptAssassination(targetName) {
 function handleAssassinationResult(message) {
     const content = document.getElementById('multiplayer-content');
 
+    // Handle cooldown error (server rejected due to cooldown)
+    if (message.cooldownRemaining && !message.targetName) {
+        const mins = Math.floor(message.cooldownRemaining / 60);
+        const secs = message.cooldownRemaining % 60;
+        // Sync our local cooldown
+        window._assassinationCooldownUntil = Date.now() + message.cooldownRemaining * 1000;
+        if (content) {
+            content.innerHTML = `
+                <div style="background: rgba(0,0,0,0.95); padding: 40px; border-radius: 15px; border: 3px solid #ff8800; text-align: center;">
+                    <div style="font-size: 4em; margin-bottom: 15px;">⏳</div>
+                    <h2 style="color: #ff8800; font-family: 'Georgia', serif;">Cooldown Active</h2>
+                    <p style="color: #ccc; margin: 15px 0;">${escapeHTML(message.error || 'You must wait before ordering another hit.')}</p>
+                    <p style="color: #ff8800; font-size: 1.3em; font-weight: bold;">${mins}m ${secs}s remaining</p>
+                    <button onclick="showAssassination()" style="background: #333; color: #c0a062; padding: 12px 25px; border: 1px solid #c0a062; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif; margin-top: 20px;">Back</button>
+                </div>
+            `;
+        }
+        return;
+    }
+
     if (message.success) {
         // Deduct bullets locally
         player.ammo = Math.max(0, (player.ammo || 0) - (message.bulletsUsed || 3));
@@ -2548,8 +2602,25 @@ function handleAssassinationResult(message) {
         if (typeof message.wantedLevel === 'number') player.wantedLevel = message.wantedLevel;
         player.energy = Math.max(0, (player.energy || 0) - 30);
 
+        // Apply health damage
+        if (typeof message.newHealth === 'number') player.health = message.newHealth;
+
+        // Apply gang member losses
+        const gangLost = message.gangMembersLost || 0;
+        if (gangLost > 0 && player.gang) {
+            for (let i = 0; i < gangLost; i++) {
+                if (player.gang.gangMembers && player.gang.gangMembers.length > 0) {
+                    player.gang.gangMembers.pop();
+                }
+                if (player.gang.members > 0) player.gang.members--;
+            }
+        }
+
+        // Set cooldown
+        window._assassinationCooldownUntil = Date.now() + (message.cooldownSeconds || 600) * 1000;
+
         if (typeof updateUI === 'function') updateUI();
-        logAction(`🎯 HIT SUCCESSFUL! Assassinated ${message.targetName} and stole $${(message.stolenAmount || 0).toLocaleString()} (${message.stealPercent}%)! +${message.repGain} rep.`);
+        logAction(`🎯 HIT SUCCESSFUL! Assassinated ${message.targetName} and stole $${(message.stolenAmount || 0).toLocaleString()} (${message.stealPercent}%)! +${message.repGain} rep. Took ${message.healthDamage || 0} damage.${gangLost > 0 ? ` Lost ${gangLost} gang member${gangLost > 1 ? 's' : ''}.` : ''}`);
 
         if (content) {
             content.innerHTML = `
@@ -2564,7 +2635,10 @@ function handleAssassinationResult(message) {
                         <div style="color: #ccc;">Stole ${message.stealPercent}% of their wealth</div>
                         <div style="color: #c0a062; margin-top: 8px;">+${message.repGain} Reputation</div>
                         <div style="color: #ff6666; margin-top: 4px;">+25 Wanted Level</div>
+                        <div style="color: #ff4444; margin-top: 8px;">❤️ -${message.healthDamage || 0} Health (now ${message.newHealth || '?'})</div>
+                        ${(message.gangMembersLost || 0) > 0 ? '<div style="color: #ff8800; margin-top: 4px;">💀 Lost ' + message.gangMembersLost + ' gang member' + (message.gangMembersLost > 1 ? 's' : '') + ' in the firefight</div>' : ''}
                         <div style="color: #888; margin-top: 8px; font-size: 0.85em;">Hit chance was ${message.chance}% | ${message.bulletsUsed} bullets used</div>
+                        <div style="color: #ff8800; margin-top: 4px; font-size: 0.85em;">⏳ Next hit available in 10 minutes</div>
                     </div>
                     <div style="margin-top: 25px;">
                         <button onclick="showAssassination()" style="background: #8b0000; color: #fff; padding: 12px 25px; border: 1px solid #ff0000; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif; margin-right: 10px;">🎯 Another Hit</button>
@@ -2579,6 +2653,23 @@ function handleAssassinationResult(message) {
         player.energy = Math.max(0, (player.energy || 0) - 30);
         if (typeof message.wantedLevel === 'number') player.wantedLevel = message.wantedLevel;
 
+        // Apply health damage
+        if (typeof message.newHealth === 'number') player.health = message.newHealth;
+
+        // Apply gang member losses
+        const gangLostFail = message.gangMembersLost || 0;
+        if (gangLostFail > 0 && player.gang) {
+            for (let i = 0; i < gangLostFail; i++) {
+                if (player.gang.gangMembers && player.gang.gangMembers.length > 0) {
+                    player.gang.gangMembers.pop();
+                }
+                if (player.gang.members > 0) player.gang.members--;
+            }
+        }
+
+        // Set cooldown
+        window._assassinationCooldownUntil = Date.now() + (message.cooldownSeconds || 600) * 1000;
+
         if (message.arrested) {
             player.inJail = true;
             player.jailTime = message.jailTime || 25;
@@ -2589,7 +2680,7 @@ function handleAssassinationResult(message) {
         }
 
         if (typeof updateUI === 'function') updateUI();
-        logAction(`🎯 HIT FAILED on ${message.targetName}!${message.arrested ? ' ARRESTED!' : ''} -${message.repLoss} rep.`);
+        logAction(`🎯 HIT FAILED on ${message.targetName}!${message.arrested ? ' ARRESTED!' : ''} -${message.repLoss} rep. Took ${message.healthDamage || 0} damage.${(message.gangMembersLost || 0) > 0 ? ` Lost ${message.gangMembersLost} gang member${message.gangMembersLost > 1 ? 's' : ''}.` : ''}`);
 
         if (content) {
             content.innerHTML = `
@@ -2604,9 +2695,12 @@ function handleAssassinationResult(message) {
                     <div style="background: rgba(139, 0, 0, 0.2); padding: 20px; border-radius: 10px; margin: 20px auto; max-width: 350px; border: 1px solid #8b0000;">
                         <div style="color: #ff4444;">-${message.repLoss || 0} Reputation</div>
                         <div style="color: #ff8800; margin-top: 4px;">+15 Wanted Level</div>
+                        <div style="color: #ff4444; margin-top: 4px;">❤️ -${message.healthDamage || 0} Health (now ${message.newHealth || '?'})</div>
+                        ${(message.gangMembersLost || 0) > 0 ? '<div style="color: #ff8800; margin-top: 4px;">💀 Lost ' + message.gangMembersLost + ' gang member' + (message.gangMembersLost > 1 ? 's' : '') + ' in the firefight</div>' : ''}
                         <div style="color: #888; margin-top: 4px;">${message.bulletsUsed || 3} bullets wasted</div>
                         ${message.arrested ? '<div style="color: #ff0000; margin-top: 8px; font-weight: bold;">Jail Time: ' + (message.jailTime || 25) + ' seconds</div>' : ''}
                         <div style="color: #888; margin-top: 8px; font-size: 0.85em;">Hit chance was ${message.chance}%</div>
+                        <div style="color: #ff8800; margin-top: 4px; font-size: 0.85em;">⏳ Next hit available in 10 minutes</div>
                     </div>
                     <div style="margin-top: 25px;">
                         ${message.arrested

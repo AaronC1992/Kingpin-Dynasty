@@ -1434,10 +1434,28 @@ function addGlobalChatMessage(sender, message, color = '#ffffff') {
 
 // Helper to generate leaderboard
 // ==================== ASSASSINATION SYSTEM ====================
+// Track assassination cooldowns per player (clientId -> timestamp)
+const assassinationCooldowns = new Map();
+const ASSASSINATION_COOLDOWN_MS = 10 * 60 * 1000; // 10 minutes
+
 function handleAssassinationAttempt(clientId, message) {
     const attacker = gameState.players.get(clientId);
     const attackerState = gameState.playerStates.get(clientId);
     if (!attacker || !attackerState) return;
+
+    // 10-minute cooldown check
+    const lastAttempt = assassinationCooldowns.get(clientId) || 0;
+    const now = Date.now();
+    if (now - lastAttempt < ASSASSINATION_COOLDOWN_MS) {
+        const remaining = Math.ceil((ASSASSINATION_COOLDOWN_MS - (now - lastAttempt)) / 1000);
+        const mins = Math.floor(remaining / 60);
+        const secs = remaining % 60;
+        const ws = clients.get(clientId);
+        if (ws && ws.readyState === 1) {
+            ws.send(JSON.stringify({ type: 'assassination_result', success: false, error: `You must wait ${mins}m ${secs}s before ordering another hit.`, cooldownRemaining: remaining }));
+        }
+        return;
+    }
 
     const targetName = message.targetPlayer;
     if (!targetName || typeof targetName !== 'string') return;
@@ -1558,12 +1576,32 @@ function handleAssassinationAttempt(clientId, message) {
     // Deduct energy
     attackerState.energy = Math.max(0, (attackerState.energy || 100) - energyCost);
 
-    // Consume 3 bullets regardless (shots fired)
+    // Consume 3-5 bullets regardless (shots fired)
     const bulletsUsed = Math.min(bulletsSent, 5);
+
+    // Set cooldown BEFORE rolling (attempt counts even if it fails)
+    assassinationCooldowns.set(clientId, Date.now());
 
     // Roll the dice
     const roll = Math.random() * 100;
     const success = roll < chance;
+
+    // ---- Health damage to attacker (always takes damage) ----
+    // Firefight is brutal regardless of outcome
+    let healthDamage;
+    if (success) {
+        healthDamage = 30 + Math.floor(Math.random() * 31); // 30-60 on success
+    } else {
+        healthDamage = 20 + Math.floor(Math.random() * 31); // 20-50 on failure
+    }
+    attackerState.health = Math.max(1, (attackerState.health || 100) - healthDamage);
+
+    // ---- Gang member casualties ----
+    // Each gang member sent has a 20% chance of being killed in the firefight
+    let gangMembersLost = 0;
+    for (let i = 0; i < gangMembers; i++) {
+        if (Math.random() < 0.20) gangMembersLost++;
+    }
 
     if (success) {
         // Steal 8-20% of target's money
@@ -1587,7 +1625,7 @@ function handleAssassinationAttempt(clientId, message) {
         // Attacker gets high wanted level
         attackerState.wantedLevel = Math.min(100, (attackerState.wantedLevel || 0) + 25);
 
-        console.log(`🎯 ASSASSINATION: ${attacker.name} killed ${target.name} and stole $${stolenAmount.toLocaleString()} (${stealPercent}%)`);
+        console.log(`🎯 ASSASSINATION: ${attacker.name} killed ${target.name} and stole $${stolenAmount.toLocaleString()} (${stealPercent}%) | HP -${healthDamage} | ${gangMembersLost} gang lost`);
 
         // Notify attacker
         const atkWs = clients.get(clientId);
@@ -1603,7 +1641,11 @@ function handleAssassinationAttempt(clientId, message) {
                 chance: Math.round(chance),
                 newMoney: attacker.money,
                 newReputation: attacker.reputation,
-                wantedLevel: attackerState.wantedLevel
+                wantedLevel: attackerState.wantedLevel,
+                healthDamage: healthDamage,
+                newHealth: attackerState.health,
+                gangMembersLost: gangMembersLost,
+                cooldownSeconds: ASSASSINATION_COOLDOWN_MS / 1000
             }));
         }
 
@@ -1644,7 +1686,7 @@ function handleAssassinationAttempt(clientId, message) {
             updateJailBots();
         }
 
-        console.log(`🎯 ASSASSINATION FAILED: ${attacker.name} failed to kill ${target.name}${arrested ? ' and was ARRESTED' : ''}`);
+        console.log(`🎯 ASSASSINATION FAILED: ${attacker.name} failed to kill ${target.name}${arrested ? ' and was ARRESTED' : ''} | HP -${healthDamage} | ${gangMembersLost} gang lost`);
 
         // Notify attacker
         const atkWs = clients.get(clientId);
@@ -1659,6 +1701,10 @@ function handleAssassinationAttempt(clientId, message) {
                 bulletsUsed: bulletsUsed,
                 chance: Math.round(chance),
                 wantedLevel: attackerState.wantedLevel,
+                healthDamage: healthDamage,
+                newHealth: attackerState.health,
+                gangMembersLost: gangMembersLost,
+                cooldownSeconds: ASSASSINATION_COOLDOWN_MS / 1000,
                 error: arrested
                     ? `Hit on ${target.name} failed! You were spotted and arrested.`
                     : `Hit on ${target.name} failed! You escaped but lost reputation.`
