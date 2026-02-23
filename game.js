@@ -11940,8 +11940,7 @@ function showTerritoryRelocation() {
     : 'You haven\'t chosen a home district yet.';
 
   hideAllScreens();
-  const screen = document.getElementById('game-screen');
-  screen.innerHTML = `
+  document.getElementById('territory-control-content').innerHTML = `
     <div style="padding: 20px; color: white; max-width: 1000px; margin: 0 auto;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <div>
@@ -11955,7 +11954,7 @@ function showTerritoryRelocation() {
       </div>
     </div>
   `;
-  screen.style.display = 'block';
+  document.getElementById('territory-control-screen').style.display = 'block';
 }
 
 function confirmRelocation(districtId) {
