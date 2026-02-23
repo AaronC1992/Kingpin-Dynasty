@@ -109,6 +109,12 @@ export async function cloudLoad() {
     return apiFetch('/api/load', { method: 'GET' });
 }
 
+// Check if a character name is already taken by another player's cloud save
+export async function checkPlayerName(name) {
+    const data = await apiFetch(`/api/check-name?name=${encodeURIComponent(name)}`, { method: 'GET' });
+    return data.taken; // true/false
+}
+
 // ── Token management ───────────────────────────────────────────
 function setLocalAuth(token, username) {
     authToken = token;

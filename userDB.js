@@ -193,6 +193,21 @@ function getUserInfo(username) {
     };
 }
 
+// Check if a character/player name is already used by any account's save data.
+// excludeUsername: skip this account (so a player re-saving with their own name passes).
+function isPlayerNameTaken(name, excludeUsername) {
+    if (!name) return false;
+    const target = name.trim().toLowerCase();
+    const excludeKey = excludeUsername ? excludeUsername.toLowerCase() : null;
+    for (const [key, user] of Object.entries(db.users)) {
+        if (excludeKey && key === excludeKey) continue;
+        if (user.saveData && user.saveData.playerName) {
+            if (user.saveData.playerName.trim().toLowerCase() === target) return true;
+        }
+    }
+    return false;
+}
+
 // ── Initialize on require ──────────────────────────────────────
 loadDB();
 
@@ -204,6 +219,7 @@ module.exports = {
     changePassword,
     deleteUser,
     getUserInfo,
+    isPlayerNameTaken,
     createSession,
     validateToken,
     destroySession,

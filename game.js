@@ -15,7 +15,7 @@ import { MobileSystem, updateMobileActionLog } from './mobile-responsive.js';
 import { initUIEvents } from './ui-events.js';
 import ExpandedSystems from './expanded-systems.js';
 import ExpandedUI from './expanded-ui.js';
-import { initAuth, showAuthModal, autoCloudSave, getAuthState, updateAuthStatusUI } from './auth.js';
+import { initAuth, showAuthModal, autoCloudSave, getAuthState, updateAuthStatusUI, checkPlayerName } from './auth.js';
 
 // Expose to window for legacy compatibility
 window.player = player;
@@ -12693,8 +12693,23 @@ async function showSimpleCharacterCreation() {
     showSimpleCharacterCreation();
     return;
   }
-  
-  player.name = playerName.trim();
+
+  const trimmedName = playerName.trim();
+
+  // Check the cloud to make sure no other player already has this name
+  try {
+    const taken = await checkPlayerName(trimmedName);
+    if (taken) {
+      await ui.alert(`The name "${trimmedName}" is already taken by another player. Pick a different name.`);
+      showSimpleCharacterCreation();
+      return;
+    }
+  } catch (err) {
+    console.warn('[auth] Name check failed, allowing name:', err.message);
+    // If the server is unreachable, allow the name so the player isn't blocked
+  }
+
+  player.name = trimmedName;
   
   // Initialize playtime tracking
   if (!player.startTime) {

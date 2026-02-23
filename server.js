@@ -165,6 +165,19 @@ const server = http.createServer(async (req, res) => {
                 return json(200, { ok: true });
             }
 
+            // ── GET /api/check-name?name=xxx ───────────────
+            if (urlPath === '/api/check-name' && req.method === 'GET') {
+                const qs = (req.url.split('?')[1] || '');
+                const params = new URLSearchParams(qs);
+                const name = params.get('name');
+                if (!name || name.trim().length === 0) return json(400, { error: 'Name required' });
+                // If the caller is logged in, exclude their own account
+                const token = getToken();
+                const caller = token ? userDB.validateToken(token) : null;
+                const taken = userDB.isPlayerNameTaken(name.trim(), caller);
+                return json(200, { taken });
+            }
+
             // ── DELETE /api/account ────────────────────────
             if (urlPath === '/api/account' && req.method === 'DELETE') {
                 const token = getToken();
