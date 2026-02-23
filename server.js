@@ -5,6 +5,8 @@ const fs = require('fs');
 const path = require('path');
 // JSON file persistence utilities
 const { loadWorldState, saveWorldState, flushWorldState } = require('./worldPersistence');
+// User accounts & authentication
+const userDB = require('./userDB');
 
 // Server configuration
 const PORT = process.env.PORT || 3000;
@@ -28,7 +30,7 @@ function getCorsHeaders(req) {
     };
 }
 
-const server = http.createServer((req, res) => {
+const server = http.createServer(async (req, res) => {
     // Handle CORS preflight
     if (req.method === 'OPTIONS') {
         res.writeHead(204, getCorsHeaders(req));
@@ -52,6 +54,134 @@ const server = http.createServer((req, res) => {
         }
     } catch (e) {
         // fall through to normal handling
+    }
+
+    // ==================== AUTH & CLOUD-SAVE API ====================
+    const urlPath = req.url.split('?')[0];
+    if (urlPath.startsWith('/api/')) {
+        const cors = getCorsHeaders(req);
+        cors['Content-Type'] = 'application/json';
+
+        // Helper: read JSON body
+        const readBody = () => new Promise((resolve, reject) => {
+            let data = '';
+            req.on('data', chunk => {
+                data += chunk;
+                if (data.length > 1e7) { reject(new Error('Payload too large')); req.destroy(); }
+            });
+            req.on('end', () => {
+                try { resolve(JSON.parse(data)); }
+                catch { reject(new Error('Invalid JSON')); }
+            });
+        });
+
+        // Helper: extract auth token
+        const getToken = () => {
+            const auth = req.headers.authorization || '';
+            return auth.startsWith('Bearer ') ? auth.slice(7) : null;
+        };
+
+        // Helper: send JSON response
+        const json = (code, obj) => {
+            res.writeHead(code, cors);
+            res.end(JSON.stringify(obj));
+        };
+
+        try {
+            // ── POST /api/register ─────────────────────────
+            if (urlPath === '/api/register' && req.method === 'POST') {
+                const { username, password } = await readBody();
+                if (!username || !password) return json(400, { error: 'Username and password required' });
+                const result = userDB.createUser(username.trim(), password);
+                if (!result.ok) return json(400, { error: result.error });
+                const token = userDB.createSession(username.trim().toLowerCase());
+                return json(201, { ok: true, token, username: username.trim() });
+            }
+
+            // ── POST /api/login ────────────────────────────
+            if (urlPath === '/api/login' && req.method === 'POST') {
+                const { username, password } = await readBody();
+                if (!username || !password) return json(400, { error: 'Username and password required' });
+                const result = userDB.authenticateUser(username.trim(), password);
+                if (!result.ok) return json(401, { error: result.error });
+                const token = userDB.createSession(username.trim().toLowerCase());
+                return json(200, { ok: true, token, username: result.username });
+            }
+
+            // ── POST /api/logout ───────────────────────────
+            if (urlPath === '/api/logout' && req.method === 'POST') {
+                const token = getToken();
+                if (token) userDB.destroySession(token);
+                return json(200, { ok: true });
+            }
+
+            // ── GET /api/profile ───────────────────────────
+            if (urlPath === '/api/profile' && req.method === 'GET') {
+                const username = userDB.validateToken(getToken());
+                if (!username) return json(401, { error: 'Not authenticated' });
+                const info = userDB.getUserInfo(username);
+                return json(200, info);
+            }
+
+            // ── POST /api/save ─────────────────────────────
+            if (urlPath === '/api/save' && req.method === 'POST') {
+                const username = userDB.validateToken(getToken());
+                if (!username) return json(401, { error: 'Not authenticated' });
+                const body = await readBody();
+                if (!body || !body.data) return json(400, { error: 'Save data required' });
+                // Wrap with metadata
+                const saveEntry = {
+                    playerName: body.playerName || 'Unknown',
+                    level: body.level || 1,
+                    money: body.money || 0,
+                    reputation: body.reputation || 0,
+                    empireRating: body.empireRating || 0,
+                    playtime: body.playtime || '0:00',
+                    saveDate: new Date().toISOString(),
+                    gameVersion: body.gameVersion || '1.3.8',
+                    data: body.data
+                };
+                userDB.setUserSave(username, saveEntry);
+                return json(200, { ok: true, saveDate: saveEntry.saveDate });
+            }
+
+            // ── GET /api/load ──────────────────────────────
+            if (urlPath === '/api/load' && req.method === 'GET') {
+                const username = userDB.validateToken(getToken());
+                if (!username) return json(401, { error: 'Not authenticated' });
+                const save = userDB.getUserSave(username);
+                if (!save) return json(404, { error: 'No cloud save found' });
+                return json(200, save);
+            }
+
+            // ── POST /api/change-password ──────────────────
+            if (urlPath === '/api/change-password' && req.method === 'POST') {
+                const username = userDB.validateToken(getToken());
+                if (!username) return json(401, { error: 'Not authenticated' });
+                const { oldPassword, newPassword } = await readBody();
+                if (!oldPassword || !newPassword) return json(400, { error: 'Both passwords required' });
+                const result = userDB.changePassword(username, oldPassword, newPassword);
+                if (!result.ok) return json(400, { error: result.error });
+                return json(200, { ok: true });
+            }
+
+            // ── DELETE /api/account ────────────────────────
+            if (urlPath === '/api/account' && req.method === 'DELETE') {
+                const token = getToken();
+                const username = userDB.validateToken(token);
+                if (!username) return json(401, { error: 'Not authenticated' });
+                userDB.destroySession(token);
+                userDB.deleteUser(username);
+                return json(200, { ok: true });
+            }
+
+            // Unknown API route
+            return json(404, { error: 'Not found' });
+
+        } catch (err) {
+            console.error('API error:', err.message);
+            return json(err.message === 'Payload too large' ? 413 : 400, { error: err.message });
+        }
     }
 
     // Handle HTTP requests to serve game files
@@ -1900,9 +2030,10 @@ function gracefulShutdown() {
     // Flush any pending world state changes
     try {
         flushWorldState();
-        console.log('💾 World state flushed to disk');
+        userDB.flushDB();
+        console.log('💾 World state & user DB flushed to disk');
     } catch (err) {
-        console.error('⚠️ Error flushing world state:', err.message);
+        console.error('⚠️ Error flushing data:', err.message);
     }
     
     // Notify all connected clients

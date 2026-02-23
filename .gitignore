@@ -1,0 +1,4 @@
+node_modules/
+users.json
+world-state.json
+.env

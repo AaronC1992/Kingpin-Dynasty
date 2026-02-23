@@ -15,6 +15,7 @@ import { MobileSystem, updateMobileActionLog } from './mobile-responsive.js';
 import { initUIEvents } from './ui-events.js';
 import ExpandedSystems from './expanded-systems.js';
 import ExpandedUI from './expanded-ui.js';
+import { initAuth, showAuthModal, autoCloudSave, getAuthState, updateAuthStatusUI } from './auth.js';
 
 // Expose to window for legacy compatibility
 window.player = player;
@@ -57,6 +58,59 @@ window.updateMobileActionLog = updateMobileActionLog;
 window.initUIEvents = initUIEvents;
 window.ExpandedSystems = ExpandedSystems;
 window.ExpandedUI = ExpandedUI;
+window.showAuthModal = showAuthModal;
+window.getAuthState = getAuthState;
+window.updateAuthStatusUI = updateAuthStatusUI;
+
+// Bridge functions for auth.js cloud save/load
+window.createSaveDataForCloud = function () {
+    const saveData = createSaveData();
+    const empireRating = calculateEmpireRating();
+    const playtime = formatPlaytime(calculatePlaytime());
+    return {
+        playerName: player.name,
+        level: player.level,
+        money: player.money,
+        reputation: Math.floor(player.reputation),
+        empireRating: empireRating.totalScore,
+        playtime: playtime,
+        gameVersion: "1.3.8",
+        data: saveData
+    };
+};
+
+window.applyCloudSave = function (cloudEntry) {
+    if (!cloudEntry || !cloudEntry.data) return;
+    const saveData = cloudEntry.data;
+    if (!validateSaveData(saveData)) {
+        alert('Cloud save data is corrupted or incompatible!');
+        return;
+    }
+    applySaveData(saveData);
+    // Also store locally so local save system stays in sync
+    const localEntry = {
+        slotNumber: SAVE_SYSTEM.currentSlot || 1,
+        saveName: `Cloud - ${cloudEntry.playerName || player.name}`,
+        playerName: cloudEntry.playerName || player.name,
+        level: cloudEntry.level || player.level,
+        money: cloudEntry.money || player.money,
+        reputation: cloudEntry.reputation || 0,
+        empireRating: cloudEntry.empireRating || 0,
+        playtime: cloudEntry.playtime || '0:00',
+        saveDate: cloudEntry.saveDate || new Date().toISOString(),
+        isAutoSave: false,
+        gameVersion: cloudEntry.gameVersion || '1.3.8',
+        data: saveData
+    };
+    localStorage.setItem(`gameSlot_${SAVE_SYSTEM.currentSlot || 1}`, JSON.stringify(localEntry));
+    updateUI();
+    if (!gameplayActive) {
+        // If on intro screen, jump into the game
+        activateGameplaySystems();
+        hideAllScreens();
+        showCommandCenter();
+    }
+};
 
 // Flag to prevent events/notifications from firing while on the title screen.
 // Set to true only when the player enters actual gameplay.
@@ -16806,6 +16860,7 @@ function initGame() {
   // until the player actually enters the game (see activateGameplaySystems).
   initializeSaveSystem(); // Initialize save system
   initializeInterfaceImprovements(); // Initialize interface improvements (hotkeys)
+  initAuth(); // Initialize authentication & cloud save system
 
   // Silently determine season & weather without logging
   updateCurrentSeason();
@@ -17799,6 +17854,9 @@ function saveGameToSlot(slotNumber, customName = null, isAutoSave = false) {
       saveSaveSystemPrefs();
       logAction(`💾 Game saved to slot ${slotNumber}: ${saveName}`);
     }
+    
+    // Auto cloud save (fire-and-forget, won't block)
+    autoCloudSave(saveEntry);
     
     return true;
   } catch (error) {
@@ -20050,5 +20108,8 @@ window.exportCharacterShowcase = exportCharacterShowcase;
 window.importCharacterShowcase = importCharacterShowcase;
 window.showStatistics = showStatistics;
 window.showCharacterShowcase = showCharacterShowcase;
+
+// Auth & Cloud Save
+window.showAuthModal = showAuthModal;
 
 
