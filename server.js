@@ -362,6 +362,8 @@ const gameState = {
     cityEvents: [],
     gangWars: [],
     jailBots: [], // Server-managed bot inmates (max 3, 0 if 3+ real players in jail)
+    // Unified territory system — 8 districts, server-authoritative
+    territories: {},
     serverStats: {
         startTime: Date.now(),
         totalConnections: 0,
@@ -371,6 +373,24 @@ const gameState = {
     }
 };
 
+// ── Unified Territory Constants (mirror of territories.js for CommonJS) ──
+const TERRITORY_IDS = [
+    'residential_low', 'residential_middle', 'residential_upscale',
+    'commercial_downtown', 'commercial_shopping',
+    'industrial_warehouse', 'industrial_port',
+    'entertainment_nightlife'
+];
+const TAX_RATE = 0.10;
+const MOVE_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
+
+function buildDefaultTerritories() {
+    const t = {};
+    for (const id of TERRITORY_IDS) {
+        t[id] = { owner: null, residents: [], defenseRating: 100, taxCollected: 0 };
+    }
+    return t;
+}
+
 // Load world persistence on startup
 let persistedLeaderboard = [];
 try {
@@ -378,6 +398,8 @@ try {
     gameState.cityDistricts = persisted.cityDistricts || {};
     gameState.cityEvents = Array.isArray(persisted.cityEvents) ? persisted.cityEvents : [];
     persistedLeaderboard = Array.isArray(persisted.leaderboard) ? persisted.leaderboard : [];
+    // Load unified territories (fall back to fresh defaults)
+    gameState.territories = persisted.territories || buildDefaultTerritories();
     console.log('💾 World state loaded from world-state.json');
 } catch (e) {
     console.log('⚠️ Failed to load world state; using defaults');
@@ -394,6 +416,7 @@ try {
         { type: 'market_crash', district: 'downtown', description: 'Economic instability, weapon prices fluctuating', timeLeft: '1 hour', createdAt: Date.now() },
         { type: 'gang_meeting', district: 'docks', description: 'Underground meeting, recruitment opportunities', timeLeft: '30 min', createdAt: Date.now() }
     ];
+    gameState.territories = buildDefaultTerritories();
 }
 
 // Debounced save to avoid frequent disk writes
@@ -407,7 +430,8 @@ function scheduleWorldSave() {
             saveWorldState({
                 cityDistricts: gameState.cityDistricts,
                 cityEvents: gameState.cityEvents,
-                leaderboard: persistedLeaderboard
+                leaderboard: persistedLeaderboard,
+                territories: gameState.territories
             });
         } catch (err) {
             console.error('⚠️ Error during world save:', err.message);
@@ -550,6 +574,18 @@ function handleClientMessage(clientId, message, ws) {
             handleTerritoryClaim(clientId, message);
             break;
             
+        case 'territory_spawn':
+            handleTerritorySpawn(clientId, message);
+            break;
+
+        case 'territory_move':
+            handleTerritoryMove(clientId, message);
+            break;
+
+        case 'territory_info':
+            handleTerritoryInfo(clientId, message, ws);
+            break;
+
         case 'heist_create':
             handleHeistCreate(clientId, message);
             break;
@@ -634,6 +670,8 @@ function handlePlayerConnect(clientId, message, ws) {
         money: message.playerStats?.money || 0,
         reputation: message.playerStats?.reputation || 0,
         territory: message.playerStats?.territory || 0,
+        currentTerritory: message.playerStats?.currentTerritory || null,
+        lastTerritoryMove: message.playerStats?.lastTerritoryMove || 0,
         level: message.playerStats?.level || 1,
         connectedAt: Date.now(),
         lastActive: Date.now()
@@ -649,6 +687,7 @@ function handlePlayerConnect(clientId, message, ws) {
         reputation: player.reputation,
         level: player.level,
         territory: player.territory,
+        currentTerritory: player.currentTerritory,
         inJail: message.playerStats?.inJail || false,
         jailTime: message.playerStats?.jailTime || 0,
         health: message.playerStats?.health || 100,
@@ -658,6 +697,14 @@ function handlePlayerConnect(clientId, message, ws) {
     };
     
     gameState.playerStates.set(clientId, playerState);
+
+    // Re-add player to their territory's resident list on reconnect
+    if (player.currentTerritory && gameState.territories[player.currentTerritory]) {
+        const residents = gameState.territories[player.currentTerritory].residents;
+        if (!residents.includes(player.name)) {
+            residents.push(player.name);
+        }
+    }
     
     console.log(`✅ Player registered: ${player.name} (ID: ${clientId}) ${playerState.inJail ? '[IN JAIL]' : ''}`);
     
@@ -799,6 +846,135 @@ function handleTerritoryClaim(clientId, message) {
         broadcastPlayerStates();
         scheduleWorldSave();
     }
+}
+
+// ==================== UNIFIED TERRITORY HANDLERS ====================
+
+// Called once during character creation — player picks their starting district
+function handleTerritorySpawn(clientId, message) {
+    const player = gameState.players.get(clientId);
+    if (!player) return;
+    const ws = clients.get(clientId);
+
+    const districtId = message.district;
+    if (!districtId || !TERRITORY_IDS.includes(districtId)) {
+        if (ws) ws.send(JSON.stringify({ type: 'territory_spawn_result', success: false, error: 'Invalid district.' }));
+        return;
+    }
+
+    // Prevent double-spawn (player already has a territory)
+    if (player.currentTerritory) {
+        if (ws) ws.send(JSON.stringify({ type: 'territory_spawn_result', success: false, error: 'Already spawned.' }));
+        return;
+    }
+
+    // Place the player
+    player.currentTerritory = districtId;
+    const terr = gameState.territories[districtId];
+    if (terr && !terr.residents.includes(player.name)) {
+        terr.residents.push(player.name);
+    }
+
+    // Sync playerStates
+    const ps = gameState.playerStates.get(clientId);
+    if (ps) { ps.currentTerritory = districtId; ps.lastUpdate = Date.now(); }
+
+    console.log(`📍 ${player.name} spawned in ${districtId}`);
+
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+            type: 'territory_spawn_result',
+            success: true,
+            district: districtId,
+            territories: gameState.territories
+        }));
+    }
+
+    broadcastToAll({
+        type: 'territory_population_update',
+        territories: gameState.territories
+    });
+
+    addGlobalChatMessage('System', `📍 ${player.name} set up shop in ${districtId.replace(/_/g, ' ')}!`, '#3498db');
+    scheduleWorldSave();
+}
+
+// Player relocates to a different district (costs money + cooldown)
+function handleTerritoryMove(clientId, message) {
+    const player = gameState.players.get(clientId);
+    if (!player) return;
+    const ws = clients.get(clientId);
+    const fail = (err) => { if (ws) ws.send(JSON.stringify({ type: 'territory_move_result', success: false, error: err })); };
+
+    const targetId = message.district;
+    if (!targetId || !TERRITORY_IDS.includes(targetId)) return fail('Invalid district.');
+    if (player.currentTerritory === targetId) return fail('You already live here.');
+
+    // Cooldown check
+    const now = Date.now();
+    if (player.lastTerritoryMove && (now - player.lastTerritoryMove < MOVE_COOLDOWN_MS)) {
+        const mins = Math.ceil((MOVE_COOLDOWN_MS - (now - player.lastTerritoryMove)) / 60000);
+        return fail(`You must wait ${mins} more minute(s) before relocating.`);
+    }
+
+    // Cost check — use a flat cost based on district index (higher = pricier)
+    const idx = TERRITORY_IDS.indexOf(targetId);
+    const moveCost = [500, 1500, 5000, 4000, 2000, 2500, 8000, 3500][idx] || 2000;
+    if ((player.money || 0) < moveCost) return fail(`Not enough money. Moving here costs $${moveCost.toLocaleString()}.`);
+
+    // Deduct cost
+    player.money -= moveCost;
+
+    // Remove from old territory
+    const oldId = player.currentTerritory;
+    if (oldId && gameState.territories[oldId]) {
+        const r = gameState.territories[oldId].residents;
+        const i = r.indexOf(player.name);
+        if (i >= 0) r.splice(i, 1);
+    }
+
+    // Add to new territory
+    player.currentTerritory = targetId;
+    player.lastTerritoryMove = now;
+    const terr = gameState.territories[targetId];
+    if (terr && !terr.residents.includes(player.name)) {
+        terr.residents.push(player.name);
+    }
+
+    // Sync playerStates
+    const ps = gameState.playerStates.get(clientId);
+    if (ps) { ps.currentTerritory = targetId; ps.money = player.money; ps.lastUpdate = now; }
+
+    console.log(`🚚 ${player.name} moved from ${oldId} to ${targetId} ($${moveCost})`);
+
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+            type: 'territory_move_result',
+            success: true,
+            district: targetId,
+            cost: moveCost,
+            money: player.money,
+            territories: gameState.territories
+        }));
+    }
+
+    broadcastToAll({
+        type: 'territory_population_update',
+        territories: gameState.territories
+    });
+
+    addGlobalChatMessage('System', `🚚 ${player.name} relocated to ${targetId.replace(/_/g, ' ')}!`, '#9b59b6');
+    broadcastPlayerStates();
+    scheduleWorldSave();
+}
+
+// Return full territory data to requesting client
+function handleTerritoryInfo(clientId, message, ws) {
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    ws.send(JSON.stringify({
+        type: 'territory_info',
+        territories: gameState.territories
+    }));
 }
 
 // Heist creation handler
@@ -1432,7 +1608,8 @@ function sendWorldState(clientId, ws) {
         playerStates: playerStatesObj,
         cityDistricts: gameState.cityDistricts,
         cityEvents: gameState.cityEvents,
-        activeHeists: gameState.activeHeists
+        activeHeists: gameState.activeHeists,
+        territories: gameState.territories
     }));
 }
 

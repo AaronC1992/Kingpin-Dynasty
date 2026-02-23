@@ -97,6 +97,8 @@ export const player = {
     mentoringSessions: 0
   },
   territory: 0, // Controlled turf
+  currentTerritory: null, // District ID where the player currently lives (e.g. 'residential_low')
+  lastTerritoryMove: 0,   // Timestamp of last territory relocation (cooldown tracking)
   gang: {
     members: 0,
     loyalty: 100,

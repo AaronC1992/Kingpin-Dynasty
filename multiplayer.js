@@ -117,6 +117,7 @@ let onlineWorldState = {
     },
     activeHeists: [],
     gangWars: [],
+    territories: {},   // Phase 1 unified territory state (synced from server)
     jailRoster: { realPlayers: [], bots: [], totalOnlineInJail: 0 },
     lastUpdate: null
 };
@@ -907,6 +908,8 @@ function connectToOnlineWorld() {
                     money: player.money,
                     reputation: player.reputation,
                     territory: player.territory,
+                    currentTerritory: player.currentTerritory || null,
+                    lastTerritoryMove: player.lastTerritoryMove || 0,
                     level: player.level || 1
                 }
             };
@@ -978,6 +981,11 @@ async function handleServerMessage(message) {
             onlineWorldState.serverInfo.playerCount = message.playerCount;
             onlineWorldState.lastUpdate = new Date().toLocaleTimeString();
             
+            // Sync territory state from server
+            if (message.territories) {
+                onlineWorldState.territories = message.territories;
+            }
+
             // Update player states including jail status
             if (message.playerStates) {
                 onlineWorldState.playerStates = message.playerStates;
@@ -1070,6 +1078,42 @@ async function handleServerMessage(message) {
                 if (typeof message.territory === 'number') player.territory = message.territory;
                 updateUI();
             }
+            break;
+
+        // ── Phase 1 Territory System ──────────────────────────────────
+        case 'territory_spawn_result':
+            if (message.success) {
+                player.currentTerritory = message.districtId;
+                logAction(`🏙️ Spawned in ${message.districtId}.`);
+            } else {
+                logAction(`⚠️ Territory spawn failed: ${message.error}`);
+            }
+            break;
+
+        case 'territory_move_result':
+            if (message.success) {
+                player.currentTerritory = message.districtId;
+                if (typeof message.money === 'number') player.money = message.money;
+                player.lastTerritoryMove = Date.now();
+                logAction(`🏙️ Relocated to ${message.districtId}.`);
+                updateUI();
+            } else {
+                // Revert local state on failure
+                logAction(`⚠️ Relocation failed: ${message.error}`);
+                if (window.ui) window.ui.toast(message.error || 'Move failed.', 'error');
+            }
+            break;
+
+        case 'territory_population_update':
+            // Another player moved — update cached territory data
+            if (onlineWorldState.territories) {
+                onlineWorldState.territories = message.territories || onlineWorldState.territories;
+            }
+            break;
+
+        case 'territory_info':
+            // Full territory state response — cache it
+            onlineWorldState.territories = message.territories || {};
             break;
 
         case 'job_result':

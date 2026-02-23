@@ -34,6 +34,7 @@ import {
   startSnakeGame, restartSnake,
   startQuickDraw, startReactionTest, handleReactionClick
 } from './miniGames.js';
+import { DISTRICTS, getDistrict, MOVE_COOLDOWN_MS } from './territories.js';
 
 // Expose to window for legacy compatibility
 window.player = player;
@@ -4733,6 +4734,20 @@ function updateUI() {
       territoryDisplay.style.display = 'block';
     } else {
       territoryDisplay.style.display = 'none';
+    }
+  }
+
+  // Update current district display (Phase 1 territory system)
+  const curTerritoryDisplay = document.getElementById("current-territory-display");
+  if (curTerritoryDisplay) {
+    if (player.currentTerritory) {
+      const td = getDistrict(player.currentTerritory);
+      if (td) {
+        curTerritoryDisplay.innerText = `📍 ${td.icon} ${td.shortName}`;
+        curTerritoryDisplay.style.display = 'block';
+      }
+    } else {
+      curTerritoryDisplay.style.display = 'none';
     }
   }
   
@@ -9469,6 +9484,7 @@ const menuUnlockConfig = [
   { id: 'options',     fn: 'showOptions()',           label: 'Settings',       tip: 'Save, load & game options',        level: 0 },
 
   // === EARLY GAME (Level 2-3) ===
+  { id: 'relocate',   fn: 'showTerritoryRelocation()',label: 'Relocate',       tip: 'Move to a different district',     level: 0 },
   { id: 'skills',      fn: 'showSkills()',            label: 'Expertise',      tip: 'Spend skill points & upgrade',     level: 2 },
   { id: 'playerstats', fn: 'showPlayerStats()',       label: 'Player Stats',   tip: 'View your current stats & bonuses', level: 2 },
   { id: 'cars',        fn: 'showStolenCars()',        label: 'Motor Pool',     tip: 'Manage your stolen vehicles',      level: 2 },
@@ -11641,8 +11657,188 @@ function selectPortrait(portraitFile, portraitLabel) {
   // Log character creation
   logAction(`ðŸŽ­ ${player.name} emerges from the shadows - ready to conquer the criminal underworld.`);
   
-  // Show intro narrative
+  // Show territory spawn selection (Phase 1 territory system)
+  showTerritorySpawn();
+}
+
+// ──────────────────────────────────────────────────────────────
+// TERRITORY SPAWN SELECTION (Phase 1)
+// Shown during character creation after portrait selection.
+// Player picks which of the 8 districts to start in.
+// ──────────────────────────────────────────────────────────────
+
+function showTerritorySpawn() {
+  const container = document.getElementById('territory-spawn-screen') || (() => {
+    const div = document.createElement('div');
+    div.id = 'territory-spawn-screen';
+    document.body.appendChild(div);
+    return div;
+  })();
+
+  const cards = DISTRICTS.map(d => `
+    <div onclick="selectSpawnTerritory('${d.id}')"
+         style="background: rgba(44,62,80,0.85); border: 2px solid #555; border-radius: 12px;
+                padding: 18px; cursor: pointer; transition: all 0.3s ease;
+                text-align: left; min-width: 220px; max-width: 280px;"
+         onmouseover="this.style.borderColor='#e74c3c'; this.style.transform='translateY(-4px)';"
+         onmouseout="this.style.borderColor='#555'; this.style.transform='translateY(0)';">
+      <div style="font-size: 2em; margin-bottom: 6px;">${d.icon}</div>
+      <h3 style="color: #e74c3c; margin: 0 0 4px;">${d.shortName}</h3>
+      <p style="color: #95a5a6; font-size: 0.85em; margin: 0 0 10px;">${d.description}</p>
+      <div style="font-size: 0.8em; color: #bdc3c7; line-height: 1.6;">
+        <span>💰 Base Income: $${d.baseIncome}</span><br>
+        <span>🏢 Max Businesses: ${d.maxBusinesses}</span><br>
+        <span>⚠️ Risk: ${d.riskLevel}</span><br>
+        <span>🚔 Police: ${d.policePresence}%</span>
+      </div>
+    </div>
+  `).join('');
+
+  container.innerHTML = `
+    <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                background: rgba(0,0,0,0.95); display: flex; align-items: center;
+                justify-content: center; z-index: 1000; overflow-y: auto;">
+      <div style="max-width: 1000px; width: 95%; padding: 30px; text-align: center; color: white;">
+        <h2 style="color: #e74c3c; font-size: 2em; margin-bottom: 8px;">🏙️ Choose Your Turf</h2>
+        <p style="color: #bdc3c7; margin-bottom: 24px; font-size: 1.1em;">
+          Where will <strong style="color:#f39c12;">${player.name}</strong> set up shop?
+          Pick a district to call home — you can always relocate later.
+        </p>
+        <div style="display: flex; flex-wrap: wrap; gap: 16px; justify-content: center;">
+          ${cards}
+        </div>
+      </div>
+    </div>
+  `;
+  container.style.display = 'block';
+}
+
+function selectSpawnTerritory(districtId) {
+  const district = getDistrict(districtId);
+  if (!district) return;
+
+  // Set local player state
+  player.currentTerritory = districtId;
+  player.lastTerritoryMove = Date.now();
+
+  // Tell the server (if connected)
+  if (typeof onlineWorldState !== 'undefined' && onlineWorldState.isConnected && onlineWorldState.socket) {
+    onlineWorldState.socket.send(JSON.stringify({
+      type: 'territory_spawn',
+      districtId: districtId
+    }));
+  }
+
+  // Remove the spawn screen
+  const screen = document.getElementById('territory-spawn-screen');
+  if (screen) screen.remove();
+
+  logAction(`🏙️ ${player.name} moved into ${district.shortName} (${district.icon}).`);
+
+  // Continue to intro narrative
   showIntroNarrative();
+}
+
+// ──────────────────────────────────────────────────────────────
+// TERRITORY RELOCATION (Phase 1)
+// Accessible from main menu — lets player move to another district.
+// ──────────────────────────────────────────────────────────────
+
+function showTerritoryRelocation() {
+  const now = Date.now();
+  const cooldownEnd = (player.lastTerritoryMove || 0) + MOVE_COOLDOWN_MS;
+  const onCooldown = now < cooldownEnd;
+  const cooldownRemaining = onCooldown ? Math.ceil((cooldownEnd - now) / 60000) : 0;
+
+  const cards = DISTRICTS.map(d => {
+    const isCurrent = d.id === player.currentTerritory;
+    const canAfford = player.money >= d.moveCost;
+    const disabled = isCurrent || onCooldown || !canAfford;
+    const borderColor = isCurrent ? '#2ecc71' : disabled ? '#444' : '#555';
+    const opacity = disabled && !isCurrent ? '0.5' : '1';
+    const cursor = disabled ? 'default' : 'pointer';
+    const onclick = disabled ? '' : `onclick="confirmRelocation('${d.id}')"`;
+
+    let badge = '';
+    if (isCurrent) badge = '<span style="color:#2ecc71; font-weight:bold;">📍 Current</span>';
+    else if (onCooldown) badge = `<span style="color:#e67e22;">⏳ ${cooldownRemaining} min</span>`;
+    else if (!canAfford) badge = '<span style="color:#e74c3c;">💸 Can\'t afford</span>';
+
+    return `
+      <div ${onclick}
+           style="background: rgba(44,62,80,0.85); border: 2px solid ${borderColor}; border-radius: 12px;
+                  padding: 16px; cursor: ${cursor}; opacity: ${opacity}; transition: all 0.3s ease;
+                  text-align: left; min-width: 220px; max-width: 280px;"
+           ${!disabled ? `onmouseover="this.style.borderColor='#e74c3c'; this.style.transform='translateY(-4px)';"
+                         onmouseout="this.style.borderColor='${borderColor}'; this.style.transform='translateY(0)';"` : ''}>
+        <div style="font-size: 1.8em; margin-bottom: 4px;">${d.icon}</div>
+        <h3 style="color: #e74c3c; margin: 0 0 4px;">${d.shortName}</h3>
+        <p style="color: #95a5a6; font-size: 0.8em; margin: 0 0 8px;">${d.description}</p>
+        <div style="font-size: 0.8em; color: #bdc3c7; line-height: 1.5;">
+          <span>💰 Move Cost: $${d.moveCost.toLocaleString()}</span><br>
+          <span>💰 Base Income: $${d.baseIncome}</span><br>
+          <span>🏢 Businesses: ${d.maxBusinesses}</span><br>
+          <span>⚠️ Risk: ${d.riskLevel} | 🚔 Police: ${d.policePresence}%</span>
+        </div>
+        <div style="margin-top: 8px; text-align: center;">${badge}</div>
+      </div>
+    `;
+  }).join('');
+
+  const currentDistrict = getDistrict(player.currentTerritory);
+  const headerNote = currentDistrict
+    ? `You currently live in <strong style="color:#2ecc71;">${currentDistrict.shortName}</strong> ${currentDistrict.icon}`
+    : 'You haven\'t chosen a home district yet.';
+
+  hideAllScreens();
+  const screen = document.getElementById('game-screen');
+  screen.innerHTML = `
+    <div style="padding: 20px; color: white; max-width: 1000px; margin: 0 auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div>
+          <h2 style="color: #e74c3c; margin: 0;">🏙️ Relocate</h2>
+          <p style="color: #bdc3c7; margin: 4px 0 0;">${headerNote}</p>
+        </div>
+        <button onclick="showMenu()" style="background: #555; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">← Back</button>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 14px; justify-content: center;">
+        ${cards}
+      </div>
+    </div>
+  `;
+  screen.style.display = 'block';
+}
+
+function confirmRelocation(districtId) {
+  const d = getDistrict(districtId);
+  if (!d) return;
+
+  const confirmed = confirm(`Move to ${d.shortName} for $${d.moveCost.toLocaleString()}?\nYou won't be able to move again for 1 hour.`);
+  if (!confirmed) return;
+
+  if (player.money < d.moveCost) {
+    alert('Not enough money to relocate.');
+    return;
+  }
+
+  // Deduct money locally
+  player.money -= d.moveCost;
+  const oldTerritory = player.currentTerritory;
+  player.currentTerritory = districtId;
+  player.lastTerritoryMove = Date.now();
+
+  // Tell the server
+  if (typeof onlineWorldState !== 'undefined' && onlineWorldState.isConnected && onlineWorldState.socket) {
+    onlineWorldState.socket.send(JSON.stringify({
+      type: 'territory_move',
+      districtId: districtId
+    }));
+  }
+
+  logAction(`🏙️ ${player.name} relocated from ${getDistrict(oldTerritory)?.shortName || 'unknown'} to ${d.shortName} (${d.icon}) for $${d.moveCost.toLocaleString()}.`);
+  alert(`Moved to ${d.shortName}! 🏙️`);
+  updateUI();
+  showTerritoryRelocation(); // Refresh the screen
 }
 
 // Function to show the intro narrative
@@ -18112,6 +18308,11 @@ window.goBackToIntro = goBackToIntro;
 window.previousTutorialStep = previousTutorialStep;
 window.nextTutorialStep = nextTutorialStep;
 window.skipTutorial = skipTutorial;
+
+// Territory System (Phase 1)
+window.selectSpawnTerritory = selectSpawnTerritory;
+window.showTerritoryRelocation = showTerritoryRelocation;
+window.confirmRelocation = confirmRelocation;
 
 // Other Locations
 window.showRealEstate = showRealEstate;
