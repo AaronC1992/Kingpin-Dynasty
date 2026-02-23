@@ -631,7 +631,7 @@ function handlePlayerConnect(clientId, message, ws) {
     const player = {
         id: clientId,
         name: finalName,
-        money: message.playerStats?.money || 10000,
+        money: message.playerStats?.money || 0,
         reputation: message.playerStats?.reputation || 0,
         territory: message.playerStats?.territory || 0,
         level: message.playerStats?.level || 1,

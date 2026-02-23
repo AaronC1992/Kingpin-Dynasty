@@ -980,18 +980,15 @@ function handleServerMessage(message) {
                 updateJailVisibility();
                 updateOnlinePlayerList();
 
-                // SERVER-AUTHORITATIVE SYNC: overwrite local critical stats from authoritative state
+                // SERVER-AUTHORITATIVE SYNC: only sync jail/wanted state from
+                // the server. Money, reputation, level, territory are owned by
+                // the local (single-player) game engine and must NOT be
+                // overwritten by the multiplayer world-update snapshot.
                 const selfPs = onlineWorldState.playerStates[onlineWorldState.playerId];
                 if (selfPs) {
-                    // Only trust server for these values
-                    if (typeof player.money === 'number' && typeof selfPs.money === 'number') player.money = selfPs.money;
-                    if (typeof selfPs.reputation === 'number') player.reputation = selfPs.reputation;
-                    if (typeof selfPs.level === 'number') player.level = selfPs.level;
-                    if (typeof selfPs.territory === 'number') player.territory = selfPs.territory;
                     player.inJail = !!selfPs.inJail;
                     player.jailTime = selfPs.jailTime || 0;
                     if (typeof selfPs.wantedLevel === 'number') player.wantedLevel = selfPs.wantedLevel;
-                    if (typeof selfPs.energy === 'number') player.energy = selfPs.energy;
                     updateUI(); // reflect authoritative corrections
                 }
             }
