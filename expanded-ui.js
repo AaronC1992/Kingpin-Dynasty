@@ -16,6 +16,7 @@ import ExpandedSystems from './expanded-systems.js';
 import { player } from './player.js';
 import { EventBus } from './eventBus.js';
 import { GameLogging } from './logging.js';
+import { ui } from './ui-modal.js';
 
 // ==================== GANG MANAGEMENT UI ====================
 
@@ -46,7 +47,7 @@ export function showGangManagementScreen() {
 }
 
 function renderGangMember(member) {
-  const roleData = member.roleData || { name: "Soldier", icon: "" };
+  const roleData = member.roleData || { name: "Soldier", icon: "\u2694\uFE0F" };
   const statusIcon = {
     "active": "",
     "injured": "",
@@ -112,7 +113,7 @@ function calculateAverageLoyalty(members) {
 
 window.recruitGangMemberExpanded = function() {
   if (player.money < 5000) {
-    alert("Not enough money to recruit! Need $5,000.");
+    ui.toast("Not enough money to recruit! Need $5,000.", 'error');
     return;
   }
   
@@ -127,11 +128,11 @@ window.recruitGangMemberExpanded = function() {
   updateUI();
 };
 
-window.dismissMember = function(memberId) {
+window.dismissMember = async function(memberId) {
   const member = player.gang.gangMembers.find(m => m.id === memberId);
   if (!member) return;
   
-  if (!confirm(`Are you sure you want to dismiss ${member.name}? This cannot be undone.`)) {
+  if (!await ui.confirm(`Are you sure you want to dismiss ${member.name}? This cannot be undone.`)) {
     return;
   }
   
@@ -292,7 +293,7 @@ window.removeDefender = function(territoryId, memberId) {
 
 window.fortifyTerritory = function(territoryId) {
   if (player.money < 10000) {
-    alert("Not enough money! Fortifications cost $10,000.");
+    ui.toast("Not enough money! Fortifications cost $10,000.", 'error');
     return;
   }
   
@@ -312,7 +313,7 @@ window.claimTerritory = function(territoryId) {
   if (!territory) return;
   
   if (player.money < territory.baseIncome) {
-    alert(`Not enough money to claim this territory! Need $${territory.baseIncome.toLocaleString()}`);
+    ui.toast(`Not enough money to claim this territory! Need $${territory.baseIncome.toLocaleString()}`, 'error');
     return;
   }
   
@@ -418,7 +419,7 @@ window.makeEventChoice = function(choiceIndex) {
   const result = ExpandedSystems.processEventChoice(currentEvent, choiceIndex, player);
   
   if (!result.success) {
-    alert(result.message);
+    ui.toast(result.message, 'error');
     return;
   }
   

@@ -156,7 +156,7 @@ function calculateMultiplayerTerritoryWeeklyIncome() {
 // Show the "Whack Rival Don" high-risk PvP challenge
 function showWhackRivalDon() {
     if (!onlineWorldState.isConnected) {
-        alert('You must be connected to the online world to challenge a rival Don.');
+        window.ui.toast('You must be connected to the online world to challenge a rival Don.', 'error');
         return;
     }
     const content = document.getElementById('multiplayer-content');
@@ -303,7 +303,7 @@ function showActiveHeists() {
 // Show heist creation screen — pick a target
 function showCreateHeist() {
     if (!onlineWorldState.isConnected) {
-        alert('You must be connected to the online world to plan a heist.');
+        window.ui.toast('You must be connected to the online world to plan a heist.', 'error');
         return;
     }
 
@@ -358,9 +358,9 @@ function showCreateHeist() {
 }
 
 // Create a heist and send to server
-function createHeist(targetId) {
+async function createHeist(targetId) {
     if (!onlineWorldState.isConnected || !onlineWorldState.socket || onlineWorldState.socket.readyState !== WebSocket.OPEN) {
-        alert('Not connected to the server!');
+        window.ui.toast('Not connected to the server!', 'error');
         return;
     }
 
@@ -368,18 +368,18 @@ function createHeist(targetId) {
     if (!target) return;
 
     if ((player.level || 1) < target.minLevel) {
-        alert(`You need to be Level ${target.minLevel} to plan this heist.`);
+        window.ui.toast(`You need to be Level ${target.minLevel} to plan this heist.`, 'error');
         return;
     }
 
     // Check if already organizing a heist
     const existingHeist = (onlineWorldState.activeHeists || []).find(h => h.organizerId === onlineWorldState.playerId);
     if (existingHeist) {
-        alert('You already have an active heist! Complete or cancel it first.');
+        window.ui.toast('You already have an active heist! Complete or cancel it first.', 'error');
         return;
     }
 
-    if (!confirm(`Plan heist on ${target.name}?\n\nReward: $${target.reward.toLocaleString()} (split among crew)\nCrew needed: ${target.minCrew}-${target.maxCrew}\nBase success: ${target.successBase}%\n\nYou'll be the organizer. Other players can join.`)) {
+    if (!await window.ui.confirm(`Plan heist on ${target.name}?\n\nReward: $${target.reward.toLocaleString()} (split among crew)\nCrew needed: ${target.minCrew}-${target.maxCrew}\nBase success: ${target.successBase}%\n\nYou'll be the organizer. Other players can join.`)) {
         return;
     }
 
@@ -404,7 +404,7 @@ function createHeist(targetId) {
 function manageHeist(heistId) {
     const heist = (onlineWorldState.activeHeists || []).find(h => h.id === heistId);
     if (!heist) {
-        alert('Heist not found!');
+        window.ui.toast('Heist not found!', 'error');
         return;
     }
 
@@ -501,9 +501,9 @@ function manageHeist(heistId) {
 }
 
 // Force start a heist (organizer only)
-function forceStartHeist(heistId) {
+async function forceStartHeist(heistId) {
     if (!onlineWorldState.isConnected || !onlineWorldState.socket || onlineWorldState.socket.readyState !== WebSocket.OPEN) {
-        alert('Not connected!');
+        window.ui.toast('Not connected!', 'error');
         return;
     }
 
@@ -511,11 +511,11 @@ function forceStartHeist(heistId) {
     if (!heist) return;
 
     if (heist.organizerId !== onlineWorldState.playerId) {
-        alert('Only the organizer can launch the heist!');
+        window.ui.toast('Only the organizer can launch the heist!', 'error');
         return;
     }
 
-    if (!confirm(`🚀 Launch the heist on ${heist.target}?\n\nThis cannot be undone. Your crew will move in immediately.`)) {
+    if (!await window.ui.confirm(`Launch the heist on ${heist.target}?\n\nThis cannot be undone. Your crew will move in immediately.`)) {
         return;
     }
 
@@ -530,7 +530,7 @@ function forceStartHeist(heistId) {
 // Leave a heist you joined
 function leaveHeist(heistId) {
     if (!onlineWorldState.isConnected || !onlineWorldState.socket || onlineWorldState.socket.readyState !== WebSocket.OPEN) {
-        alert('Not connected!');
+        window.ui.toast('Not connected!', 'error');
         return;
     }
 
@@ -550,13 +550,13 @@ function leaveHeist(heistId) {
 }
 
 // Cancel a heist (organizer only)
-function cancelHeist(heistId) {
+async function cancelHeist(heistId) {
     if (!onlineWorldState.isConnected || !onlineWorldState.socket || onlineWorldState.socket.readyState !== WebSocket.OPEN) {
-        alert('Not connected!');
+        window.ui.toast('Not connected!', 'error');
         return;
     }
 
-    if (!confirm('Cancel this heist? All crew members will be dismissed.')) return;
+    if (!await window.ui.confirm('Cancel this heist? All crew members will be dismissed.')) return;
 
     onlineWorldState.socket.send(JSON.stringify({
         type: 'heist_cancel',
@@ -572,20 +572,20 @@ function cancelHeist(heistId) {
 // Invite a specific player to your active heist
 function inviteToHeist(playerName) {
     if (!onlineWorldState.isConnected || !onlineWorldState.socket || onlineWorldState.socket.readyState !== WebSocket.OPEN) {
-        alert("You need to be connected to the online world!");
+        window.ui.toast("You need to be connected to the online world!", 'error');
         return;
     }
 
     // Check if player has an active heist
     const myHeist = (onlineWorldState.activeHeists || []).find(h => h.organizerId === onlineWorldState.playerId);
     if (!myHeist) {
-        alert(`You don't have an active heist! Go to Big Scores and plan one first.`);
+        window.ui.toast(`You don't have an active heist! Go to Big Scores and plan one first.`, 'error');
         return;
     }
 
     const participantCount = Array.isArray(myHeist.participants) ? myHeist.participants.length : 0;
     if (participantCount >= (myHeist.maxParticipants || 4)) {
-        alert('Your heist crew is already full!');
+        window.ui.toast('Your heist crew is already full!', 'error');
         return;
     }
 
@@ -599,7 +599,7 @@ function inviteToHeist(playerName) {
     if (typeof showBriefNotification === 'function') {
         showBriefNotification(`Heist invite sent to ${playerName}!`, 3000);
     } else {
-        alert(`Heist invitation sent to ${playerName}!`);
+        window.ui.toast(`Heist invitation sent to ${playerName}!`, 'success');
     }
 }
 
@@ -607,7 +607,7 @@ function inviteToHeist(playerName) {
 function joinHeist(heistId) {
     const heist = (onlineWorldState.activeHeists || []).find(h => h.id === heistId);
     if (!heist) {
-        alert('Heist not found!');
+        window.ui.toast('Heist not found!', 'error');
         return;
     }
     
@@ -615,12 +615,12 @@ function joinHeist(heistId) {
     const maxCount = heist.maxParticipants || 4;
     
     if (participantCount >= maxCount) {
-        alert('This heist crew is full!');
+        window.ui.toast('This heist crew is full!', 'error');
         return;
     }
     
     if (Array.isArray(heist.participants) && heist.participants.includes(onlineWorldState.playerId)) {
-        alert('You already joined this heist!');
+        window.ui.toast('You already joined this heist!', 'error');
         return;
     }
     
@@ -637,7 +637,7 @@ function joinHeist(heistId) {
         }
         showActiveHeists();
     } else {
-        alert('Not connected to the server!');
+        window.ui.toast('Not connected to the server!', 'error');
     }
 }
 
@@ -718,9 +718,9 @@ function showGangWars() {
     let warsHTML = wars.length > 0
         ? wars.map(w => `
             <div style="background: rgba(139,0,0,0.2); padding: 15px; border-radius: 8px; margin: 10px 0; border: 1px solid #8b0000;">
-                <div style="color: #ff4444; font-weight: bold;">${w.attacker || '???'} vs ${w.defender || '???'}</div>
-                <div style="color: #ccc; font-size: 0.9em;">District: ${w.district || 'Unknown'}</div>
-                <button onclick="spectateWar('${w.district}')" style="margin-top: 8px; background: #444; color: #c0a062; padding: 8px 15px; border: 1px solid #c0a062; border-radius: 5px; cursor: pointer;">Spectate</button>
+                <div style="color: #ff4444; font-weight: bold;">${escapeHTML(w.attacker || '???')} vs ${escapeHTML(w.defender || '???')}</div>
+                <div style="color: #ccc; font-size: 0.9em;">District: ${escapeHTML(w.district || 'Unknown')}</div>
+                <button onclick="spectateWar('${escapeHTML(w.district)}')" style="margin-top: 8px; background: #444; color: #c0a062; padding: 8px 15px; border: 1px solid #c0a062; border-radius: 5px; cursor: pointer;">Spectate</button>
             </div>
         `).join('')
         : '<p style="color: #888; text-align: center; font-style: italic;">No active turf wars. The streets are quiet... for now.</p>';
@@ -751,11 +751,11 @@ function showNearbyPlayers() {
         ? players.map(p => `
             <div style="background: rgba(0,0,0,0.6); padding: 12px; border-radius: 8px; margin: 8px 0; border: 1px solid #f39c12; display: flex; justify-content: space-between; align-items: center;">
                 <div>
-                    <span style="color: #f39c12; font-weight: bold;">${p.name || 'Unknown'}</span>
+                    <span style="color: #f39c12; font-weight: bold;">${escapeHTML(p.name || 'Unknown')}</span>
                     <span style="color: #888; font-size: 0.85em;"> Lvl ${p.level || 1}</span>
                 </div>
                 <div>
-                    <button onclick="challengePlayer('${p.name}')" style="background: #8b0000; color: #fff; padding: 5px 12px; border: none; border-radius: 4px; cursor: pointer; margin: 0 3px;">Fight</button>
+                    <button onclick="challengePlayer('${escapeHTML(p.name)}')" style="background: #8b0000; color: #fff; padding: 5px 12px; border: none; border-radius: 4px; cursor: pointer; margin: 0 3px;">Fight</button>
                 </div>
             </div>
         `).join('')
@@ -783,13 +783,13 @@ function viewTerritoryDetails(district) {
     
     content.innerHTML = `
         <div style="background: rgba(0,0,0,0.95); padding: 30px; border-radius: 15px; border: 3px solid #c0a062;">
-            <h2 style="color: #c0a062; text-align: center; font-family: 'Georgia', serif;"> ${district}</h2>
+            <h2 style="color: #c0a062; text-align: center; font-family: 'Georgia', serif;"> ${escapeHTML(district)}</h2>
             <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 10px; margin: 15px 0;">
-                <p style="color: #ccc;">Controlled by: <span style="color: #f39c12; font-weight: bold;">${info.controlledBy}</span></p>
+                <p style="color: #ccc;">Controlled by: <span style="color: #f39c12; font-weight: bold;">${escapeHTML(info.controlledBy)}</span></p>
                 <p style="color: #ccc;">Defense Power: <span style="color: #e74c3c;">${info.power || 0}</span></p>
             </div>
             <div style="text-align: center; margin-top: 15px;">
-                <button onclick="challengeForTerritory('${district}')" style="background: #8b0000; color: #fff; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin: 5px;">Attack</button>
+                <button onclick="challengeForTerritory('${escapeHTML(district)}')" style="background: #8b0000; color: #fff; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin: 5px;">Attack</button>
                 <button onclick="showOnlineWorld()" style="background: #333; color: #c0a062; padding: 10px 20px; border: 1px solid #c0a062; border-radius: 5px; cursor: pointer; margin: 5px;">Back</button>
             </div>
         </div>
@@ -799,7 +799,7 @@ function viewTerritoryDetails(district) {
 // Challenge for a territory (sends to server if connected)
 function challengeForTerritory(district) {
     if (!onlineWorldState.isConnected || !onlineWorldState.socket) {
-        alert('You must be connected to the online world to challenge for territory.');
+        window.ui.toast('You must be connected to the online world to challenge for territory.', 'error');
         return;
     }
     
@@ -816,14 +816,14 @@ function challengeForTerritory(district) {
 // Start a heist in a specific district — redirects to heist creation
 function startDistrictHeist(districtName) {
     if (!onlineWorldState.isConnected || !onlineWorldState.socket) {
-        alert('You must be connected to the online world to start a heist.');
+        window.ui.toast('You must be connected to the online world to start a heist.', 'error');
         return;
     }
     
     // Check if already organizing
     const existingHeist = (onlineWorldState.activeHeists || []).find(h => h.organizerId === onlineWorldState.playerId);
     if (existingHeist) {
-        alert('You already have an active heist! Complete or cancel it first.');
+        window.ui.toast('You already have an active heist! Complete or cancel it first.', 'error');
         showActiveHeists();
         return;
     }
@@ -972,7 +972,7 @@ function connectToLocalDemo() {
 }
 
 // Handle messages from the server
-function handleServerMessage(message) {
+async function handleServerMessage(message) {
     switch(message.type) {
         case 'world_update':
             onlineWorldState.serverInfo.playerCount = message.playerCount;
@@ -1189,7 +1189,7 @@ function handleServerMessage(message) {
         case 'heist_invite':
             // Someone invited you to a heist
             if (message.heistId && message.inviterName) {
-                const acceptInvite = confirm(`📨 ${message.inviterName} invited you to a heist: ${message.target || 'Unknown'}!\n\nReward: $${(message.reward || 0).toLocaleString()}\nDifficulty: ${message.difficulty || 'Unknown'}\n\nJoin their crew?`);
+                const acceptInvite = await window.ui.confirm(`${message.inviterName} invited you to a heist: ${message.target || 'Unknown'}!\n\nReward: $${(message.reward || 0).toLocaleString()}\nDifficulty: ${message.difficulty || 'Unknown'}\n\nJoin their crew?`);
                 if (acceptInvite && onlineWorldState.socket && onlineWorldState.socket.readyState === WebSocket.OPEN) {
                     onlineWorldState.socket.send(JSON.stringify({
                         type: 'heist_join',
@@ -1451,23 +1451,23 @@ function updatePlayerJailStatus(playerId, playerName, jailStatus) {
 }
 
 // Attempt to break out another player
-function attemptPlayerJailbreak(targetPlayerId, targetPlayerName) {
+async function attemptPlayerJailbreak(targetPlayerId, targetPlayerName) {
     if (!onlineWorldState.isConnected) {
-        alert("You need to be connected to the online world!");
+        window.ui.toast("You need to be connected to the online world!", 'error');
         return;
     }
     
     if (player.inJail) {
-        alert("You can't help others break out while you're in jail yourself!");
+        window.ui.toast("You can't help others break out while you're in jail yourself!", 'error');
         return;
     }
     
     if (player.energy < 15) {
-        alert("You need at least 15 energy to attempt a jailbreak!");
+        window.ui.toast("You need at least 15 energy to attempt a jailbreak!", 'error');
         return;
     }
     
-    const confirmBreakout = confirm(`Attempt to break ${targetPlayerName} out of jail? This will cost 15 energy and has risks.`);
+    const confirmBreakout = await window.ui.confirm(`Attempt to break ${targetPlayerName} out of jail? This will cost 15 energy and has risks.`);
     
     if (confirmBreakout) {
         // SERVER-AUTHORITATIVE INTENT: Energy deducted locally, outcome (success/arrest) decided by server.
@@ -1482,7 +1482,7 @@ function attemptPlayerJailbreak(targetPlayerId, targetPlayerName) {
             }));
             logAction(` Jailbreak intent sent to free ${targetPlayerName}. Awaiting authoritative outcome...`);
         } else {
-            alert('Connection lost before sending jailbreak intent.');
+            window.ui.toast('Connection lost before sending jailbreak intent.', 'error');
         }
         updateUI(); // Show reduced energy immediately; success/failure will arrive via server messages
     }
@@ -1496,23 +1496,23 @@ function requestJailRoster() {
 }
 
 // Attempt to break out a jail bot (server-authoritative)
-function attemptBotJailbreak(botId, botName) {
+async function attemptBotJailbreak(botId, botName) {
     if (!onlineWorldState.isConnected) {
-        alert("You need to be connected to the online world!");
+        window.ui.toast("You need to be connected to the online world!", 'error');
         return;
     }
 
     if (player.inJail) {
-        alert("You can't help others break out while you're in jail yourself!");
+        window.ui.toast("You can't help others break out while you're in jail yourself!", 'error');
         return;
     }
 
     if (player.energy < 15) {
-        alert("You need at least 15 energy to attempt a jailbreak!");
+        window.ui.toast("You need at least 15 energy to attempt a jailbreak!", 'error');
         return;
     }
 
-    const confirmBreakout = confirm(`Attempt to break ${botName} out of jail? This will cost 15 energy and has risks.`);
+    const confirmBreakout = await window.ui.confirm(`Attempt to break ${botName} out of jail? This will cost 15 energy and has risks.`);
 
     if (confirmBreakout) {
         player.energy -= 15;
@@ -1526,7 +1526,7 @@ function attemptBotJailbreak(botId, botName) {
             }));
             logAction(`🔓 Attempting to break out ${botName}...`);
         } else {
-            alert('Connection lost before sending jailbreak intent.');
+            window.ui.toast('Connection lost before sending jailbreak intent.', 'error');
         }
         updateUI();
     }
@@ -1573,7 +1573,7 @@ function showFreedFromJailPopup(helperName, helperId) {
 // Send a gift of money to another player
 function sendGiftMoney(targetPlayerId, amount) {
     if (player.money < amount) {
-        alert("You don't have enough money for that gift!");
+        window.ui.toast("You don't have enough money for that gift!", 'error');
         return;
     }
     player.money -= amount;
@@ -2096,7 +2096,7 @@ function ensurePlayerName() {
 }
 
 // Function to ensure player name for chat (prompts if needed)
-function ensurePlayerNameForChat() {
+async function ensurePlayerNameForChat() {
     // First try the regular ensurePlayerName
     let name = ensurePlayerName();
     if (name) {
@@ -2104,9 +2104,18 @@ function ensurePlayerNameForChat() {
     }
     
     // If no name available, prompt the user
-    let userName = prompt('Enter your criminal name for multiplayer chat:', 'Criminal_' + Math.floor(Math.random() * 1000));
+    let userName = await window.ui.prompt('Enter your criminal name for multiplayer chat:', 'Criminal_' + Math.floor(Math.random() * 1000));
     if (userName && userName.trim() !== '') {
-        player.name = userName.trim();
+        // Sanitize: strip HTML tags, limit length, remove control characters
+        userName = userName.trim()
+            .replace(/<[^>]*>/g, '')
+            .replace(/[\x00-\x1F\x7F]/g, '')
+            .substring(0, 30);
+        if (userName.length === 0) {
+            window.ui.toast('Invalid name. Please try again.', 'error');
+            return null;
+        }
+        player.name = userName;
         // Save the name immediately
         if (typeof saveGame === 'function') {
             saveGame();
@@ -2119,9 +2128,9 @@ function ensurePlayerNameForChat() {
     }
 }
 
-function sendChatMessage() {
+async function sendChatMessage() {
     // Ensure player has a valid name before sending chat (prompt if needed)
-    const playerName = ensurePlayerNameForChat();
+    const playerName = await ensurePlayerNameForChat();
     if (!playerName) {
         // User cancelled name entry
         return;
@@ -2149,9 +2158,9 @@ function sendChatMessage() {
 }
 
 // Send quick chat message
-function sendQuickChat(message) {
+async function sendQuickChat(message) {
     // Ensure player has a valid name before sending quick chat (prompt if needed)
-    const playerName = ensurePlayerNameForChat();
+    const playerName = await ensurePlayerNameForChat();
     if (!playerName) {
         // User cancelled name entry
         return;
@@ -2281,19 +2290,19 @@ function showOnlineWorld() {
                             <div style="background: rgba(20, 20, 20, 0.8); padding: 12px; margin: 8px 0; border-radius: 8px; border: 2px solid ${borderColor};">
                                 <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                                     <div style="flex: 1;">
-                                        <strong style="color: #c0a062; font-size: 1.1em;">${district.charAt(0).toUpperCase() + district.slice(1)}</strong>
+                                        <strong style="color: #c0a062; font-size: 1.1em;">${escapeHTML(district.charAt(0).toUpperCase() + district.slice(1))}</strong>
                                         <div style="margin: 5px 0; font-size: 0.85em;">
-                                            <div style="color: #ccc;">Controlled by: <span style="color: ${isPlayerControlled ? '#27ae60' : '#95a5a6'};">${controllerName || 'Unknown'}</span></div>
+                                            <div style="color: #ccc;">Controlled by: <span style="color: ${isPlayerControlled ? '#27ae60' : '#95a5a6'};">${escapeHTML(controllerName || 'Unknown')}</span></div>
                                             <div style="color: #ccc;">Defense: <span style="color: #e74c3c;">${districtData.defenseRating}</span></div>
                                             <div style="color: #ccc;">Income: <span style="color: #27ae60;">$${districtData.weeklyIncome.toLocaleString()}/week</span></div>
                                         </div>
                                     </div>
                                     <div style="text-align: right;">
-                                        <button onclick="viewTerritoryDetails('${district}')" 
+                                        <button onclick="viewTerritoryDetails('${escapeHTML(district)}')" 
                                                 style="background: #f39c12; color: #000; padding: 8px 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-bottom: 5px; width: 100%;">
                                              Details
                                         </button>
-                                        <button onclick="challengeForTerritory('${district}')" 
+                                        <button onclick="challengeForTerritory('${escapeHTML(district)}')" 
                                                 style="background: linear-gradient(180deg, #8b0000 0%, #5a0000 100%); color: #fff; padding: 8px 12px; border: 1px solid #ff0000; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%;">
                                              Attack
                                         </button>
@@ -2550,32 +2559,32 @@ function exploreDistrict(districtName) {
     const district = onlineWorldState.cityDistricts[districtName];
     
     if (!onlineWorldState.isConnected) {
-        alert("You need to be connected to the online world to explore districts!");
+        window.ui.toast("You need to be connected to the online world to explore districts!", 'error');
         return;
     }
     
     let districtHTML = `
         <div style="background: rgba(0, 0, 0, 0.9); padding: 20px; border-radius: 15px; border: 2px solid #c0a062;">
-            <h3 style="color: #c0a062; font-family: 'Georgia', serif;"> ${districtName.charAt(0).toUpperCase() + districtName.slice(1)} District</h3>
+            <h3 style="color: #c0a062; font-family: 'Georgia', serif;"> ${escapeHTML(districtName.charAt(0).toUpperCase() + districtName.slice(1))} District</h3>
             
             <div style="background: rgba(20, 20, 20, 0.8); padding: 15px; border-radius: 10px; margin: 15px 0; border: 1px solid #555;">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                     <div><strong style="color: #c0a062;">Crime Level:</strong> <span style="color: #ccc;">${district.crimeLevel}%</span></div>
-                    <div><strong style="color: #c0a062;">Controlled By:</strong> <span style="color: #ccc;">${district.controlledBy || 'No one'}</span></div>
+                    <div><strong style="color: #c0a062;">Controlled By:</strong> <span style="color: #ccc;">${escapeHTML(district.controlledBy || 'No one')}</span></div>
                 </div>
             </div>
             
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 20px 0;">
-                <button onclick="doDistrictJob('${districtName}')" style="background: #333; color: #c0a062; padding: 10px; border: 1px solid #c0a062; border-radius: 5px; cursor: pointer; font-family: 'Georgia', serif;">
+                <button onclick="doDistrictJob('${escapeHTML(districtName)}')" style="background: #333; color: #c0a062; padding: 10px; border: 1px solid #c0a062; border-radius: 5px; cursor: pointer; font-family: 'Georgia', serif;">
                      Find Work
                 </button>
-                <button onclick="claimTerritory('${districtName}')" style="background: #333; color: #8b0000; padding: 10px; border: 1px solid #8b0000; border-radius: 5px; cursor: pointer; font-family: 'Georgia', serif;">
+                <button onclick="claimTerritory('${escapeHTML(districtName)}')" style="background: #333; color: #8b0000; padding: 10px; border: 1px solid #8b0000; border-radius: 5px; cursor: pointer; font-family: 'Georgia', serif;">
                      Claim Turf
                 </button>
-                <button onclick="findPlayersInDistrict('${districtName}')" style="background: #333; color: #f39c12; padding: 10px; border: 1px solid #f39c12; border-radius: 5px; cursor: pointer; font-family: 'Georgia', serif;">
+                <button onclick="findPlayersInDistrict('${escapeHTML(districtName)}')" style="background: #333; color: #f39c12; padding: 10px; border: 1px solid #f39c12; border-radius: 5px; cursor: pointer; font-family: 'Georgia', serif;">
                      Find Crew
                 </button>
-                <button onclick="startDistrictHeist('${districtName}')" style="background: #333; color: #27ae60; padding: 10px; border: 1px solid #27ae60; border-radius: 5px; cursor: pointer; font-family: 'Georgia', serif;">
+                <button onclick="startDistrictHeist('${escapeHTML(districtName)}')" style="background: #333; color: #27ae60; padding: 10px; border: 1px solid #27ae60; border-radius: 5px; cursor: pointer; font-family: 'Georgia', serif;">
                      Plan Score
                 </button>
             </div>
@@ -2662,7 +2671,7 @@ function sendGlobalChatMessage() {
     if (!message) return;
     
     if (!onlineWorldState.isConnected) {
-        alert("You need to be connected to the online world to chat!");
+        window.ui.toast("You need to be connected to the online world to chat!", 'error');
         return;
     }
     
@@ -2690,7 +2699,7 @@ function sendQuickChatMessage() {
     if (!message) return;
     
     if (!onlineWorldState.isConnected) {
-        alert("You need to be connected to the online world to chat!");
+        window.ui.toast("You need to be connected to the online world to chat!", 'error');
         return;
     }
     
@@ -2748,7 +2757,7 @@ function simulateGlobalChatResponse() {
 // District actions
 function doDistrictJob(districtName) {
     if (!onlineWorldState.isConnected) {
-        alert("You need to be connected to the online world!");
+        window.ui.toast("You need to be connected to the online world!", 'error');
         return;
     }
 
@@ -2896,9 +2905,9 @@ function doDistrictJob(districtName) {
     if (typeof checkLevelUp === 'function') checkLevelUp();
 }
 
-function claimTerritory(districtName) {
+async function claimTerritory(districtName) {
     if (!onlineWorldState.isConnected) {
-        alert("You need to be connected to the online world!");
+        window.ui.toast("You need to be connected to the online world!", 'error');
         return;
     }
     
@@ -2906,11 +2915,11 @@ function claimTerritory(districtName) {
     const cost = 50000 + (district.crimeLevel * 1000);
     
     if (player.money < cost) {
-        alert(`Not enough money! Need $${cost.toLocaleString()} to claim ${districtName}.`);
+        window.ui.toast(`Not enough money! Need $${cost.toLocaleString()} to claim ${districtName}.`, 'error');
         return;
     }
     
-    if (confirm(`Claim ${districtName} district for $${cost.toLocaleString()}? This will be visible to all players.`)) {
+    if (await window.ui.confirm(`Claim ${districtName} district for $${cost.toLocaleString()}? This will be visible to all players.`)) {
         // SERVER-AUTHORITATIVE INTENT: Do NOT mutate local money/territory.
         // Send territory_claim intent; server will validate cost, apply changes, then broadcast territory_taken.
         if (onlineWorldState.socket && onlineWorldState.socket.readyState === WebSocket.OPEN) {
@@ -2920,45 +2929,45 @@ function claimTerritory(districtName) {
             }));
             logAction(` Territory claim intent sent for ${districtName} ($${cost.toLocaleString()}). Awaiting authoritative confirmation...`);
         } else {
-            alert('Connection lost before sending claim intent.');
+            window.ui.toast('Connection lost before sending claim intent.', 'error');
         }
     }
 }
 
 function findPlayersInDistrict(districtName) {
     if (!onlineWorldState.isConnected) {
-        alert("You need to be connected to the online world!");
+        window.ui.toast("You need to be connected to the online world!", 'error');
         return;
     }
     
     const playersInDistrict = onlineWorldState.nearbyPlayers.filter(() => Math.random() > 0.5);
     
     if (playersInDistrict.length === 0) {
-        alert(`No other players currently in ${districtName} district.`);
+        window.ui.toast(`No other players currently in ${districtName} district.`, 'info');
         return;
     }
     
     let playersHTML = `
         <div style="background: rgba(0, 0, 0, 0.9); padding: 20px; border-radius: 15px; border: 2px solid #c0a062;">
-            <h3 style="color: #c0a062; font-family: 'Georgia', serif;"> Crew in ${districtName.charAt(0).toUpperCase() + districtName.slice(1)}</h3>
+            <h3 style="color: #c0a062; font-family: 'Georgia', serif;"> Crew in ${escapeHTML(districtName.charAt(0).toUpperCase() + districtName.slice(1))}</h3>
             <div style="margin: 20px 0;">
                 ${playersInDistrict.map(p => `
                     <div style="background: rgba(20, 20, 20, 0.8); padding: 15px; margin: 10px 0; border-radius: 8px; border: 1px solid #555;">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <div>
-                                <h4 style="color: #c0a062; margin: 0; font-family: 'Georgia', serif;">${p.name}</h4>
+                                <h4 style="color: #c0a062; margin: 0; font-family: 'Georgia', serif;">${escapeHTML(p.name)}</h4>
                                 <div style="display: flex; gap: 20px; font-size: 0.9em; margin: 5px 0; color: #ccc;">
                                     <span>Level ${p.level}</span>
                                     <span>Rep: ${p.reputation}</span>
-                                    <span>Territory: ${p.territory}</span>
+                                    <span>Territory: ${escapeHTML(p.territory)}</span>
                                     <span style="color: #27ae60;">● Online</span>
                                 </div>
                             </div>
                             <div style="display: flex; gap: 10px;">
-                                <button onclick="challengePlayer('${p.name}')" style="background: #8b0000; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-family: 'Georgia', serif;">
+                                <button onclick="challengePlayer('${escapeHTML(p.name)}')" style="background: #8b0000; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-family: 'Georgia', serif;">
                                      Challenge
                                 </button>
-                                <button onclick="inviteToHeist('${p.name}')" style="background: #f39c12; color: #000; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-family: 'Georgia', serif;">
+                                <button onclick="inviteToHeist('${escapeHTML(p.name)}')" style="background: #f39c12; color: #000; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-family: 'Georgia', serif;">
                                      Invite
                                 </button>
                             </div>
@@ -2988,13 +2997,13 @@ function showCityEvents() {
                     <div style="background: rgba(20, 20, 20, 0.8); padding: 15px; margin: 10px 0; border-radius: 8px; border: 1px solid #555;">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <div>
-                                <h4 style="color: #c0a062; margin: 0; font-family: 'Georgia', serif;">${event.type.replace('_', ' ').toUpperCase()}</h4>
-                                <p style="margin: 5px 0; color: #ccc;">${event.description}</p>
-                                <small style="color: #999;">District: ${event.district.charAt(0).toUpperCase() + event.district.slice(1)}</small>
+                                <h4 style="color: #c0a062; margin: 0; font-family: 'Georgia', serif;">${escapeHTML(event.type.replace('_', ' ').toUpperCase())}</h4>
+                                <p style="margin: 5px 0; color: #ccc;">${escapeHTML(event.description)}</p>
+                                <small style="color: #999;">District: ${escapeHTML(event.district.charAt(0).toUpperCase() + event.district.slice(1))}</small>
                             </div>
                             <div style="text-align: right;">
-                                <div style="color: #f39c12; font-weight: bold;"> ${event.timeLeft}</div>
-                                <button onclick="participateInEvent('${event.type}', '${event.district}')" style="background: #9b59b6; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; margin-top: 5px; font-family: 'Georgia', serif;">
+                                <div style="color: #f39c12; font-weight: bold;"> ${escapeHTML(event.timeLeft)}</div>
+                                <button onclick="participateInEvent('${escapeHTML(event.type)}', '${escapeHTML(event.district)}')" style="background: #9b59b6; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; margin-top: 5px; font-family: 'Georgia', serif;">
                                      Get Involved
                                 </button>
                             </div>
@@ -3012,7 +3021,7 @@ function showCityEvents() {
 
 function showAssassination() {
     if (!onlineWorldState.isConnected) {
-        alert('You must be connected to the online world to order a hit.');
+        window.ui.toast('You must be connected to the online world to order a hit.', 'error');
         return;
     }
 
@@ -3157,9 +3166,9 @@ function showAssassination() {
     `;
 }
 
-function attemptAssassination(targetName) {
+async function attemptAssassination(targetName) {
     if (!onlineWorldState.isConnected || !onlineWorldState.socket || onlineWorldState.socket.readyState !== WebSocket.OPEN) {
-        alert('Not connected to the server!');
+        window.ui.toast('Not connected to the server!', 'error');
         return;
     }
 
@@ -3169,7 +3178,7 @@ function attemptAssassination(targetName) {
         const remaining = Math.ceil((window._assassinationCooldownUntil - now) / 1000);
         const mins = Math.floor(remaining / 60);
         const secs = remaining % 60;
-        alert(`You must wait ${mins}m ${secs}s before attempting another hit.`);
+        window.ui.toast(`You must wait ${mins}m ${secs}s before attempting another hit.`, 'error');
         return;
     }
 
@@ -3182,13 +3191,13 @@ function attemptAssassination(targetName) {
     const gangCount = (player.gang && player.gang.members) || 0;
     const bullets = player.ammo || 0;
 
-    if (guns.length < 1) { alert('You need at least one gun!'); return; }
-    if (bullets < 3) { alert('You need at least 3 bullets!'); return; }
-    if (totalVehicles < 1) { alert('You need a getaway vehicle!'); return; }
-    if ((player.energy || 0) < 30) { alert('Not enough energy! You need 30 energy.'); return; }
+    if (guns.length < 1) { window.ui.toast('You need at least one gun!', 'error'); return; }
+    if (bullets < 3) { window.ui.toast('You need at least 3 bullets!', 'error'); return; }
+    if (totalVehicles < 1) { window.ui.toast('You need a getaway vehicle!', 'error'); return; }
+    if ((player.energy || 0) < 30) { window.ui.toast('Not enough energy! You need 30 energy.', 'error'); return; }
 
-    const confirmHit = confirm(
-        `⚠️ ORDER HIT ON ${targetName}?\n\n` +
+    const confirmHit = await window.ui.confirm(
+        `ORDER HIT ON ${targetName}?\n\n` +
         `This will cost:\n` +
         `• 30 Energy\n` +
         `• 3-5 Bullets\n` +
@@ -3395,7 +3404,7 @@ function handleAssassinationVictim(message) {
     if (typeof showBriefNotification === 'function') {
         showBriefNotification(`💀 ASSASSINATED by ${message.attackerName}! Lost $${stolenStr}!`, 6000);
     } else {
-        alert(`💀 You were assassinated by ${message.attackerName}!\n\nThey stole $${stolenStr} (${message.stealPercent}%) of your cash!`);
+        window.ui.alert(`💀 You were assassinated by ${message.attackerName}!\n\nThey stole $${stolenStr} (${message.stealPercent}%) of your cash!`);
     }
 }
 
@@ -3407,7 +3416,7 @@ function handleAssassinationSurvived(message) {
     if (typeof showBriefNotification === 'function') {
         showBriefNotification(`🛡️ Survived a hit from ${message.attackerName}!`, 5000);
     } else {
-        alert(`🛡️ Someone tried to assassinate you!\n\n${message.attackerName} sent a hitman, but you survived!`);
+        window.ui.alert(`🛡️ Someone tried to assassinate you!\n\n${message.attackerName} sent a hitman, but you survived!`);
     }
 }
 
@@ -3727,13 +3736,13 @@ function spectateWar(district) {
                 outcome = 'Stalemate — both sides withdraw, licking their wounds.';
                 winningSide = null;
             } else if (attackerStrength > defenderStrength) {
-                outcome = `${attackerName} overwhelms the defense — the district is theirs!`;
+                outcome = `${escapeHTML(attackerName)} overwhelms the defense — the district is theirs!`;
                 winningSide = 'attacker';
-                addWorldEvent?.(`⚔️ ${attackerName} seized ${district} from ${defenderName}!`);
+                addWorldEvent?.(`⚔️ ${escapeHTML(attackerName)} seized ${escapeHTML(district)} from ${escapeHTML(defenderName)}!`);
             } else {
-                outcome = `${defenderName} holds firm — ${attackerName} retreats into the night.`;
+                outcome = `${escapeHTML(defenderName)} holds firm — ${escapeHTML(attackerName)} retreats into the night.`;
                 winningSide = 'defender';
-                addWorldEvent?.(`🛡️ ${defenderName} repelled ${attackerName}'s assault on ${district}.`);
+                addWorldEvent?.(`🛡️ ${escapeHTML(defenderName)} repelled ${escapeHTML(attackerName)}'s assault on ${escapeHTML(district)}.`);
             }
             log(`--- Battle concludes ---`);
             log(outcome);
@@ -3745,19 +3754,19 @@ function spectateWar(district) {
                     const winnings = betAmount * 2;
                     player.money += winnings;
                     betResult = `<div style="margin-top:10px;padding:10px;background:rgba(46,204,113,0.2);border:1px solid #2ecc71;border-radius:6px;color:#2ecc71;text-align:center;">💰 You won the bet! +$${winnings.toLocaleString()}</div>`;
-                    logAction(`💰 Won $${winnings.toLocaleString()} betting on the turf war in ${district}!`);
+                    logAction(`💰 Won $${winnings.toLocaleString()} betting on the turf war in ${escapeHTML(district)}!`);
                 } else if (winningSide === null) {
                     player.money += betAmount; // refund on stalemate
                     betResult = `<div style="margin-top:10px;padding:10px;background:rgba(241,196,15,0.2);border:1px solid #f1c40f;border-radius:6px;color:#f1c40f;text-align:center;">🤝 Stalemate — bet refunded ($${betAmount.toLocaleString()})</div>`;
                 } else {
                     betResult = `<div style="margin-top:10px;padding:10px;background:rgba(231,76,60,0.2);border:1px solid #e74c3c;border-radius:6px;color:#e74c3c;text-align:center;">💸 You lost the bet. -$${betAmount.toLocaleString()}</div>`;
-                    logAction(`💸 Lost $${betAmount.toLocaleString()} betting on the turf war in ${district}.`);
+                    logAction(`💸 Lost $${betAmount.toLocaleString()} betting on the turf war in ${escapeHTML(district)}.`);
                 }
                 if (typeof updateUI === 'function') updateUI();
             }
 
             footer.innerHTML = `<div style="color:#c0a062;font-weight:bold;">${outcome}</div>${betResult}`;
-            logAction?.(`⚔️ Spectated turf war in ${district}: ${outcome}`);
+            logAction?.(`⚔️ Spectated turf war in ${escapeHTML(district)}: ${outcome}`);
         }
     }, 1000);
     window._warSpectateInterval = interval;
@@ -3767,7 +3776,7 @@ function spectateWar(district) {
 
 function participateInEvent(eventType, district) {
     if (!onlineWorldState.isConnected) {
-        alert("You need to be connected to the online world!");
+        window.ui.toast("You need to be connected to the online world!", 'error');
         return;
     }
 

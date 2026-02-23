@@ -2299,7 +2299,7 @@ async function takeLoan(loanId) {
   showLoanShark();
 }
 
-function repayLoan(loanIndex) {
+async function repayLoan(loanIndex) {
   if (!player.activeLoans || loanIndex >= player.activeLoans.length) return;
   
   const loan = player.activeLoans[loanIndex];
@@ -2311,7 +2311,7 @@ function repayLoan(loanIndex) {
       alert("You don't have any money to put towards this loan!");
       return;
     }
-    const partialConfirm = confirm(`You don't have enough to pay the full $${loan.amountOwed.toLocaleString()}.\n\nPay $${partialAmount.toLocaleString()} (all your cash) to reduce the debt?\n\nRemaining after payment: $${(loan.amountOwed - partialAmount).toLocaleString()}`);
+    const partialConfirm = await ui.confirm(`You don't have enough to pay the full $${loan.amountOwed.toLocaleString()}.\n\nPay $${partialAmount.toLocaleString()} (all your cash) to reduce the debt?\n\nRemaining after payment: $${(loan.amountOwed - partialAmount).toLocaleString()}`);
     if (!partialConfirm) return;
     
     player.money -= partialAmount;
@@ -11899,7 +11899,7 @@ async function buyItem(index) {
     // Confirmation for expensive purchases (over $100K)
     if (finalPrice >= 100000 && item.type !== "ammo" && item.type !== "gas" && item.type !== "energy") {
       const pctOfWallet = ((finalPrice / player.money) * 100).toFixed(0);
-      const confirmed = confirm(`Purchase ${item.name} for $${finalPrice.toLocaleString()}?\n\nThis is ${pctOfWallet}% of your wallet ($${player.money.toLocaleString()}).`);
+      const confirmed = await ui.confirm(`Purchase ${item.name} for $${finalPrice.toLocaleString()}?\n\nThis is ${pctOfWallet}% of your wallet ($${player.money.toLocaleString()}).`);
       if (!confirmed) return;
     }
     
@@ -16525,7 +16525,7 @@ function showDeleteSelectionInterface(saves) {
   document.body.appendChild(overlay);
 }
 
-function confirmDeleteSave(slotNumber) {
+async function confirmDeleteSave(slotNumber) {
   const slot = getSaveEntry(slotNumber);
   if (!slot || slot.empty) {
     alert("Save slot not found!");
@@ -16535,7 +16535,7 @@ function confirmDeleteSave(slotNumber) {
   const slotName = slotNumber === 0 ? 'Auto-Save' : `Slot ${slotNumber}`;
   const confirmMessage = `Are you absolutely sure you want to permanently delete ${slotName}?\n\nSave: ${slot.saveName}\nPlayer: ${slot.playerName}\nLevel: ${slot.level}\n\nThis action cannot be undone!`;
   
-  if (confirm(confirmMessage)) {
+  if (await ui.confirm(confirmMessage)) {
     deleteSaveSlot(slotNumber);
     
     // Remove the overlay
@@ -18284,19 +18284,24 @@ function getItemImage(itemName) {
     return items[itemName];
   }
   
-  // Default fallback - return a placeholder or the item name
-  return `missing-item.png`;
+  // Default fallback - inline SVG data URI (no external file needed)
+  return `data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iODAiIGhlaWdodD0iODAiIGZpbGw9IiM0OTUwNTciIHJ4PSI4Ii8+PHRleHQgeD0iNDAiIHk9IjM1IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjQiIGZpbGw9IiNhYWIwYjUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPj88L3RleHQ+PHRleHQgeD0iNDAiIHk9IjU1IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iOCIgZmlsbD0iIzZjNzU3ZCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+Tm8gSW1hZ2U8L3RleHQ+PC9zdmc+`;
 }
 
-function saveToSlot(slotNumber) {
+async function saveToSlot(slotNumber) {
   if (!player.name || player.name.trim() === "") {
     alert("You must create a character before saving! Click 'Start Game' to create your character first.");
     return;
   }
   
-  const customName = prompt(`Enter a name for this save:`, `${player.name} - ${getCurrentDateString()}`);
+  const customName = await ui.prompt(`Enter a name for this save:`, `${player.name} - ${getCurrentDateString()}`);
   if (customName !== null) {
-    const result = saveGameToSlot(slotNumber, customName);
+    // Sanitize save name: strip HTML, control chars, limit length
+    const sanitized = customName.trim()
+      .replace(/<[^>]*>/g, '')
+      .replace(/[\x00-\x1F\x7F]/g, '')
+      .substring(0, 60);
+    const result = saveGameToSlot(slotNumber, sanitized || `${player.name} - ${getCurrentDateString()}`);
     if (result) {
       alert("Game saved successfully!");
     }

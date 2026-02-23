@@ -33,7 +33,7 @@ export const EXPANDED_SYSTEMS_CONFIG = {
 export const GANG_MEMBER_ROLES = {
     bruiser: {
         name: "Bruiser",
-        icon: "",
+        icon: "\uD83D\uDCAA",
         description: "Muscle for hire. Excels in combat and intimidation.",
         baseStat: { violence: 15, stealth: 5, intelligence: 5, loyalty: 50 },
         perk: {
@@ -43,7 +43,7 @@ export const GANG_MEMBER_ROLES = {
     },
     fixer: {
         name: "Fixer",
-        icon: "",
+        icon: "\uD83E\uDD1D",
         description: "Smooth talker who knows everyone worth knowing.",
         baseStat: { violence: 5, stealth: 10, intelligence: 15, loyalty: 60 },
         perk: {
@@ -53,7 +53,7 @@ export const GANG_MEMBER_ROLES = {
     },
     hacker: {
         name: "Hacker",
-        icon: "",
+        icon: "\uD83D\uDCBB",
         description: "Tech wizard specializing in breaking electronic security.",
         baseStat: { violence: 3, stealth: 15, intelligence: 20, loyalty: 55 },
         perk: {
@@ -63,7 +63,7 @@ export const GANG_MEMBER_ROLES = {
     },
     enforcer: {
         name: "Enforcer",
-        icon: "",
+        icon: "\uD83D\uDD2B",
         description: "Professional killer who handles the wet work.",
         baseStat: { violence: 18, stealth: 12, intelligence: 8, loyalty: 45 },
         perk: {
@@ -73,7 +73,7 @@ export const GANG_MEMBER_ROLES = {
     },
     driver: {
         name: "Wheelman",
-        icon: "",
+        icon: "\uD83D\uDE97",
         description: "Master behind the wheel, perfect for getaways.",
         baseStat: { violence: 8, stealth: 15, intelligence: 10, loyalty: 65 },
         perk: {
@@ -83,7 +83,7 @@ export const GANG_MEMBER_ROLES = {
     },
     scout: {
         name: "Scout",
-        icon: "",
+        icon: "\uD83D\uDD75\uFE0F",
         description: "Expert at gathering intelligence on targets.",
         baseStat: { violence: 6, stealth: 18, intelligence: 15, loyalty: 70 },
         perk: {
@@ -93,7 +93,7 @@ export const GANG_MEMBER_ROLES = {
     },
     accountant: {
         name: "Accountant",
-        icon: "",
+        icon: "\uD83D\uDCB0",
         description: "Numbers genius who maximizes profits.",
         baseStat: { violence: 2, stealth: 10, intelligence: 22, loyalty: 75 },
         perk: {

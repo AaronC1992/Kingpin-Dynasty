@@ -1,6 +1,7 @@
 // ==================== AUTH & CLOUD SAVE CLIENT ====================
 // Handles login, registration, cloud saves, and account UI.
 // Imported as ES module by game.js.
+import { ui } from './ui-modal.js';
 
 // ── Server URL (same host as multiplayer WS, but HTTP) ─────────
 const AUTH_API_BASE = (function () {
@@ -388,7 +389,7 @@ export function showAuthModal(onSuccessOrOpts) {
                     if (typeof window.applyCloudSave === 'function') {
                         const hasCurrentGame = window.player && window.player.name;
                         if (hasCurrentGame) {
-                            if (!confirm(`This will replace your current game with your cloud save:\n${save.playerName || 'Unknown'} (Lvl ${save.level || '?'})\n\nContinue?`)) {
+                            if (!await ui.confirm(`This will replace your current game with your cloud save:\n${save.playerName || 'Unknown'} (Lvl ${save.level || '?'})\n\nContinue?`)) {
                                 btn.disabled = false;
                                 btn.textContent = '📥 Load from Cloud';
                                 return;
@@ -428,8 +429,8 @@ export function showAuthModal(onSuccessOrOpts) {
 
         // Delete account button
         document.getElementById('auth-delete-account-btn').onclick = async () => {
-            if (!confirm('⚠️ WARNING: This will permanently delete your account and cloud save.\n\nThis cannot be undone!\n\nAre you sure?')) return;
-            if (!confirm('Are you REALLY sure? All progress will be lost forever.')) return;
+            if (!await ui.confirm('WARNING: This will permanently delete your account and cloud save.\n\nThis cannot be undone!\n\nAre you sure?')) return;
+            if (!await ui.confirm('Are you REALLY sure? All progress will be lost forever.')) return;
             const btn = document.getElementById('auth-delete-account-btn');
             btn.disabled = true;
             btn.textContent = '🗑️ Deleting...';
