@@ -11947,7 +11947,7 @@ function showTerritoryRelocation() {
           <h2 style="color: #e74c3c; margin: 0;">🏙️ Relocate</h2>
           <p style="color: #bdc3c7; margin: 4px 0 0;">${headerNote}</p>
         </div>
-        <button onclick="showMenu()" style="background: #555; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">← Back</button>
+        <button onclick="showTerritoryControl()" style="background: #555; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">← Back</button>
       </div>
       <div style="display: flex; flex-wrap: wrap; gap: 14px; justify-content: center;">
         ${cards}
