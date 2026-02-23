@@ -447,6 +447,7 @@ function handleClientMessage(clientId, message, ws) {
         case 'request_world_state':
             sendWorldState(clientId, ws);
             break;
+
         
         // ==================== SERVER-AUTHORITATIVE INTENTS (FIRST PASS) ====================
         // Clients now send INTENT messages only. The server validates and computes outcomes.
@@ -557,6 +558,7 @@ function handleGlobalChat(clientId, message) {
     }
     
     // Filter and sanitize message
+    if (!message.message || typeof message.message !== 'string') return;
     let sanitizedMessage = message.message.replace(/<[^>]*>/g, '').substring(0, 200); // Remove HTML and limit length
 
     // Profanity filter
@@ -607,6 +609,7 @@ function handleTerritoryClaim(clientId, message) {
     if (!player) return;
     
     const district = message.district;
+    if (!district || !gameState.cityDistricts[district]) return;
     const cost = 50000 + (gameState.cityDistricts[district].crimeLevel * 1000);
     
     if (player.money >= cost) {
@@ -803,10 +806,15 @@ function handlePlayerUpdate(clientId, message) {
         gameState.playerStates.set(clientId, playerState);
     }
     
-    // Update all state fields from message
+    // Update allowed state fields from message (whitelist approach)
     if (message.playerState) {
-        Object.assign(playerState, message.playerState);
-        // Do NOT trust client-sent identity; enforce server-side identity
+        const allowed = ['inJail', 'jailTime', 'health', 'energy', 'wantedLevel'];
+        for (const key of allowed) {
+            if (message.playerState[key] !== undefined) {
+                playerState[key] = message.playerState[key];
+            }
+        }
+        // Enforce server-side identity
         playerState.playerId = clientId;
         playerState.name = player.name;
         playerState.lastUpdate = Date.now();
@@ -1177,6 +1185,23 @@ function handleJailbreakBot(clientId, message) {
     broadcastJailRoster();
 }
 
+// ==================== SEND WORLD STATE ====================
+function sendWorldState(clientId, ws) {
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    const playerStatesObj = {};
+    gameState.playerStates.forEach((state, id) => {
+        playerStatesObj[id] = state;
+    });
+    ws.send(JSON.stringify({
+        type: 'world_update',
+        playerCount: gameState.players.size,
+        playerStates: playerStatesObj,
+        cityDistricts: gameState.cityDistricts,
+        cityEvents: gameState.cityEvents,
+        activeHeists: gameState.activeHeists
+    }));
+}
+
 // ==================== GIFT / MONEY TRANSFER ====================
 function handleSendGift(senderId, message) {
     const sender = gameState.players.get(senderId);
@@ -1191,7 +1216,14 @@ function handleSendGift(senderId, message) {
     const targetPlayer = gameState.players.get(targetId);
     if (!targetClient || !targetPlayer) return;
 
-    // We trust the client already deducted money; just notify recipient
+    // Validate sender has enough money server-side
+    if (sender.money < amount) return;
+    sender.money -= amount;
+    targetPlayer.money = (targetPlayer.money || 0) + amount;
+    if (senderState) { senderState.money = sender.money; senderState.lastUpdate = Date.now(); }
+    const targetState = gameState.playerStates.get(targetId);
+    if (targetState) { targetState.money = targetPlayer.money; targetState.lastUpdate = Date.now(); }
+
     if (targetClient.readyState === WebSocket.OPEN) {
         targetClient.send(JSON.stringify({
             type: 'gift_received',

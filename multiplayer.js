@@ -375,12 +375,15 @@ function initializeOnlineWorld() {
         }
     }
     
-    // Set up periodic state sync
-    setInterval(() => {
-        if (onlineWorldState.isConnected) {
-            syncPlayerState();
-        }
-    }, 5000); // Sync every 5 seconds
+    // Set up periodic state sync (only once)
+    if (!window._syncIntervalStarted) {
+        window._syncIntervalStarted = true;
+        setInterval(() => {
+            if (onlineWorldState.isConnected) {
+                syncPlayerState();
+            }
+        }, 5000); // Sync every 5 seconds
+    }
 }
 
 // Function to connect to multiplayer after game is loaded/started
@@ -1190,7 +1193,7 @@ function showPVP() {
                     </div>
                     <div>
                         <div style="color: #888; font-size: 0.85em;">Gang Members</div>
-                        <div style="color: #3498db; font-weight: bold; font-size: 1.3em;">${player.gangMembers || 0}</div>
+                        <div style="color: #3498db; font-weight: bold; font-size: 1.3em;">${(player.gang && player.gang.members) || 0}</div>
                     </div>
                 </div>
             </div>
@@ -1241,9 +1244,9 @@ function showPVP() {
 function calculateAttackPower() {
     return (player.level * 10) + 
            (player.skills.stealth * 8) + 
-           (player.skills.firearms * 12) + 
+           (player.skills.violence * 12) + 
            (player.skills.intelligence * 6) + 
-           (player.skills.power * 2);
+           ((player.power || 0) * 2);
 }
 
 // Helper to calculate defense power for display
@@ -1251,7 +1254,7 @@ function calculateDefensePower() {
     const territoryCount = countControlledTerritories();
     return (player.level * 10) + 
            (player.reputation * 0.5) + 
-           (player.skills.power * 2) + 
+           ((player.power || 0) * 2) + 
            (territoryCount * 15);
 }
 
@@ -1405,14 +1408,6 @@ function showGlobalChat() {
             mobileBackBtn.style.cssText = 'position: fixed; top: 10px; left: 10px; background: linear-gradient(45deg, #8b0000, #5a0000); color: white; padding: 10px 15px; border: 1px solid #ff0000; border-radius: 5px; cursor: pointer; z-index: 1000; font-family: "Georgia", serif;';
             mobileBackBtn.onclick = goBackToMainMenu;
             document.body.appendChild(mobileBackBtn);
-            
-            // Remove the button when leaving the screen
-            setTimeout(() => {
-                const existingBtn = document.querySelector('button[style*="position: fixed"]');
-                if (existingBtn && existingBtn.innerHTML === '← Back') {
-                    existingBtn.remove();
-                }
-            }, 100);
         }
     }
     
@@ -1897,8 +1892,10 @@ function initializeWorldData() {
 }
 
 // Start periodic world updates
+let _worldUpdateInterval = null;
 function startWorldUpdates() {
-    setInterval(() => {
+    if (_worldUpdateInterval) clearInterval(_worldUpdateInterval);
+    _worldUpdateInterval = setInterval(() => {
         if (onlineWorldState.isConnected) {
             updateWorldState();
         }
@@ -2065,7 +2062,8 @@ function addWorldEvent(event) {
 
 // Chat functions
 function sendGlobalChatMessage() {
-    const chatInput = document.getElementById('global-chat-input');
+    const chatInput = document.getElementById('chat-input');
+    if (!chatInput) return;
     const message = chatInput.value.trim();
     
     if (!message) return;
@@ -2442,7 +2440,7 @@ function spectateWar(district) {
     header.style.alignItems = 'center';
     header.innerHTML = `
         <h3 style="margin:0; color:#ff4444; text-shadow:2px 2px 6px #8b0000;"> Turf War: ${district}</h3>
-        <button style="background:#333; color:#c0a062; padding:6px 12px; border:1px solid #c0a062; border-radius:6px; cursor:pointer;" onclick="document.getElementById('turf-war-spectator').remove();"> Close</button>
+        <button style="background:#333; color:#c0a062; padding:6px 12px; border:1px solid #c0a062; border-radius:6px; cursor:pointer;" onclick="clearInterval(window._warSpectateInterval); document.getElementById('turf-war-spectator').remove();"> Close</button>
     `;
     modal.appendChild(header);
 
@@ -2533,11 +2531,16 @@ function spectateWar(district) {
             }
         }
 
-        // Update bars
-        attackerBar().style.width = `${(attackerStrength/attackerStrengthStart)*100}%`;
-        defenderBar().style.width = `${(defenderStrength/defenderStrengthStart)*100}%`;
-        attackerVal().textContent = attackerStrength;
-        defenderVal().textContent = defenderStrength;
+        // Update bars (null-safe after modal close)
+        const ab = attackerBar();
+        const db = defenderBar();
+        const av = attackerVal();
+        const dv = defenderVal();
+        if (!ab || !db) { clearInterval(interval); return; }
+        ab.style.width = `${(attackerStrength/attackerStrengthStart)*100}%`;
+        db.style.width = `${(defenderStrength/defenderStrengthStart)*100}%`;
+        if (av) av.textContent = attackerStrength;
+        if (dv) dv.textContent = defenderStrength;
 
         // Check end conditions
         if (attackerStrength <= 0 || defenderStrength <= 0 || tick >= maxTicks) {
@@ -2558,6 +2561,7 @@ function spectateWar(district) {
             logAction?.(` Spectated turf war in ${district} (${outcome})`);
         }
     }, 1000);
+    window._warSpectateInterval = interval;
 }
 
 // Removed placeholder challengeForTerritory(district); full implementation defined later.
