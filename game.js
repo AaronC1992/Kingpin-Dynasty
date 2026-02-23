@@ -14549,22 +14549,42 @@ function autoCollectBusinessesAndTribute() {
   // Businesses: collect if at least 1 hour passed
   if (player.businesses && player.businesses.length > 0) {
     const now = Date.now();
+    const tState = (typeof onlineWorldState !== 'undefined' && onlineWorldState.territories) || {};
+    const myName = (typeof onlineWorldState !== 'undefined' && onlineWorldState.username) || '';
     player.businesses.forEach(biz => {
       const businessType = businessTypes.find(bt => bt.id === biz.type);
       if (!businessType) return;
       const last = biz.lastCollection || now;
       const hoursElapsed = Math.floor((now - last) / (1000 * 60 * 60));
       if (hoursElapsed >= 1) {
+        // Phase 3: district multiplier
+        const bizMultiplier = getBusinessMultiplier(biz.districtId || player.currentTerritory);
         const hourlyIncome = Math.floor(businessType.baseIncome * Math.pow(businessType.incomeMultiplier, biz.level - 1) / 24);
-        const totalIncome = hourlyIncome * Math.min(hoursElapsed, 48);
-        if (totalIncome > 0) {
+        const grossIncome = Math.floor(hourlyIncome * Math.min(hoursElapsed, 48) * bizMultiplier);
+        // Phase 3: territory tax
+        let taxAmount = 0;
+        const bizDistrict = biz.districtId || player.currentTerritory;
+        const terrData = tState[bizDistrict];
+        if (terrData && terrData.owner && terrData.owner !== myName) {
+          taxAmount = Math.floor(grossIncome * BUSINESS_TAX_RATE);
+          if (typeof onlineWorldState !== 'undefined' && onlineWorldState.isConnected && onlineWorldState.socket) {
+            onlineWorldState.socket.send(JSON.stringify({
+              type: 'business_income_tax',
+              district: bizDistrict,
+              grossIncome: grossIncome,
+              taxAmount: taxAmount
+            }));
+          }
+        }
+        const netIncome = grossIncome - taxAmount;
+        if (netIncome > 0) {
           if (businessType.paysDirty) {
-            player.dirtyMoney = (player.dirtyMoney || 0) + totalIncome; // illegal business income is dirty
+            player.dirtyMoney = (player.dirtyMoney || 0) + netIncome;
           } else {
-            player.money += totalIncome; // business income is clean
+            player.money += netIncome;
           }
           biz.lastCollection = now;
-          collected += totalIncome;
+          collected += netIncome;
         }
       }
     });
@@ -16609,6 +16629,16 @@ function initializeMissingData() {
         if (!member.specialization || member.specialization !== expected) {
           member.specialization = expected;
         }
+      }
+    });
+  }
+
+  // Phase 3: Business district migration — stamp districtId on legacy businesses
+  if (player.businesses && player.businesses.length > 0) {
+    const fallbackDistrict = player.currentTerritory || 'residential_low';
+    player.businesses.forEach(biz => {
+      if (!biz.districtId) {
+        biz.districtId = fallbackDistrict;
       }
     });
   }

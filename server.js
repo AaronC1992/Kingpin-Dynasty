@@ -2087,8 +2087,8 @@ function handleBusinessIncomeTax(clientId, message) {
     const terr = gameState.territories[district];
     if (!terr || !terr.owner || terr.owner === player.name) return;
 
-    // Cap tax at 10% of grossIncome for safety
-    const safeTax = Math.min(taxAmount, Math.floor((grossIncome || 0) * 0.10));
+    // Cap tax at TAX_RATE of grossIncome for safety (must stay in sync with BUSINESS_TAX_RATE in territories.js)
+    const safeTax = Math.min(taxAmount, Math.floor((grossIncome || 0) * TAX_RATE));
     if (safeTax <= 0) return;
 
     terr.taxCollected = (terr.taxCollected || 0) + safeTax;
