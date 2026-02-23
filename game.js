@@ -7805,14 +7805,8 @@ async function fireGangMember(memberIndex) {
 
 // Function to show the jail screen
 function showJailScreen() {
+  hideAllScreens();
   document.getElementById("jail-screen").style.display = "block";
-  document.getElementById("menu").style.display = "none";
-  document.getElementById("gameplay").style.display = "none";
-  document.getElementById("jobs-screen").style.display = "none";
-  document.getElementById("missions-screen").style.display = "none"; // Hide missions screen
-  document.getElementById("store-screen").style.display = "none";
-  document.getElementById("real-estate-screen").style.display = "none";
-  document.getElementById("jailbreak-screen").style.display = "none"; // Hide jailbreak screen
 
   // Show player portrait behind bars
   displayPlayerJailPortrait();
@@ -11308,7 +11302,7 @@ function showJailbreak() {
     requestJailRoster();
   }
 
-  document.getElementById("menu").style.display = "none";
+  hideAllScreens();
   document.getElementById("jailbreak-screen").style.display = "block";
   updateJailbreakPrisonerList();
 }
@@ -14170,7 +14164,7 @@ function updateJailTimer() {
 
 // Function to show the Court House screen
 function showCourtHouse() {
-  document.getElementById("menu").style.display = "none";
+  hideAllScreens();
   document.getElementById("court-house-screen").style.display = "block";
   updateCourtHouseCost();
 }
@@ -14611,7 +14605,7 @@ function fenceSellAllCars() {
 
 // Function to show the hospital screen
 function showHospital() {
-  document.getElementById("menu").style.display = "none";
+  hideAllScreens();
   document.getElementById("hospital-screen").style.display = "block";
   renderHospitalContent();
 }
