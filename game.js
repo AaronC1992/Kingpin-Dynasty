@@ -7,7 +7,7 @@ import { crimeFamilies, factionEffects, potentialMentors } from './factions.js';
 import { storyCampaigns, factionMissions, territoryMissions, bossBattles, missionProgress } from './missions.js';
 import { narrationVariations, getRandomNarration } from './narration.js';
 import { storeItems, realEstateProperties, businessTypes, loanOptions, launderingMethods } from './economy.js';
-import { prisonerNames, recruitNames, availableRecruits, randomEncounterRecruit, jailPrisoners, jailbreakPrisoners, generateJailPrisoners, generateJailbreakPrisoners, generateAvailableRecruits, generateRandomEncounter } from './generators.js';
+import { prisonerNames, recruitNames, availableRecruits, randomEncounterRecruit, clearRandomEncounterRecruit, jailPrisoners, jailbreakPrisoners, generateJailPrisoners, generateJailbreakPrisoners, generateAvailableRecruits, generateRandomEncounter } from './generators.js';
 import { EventBus } from './eventBus.js';
 import { GameLogging } from './logging.js';
 import { ui, ModalSystem } from './ui-modal.js';
@@ -11872,7 +11872,7 @@ function handleRecruitChoice(shouldHire) {
     const maxCapacity = calculateMaxGangMembers();
     if (player.gang.gangMembers.length >= maxCapacity) {
       alert(`You've reached your gang capacity limit of ${maxCapacity} members! Purchase more real estate to house additional gang members.`);
-      randomEncounterRecruit = null;
+      clearRandomEncounterRecruit();
       return;
     }
     
@@ -11898,7 +11898,7 @@ function handleRecruitChoice(shouldHire) {
     logAction(`🚶 You decline ${recruit.name}'s offer to join. Sometimes it's better to be selective about who you trust.`);
   }
 
-  randomEncounterRecruit = null; // Clear the encounter
+  clearRandomEncounterRecruit(); // Clear the encounter
 }
 
 // Function to show the store

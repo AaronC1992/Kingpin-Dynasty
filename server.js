@@ -24,8 +24,8 @@ function getCorsHeaders(req) {
     const origin = req.headers.origin || '*';
     return {
         'Access-Control-Allow-Origin': ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0],
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
         'Access-Control-Max-Age': '86400'
     };
 }
@@ -269,8 +269,8 @@ const server = http.createServer(async (req, res) => {
             res.writeHead(200, { 
                 'Content-Type': contentType,
                 'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-                'Access-Control-Allow-Headers': 'Content-Type'
+                'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type, Authorization'
             });
             // Don't specify encoding for binary files (images, etc.)
             if (contentType.startsWith('text/') || contentType.includes('javascript') || contentType.includes('json')) {
