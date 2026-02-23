@@ -283,6 +283,24 @@ export function showAuthModal(onSuccessOrOpts) {
                 await login(user, pass);
             }
             updateAuthStatusUI();
+
+            // After a LOGIN (not register), try to auto-load the cloud save
+            if (!isRegisterMode) {
+                try {
+                    const save = await cloudLoad();
+                    if (save && save.data && typeof window.applyCloudSave === 'function') {
+                        window.applyCloudSave(save);
+                        if (typeof window.showBriefNotification === 'function') {
+                            window.showBriefNotification('☁️ Cloud save loaded!', 'success');
+                        }
+                        close();
+                        return; // skip onSuccess — save was loaded, game is running
+                    }
+                } catch (e) {
+                    console.warn('[auth] No cloud save to auto-load:', e.message);
+                }
+            }
+
             if (required && onSuccess) {
                 // Required-mode: close modal and fire callback immediately
                 close();

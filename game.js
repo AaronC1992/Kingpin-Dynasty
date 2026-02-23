@@ -16707,10 +16707,19 @@ function confirmDeleteSave(slotNumber) {
     }
     
     // Show success message
-    alert(`${slotName} has been permanently deleted!\n\nYou have been returned to the start screen where you can begin a new criminal empire.`);
+    alert(`${slotName} has been permanently deleted!\n\nYou have been returned to the title screen.`);
     
-    // Always return to intro screen after deletion so player can restart
-    returnToIntroScreen();
+    // Check if any saves remain
+    const remainingSlots = getAllSaveSlots();
+    const remainingSaves = remainingSlots.filter(s => !s.empty);
+    
+    if (remainingSaves.length === 0) {
+      // No saves left — return to title screen
+      returnToIntroScreen();
+    } else {
+      // Still have saves — return to title screen so player can choose
+      returnToIntroScreen();
+    }
     
     logAction(`🗑️ Deleted save: ${slotName} (${slot.saveName})`);
   }
@@ -16770,17 +16779,16 @@ function returnToIntroScreen() {
     }
   });
   
-  // Show the command center (intro screen removed)
-  showCommandCenter();
-  
-  logAction(`🏠 Returned to SafeHouse - ready to start a new criminal empire!`);
+  // Return to title screen
+  gameplayActive = false;
+  document.getElementById('intro-screen').style.display = 'block';
 }
 
 // ── Delete all local saves and return to title screen ──────────────────
 // Called after the server-side account deletion is complete.
 function deleteAllLocalSavesAndReset() {
-  // Wipe every game save slot from localStorage
-  for (let i = 1; i <= 10; i++) {
+  // Wipe every game save slot from localStorage (0 = auto-save, 1-10 = manual)
+  for (let i = 0; i <= 10; i++) {
     localStorage.removeItem(`gameSlot_${i}`);
   }
   localStorage.removeItem('saveSystemPrefs');
