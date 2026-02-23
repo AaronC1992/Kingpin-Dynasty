@@ -431,21 +431,21 @@ export function showAuthModal(onSuccessOrOpts) {
             const btn = document.getElementById('auth-delete-account-btn');
             btn.disabled = true;
             btn.textContent = '🗑️ Deleting...';
+
+            // Attempt server-side deletion, but always clean up locally
             try {
                 await deleteAccount();
-                updateAuthStatusUI();
-                close();
-                // Wipe local saves and return to title screen
-                if (typeof window.deleteAllLocalSavesAndReset === 'function') {
-                    window.deleteAllLocalSavesAndReset();
-                }
             } catch (err) {
-                btn.textContent = '❌ Delete failed';
-                console.error('Delete account error:', err);
-                setTimeout(() => {
-                    btn.disabled = false;
-                    btn.textContent = '🗑️ Delete Account & Save';
-                }, 2000);
+                console.error('Delete account server error:', err);
+                // Server call may have failed, but user confirmed — clear local state anyway
+            }
+
+            // Always: force log-out, close modal, wipe saves, return to title
+            clearLocalAuth();
+            updateAuthStatusUI();
+            close();
+            if (typeof window.deleteAllLocalSavesAndReset === 'function') {
+                window.deleteAllLocalSavesAndReset();
             }
         };
     }
