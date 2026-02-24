@@ -2078,14 +2078,14 @@ export default {
     RIVALS: RIVAL_KINGPINS,
     
     // Gang functions
-    generateGangMember,
+    generateGangMember: generateExpandedGangMember,
     calculateMemberEffectiveness,
     updateMemberLoyalty,
     
     // Territory functions
-    assignMembersToTerritory,
-    calculateTerritoryDefense,
-    processTerritoryAttack,
+    assignMembersToTerritory: assignMembersToExpandedTerritory,
+    calculateTerritoryDefense: calculateExpandedTerritoryDefense,
+    processTerritoryAttack: processExpandedTerritoryAttack,
     
     // Event functions
     triggerInteractiveEvent,
