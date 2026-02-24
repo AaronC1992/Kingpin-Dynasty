@@ -14700,22 +14700,22 @@ function showTutorialUI(uiType) {
 
 // Function to clear all tutorial highlights
 function clearTutorialHighlights() {
-  // Clear stats bar highlighting
+  // Clear stats bar highlighting — restore CSS-defined values
   const statsBar = document.getElementById("stats-bar");
   if (statsBar) {
-    statsBar.style.border = "3px solid #e74c3c"; // Original border
-    statsBar.style.boxShadow = "none";
-    statsBar.style.zIndex = "10"; // Original z-index
-    statsBar.style.position = "fixed"; // Original position
+    statsBar.style.border = "";            // Let CSS rule (border-bottom: 2px solid #d4af37) take over
+    statsBar.style.boxShadow = "";
+    statsBar.style.zIndex = "";            // Let CSS rule (z-index: 20) take over
+    statsBar.style.position = "";          // Let CSS rule (position: fixed) take over
   }
   
-  // Clear action log highlighting
+  // Clear action log highlighting — restore CSS-defined values
   const actionLog = document.getElementById("action-log");
   if (actionLog) {
-    actionLog.style.border = "2px solid rgba(52, 152, 219, 0.3)"; // Original border
-    actionLog.style.boxShadow = "none";
-    actionLog.style.zIndex = "10"; // Original z-index
-    actionLog.style.position = "fixed"; // Original position
+    actionLog.style.border = "";           // Let CSS rule (border-right: 1px solid #d4af37) take over
+    actionLog.style.boxShadow = "";
+    actionLog.style.zIndex = "";           // Let CSS rule (z-index: 15) take over
+    actionLog.style.position = "";         // Let CSS rule (position: fixed) take over
   }
   
   // Clear all game screen highlighting and reset styles
@@ -14724,12 +14724,11 @@ function clearTutorialHighlights() {
   screens.forEach(screenId => {
     const screen = document.getElementById(screenId);
     if (screen) {
-      screen.style.border = "1px solid rgba(52, 152, 219, 0.3)"; // Original border
-      screen.style.boxShadow = "0 10px 30px rgba(0,0,0,0.5)"; // Original shadow
-      screen.style.opacity = "1";
-      screen.style.pointerEvents = "auto";
-      screen.style.zIndex = "auto"; // Reset z-index
-      // Don't change position for menu and other main screens - they need to stay fixed
+      screen.style.border = "";
+      screen.style.boxShadow = "";
+      screen.style.opacity = "";
+      screen.style.pointerEvents = "";
+      screen.style.zIndex = "";
     }
   });
 }
