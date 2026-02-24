@@ -1164,7 +1164,7 @@ p, ul {
     height: calc(100vh - 44px);
     background: #111;
     color: #e0e0e0;
-    padding: 15px;
+    padding: 0;
     overflow-y: auto;
     z-index: 15;
     font-size: 13px;
@@ -1173,29 +1173,37 @@ p, ul {
 }
 
 #action-log h3 {
-    margin-top: 0;
-    font-size: 1.2em;
+    position: sticky;
+    top: 0;
+    margin: 0;
+    font-size: 1.1em;
     color: #d4af37;
+    background: linear-gradient(to bottom, #1a1a1a, #111);
     border-bottom: 2px solid #d4af37;
-    padding-bottom: 10px;
+    padding: 12px 15px 10px;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 2px;
+    text-align: center;
+    z-index: 1;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.6);
 }
 
 #action-log ul {
     list-style-type: none;
-    padding: 0;
+    padding: 10px 12px;
+    margin: 0;
 }
 
 #action-log li {
-    margin-bottom: 10px;
-    padding: 8px;
+    margin-bottom: 8px;
+    padding: 8px 10px;
     background: #1a1a1a;
-    border-radius: 2px;
+    border-radius: 3px;
     border-left: 3px solid #c0392b;
-    font-size: 12px;
+    font-size: 11px;
+    line-height: 1.4;
     animation: logItemSlide 0.3s ease-out;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid #222;
 }
 
 @keyframes logItemSlide {
