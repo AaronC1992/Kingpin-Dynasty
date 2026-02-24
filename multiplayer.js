@@ -125,6 +125,90 @@ let onlineWorldState = {
 // Territory income tracking
 let territoryIncomeNextCollection = Date.now() + (7 * 24 * 60 * 60 * 1000); // Next weekly collection
 
+// ==================== NOTIFICATION SOUND SYSTEM ====================
+// Web Audio API-based sound effects for PvP events — no external files needed.
+let _audioCtx = null;
+function getAudioCtx() {
+    if (!_audioCtx) {
+        try { _audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { /* silent */ }
+    }
+    return _audioCtx;
+}
+
+/**
+ * Play a short synthesized notification sound.
+ * Types: 'combat', 'victory', 'defeat', 'alert', 'cash', 'heist'
+ */
+function playNotificationSound(type) {
+    const ctx = getAudioCtx();
+    if (!ctx) return;
+    try {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        const now = ctx.currentTime;
+
+        switch (type) {
+            case 'combat':      // Short aggressive stab
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(220, now); osc.frequency.exponentialRampToValueAtTime(110, now + 0.15);
+                gain.gain.setValueAtTime(0.25, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+                osc.start(now); osc.stop(now + 0.2); break;
+            case 'victory':     // Rising triumphant tone
+                osc.type = 'square'; osc.frequency.setValueAtTime(440, now); osc.frequency.exponentialRampToValueAtTime(880, now + 0.3);
+                gain.gain.setValueAtTime(0.2, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+                osc.start(now); osc.stop(now + 0.4); break;
+            case 'defeat':      // Descending low tone
+                osc.type = 'sine'; osc.frequency.setValueAtTime(330, now); osc.frequency.exponentialRampToValueAtTime(80, now + 0.4);
+                gain.gain.setValueAtTime(0.2, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+                osc.start(now); osc.stop(now + 0.5); break;
+            case 'alert':       // Double beep
+                osc.type = 'square'; osc.frequency.setValueAtTime(800, now);
+                gain.gain.setValueAtTime(0.15, now); gain.gain.setValueAtTime(0, now + 0.08);
+                gain.gain.setValueAtTime(0.15, now + 0.12); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+                osc.start(now); osc.stop(now + 0.25); break;
+            case 'cash':        // Ka-ching
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(1200, now); osc.frequency.exponentialRampToValueAtTime(2400, now + 0.1);
+                gain.gain.setValueAtTime(0.15, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+                osc.start(now); osc.stop(now + 0.2); break;
+            case 'heist':       // Tension build
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, now); osc.frequency.exponentialRampToValueAtTime(600, now + 0.5);
+                gain.gain.setValueAtTime(0.12, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+                osc.start(now); osc.stop(now + 0.6); break;
+            default:            // Generic blip
+                osc.type = 'sine'; osc.frequency.setValueAtTime(600, now);
+                gain.gain.setValueAtTime(0.15, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+                osc.start(now); osc.stop(now + 0.15);
+        }
+    } catch (e) { /* AudioContext not supported or user hasn't interacted yet */ }
+}
+
+/**
+ * Show a toast notification at the top of the screen.
+ * Auto-dismisses after `duration` ms.
+ */
+function showMPToast(text, color, duration) {
+    duration = duration || 4000;
+    color = color || '#c0a062';
+    let container = document.getElementById('mp-toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'mp-toast-container';
+        container.style.cssText = 'position:fixed;top:10px;right:10px;z-index:99999;display:flex;flex-direction:column;gap:8px;pointer-events:none;';
+        document.body.appendChild(container);
+    }
+    const toast = document.createElement('div');
+    toast.style.cssText = `background:rgba(0,0,0,0.92);border:1px solid ${color};color:${color};padding:12px 20px;border-radius:8px;font-family:Georgia,serif;font-size:0.95em;box-shadow:0 4px 15px rgba(0,0,0,0.5);pointer-events:auto;opacity:0;transform:translateX(30px);transition:opacity 0.3s,transform 0.3s;max-width:350px;`;
+    toast.textContent = text;
+    container.appendChild(toast);
+    // Animate in
+    requestAnimationFrame(() => { toast.style.opacity = '1'; toast.style.transform = 'translateX(0)'; });
+    setTimeout(() => {
+        toast.style.opacity = '0'; toast.style.transform = 'translateX(30px)';
+        setTimeout(() => toast.remove(), 300);
+    }, duration);
+}
+
 // ==================== MISSING FUNCTION IMPLEMENTATIONS ====================
 
 // Sync server territory data to local player object
@@ -1076,7 +1160,11 @@ async function handleServerMessage(message) {
             if (message.playerId === onlineWorldState.playerId) {
                 if (typeof message.money === 'number') player.money = message.money;
                 if (typeof message.territory === 'number') player.territory = message.territory;
+                playNotificationSound('cash');
+                showMPToast(`\uD83D\uDC51 You claimed ${message.district}!`, '#27ae60');
                 updateUI();
+            } else {
+                showMPToast(`${message.playerName} claimed ${message.district}!`, '#f39c12');
             }
             break;
 
@@ -1133,23 +1221,31 @@ async function handleServerMessage(message) {
         case 'territory_ownership_changed':
             onlineWorldState.territories = message.territories || onlineWorldState.territories;
             if (message.method === 'assassination') {
-                addWorldEvent(`🎯 ${message.attacker} seized ${message.seized.join(', ')} from ${message.defender} via assassination!`);
+                addWorldEvent(`\uD83C\uDFAF ${message.attacker} seized ${message.seized.join(', ')} from ${message.defender} via assassination!`);
+                playNotificationSound('alert');
+                showMPToast(`\uD83C\uDFAF ${message.attacker} seized territory via assassination!`, '#8b0000', 6000);
             } else if (message.method === 'war') {
-                addWorldEvent(`⚔️ ${message.attacker} conquered ${message.seized.join(', ')} from ${message.defender} in a gang war!`);
+                addWorldEvent(`\u2694\uFE0F ${message.attacker} conquered ${message.seized.join(', ')} from ${message.defender} in a gang war!`);
+                playNotificationSound('combat');
+                showMPToast(`\u2694\uFE0F ${message.attacker} conquered territory in a war!`, '#8b0000', 6000);
             } else {
-                addWorldEvent(`👑 ${message.attacker} claimed ${message.seized.join(', ')}!`);
+                addWorldEvent(`\uD83D\uDC51 ${message.attacker} claimed ${message.seized.join(', ')}!`);
             }
             break;
 
         case 'territory_war_result':
             if (message.victory) {
                 onlineWorldState.territories = message.territories || onlineWorldState.territories;
-                logAction(`⚔️ Victory! Conquered ${message.district} from ${message.oldOwner}. Rep +${message.repGain}, lost ${message.gangMembersLost} members, HP -${message.healthDamage}.`);
+                logAction(`\u2694\uFE0F Victory! Conquered ${message.district} from ${message.oldOwner}. Rep +${message.repGain}, lost ${message.gangMembersLost} members, HP -${message.healthDamage}.`);
+                playNotificationSound('victory');
+                showMPToast(`\u2694\uFE0F Victory! You conquered ${message.district}!`, '#2ecc71', 5000);
                 if (typeof message.wantedLevel === 'number') player.wantedLevel = message.wantedLevel;
                 if (typeof message.energy === 'number') player.energy = message.energy;
                 if (typeof message.newHealth === 'number') player.health = message.newHealth;
             } else {
-                logAction(`⚔️ Defeat! Failed to take ${message.district}. Lost ${message.gangMembersLost} members, HP -${message.healthDamage}.${message.jailed ? ' Arrested!' : ''}`);
+                logAction(`\u2694\uFE0F Defeat! Failed to take ${message.district}. Lost ${message.gangMembersLost} members, HP -${message.healthDamage}.${message.jailed ? ' Arrested!' : ''}`);
+                playNotificationSound('defeat');
+                showMPToast(`\u2694\uFE0F Defeat! Failed to take ${message.district}.`, '#e74c3c', 5000);
                 if (typeof message.wantedLevel === 'number') player.wantedLevel = message.wantedLevel;
                 if (typeof message.energy === 'number') player.energy = message.energy;
                 if (typeof message.newHealth === 'number') player.health = message.newHealth;
@@ -1163,20 +1259,26 @@ async function handleServerMessage(message) {
 
         case 'territory_war_defense_lost':
             onlineWorldState.territories = message.territories || onlineWorldState.territories;
-            logAction(`⚔️ ${message.attackerName} conquered your territory ${message.district}!`);
-            if (window.ui) window.ui.toast(`${message.attackerName} seized ${message.district.replace(/_/g, ' ')} from you! ⚔️`, 'error');
+            logAction(`\u2694\uFE0F ${message.attackerName} conquered your territory ${message.district}!`);
+            playNotificationSound('defeat');
+            showMPToast(`\u2694\uFE0F ${message.attackerName} seized your territory!`, '#e74c3c', 6000);
+            if (window.ui) window.ui.toast(`${message.attackerName} seized ${message.district.replace(/_/g, ' ')} from you! \u2694\uFE0F`, 'error');
             break;
 
         case 'territory_war_defense_held':
-            logAction(`⚔️ ${message.attackerName} attacked your territory ${message.district} but your defenses held!`);
-            if (window.ui) window.ui.toast(`You repelled ${message.attackerName}'s attack on ${message.district.replace(/_/g, ' ')}! 🛡️`, 'success');
+            logAction(`\u2694\uFE0F ${message.attackerName} attacked your territory ${message.district} but your defenses held!`);
+            playNotificationSound('victory');
+            showMPToast(`\uD83D\uDEE1\uFE0F Defended ${message.district} from ${message.attackerName}!`, '#2ecc71', 5000);
+            if (window.ui) window.ui.toast(`You repelled ${message.attackerName}'s attack on ${message.district.replace(/_/g, ' ')}! \uD83D\uDEE1\uFE0F`, 'success');
             break;
 
         case 'territory_tax_income':
             if (typeof message.amount === 'number') {
                 if (typeof message.newMoney === 'number') player.money = message.newMoney;
                 const taxSource = message.source === 'business' ? 'business income' : 'job';
-                logAction(`💰 Tax income: $${message.amount.toLocaleString()} from ${message.from}'s ${taxSource} (${message.district.replace(/_/g, ' ')}).`);
+                logAction(`\uD83D\uDCB0 Tax income: $${message.amount.toLocaleString()} from ${message.from}'s ${taxSource} (${message.district.replace(/_/g, ' ')}).`);
+                playNotificationSound('cash');
+                showMPToast(`\uD83D\uDCB0 +$${message.amount.toLocaleString()} tax from ${message.from}`, '#27ae60', 3000);
                 updateUI();
             }
             break;
@@ -1295,10 +1397,13 @@ async function handleServerMessage(message) {
             if (message.heistId) {
                 onlineWorldState.activeHeists = onlineWorldState.activeHeists.filter(h => h.id !== message.heistId);
             }
-            addWorldEvent(message.worldMessage || (message.success ? '💰 A heist was successful!' : '🚔 A heist has failed!'));
+            addWorldEvent(message.worldMessage || (message.success ? '\uD83D\uDCB0 A heist was successful!' : '\uD83D\uDE94 A heist has failed!'));
             // Show result popup if player was involved
             if (message.involved) {
                 showHeistResult(message);
+                playNotificationSound(message.success ? 'cash' : 'defeat');
+            } else {
+                showMPToast(message.worldMessage || 'A heist just went down!', message.success ? '#2ecc71' : '#e74c3c');
             }
             // Refresh heists screen if shown
             if (document.getElementById('multiplayer-content') && document.getElementById('multiplayer-content').innerHTML.includes('Big Scores')) {
@@ -1309,6 +1414,8 @@ async function handleServerMessage(message) {
         case 'heist_invite':
             // Someone invited you to a heist
             if (message.heistId && message.inviterName) {
+                playNotificationSound('heist');
+                showMPToast(`\uD83D\uDCB0 ${message.inviterName} invited you to a heist!`, '#f39c12', 8000);
                 const acceptInvite = await window.ui.confirm(`${message.inviterName} invited you to a heist: ${message.target || 'Unknown'}!\n\nReward: $${(message.reward || 0).toLocaleString()}\nDifficulty: ${message.difficulty || 'Unknown'}\n\nJoin their crew?`);
                 if (acceptInvite && onlineWorldState.socket && onlineWorldState.socket.readyState === WebSocket.OPEN) {
                     onlineWorldState.socket.send(JSON.stringify({
@@ -1356,25 +1463,43 @@ async function handleServerMessage(message) {
             
         case 'assassination_result':
             handleAssassinationResult(message);
+            playNotificationSound(message.success ? 'victory' : 'defeat');
             break;
 
         case 'assassination_victim':
             handleAssassinationVictim(message);
+            playNotificationSound('alert');
+            showMPToast(`\uD83C\uDFAF ${message.attackerName} ordered a hit on you!`, '#e74c3c', 6000);
             break;
 
         case 'assassination_survived':
             handleAssassinationSurvived(message);
+            playNotificationSound('alert');
+            showMPToast(`\uD83D\uDEE1\uFE0F You survived an assassination attempt!`, '#2ecc71', 5000);
             break;
 
         case 'combat_result':
             // Server-authoritative PvP combat outcome — show result modal
+            if (message.error) {
+                showSystemMessage(message.error, '#e74c3c');
+                break;
+            }
             const isWinner = message.winner === (player.name || '');
             const isLoser = message.loser === (player.name || '');
             if (isWinner || isLoser) {
                 showPvpResultModal(message, isWinner);
+                playNotificationSound(isWinner ? 'victory' : 'defeat');
+                // Sync health damage from server
+                if (message.healthDamage) {
+                    const myDmg = isWinner ? message.healthDamage.winner : message.healthDamage.loser;
+                    if (myDmg) player.health = Math.max(1, (player.health || 100) - myDmg);
+                }
+            } else {
+                // Spectator — show toast
+                showMPToast(`\u2694\uFE0F ${message.winner} defeated ${message.loser}!`, '#8b0000');
             }
             // Always log in world feed for other spectators
-            addWorldEvent(`⚔️ ${message.winner} defeated ${message.loser} in combat!`);
+            addWorldEvent(`\u2694\uFE0F ${message.winner} defeated ${message.loser} in combat!`);
             // Stats sync happens via next world_update
             break;
 
@@ -1426,6 +1551,19 @@ async function handleServerMessage(message) {
                 showSystemMessage(message.message || `You received a $${message.amount.toLocaleString()} gift!`, '#c0a062');
                 logAction(`💰 ${message.senderName || 'Someone'} sent you $${message.amount.toLocaleString()}!`);
                 updateUI();
+            }
+            break;
+
+        case 'war_bet_result':
+            // Server resolved our war bet — store result for the spectator animation to display
+            if (message.success) {
+                window._lastWarBetResult = message;
+                // Sync money immediately so HUD updates
+                if (message.newMoney !== undefined) player.money = message.newMoney;
+                if (typeof updateUI === 'function') updateUI();
+                playNotificationSound(message.won ? 'victory' : 'defeat');
+            } else {
+                showSystemMessage(message.error || 'Bet failed.', '#e74c3c');
             }
             break;
 
@@ -1739,6 +1877,7 @@ function showPvpResultModal(message, isWinner) {
 
     const repChange = message.repChange || 5;
     const opponent = isWinner ? message.loser : message.winner;
+    const myDmg = message.healthDamage ? (isWinner ? message.healthDamage.winner : message.healthDamage.loser) : 0;
 
     if (isWinner) {
         modal.style.border = '2px solid #2ecc71';
@@ -1757,6 +1896,10 @@ function showPvpResultModal(message, isWinner) {
                         <div style="color:#2ecc71;font-size:1.5em;font-weight:bold;">+${repChange}</div>
                         <div style="color:#888;font-size:0.85em;">Reputation</div>
                     </div>
+                    ${myDmg ? `<div>
+                        <div style="color:#e67e22;font-size:1.5em;font-weight:bold;">-${myDmg}</div>
+                        <div style="color:#888;font-size:0.85em;">Health</div>
+                    </div>` : ''}
                     <div>
                         <div style="color:#f1c40f;font-size:1.5em;font-weight:bold;">⭐</div>
                         <div style="color:#888;font-size:0.85em;">Street Cred</div>
@@ -1771,7 +1914,7 @@ function showPvpResultModal(message, isWinner) {
             </div>
         `;
 
-        logAction(`🏆 Victory! Defeated ${opponent} and gained ${repChange} reputation!`);
+        logAction(`🏆 Victory! Defeated ${opponent} and gained ${repChange} reputation!${myDmg ? ` (HP -${myDmg})` : ''}`);
     } else {
         modal.style.border = '2px solid #e74c3c';
         modal.style.boxShadow = '0 0 30px rgba(231,76,60,0.5)';
@@ -1790,6 +1933,10 @@ function showPvpResultModal(message, isWinner) {
                         <div style="color:#e74c3c;font-size:1.5em;font-weight:bold;">-${repLoss}</div>
                         <div style="color:#888;font-size:0.85em;">Reputation</div>
                     </div>
+                    ${myDmg ? `<div>
+                        <div style="color:#e67e22;font-size:1.5em;font-weight:bold;">-${myDmg}</div>
+                        <div style="color:#888;font-size:0.85em;">Health</div>
+                    </div>` : ''}
                     <div>
                         <div style="color:#e74c3c;font-size:1.5em;font-weight:bold;">💔</div>
                         <div style="color:#888;font-size:0.85em;">Pride</div>
@@ -1804,7 +1951,7 @@ function showPvpResultModal(message, isWinner) {
             </div>
         `;
 
-        logAction(`💀 Defeated by ${opponent}. Lost ${repLoss} reputation.`);
+        logAction(`💀 Defeated by ${opponent}. Lost ${repLoss} reputation.${myDmg ? ` (HP -${myDmg})` : ''}`);
     }
 
     if (typeof updateUI === 'function') updateUI();
@@ -1823,16 +1970,14 @@ function syncPlayerState() {
             type: 'player_update',
             playerId: onlineWorldState.playerId,
             playerName: playerName,
+            money: player.money,
+            reputation: player.reputation,
+            level: player.level || 1,
+            territory: player.territory,
             playerState: {
-                money: player.money,
-                reputation: player.reputation,
-                level: player.level || 1,
-                territory: player.territory,
-                inJail: player.inJail || false,
-                jailTime: player.jailTime || 0,
-                health: player.health,
-                energy: player.energy,
-                wantedLevel: player.wantedLevel
+                // Display-sync stats for other players to see
+                gangMembers: (player.gangMembers || []).length,
+                power: typeof calculatePower === 'function' ? calculatePower() : 0
             }
         }));
     }
@@ -2723,39 +2868,60 @@ function exploreDistrict(districtName) {
 }
 
 // Load global leaderboard
+// Active leaderboard category for tab switching
+let _leaderboardCategory = 'reputation';
+
 function loadGlobalLeaderboard() {
     const leaderboardElement = document.getElementById('global-leaderboard');
     if (!leaderboardElement) return;
     
-    // Use real server leaderboard data
-    const serverData = onlineWorldState.serverInfo.globalLeaderboard || [];
+    // Server now sends multi-category leaderboard
+    const serverData = onlineWorldState.serverInfo.globalLeaderboard || {};
     const playerName = player.name || 'You';
-    
-    // Build leaderboard from server data, ensure current player is included
-    let leaderboard = serverData.map((entry, i) => ({
-        rank: i + 1,
-        name: entry.name,
-        reputation: entry.reputation || 0,
-        territory: entry.territory || 0
-    }));
-    
-    // If no server data yet, show just the player
-    if (leaderboard.length === 0) {
-        leaderboard = [{ rank: 1, name: playerName, reputation: player.reputation || 0, territory: player.territory || 0 }];
+
+    // Backwards compatibility: if serverData is an array (old format), wrap it
+    const categories = Array.isArray(serverData)
+        ? { reputation: serverData, wealth: [], combat: [], territories: [] }
+        : serverData;
+
+    const cat = _leaderboardCategory;
+    const data = categories[cat] || [];
+
+    // Tab bar
+    const tabs = [
+        { key: 'reputation', label: '⭐ Rep', color: '#f39c12' },
+        { key: 'wealth', label: '💰 Wealth', color: '#2ecc71' },
+        { key: 'combat', label: '⚔️ Combat', color: '#e74c3c' },
+        { key: 'territories', label: '🏛️ Turf', color: '#3498db' }
+    ];
+    const tabHTML = `<div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">${tabs.map(t =>
+        `<button onclick="_leaderboardCategory='${t.key}';loadGlobalLeaderboard();" style="background:${_leaderboardCategory === t.key ? t.color : '#222'};color:${_leaderboardCategory === t.key ? '#000' : '#ccc'};border:1px solid ${t.color};padding:5px 10px;border-radius:4px;cursor:pointer;font-family:Georgia,serif;font-size:0.8em;">${t.label}</button>`
+    ).join('')}</div>`;
+
+    let rows = '';
+    if (data.length === 0) {
+        rows = '<div style="color:#888;text-align:center;padding:15px;">No entries yet.</div>';
+    } else {
+        rows = data.map((entry, i) => {
+            const rank = i + 1;
+            const isMe = entry.name === playerName;
+            let detail = '';
+            if (cat === 'reputation') detail = `${entry.reputation || 0} rep`;
+            else if (cat === 'wealth') detail = `$${(entry.money || 0).toLocaleString()}`;
+            else if (cat === 'combat') detail = `${entry.pvpWins || 0}W / ${entry.pvpLosses || 0}L`;
+            else if (cat === 'territories') detail = `${entry.territories || 0} owned`;
+
+            return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px;margin:4px 0;background:rgba(0,0,0,0.3);border-radius:5px;${isMe ? 'border:2px solid #2ecc71;' : ''}">
+                <div>
+                    <span style="color:${rank <= 3 ? '#f39c12' : '#ecf0f1'};">#${rank}</span>
+                    <strong style="margin-left:10px;color:${isMe ? '#2ecc71' : '#ecf0f1'};">${escapeHTML(entry.name)}</strong>
+                </div>
+                <div style="color:#95a5a6;font-size:0.9em;">${detail}</div>
+            </div>`;
+        }).join('');
     }
-    
-    leaderboardElement.innerHTML = leaderboard.map(entry => `
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; margin: 5px 0; background: rgba(0, 0, 0, 0.3); border-radius: 5px; ${entry.name === playerName ? 'border: 2px solid #2ecc71;' : ''}">
-            <div>
-                <span style="color: ${entry.rank <= 3 ? '#f39c12' : '#ecf0f1'};">#${entry.rank}</span>
-                <strong style="margin-left: 10px; color: ${entry.name === playerName ? '#2ecc71' : '#ecf0f1'};">${escapeHTML(entry.name)}</strong>
-            </div>
-            <div style="text-align: right; font-size: 0.9em;">
-                <div style="color: #95a5a6;">${entry.reputation} rep</div>
-                <div style="color: #95a5a6;">${entry.territory || 0} turf</div>
-            </div>
-        </div>
-    `).join('');
+
+    leaderboardElement.innerHTML = tabHTML + rows;
 }
 
 // World activity functions
@@ -3618,13 +3784,16 @@ function executePvpChallenge(playerName, energyCost) {
     if (typeof updateUI === 'function') updateUI();
 
     // Send challenge to server for authoritative resolution
+    // Include combat stats so server can use the balanced formula
     if (onlineWorldState.socket && onlineWorldState.socket.readyState === WebSocket.OPEN) {
         onlineWorldState.socket.send(JSON.stringify({
             type: 'player_challenge',
             targetPlayer: playerName,
             playerName: player.name,
             level: player.level,
-            reputation: player.reputation
+            reputation: player.reputation,
+            power: typeof calculatePower === 'function' ? calculatePower() : 0,
+            gangMembers: (player.gangMembers || []).length
         }));
 
         // Show a "waiting" notification
@@ -3735,17 +3904,27 @@ function spectateWar(district) {
     `;
     modal.appendChild(betSection);
 
-    // Place bet handler
+    // Place bet handler — sends intent to server, server handles money
     window._placeWarBet = function(side) {
         if (playerBet) return;
         if (player.money < betAmount) {
             showSystemMessage('Not enough cash to place a bet!', '#e74c3c');
             return;
         }
-        player.money -= betAmount;
-        playerBet = side;
-        betSection.innerHTML = `<div style="color:#c0a062;">💰 Bet placed: <strong>$${betAmount.toLocaleString()}</strong> on <strong>${side === 'attacker' ? escapeHTML(attackerName) : escapeHTML(defenderName)}</strong></div>`;
-        if (typeof updateUI === 'function') updateUI();
+
+        // Send bet to server for authoritative money handling
+        if (onlineWorldState.socket && onlineWorldState.socket.readyState === WebSocket.OPEN) {
+            playerBet = side; // Mark locally so we can't double-bet
+            onlineWorldState.socket.send(JSON.stringify({
+                type: 'war_bet',
+                district: district,
+                side: side,
+                amount: betAmount
+            }));
+            betSection.innerHTML = `<div style="color:#c0a062;">💰 Bet placed: <strong>$${betAmount.toLocaleString()}</strong> on <strong>${side === 'attacker' ? escapeHTML(attackerName) : escapeHTML(defenderName)}</strong> — awaiting outcome...</div>`;
+        } else {
+            showSystemMessage('Not connected to server. Can\'t place bet.', '#e74c3c');
+        }
     };
 
     const barsContainer = document.createElement('div');
@@ -3878,21 +4057,21 @@ function spectateWar(district) {
             log(`--- Battle concludes ---`);
             log(outcome);
 
-            // Resolve bet
+            // Resolve bet — outcome was already decided server-side via war_bet_result
+            // We just show the animation outcome. Actual money was handled by the server.
             let betResult = '';
-            if (playerBet) {
-                if (winningSide === playerBet) {
-                    const winnings = betAmount * 2;
-                    player.money += winnings;
-                    betResult = `<div style="margin-top:10px;padding:10px;background:rgba(46,204,113,0.2);border:1px solid #2ecc71;border-radius:6px;color:#2ecc71;text-align:center;">💰 You won the bet! +$${winnings.toLocaleString()}</div>`;
-                    logAction(`💰 Won $${winnings.toLocaleString()} betting on the turf war in ${escapeHTML(district)}!`);
-                } else if (winningSide === null) {
-                    player.money += betAmount; // refund on stalemate
-                    betResult = `<div style="margin-top:10px;padding:10px;background:rgba(241,196,15,0.2);border:1px solid #f1c40f;border-radius:6px;color:#f1c40f;text-align:center;">🤝 Stalemate — bet refunded ($${betAmount.toLocaleString()})</div>`;
+            if (playerBet && window._lastWarBetResult) {
+                const res = window._lastWarBetResult;
+                if (res.won) {
+                    betResult = `<div style="margin-top:10px;padding:10px;background:rgba(46,204,113,0.2);border:1px solid #2ecc71;border-radius:6px;color:#2ecc71;text-align:center;">💰 You won the bet! +$${(res.payout || 0).toLocaleString()}</div>`;
+                    logAction(`💰 Won $${(res.payout || 0).toLocaleString()} betting on the turf war in ${escapeHTML(district)}!`);
                 } else {
-                    betResult = `<div style="margin-top:10px;padding:10px;background:rgba(231,76,60,0.2);border:1px solid #e74c3c;border-radius:6px;color:#e74c3c;text-align:center;">💸 You lost the bet. -$${betAmount.toLocaleString()}</div>`;
-                    logAction(`💸 Lost $${betAmount.toLocaleString()} betting on the turf war in ${escapeHTML(district)}.`);
+                    betResult = `<div style="margin-top:10px;padding:10px;background:rgba(231,76,60,0.2);border:1px solid #e74c3c;border-radius:6px;color:#e74c3c;text-align:center;">💸 You lost the bet. -$${(res.betAmount || 0).toLocaleString()}</div>`;
+                    logAction(`💸 Lost $${(res.betAmount || 0).toLocaleString()} betting on the turf war in ${escapeHTML(district)}.`);
                 }
+                // Sync money from server
+                if (res.newMoney !== undefined) player.money = res.newMoney;
+                window._lastWarBetResult = null;
                 if (typeof updateUI === 'function') updateUI();
             }
 

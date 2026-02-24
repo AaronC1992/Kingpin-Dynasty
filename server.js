@@ -661,6 +661,10 @@ function handleClientMessage(clientId, message, ws) {
         case 'business_income_tax':
             handleBusinessIncomeTax(clientId, message);
             break;
+
+        case 'war_bet':
+            handleWarBet(clientId, message);
+            break;
             
         default:
             console.log(`⚠️ Unknown message type: ${message.type}`);
@@ -1338,54 +1342,153 @@ function handleHeistJoin(clientId, message) {
 }
 
 // Player challenge handler
+// PvP challenge cooldowns — 30 seconds between fights
+const pvpCooldowns = new Map();
+const PVP_COOLDOWN_MS = 30 * 1000;
+
 function handlePlayerChallenge(clientId, message) {
     const challenger = gameState.players.get(clientId);
-    const targetPlayer = Array.from(gameState.players.values()).find(p => p.name === message.targetPlayer);
-    
-    if (!challenger || !targetPlayer) return;
-    
-    // Simulate combat
-    const challengerPower = challenger.level + (challenger.reputation / 10);
-    const targetPower = targetPlayer.level + (targetPlayer.reputation / 10);
-    
-    const victory = (challengerPower + Math.random() * 20) > (targetPower + Math.random() * 20);
-    
+    const challengerState = gameState.playerStates.get(clientId);
+    if (!challenger || !challengerState) return;
+
+    const ws = clients.get(clientId);
+    const fail = (err) => { if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'combat_result', error: err })); };
+
+    // Find target
+    let targetId = null, targetPlayer = null, targetState = null;
+    for (const [id, p] of gameState.players.entries()) {
+        if (p.name === message.targetPlayer && id !== clientId) {
+            targetId = id;
+            targetPlayer = p;
+            targetState = gameState.playerStates.get(id);
+            break;
+        }
+    }
+    if (!targetPlayer || !targetState) return fail('Target not found or offline.');
+
+    // Cooldown check
+    const now = Date.now();
+    const lastFight = pvpCooldowns.get(clientId) || 0;
+    if (now - lastFight < PVP_COOLDOWN_MS) {
+        const secs = Math.ceil((PVP_COOLDOWN_MS - (now - lastFight)) / 1000);
+        return fail(`Wait ${secs}s before fighting again.`);
+    }
+
+    // Can't fight while in jail
+    if (challengerState.inJail) return fail('You can\'t fight while in jail.');
+    if (targetState.inJail) return fail('Target is in jail — protected by the feds.');
+
+    // Energy check — server validates, costs 5
+    const energyCost = 5;
+    if ((challengerState.energy || 0) < energyCost) return fail('Not enough energy.');
+    challengerState.energy = Math.max(0, (challengerState.energy || 100) - energyCost);
+
+    // Set cooldown
+    pvpCooldowns.set(clientId, now);
+
+    // === BALANCED COMBAT FORMULA ===
+    // Factors: level (~25%), reputation (~15%), gear/power (~25%), gang (~15%), health/energy (~10%), randomness (~10%)
+    // Client-reported stats (power, gangMembers) are capped server-side to prevent inflated values.
+    const cLevel = challenger.level || 1;
+    const tLevel = targetPlayer.level || 1;
+    const cRep = challenger.reputation || 0;
+    const tRep = targetPlayer.reputation || 0;
+
+    // Cap client-reported stats to sane maximums
+    const cPower   = Math.max(0, Math.min(message.power || 0, 5000));
+    const cGang    = Math.max(0, Math.min(message.gangMembers || 0, 100));
+    const cHealth  = Math.max(0, Math.min(challengerState.health || 100, 200));
+    const cEnergy  = Math.max(0, Math.min(challengerState.energy || 100, 200));
+
+    // Target stats from server-authoritative state (no client trust)
+    const tPower   = Math.max(0, Math.min(targetState.power || 0, 5000));
+    const tGang    = Math.max(0, Math.min(targetState.gangMembers || 0, 100));
+    const tHealth  = Math.max(0, Math.min(targetState.health || 100, 200));
+    const tEnergy  = Math.max(0, Math.min(targetState.energy || 100, 200));
+
+    // Composite combat score
+    function combatScore(lvl, rep, power, gang, hp, en) {
+        return (lvl * 5)                        // Level:       max ~250 @ lvl 50
+             + (rep * 0.3)                      // Reputation:  max ~150 @ 500 rep
+             + (power * 0.08)                   // Gear power:  max ~400 @ 5000
+             + (gang * 3)                       // Gang:        max ~300 @ 100 members
+             + ((hp / 100) * 20)                // Health:      max ~40  @ 200 HP
+             + ((en / 100) * 10)                // Energy:      max ~20  @ 200
+             + (Math.random() * 40);            // Randomness:  0-40 (upset factor)
+    }
+
+    const challengerScore = combatScore(cLevel, cRep, cPower, cGang, cHealth, cEnergy);
+    const targetScore     = combatScore(tLevel, tRep, tPower, tGang, tHealth, tEnergy);
+    const victory = challengerScore > targetScore;
+
+    // Health damage from the fight (both take damage)
+    const winnerDmg = 5 + Math.floor(Math.random() * 10);   // 5-14
+    const loserDmg  = 10 + Math.floor(Math.random() * 15);  // 10-24
+
     if (victory) {
         const repGain = 5 + Math.floor(Math.random() * 10);
-        challenger.reputation += repGain;
-        targetPlayer.reputation = Math.max(0, targetPlayer.reputation - 3);
-        
-        console.log(`⚔️ ${challenger.name} defeated ${targetPlayer.name}`);
-        
+        const repLoss = 3 + Math.floor(Math.random() * 3);
+        challenger.reputation = (challenger.reputation || 0) + repGain;
+        challengerState.reputation = challenger.reputation;
+        targetPlayer.reputation = Math.max(0, (targetPlayer.reputation || 0) - repLoss);
+        targetState.reputation = targetPlayer.reputation;
+
+        // Track PvP wins/losses for leaderboard
+        challenger.pvpWins = (challenger.pvpWins || 0) + 1;
+        targetPlayer.pvpLosses = (targetPlayer.pvpLosses || 0) + 1;
+
+        // Apply health damage
+        challengerState.health = Math.max(1, (challengerState.health || 100) - winnerDmg);
+        targetState.health = Math.max(1, (targetState.health || 100) - loserDmg);
+
+        console.log(`⚔️ ${challenger.name} defeated ${targetPlayer.name} (${Math.round(challengerScore)} vs ${Math.round(targetScore)})`);
+
         broadcastToAll({
             type: 'combat_result',
             winner: challenger.name,
             loser: targetPlayer.name,
-            repChange: repGain
+            repChange: repGain,
+            healthDamage: { winner: winnerDmg, loser: loserDmg }
         });
-        
+
         addGlobalChatMessage('System', `⚔️ ${challenger.name} defeated ${targetPlayer.name} in combat!`, '#e74c3c');
-        // Persist leaderboard changes
         persistedLeaderboard = generateLeaderboard();
         broadcastToAll({ type: 'player_ranked', leaderboard: persistedLeaderboard });
         scheduleWorldSave();
     } else {
         const repLoss = 2 + Math.floor(Math.random() * 5);
-        challenger.reputation = Math.max(0, challenger.reputation - repLoss);
-        targetPlayer.reputation += 3;
-        
-        console.log(`⚔️ ${targetPlayer.name} defeated ${challenger.name}`);
-        
+        const repGain = 3 + Math.floor(Math.random() * 3);
+        challenger.reputation = Math.max(0, (challenger.reputation || 0) - repLoss);
+        challengerState.reputation = challenger.reputation;
+        targetPlayer.reputation = (targetPlayer.reputation || 0) + repGain;
+        targetState.reputation = targetPlayer.reputation;
+
+        // Track PvP wins/losses
+        targetPlayer.pvpWins = (targetPlayer.pvpWins || 0) + 1;
+        challenger.pvpLosses = (challenger.pvpLosses || 0) + 1;
+
+        // Apply health damage
+        challengerState.health = Math.max(1, (challengerState.health || 100) - loserDmg);
+        targetState.health = Math.max(1, (targetState.health || 100) - winnerDmg);
+
+        console.log(`⚔️ ${targetPlayer.name} defeated ${challenger.name} (${Math.round(targetScore)} vs ${Math.round(challengerScore)})`);
+
         broadcastToAll({
             type: 'combat_result',
             winner: targetPlayer.name,
             loser: challenger.name,
-            repChange: 3
+            repChange: repGain,
+            healthDamage: { winner: winnerDmg, loser: loserDmg }
         });
+
+        addGlobalChatMessage('System', `⚔️ ${targetPlayer.name} defeated ${challenger.name} in combat!`, '#e74c3c');
         persistedLeaderboard = generateLeaderboard();
         broadcastToAll({ type: 'player_ranked', leaderboard: persistedLeaderboard });
         scheduleWorldSave();
     }
+
+    // Broadcast updated states so both players see HP/energy changes
+    broadcastPlayerStates();
 }
 
 // Heist start handler (organizer manually starts)
@@ -1508,9 +1611,13 @@ function handlePlayerUpdate(clientId, message) {
     }
     
     // Update allowed state fields from message (whitelist approach)
+    // SECURITY: gameplay-sensitive fields (health, energy, inJail, jailTime, wantedLevel)
+    // are only updated by server-side handlers (jobs, combat, jailbreak, etc.)
     if (message.playerState) {
-        const allowed = ['inJail', 'jailTime', 'health', 'energy', 'wantedLevel'];
-        for (const key of allowed) {
+        // Display-sync only — these help other clients see you accurately
+        // but are NOT used for server-side combat/economy calculations.
+        const displayOnly = ['gangMembers', 'power'];
+        for (const key of displayOnly) {
             if (message.playerState[key] !== undefined) {
                 playerState[key] = message.playerState[key];
             }
@@ -2594,15 +2701,107 @@ function handleAssassinationAttempt(clientId, message) {
     scheduleWorldSave();
 }
 
-function generateLeaderboard() {
-    return Array.from(gameState.players.values())
-        .sort((a, b) => b.reputation - a.reputation)
-        .slice(0, 10)
-        .map(p => ({
-            name: p.name,
-            reputation: p.reputation,
-            territory: p.territory
+// ==================== WAR BETTING (SERVER-AUTHORITATIVE) ====================
+// Server deducts the bet, generates a sealed outcome, and sends it back.
+// Client animates the war to match, then the server resolves the payout.
+function handleWarBet(clientId, message) {
+    const player = gameState.players.get(clientId);
+    const ps = gameState.playerStates.get(clientId);
+    if (!player || !ps) return;
+    const ws = clients.get(clientId);
+    const fail = (err) => { if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'war_bet_result', success: false, error: err })); };
+
+    const { district, side, amount } = message;
+    if (!district || !side || !amount) return fail('Invalid bet.');
+    if (side !== 'attacker' && side !== 'defender') return fail('Invalid side.');
+
+    const betAmount = Math.max(0, Math.min(parseInt(amount) || 0, 10000)); // Cap at $10k
+    if (betAmount < 100) return fail('Minimum bet is $100.');
+    if (player.money < betAmount) return fail('Not enough cash.');
+
+    // Deduct bet
+    player.money -= betAmount;
+    if (ps) { ps.money = player.money; ps.lastUpdate = Date.now(); }
+
+    // Generate sealed outcome — ~50/50 with slight defender advantage
+    const attackerWinChance = 0.48;
+    const roll = Math.random();
+    const winningSide = roll < attackerWinChance ? 'attacker' : 'defender';
+
+    // Calculate payout (1.9x — slight house edge)
+    let payout = 0;
+    let won = false;
+    if (winningSide === side) {
+        payout = Math.floor(betAmount * 1.9);
+        player.money += payout;
+        won = true;
+    } else if (winningSide === 'stalemate') {
+        // Refund on stalemate (rare)
+        player.money += betAmount;
+        payout = betAmount;
+    }
+
+    if (ps) { ps.money = player.money; ps.lastUpdate = Date.now(); }
+
+    console.log(`🎰 WAR BET: ${player.name} bet $${betAmount} on ${side} in ${district} — ${won ? 'WON' : 'LOST'} ($${payout})`);
+
+    if (ws && ws.readyState === 1) {
+        ws.send(JSON.stringify({
+            type: 'war_bet_result',
+            success: true,
+            won: won,
+            winningSide: winningSide,
+            betAmount: betAmount,
+            payout: payout,
+            newMoney: player.money,
+            district: district
         }));
+    }
+
+    broadcastPlayerStates();
+    scheduleWorldSave();
+}
+
+function generateLeaderboard() {
+    const players = Array.from(gameState.players.values());
+
+    // Reputation leaders (primary ranking)
+    const byReputation = players
+        .sort((a, b) => (b.reputation || 0) - (a.reputation || 0))
+        .slice(0, 10)
+        .map(p => ({ name: p.name, reputation: p.reputation || 0, territory: p.territory || 0 }));
+
+    // Wealthiest players
+    const byWealth = players
+        .sort((a, b) => (b.money || 0) - (a.money || 0))
+        .slice(0, 10)
+        .map(p => ({ name: p.name, money: p.money || 0 }));
+
+    // Top fighters (by PvP wins)
+    const byPvpWins = players
+        .filter(p => (p.pvpWins || 0) > 0)
+        .sort((a, b) => (b.pvpWins || 0) - (a.pvpWins || 0))
+        .slice(0, 10)
+        .map(p => ({ name: p.name, pvpWins: p.pvpWins || 0, pvpLosses: p.pvpLosses || 0 }));
+
+    // Territory lords (most territories owned)
+    const territoryOwners = {};
+    for (const [tId, tData] of Object.entries(gameState.territories || {})) {
+        if (tData.owner) {
+            territoryOwners[tData.owner] = (territoryOwners[tData.owner] || 0) + 1;
+        }
+    }
+    const byTerritories = Object.entries(territoryOwners)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10)
+        .map(([name, count]) => ({ name, territories: count }));
+
+    return {
+        reputation: byReputation,
+        wealth: byWealth,
+        combat: byPvpWins,
+        territories: byTerritories
+    };
 }
 
 // Helper to generate client ID
