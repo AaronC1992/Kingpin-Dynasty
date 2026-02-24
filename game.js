@@ -2685,15 +2685,7 @@ window.closeScreen = function() {
   }
 };
 
-// Export all UI functions
-default {
-  showGangManagementScreen,
-  showTerritoryMapScreen,
-  showInteractiveEvent,
-  checkAndTriggerInteractiveEvent,
-  showRivalActivityScreen,
-  showRelationshipsScreen
-};
+// Export all UI functions (exposed via window below)
 
 // Expose merged expanded UI functions to window (for onclick handlers in dynamic HTML)
 window.showGangManagementScreen = showGangManagementScreen;
