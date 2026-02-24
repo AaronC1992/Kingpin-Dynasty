@@ -98,6 +98,12 @@ function skipTutorial() {
     // Update desktop tracker
     const trackerTextDesktop = document.getElementById('tutorial-tracker-text');
     if (trackerTextDesktop) trackerTextDesktop.textContent = 'Tutorial Skipped';
+    
+    // Remove desktop progress bar and step counter (with Skip button)
+    const progressBar = document.getElementById('tutorial-progress-bar-desktop');
+    if (progressBar) progressBar.remove();
+    const stepCounter = document.getElementById('tutorial-step-counter-desktop');
+    if (stepCounter) stepCounter.remove();
 }
 
 // Expose skip function globally
@@ -295,6 +301,11 @@ function advanceStep(step) {
         if (tracker) {
             setTimeout(() => tracker.remove(), 5000);
         }
+        
+        // Remove step counter (with Skip button) on completion
+        const stepCounter = document.getElementById('tutorial-step-counter-desktop');
+        if (stepCounter) stepCounter.remove();
+        
         return;
     }
     
