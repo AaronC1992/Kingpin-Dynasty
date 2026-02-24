@@ -89,7 +89,7 @@ window.createSaveDataForCloud = function () {
         reputation: Math.floor(player.reputation),
         empireRating: empireRating.totalScore,
         playtime: playtime,
-        gameVersion: "1.3.8",
+        gameVersion: "1.4.3",
         data: saveData
     };
 };
@@ -114,7 +114,7 @@ window.applyCloudSave = function (cloudEntry) {
         playtime: cloudEntry.playtime || '0:00',
         saveDate: cloudEntry.saveDate || new Date().toISOString(),
         isAutoSave: false,
-        gameVersion: cloudEntry.gameVersion || '1.3.8',
+        gameVersion: cloudEntry.gameVersion || '1.4.3',
         data: saveData
     };
     localStorage.setItem(`gameSlot_${SAVE_SYSTEM.currentSlot || 1}`, JSON.stringify(localEntry));
@@ -13854,8 +13854,22 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = "1.3.8";
+const CURRENT_VERSION = "1.4.3";
 const VERSION_UPDATES = {
+  "1.4.3": {
+    title: "February 2026 Update - Layout & Economy Overhaul",
+    date: "February 2026",
+    changes: [
+      "Economy rebalance — tuned job payouts, energy costs, and progression curves",
+      "Comprehensive layout overhaul — all 31 game screens now align correctly at every breakpoint",
+      "Fixed responsive media queries — sidebar offsets, page-header, and stats bar at all screen sizes",
+      "Ledger polish — sticky heading, tighter log spacing, gradient header background",
+      "Tutorial skip button now properly cleans up after skipping or completing the tutorial",
+      "Consolidated expanded-styles.css into main stylesheet for faster loading",
+      "5 runtime error hotfixes across gang, territory, faction, and UI systems",
+      "Fixed clearTutorialHighlights incorrectly overriding CSS z-index and borders"
+    ]
+  },
   "1.3.8": {
     title: "June 2025 Update - SafeHouse & Polish",
     date: "June 2025",

@@ -5,6 +5,24 @@ All notable changes to From Dusk To Don (Mafia Born) will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.3] - 2026-02-24
+
+### Fixed
+- **Comprehensive layout overhaul** — raised base `.game-screen` padding so all 31 screens clear the page-header at every breakpoint
+- **Responsive media queries** — corrected sidebar top offsets (44px), page-header left/right values, and stats bar flex layout across 768px and 480px breakpoints
+- **clearTutorialHighlights()** — now clears inline styles instead of setting incorrect z-index and border values
+- **Tutorial skip button** persisting after skipping or completing the tutorial
+- **5 runtime error hotfixes** — resolved crashes in gang, territory, faction, and UI systems
+- **Stolen-cars screen** double-indent from conflicting margin and padding rules
+- **Corrupted CSS block** with literal `\n` characters replaced with actual newlines
+
+### Changed
+- **Economy rebalance** — tuned job payouts, energy costs, and XP progression curves for better flow
+- **Ledger polish** — sticky heading with gradient background, tighter log entry spacing
+- **Merged expanded-styles.css** into styles.css — single stylesheet for all game CSS
+- Removed `<link>` to expanded-styles.css from index.html
+- Version bumped to 1.4.3
+
 ## [0.2.0] - 2025-11-21
 
 ### Added

@@ -1,6 +1,6 @@
 # Mafia Born
 
-A deep criminal empire-building browser game where you rise from street thug to legendary kingpin. Build your crew, claim territory, run businesses, and outmanoeuvre rival crime families — all from your browser.
+**v1.4.3** | A deep criminal empire-building browser game where you rise from street thug to legendary kingpin. Build your crew, claim territory, run businesses, and outmanoeuvre rival crime families — all from your browser.
 
 ## **[PLAY NOW](https://mafiaborn.com/)**
 
@@ -109,6 +109,18 @@ Compatible with Chrome, Firefox, Safari, Edge, and their mobile counterparts.
 - Export and import saves as JSON files
 - Full persistence of all progress, achievements, and legacy data
 - Save migration for older saves — new features auto-initialize on load
+
+---
+
+## Recent Changes (v1.4.3)
+
+- **Economy rebalance** — tuned job payouts, energy costs, and progression curves for a better flow
+- **Comprehensive layout overhaul** — fixed content alignment across all 31 game screens at every breakpoint
+- **Tutorial polish** — skip button now properly cleans up after use; progress tracker removed on completion
+- **Ledger polish** — sticky heading, tighter log entry spacing, gradient header
+- **Consolidated CSS** — merged expanded-styles.css into a single stylesheet
+- **5 runtime error hotfixes** — resolved crashes in gang, territory, faction, and UI systems
+- **Responsive media query fixes** — corrected sidebar offsets, page-header positioning, and stats bar layout at all screen sizes
 
 ---
 
