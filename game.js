@@ -13,8 +13,6 @@ import { GameLogging } from './logging.js';
 import { ui, ModalSystem } from './ui-modal.js';
 import { MobileSystem, updateMobileActionLog } from './mobile-responsive.js';
 import { initUIEvents } from './ui-events.js';
-import ExpandedSystems from './expanded-systems.js';
-import ExpandedUI from './expanded-ui.js';
 import { initAuth, showAuthModal, autoCloudSave, getAuthState, updateAuthStatusUI, checkPlayerName } from './auth.js';
 import {
   initCasino, getCasinoWins, resetCasinoWins,
@@ -75,8 +73,6 @@ window.ModalSystem = ModalSystem;
 window.MobileSystem = MobileSystem;
 window.updateMobileActionLog = updateMobileActionLog;
 window.initUIEvents = initUIEvents;
-window.ExpandedSystems = ExpandedSystems;
-window.ExpandedUI = ExpandedUI;
 window.showAuthModal = showAuthModal;
 window.getAuthState = getAuthState;
 window.updateAuthStatusUI = updateAuthStatusUI;
@@ -985,7 +981,7 @@ async function startBossBattle(battleId) {
 // ==================== GANG MANAGEMENT OVERHAUL ====================
 
 // --- Unified Role System ---
-// GANG_MEMBER_ROLES (expanded-systems.js) is the canonical role definition.
+// GANG_MEMBER_ROLES is the canonical role definition (merged from former expanded-systems.js).
 // specialistRoles below maps those roles to operation/training mechanics.
 // Members store BOTH: .role (expanded key) and .specialization (operations key).
 // The mapping keeps them consistent — no more conflicting role assignments.
@@ -1008,6 +1004,1765 @@ const SPECIALIZATION_TO_EXPANDED = {
   driver:     'driver',
   thief:      'scout'
 };
+
+// ==================== MERGED FROM EXPANDED-SYSTEMS.JS & EXPANDED-UI.JS ====================
+// These systems were consolidated from separate files into the main game module.
+// Contains: Gang roles/stats/traits, Expanded territory wars, Interactive events,
+//           Rival AI kingpins, Respect system, and all related UI screens.
+// Original files deleted — this is now the canonical source.
+
+// ==================== CONFIGURATION ====================
+
+const EXPANDED_SYSTEMS_CONFIG = {
+    gangRolesEnabled: true,
+    territoryWarsEnabled: true,
+    interactiveEventsEnabled: true,
+    rivalKingpinsEnabled: true,
+    respectSystemEnabled: true,
+    
+    // Balance settings
+    rivalGrowthInterval: 120000, // 2 minutes between rival actions
+    territoryAttackChance: 0.15, // 15% chance of attack per check
+    respectDecayRate: 0.95, // Respect naturally decays to neutral over time
+};
+
+// ==================== 1. GANG MEMBER ROLES & STATS ====================
+
+const GANG_MEMBER_ROLES = {
+    bruiser: {
+        name: "Bruiser",
+        icon: "\uD83D\uDCAA",
+        description: "Muscle for hire. Excels in combat and intimidation.",
+        baseStat: { violence: 15, stealth: 5, intelligence: 5, loyalty: 50 },
+        perk: {
+            name: "Enforcer",
+            effect: "Reduces arrest chance on violent jobs by 10%"
+        }
+    },
+    fixer: {
+        name: "Fixer",
+        icon: "\uD83E\uDD1D",
+        description: "Smooth talker who knows everyone worth knowing.",
+        baseStat: { violence: 5, stealth: 10, intelligence: 15, loyalty: 60 },
+        perk: {
+            name: "Connected",
+            effect: "Reduces heat gain by 15%"
+        }
+    },
+    hacker: {
+        name: "Hacker",
+        icon: "\uD83D\uDCBB",
+        description: "Tech wizard specializing in breaking electronic security.",
+        baseStat: { violence: 3, stealth: 15, intelligence: 20, loyalty: 55 },
+        perk: {
+            name: "Digital Ghost",
+            effect: "+20% success on intelligence-based jobs"
+        }
+    },
+    enforcer: {
+        name: "Enforcer",
+        icon: "\uD83D\uDD2B",
+        description: "Professional killer who handles the wet work.",
+        baseStat: { violence: 18, stealth: 12, intelligence: 8, loyalty: 45 },
+        perk: {
+            name: "Assassin",
+            effect: "+15% damage in territory wars"
+        }
+    },
+    driver: {
+        name: "Wheelman",
+        icon: "\uD83D\uDE97",
+        description: "Master behind the wheel, perfect for getaways.",
+        baseStat: { violence: 8, stealth: 15, intelligence: 10, loyalty: 65 },
+        perk: {
+            name: "Fast & Furious",
+            effect: "+25% escape chance when heat is high"
+        }
+    },
+    scout: {
+        name: "Scout",
+        icon: "\uD83D\uDD75\uFE0F",
+        description: "Expert at gathering intelligence on targets.",
+        baseStat: { violence: 6, stealth: 18, intelligence: 15, loyalty: 70 },
+        perk: {
+            name: "Eyes Everywhere",
+            effect: "Reveals territory attack warnings 30 seconds early"
+        }
+    },
+    accountant: {
+        name: "Accountant",
+        icon: "\uD83D\uDCB0",
+        description: "Numbers genius who maximizes profits.",
+        baseStat: { violence: 2, stealth: 10, intelligence: 22, loyalty: 75 },
+        perk: {
+            name: "Money Launderer",
+            effect: "+10% income from businesses and territories"
+        }
+    }
+};
+
+// Generate a gang member with role, stats, and traits
+function generateExpandedGangMember(role = null, name = null) {
+    // If no role specified, pick random weighted by rarity
+    if (!role) {
+        const roles = Object.keys(GANG_MEMBER_ROLES);
+        role = roles[Math.floor(Math.random() * roles.length)];
+    }
+    
+    const roleData = GANG_MEMBER_ROLES[role];
+    const member = {
+        id: Date.now() + Math.random(), // Unique ID
+        name: name || generateGangMemberName(),
+        role: role,
+        roleData: roleData,
+        stats: {
+            violence: roleData.baseStat.violence + Math.floor(Math.random() * 10),
+            stealth: roleData.baseStat.stealth + Math.floor(Math.random() * 10),
+            intelligence: roleData.baseStat.intelligence + Math.floor(Math.random() * 10),
+            loyalty: roleData.baseStat.loyalty + Math.floor(Math.random() * 20) - 10
+        },
+        perk: roleData.perk,
+        level: 1,
+        experience: 0,
+        status: "active", // active, injured, jailed, dead
+        assignedTo: null, // null, "territory_X", "operation_Y"
+        traits: generateRandomTraits(),
+        joinedDate: Date.now()
+    };
+    
+    return member;
+}
+
+function generateGangMemberName() {
+    const firstNames = [
+        "Tommy", "Vinnie", "Angelo", "Sal", "Frankie", "Johnny", "Nicky", "Bobby",
+        "Maria", "Carmela", "Rosa", "Lucia", "Gina", "Sofia", "Isabella",
+        "Viktor", "Dmitri", "Ivan", "Nikolai", "Wei", "Chen", "Lin", "Carlos", "Diego"
+    ];
+    
+    const lastNames = [
+        "Rossi", "Lombardi", "Moretti", "Ricci", "Russo", "Conti",
+        "Volkov", "Petrov", "Ivanov", "Chen", "Wu", "Zhang",
+        "Martinez", "Rodriguez", "Garcia", "Hernandez"
+    ];
+    
+    const nicknames = [
+        "The Bull", "Two-Fingers", "The Snake", "Ice Pick", "Scarface",
+        "Lucky", "The Hammer", "Knuckles", "Lefty", "Ace"
+    ];
+    
+    const useNickname = Math.random() > 0.7;
+    
+    if (useNickname) {
+        const first = firstNames[Math.floor(Math.random() * firstNames.length)];
+        const nick = nicknames[Math.floor(Math.random() * nicknames.length)];
+        return `${first} "${nick}"`;
+    } else {
+        const first = firstNames[Math.floor(Math.random() * firstNames.length)];
+        const last = lastNames[Math.floor(Math.random() * lastNames.length)];
+        return `${first} ${last}`;
+    }
+}
+
+function generateRandomTraits() {
+    const allTraits = [
+        { name: "Hothead", effect: "+10% violence, -5% loyalty" },
+        { name: "Cool Under Pressure", effect: "+10% success in high-heat jobs" },
+        { name: "Loyal to the End", effect: "Never betrays, +10% loyalty" },
+        { name: "Greedy", effect: "+15% payout demand, -10% loyalty" },
+        { name: "Cautious", effect: "-10% arrest chance, -5% success" },
+        { name: "Reckless", effect: "+10% success, +15% arrest chance" },
+        { name: "Charming", effect: "+10% reputation gains" },
+        { name: "Paranoid", effect: "+20% detection of betrayals" },
+        { name: "Veteran", effect: "+5 to all stats" },
+        { name: "Greenhorn", effect: "-5 to all stats, gains XP 50% faster" }
+    ];
+    
+    // 30% chance of having a trait
+    if (Math.random() > 0.7) {
+        return [allTraits[Math.floor(Math.random() * allTraits.length)]];
+    }
+    
+    return [];
+}
+
+// Calculate gang member effectiveness for a specific task type
+function calculateMemberEffectiveness(member, taskType) {
+    let baseScore = 0;
+    
+    switch(taskType) {
+        case "violence":
+            baseScore = member.stats.violence * 2 + member.stats.stealth * 0.5;
+            break;
+        case "stealth":
+            baseScore = member.stats.stealth * 2 + member.stats.intelligence * 0.5;
+            break;
+        case "intelligence":
+            baseScore = member.stats.intelligence * 2 + member.stats.stealth * 0.5;
+            break;
+        case "defense":
+            baseScore = (member.stats.violence + member.stats.stealth + member.stats.intelligence) / 2;
+            break;
+        default:
+            baseScore = (member.stats.violence + member.stats.stealth + member.stats.intelligence) / 3;
+    }
+    
+    // Apply loyalty modifier
+    const loyaltyMod = member.stats.loyalty / 100;
+    baseScore *= (0.5 + loyaltyMod * 0.5); // 50% to 100% effectiveness based on loyalty
+    
+    // Apply trait modifiers
+    member.traits.forEach(trait => {
+        if (trait.name === "Veteran") baseScore *= 1.15;
+        if (trait.name === "Greenhorn") baseScore *= 0.85;
+        if (trait.name === "Reckless" && taskType === "violence") baseScore *= 1.1;
+        if (trait.name === "Cautious" && taskType === "stealth") baseScore *= 1.1;
+    });
+    
+    return Math.floor(baseScore);
+}
+
+// Update gang member loyalty
+function updateMemberLoyalty(member, change, reason = "") {
+    member.stats.loyalty = Math.max(0, Math.min(100, member.stats.loyalty + change));
+    
+    // Check for betrayal if loyalty too low
+    if (member.stats.loyalty < 20 && Math.random() < 0.3) {
+        return { betrayed: true, member: member };
+    }
+    
+    return { betrayed: false, loyaltyChange: change };
+}
+
+// ==================== 2. TERRITORY WARS & DEFENSE ====================
+
+// Territory war zones — used by the single-player gang war system.
+// These are large-scale strategic zones, separate from the economic districtTypes
+// in game.js (which are detailed neighborhoods the player can buy/manage).
+// See also: multiplayer.js cityDistricts (5 multiplayer area-control zones).
+const EXPANDED_TERRITORIES = [
+    {
+        id: "downtown",
+        name: "Downtown District",
+        description: "Heart of the city with high-value targets",
+        baseIncome: 5000,
+        defenseRequired: 200,
+        riskLevel: "high",
+        controlledBy: null,
+        defendingMembers: [],
+        lastAttacked: 0,
+        fortificationLevel: 0
+    },
+    {
+        id: "docks",
+        name: "The Docks",
+        description: "Perfect for smuggling operations",
+        baseIncome: 3500,
+        defenseRequired: 150,
+        riskLevel: "medium",
+        controlledBy: null,
+        defendingMembers: [],
+        lastAttacked: 0,
+        fortificationLevel: 0
+    },
+    {
+        id: "suburbs",
+        name: "Suburban Rackets",
+        description: "Safe neighborhoods with steady income",
+        baseIncome: 2000,
+        defenseRequired: 100,
+        riskLevel: "low",
+        controlledBy: null,
+        defendingMembers: [],
+        lastAttacked: 0,
+        fortificationLevel: 0
+    },
+    {
+        id: "industrial",
+        name: "Industrial Zone",
+        description: "Warehouses and chop shops",
+        baseIncome: 4000,
+        defenseRequired: 175,
+        riskLevel: "medium",
+        controlledBy: null,
+        defendingMembers: [],
+        lastAttacked: 0,
+        fortificationLevel: 0
+    },
+    {
+        id: "casino_district",
+        name: "Casino District",
+        description: "High rollers and underground gambling",
+        baseIncome: 6000,
+        defenseRequired: 250,
+        riskLevel: "very high",
+        controlledBy: null,
+        defendingMembers: [],
+        lastAttacked: 0,
+        fortificationLevel: 0
+    }
+];
+
+// Assign gang members to defend a territory
+function assignMembersToExpandedTerritory(territoryId, memberIds, player) {
+    const territory = EXPANDED_TERRITORIES.find(t => t.id === territoryId);
+    if (!territory) return { success: false, message: "Territory not found" };
+    
+    // Remove members from their current assignments
+    memberIds.forEach(memberId => {
+        const member = player.gang.gangMembers.find(m => m.id === memberId);
+        if (member && member.assignedTo) {
+            // Remove from previous territory
+            const oldTerritory = EXPANDED_TERRITORIES.find(t => t.id === member.assignedTo);
+            if (oldTerritory) {
+                oldTerritory.defendingMembers = oldTerritory.defendingMembers.filter(id => id !== memberId);
+            }
+        }
+        if (member) {
+            member.assignedTo = territoryId;
+        }
+    });
+    
+    territory.defendingMembers = memberIds;
+    
+    const defenseStrength = calculateExpandedTerritoryDefense(territory, player);
+    
+    return {
+        success: true,
+        message: `Assigned ${memberIds.length} members to ${territory.name}`,
+        defenseStrength: defenseStrength
+    };
+}
+
+// Calculate total defense strength of a territory
+function calculateExpandedTerritoryDefense(territory, player) {
+    let totalDefense = territory.fortificationLevel * 10; // Fortifications add base defense
+    
+    territory.defendingMembers.forEach(memberId => {
+        const member = player.gang.gangMembers.find(m => m.id === memberId);
+        if (member && member.status === "active") {
+            totalDefense += calculateMemberEffectiveness(member, "defense");
+            
+            // Apply role bonuses
+            if (member.role === "enforcer") totalDefense *= 1.15;
+            if (member.role === "bruiser") totalDefense *= 1.10;
+            if (member.role === "scout") totalDefense *= 1.05;
+        }
+    });
+    
+    return Math.floor(totalDefense);
+}
+
+// Process a territory attack
+function processExpandedTerritoryAttack(territory, attackerName, attackStrength, player) {
+    const defenseStrength = calculateExpandedTerritoryDefense(territory, player);
+    const attackSuccess = attackStrength > defenseStrength;
+    
+    const result = {
+        success: !attackSuccess, // Player success = attack failed
+        territory: territory.name,
+        attacker: attackerName,
+        attackStrength: attackStrength,
+        defenseStrength: defenseStrength,
+        casualties: [],
+        injuredDefenders: [],
+        lostTerritory: false,
+        rewards: {}
+    };
+    
+    if (attackSuccess) {
+        // Attack succeeded - territory lost
+        result.lostTerritory = true;
+        territory.controlledBy = attackerName;
+        
+        // Chance of casualties/injuries
+        territory.defendingMembers.forEach(memberId => {
+            const member = player.gang.gangMembers.find(m => m.id === memberId);
+            if (!member) return;
+            
+            const casualtyRoll = Math.random();
+            if (casualtyRoll < 0.1) {
+                // 10% chance of death
+                member.status = "dead";
+                result.casualties.push(member.name);
+            } else if (casualtyRoll < 0.3) {
+                // 20% chance of jail
+                member.status = "jailed";
+                result.casualties.push(member.name + " (arrested)");
+            } else if (casualtyRoll < 0.6) {
+                // 30% chance of injury
+                member.status = "injured";
+                result.injuredDefenders.push(member.name);
+                // Auto-heal after 5 minutes
+                setTimeout(() => {
+                    if (member.status === "injured") member.status = "active";
+                }, 300000);
+            }
+            
+            // Loyalty hit from losing
+            updateMemberLoyalty(member, -10, "Lost territory defense");
+        });
+        
+        territory.defendingMembers = [];
+        
+    } else {
+        // Defense successful
+        result.rewards.money = Math.floor(territory.baseIncome * 0.5);
+        result.rewards.respect = Math.floor(territory.baseIncome / 100);
+        
+        // Loyalty boost for defenders
+        territory.defendingMembers.forEach(memberId => {
+            const member = player.gang.gangMembers.find(m => m.id === memberId);
+            if (member) {
+                updateMemberLoyalty(member, 5, "Successfully defended territory");
+            }
+        });
+        
+        // Small chance of minor casualties even in victory
+        if (Math.random() < 0.15 && territory.defendingMembers.length > 0) {
+            const randomDefender = player.gang.gangMembers.find(
+                m => m.id === territory.defendingMembers[Math.floor(Math.random() * territory.defendingMembers.length)]
+            );
+            if (randomDefender) {
+                randomDefender.status = "injured";
+                result.injuredDefenders.push(randomDefender.name);
+                setTimeout(() => {
+                    if (randomDefender.status === "injured") randomDefender.status = "active";
+                }, 300000);
+            }
+        }
+    }
+    
+    territory.lastAttacked = Date.now();
+    
+    return result;
+}
+
+// ==================== 3. INTERACTIVE RANDOM EVENTS ====================
+
+const INTERACTIVE_EVENTS = [
+    {
+        id: "police_raid",
+        title: " Police Raid!",
+        description: "The cops just kicked in the door of one of your operations! They're looking for evidence.",
+        choices: [
+            {
+                text: "Fight them off",
+                requirements: { gangMembers: 3, violence: 10 },
+                outcomes: {
+                    success: {
+                        money: 0,
+                        heat: 30,
+                        respect: 15,
+                        loyalty: 10,
+                        message: "Your crew fought like hell. The cops retreated, but they'll be back with reinforcements."
+                    },
+                    failure: {
+                        money: -5000,
+                        heat: 50,
+                        respect: -10,
+                        loyalty: -15,
+                        jailChance: 40,
+                        message: "The shootout went badly. Several of your guys are in cuffs, and the feds are pissed."
+                    }
+                },
+                successChance: 0.6
+            },
+            {
+                text: "Bribe them ($10,000)",
+                requirements: { money: 10000 },
+                outcomes: {
+                    success: {
+                        money: -10000,
+                        heat: -20,
+                        respect: 5,
+                        message: "The cops took the money and conveniently 'lost' the evidence. Crisis averted."
+                    }
+                },
+                successChance: 0.85
+            },
+            {
+                text: "Lay low and cooperate",
+                requirements: {},
+                outcomes: {
+                    success: {
+                        money: -2000,
+                        heat: 10,
+                        respect: -5,
+                        message: "They roughed up the place and took some cash, but found nothing solid. You live to fight another day."
+                    }
+                },
+                successChance: 1.0
+            }
+        ]
+    },
+    {
+        id: "betrayal_rumor",
+        title: " Whispers of Betrayal",
+        description: "Word on the street is that one of your crew might be talking to the feds.",
+        choices: [
+            {
+                text: "Investigate quietly",
+                requirements: { intelligence: 15 },
+                outcomes: {
+                    success: {
+                        message: "Your investigation revealed the rat. You handled it... permanently. The crew respects your vigilance.",
+                        respect: 10,
+                        loyalty: 15,
+                        gangMemberLoss: 1
+                    },
+                    failure: {
+                        message: "You found nothing. Maybe it was just paranoia... or maybe the rat is still among you.",
+                        loyalty: -5
+                    }
+                },
+                successChance: 0.7
+            },
+            {
+                text: "Ignore the rumors",
+                requirements: {},
+                outcomes: {
+                    success: {
+                        message: "Sometimes rumors are just rumors. The crew appreciates that you trust them.",
+                        loyalty: 5
+                    },
+                    failure: {
+                        message: "Turns out the rumors were true. One of your guys flipped. The feds now have intel on your operations.",
+                        heat: 40,
+                        respect: -15,
+                        loyalty: -20,
+                        gangMemberLoss: 1
+                    }
+                },
+                successChance: 0.5
+            },
+            {
+                text: "Make an example (kill a random member)",
+                requirements: { gangMembers: 2 },
+                outcomes: {
+                    success: {
+                        message: "You whacked someone at random as a warning. The message was received loud and clear.",
+                        respect: 15,
+                        loyalty: -25,
+                        heat: 20,
+                        gangMemberLoss: 1
+                    }
+                },
+                successChance: 1.0
+            }
+        ]
+    },
+    {
+        id: "rival_scandal",
+        title: " Rival Boss Scandal",
+        description: "A rival crime boss just got caught in a compromising situation. The tabloids are having a field day.",
+        choices: [
+            {
+                text: "Blackmail them ($15,000 payout)",
+                requirements: { intelligence: 12 },
+                outcomes: {
+                    success: {
+                        money: 15000,
+                        respect: 5,
+                        factionRespect: { target: "rival", change: -20 },
+                        message: "They paid up to keep it quiet. Easy money."
+                    },
+                    failure: {
+                        respect: -10,
+                        factionRespect: { target: "rival", change: -30 },
+                        message: "They called your bluff. Now they're gunning for you."
+                    }
+                },
+                successChance: 0.75
+            },
+            {
+                text: "Help cover it up",
+                requirements: { money: 5000 },
+                outcomes: {
+                    success: {
+                        money: -5000,
+                        factionRespect: { target: "rival", change: 40 },
+                        message: "You helped them out of a jam. They owe you one now."
+                    }
+                },
+                successChance: 0.9
+            },
+            {
+                text: "Leak it to the press",
+                requirements: {},
+                outcomes: {
+                    success: {
+                        respect: 10,
+                        factionRespect: { target: "rival", change: -40 },
+                        territoryVulnerable: "rival", // Their territories become easier to capture
+                        message: "The scandal destroyed their reputation. Their operations are in chaos."
+                    }
+                },
+                successChance: 1.0
+            }
+        ]
+    },
+    {
+        id: "arms_deal",
+        title: " Black Market Arms Deal",
+        description: "A weapons smuggler has a shipment of military-grade hardware. First come, first served.",
+        choices: [
+            {
+                text: "Buy the whole shipment ($25,000)",
+                requirements: { money: 25000 },
+                outcomes: {
+                    success: {
+                        money: -25000,
+                        power: 50,
+                        inventory: ["Military Rifles", "Body Armor", "Explosives"],
+                        message: "Your crew is now heavily armed. The streets will fear you."
+                    }
+                },
+                successChance: 1.0
+            },
+            {
+                text: "Hijack the shipment",
+                requirements: { gangMembers: 4, violence: 15 },
+                outcomes: {
+                    success: {
+                        power: 50,
+                        heat: 35,
+                        inventory: ["Military Rifles", "Body Armor", "Explosives"],
+                        message: "You took the weapons by force. The smuggler won't forget this."
+                    },
+                    failure: {
+                        health: -30,
+                        heat: 20,
+                        gangMemberLoss: 2,
+                        message: "The ambush failed. Your crew took heavy casualties."
+                    }
+                },
+                successChance: 0.65
+            },
+            {
+                text: "Pass on the deal",
+                requirements: {},
+                outcomes: {
+                    success: {
+                        message: "Sometimes discretion is the better part of valor. You let this one slide."
+                    }
+                },
+                successChance: 1.0
+            }
+        ]
+    },
+    {
+        id: "witness_problem",
+        title: " Witness to Eliminate",
+        description: "Someone saw your crew during that last job. They're set to testify in three days.",
+        choices: [
+            {
+                text: "Send a hitter",
+                requirements: { gangMembers: 1, violence: 10 },
+                outcomes: {
+                    success: {
+                        heat: 30,
+                        respect: 10,
+                        message: "The witness had an unfortunate accident. Case closed."
+                    },
+                    failure: {
+                        heat: 60,
+                        respect: -15,
+                        jailChance: 30,
+                        message: "The hit went sideways. Now you're wanted for attempted murder too."
+                    }
+                },
+                successChance: 0.7
+            },
+            {
+                text: "Intimidate them ($5,000 + threats)",
+                requirements: { money: 5000, charisma: 10 },
+                outcomes: {
+                    success: {
+                        money: -5000,
+                        heat: 10,
+                        message: "They got the message and suddenly developed amnesia. No testimony."
+                    },
+                    failure: {
+                        money: -5000,
+                        heat: 40,
+                        message: "They took the money and still testified. Now you're in deeper trouble."
+                    }
+                },
+                successChance: 0.8
+            },
+            {
+                text: "Relocate them (pay them off: $20,000)",
+                requirements: { money: 20000 },
+                outcomes: {
+                    success: {
+                        money: -20000,
+                        heat: -10,
+                        message: "You gave them enough cash to disappear. Problem solved peacefully."
+                    }
+                },
+                successChance: 0.95
+            }
+        ]
+    }
+];
+
+// Trigger an interactive event
+function triggerInteractiveEvent(player) {
+    // Filter events based on player status
+    const availableEvents = INTERACTIVE_EVENTS.filter(event => {
+        // Add any event-specific availability logic here
+        return true;
+    });
+    
+    if (availableEvents.length === 0) return null;
+    
+    const event = availableEvents[Math.floor(Math.random() * availableEvents.length)];
+    
+    return {
+        ...event,
+        timestamp: Date.now()
+    };
+}
+
+// Process player's choice in an interactive event
+function processEventChoice(event, choiceIndex, player) {
+    const choice = event.choices[choiceIndex];
+    
+    if (!choice) {
+        return { success: false, message: "Invalid choice" };
+    }
+    
+    // Check requirements
+    const meetsRequirements = checkEventRequirements(choice.requirements, player);
+    
+    if (!meetsRequirements.success) {
+        return {
+            success: false,
+            message: `Requirements not met: ${meetsRequirements.missing.join(", ")}`
+        };
+    }
+    
+    // Determine success
+    const roll = Math.random();
+    const success = roll < choice.successChance;
+    
+    const outcome = success ? choice.outcomes.success : (choice.outcomes.failure || choice.outcomes.success);
+    
+    // Apply outcomes
+    const result = applyEventOutcomes(outcome, player);
+    
+    return {
+        success: true,
+        eventSuccess: success,
+        choice: choice.text,
+        outcome: outcome,
+        result: result
+    };
+}
+
+function checkEventRequirements(requirements, player) {
+    const missing = [];
+    
+    if (requirements.money && player.money < requirements.money) {
+        missing.push(`$${requirements.money.toLocaleString()}`);
+    }
+    
+    if (requirements.gangMembers && player.gang.gangMembers.filter(m => m.status === "active").length < requirements.gangMembers) {
+        missing.push(`${requirements.gangMembers} gang members`);
+    }
+    
+    if (requirements.violence && player.skills.violence < requirements.violence) {
+        missing.push(`Violence ${requirements.violence}`);
+    }
+    
+    if (requirements.intelligence && player.skills.intelligence < requirements.intelligence) {
+        missing.push(`Intelligence ${requirements.intelligence}`);
+    }
+    
+    if (requirements.charisma && player.skills.charisma < requirements.charisma) {
+        missing.push(`Charisma ${requirements.charisma}`);
+    }
+    
+    return {
+        success: missing.length === 0,
+        missing: missing
+    };
+}
+
+function applyEventOutcomes(outcome, player) {
+    const changes = {};
+    
+    if (outcome.money) {
+        player.money += outcome.money;
+        changes.money = outcome.money;
+    }
+    
+    if (outcome.heat) {
+        player.wantedLevel = Math.max(0, Math.min(100, player.wantedLevel + outcome.heat));
+        changes.heat = outcome.heat;
+    }
+    
+    if (outcome.respect) {
+        player.reputation += outcome.respect;
+        changes.respect = outcome.respect;
+    }
+    
+    if (outcome.loyalty) {
+        player.gang.gangMembers.forEach(member => {
+            if (member.status === "active") {
+                updateMemberLoyalty(member, outcome.loyalty);
+            }
+        });
+        changes.loyalty = outcome.loyalty;
+    }
+    
+    if (outcome.gangMemberLoss && player.gang.gangMembers.length > 0) {
+        const toLose = Math.min(outcome.gangMemberLoss, player.gang.gangMembers.length);
+        const lostMembers = [];
+        for (let i = 0; i < toLose; i++) {
+            const randomIndex = Math.floor(Math.random() * player.gang.gangMembers.length);
+            const member = player.gang.gangMembers[randomIndex];
+            member.status = "dead";
+            lostMembers.push(member.name);
+        }
+        changes.lostMembers = lostMembers;
+    }
+    
+    if (outcome.jailChance && Math.random() * 100 < outcome.jailChance) {
+        // Trigger jail
+        changes.jailed = true;
+    }
+    
+    if (outcome.power) {
+        player.power += outcome.power;
+        changes.power = outcome.power;
+    }
+    
+    if (outcome.health) {
+        player.health = Math.max(0, Math.min(100, player.health + outcome.health));
+        changes.health = outcome.health;
+    }
+    
+    if (outcome.inventory) {
+        if (!player.inventory) player.inventory = [];
+        outcome.inventory.forEach(item => {
+            player.inventory.push(item);
+        });
+        changes.addedItems = outcome.inventory;
+    }
+    
+    changes.message = outcome.message;
+    
+    return changes;
+}
+
+// ==================== 4. RIVAL AI KINGPINS ====================
+
+const RIVAL_KINGPINS = [
+    {
+        id: "torrino_boss",
+        name: "Don Vittorio Torrino",
+        faction: "torrino",
+        personality: "traditional",
+        territories: ["industrial"],
+        gangSize: 8,
+        powerRating: 150,
+        wealth: 50000,
+        aggressiveness: 0.6,
+        respectTowardPlayer: 0,
+        specialAbility: "old_school_tactics"
+    },
+    {
+        id: "kozlov_boss",
+        name: "Yuri Kozlov",
+        faction: "kozlov",
+        personality: "ruthless",
+        territories: ["docks"],
+        gangSize: 10,
+        powerRating: 180,
+        wealth: 75000,
+        aggressiveness: 0.8,
+        respectTowardPlayer: 0,
+        specialAbility: "brutal_efficiency"
+    },
+    {
+        id: "chen_boss",
+        name: "Chen Wei",
+        faction: "chen",
+        personality: "strategic",
+        territories: ["casino_district"],
+        gangSize: 7,
+        powerRating: 140,
+        wealth: 100000,
+        aggressiveness: 0.4,
+        respectTowardPlayer: 0,
+        specialAbility: "financial_genius"
+    },
+    {
+        id: "morales_boss",
+        name: "Isabella Morales",
+        faction: "morales",
+        personality: "expanding",
+        territories: ["suburbs"],
+        gangSize: 9,
+        powerRating: 160,
+        wealth: 60000,
+        aggressiveness: 0.7,
+        respectTowardPlayer: 0,
+        specialAbility: "network_expansion"
+    },
+    {
+        id: "independent_boss",
+        name: "Marcus 'The Jackal' Kane",
+        faction: "independent",
+        personality: "opportunistic",
+        territories: [],
+        gangSize: 6,
+        powerRating: 120,
+        wealth: 30000,
+        aggressiveness: 0.9,
+        respectTowardPlayer: 0,
+        specialAbility: "guerrilla_warfare"
+    }
+];
+
+// Rival AI turn - called periodically
+function processRivalTurn(rival, allTerritories, player) {
+    const actions = [];
+    
+    // 1. Grow gang (if has money)
+    if (rival.wealth > 5000 && rival.gangSize < 20 && Math.random() < 0.4) {
+        rival.gangSize += 1;
+        rival.wealth -= 5000;
+        actions.push(`${rival.name} recruited a new soldier`);
+    }
+    
+    // 2. Attempt territory expansion
+    if (Math.random() < rival.aggressiveness * 0.5) {
+        const uncontrolledTerritories = allTerritories.filter(t => 
+            !t.controlledBy || (t.controlledBy !== rival.id && t.controlledBy !== "player")
+        );
+        
+        if (uncontrolledTerritories.length > 0) {
+            const target = uncontrolledTerritories[Math.floor(Math.random() * uncontrolledTerritories.length)];
+            
+            // Attempt to claim neutral territory
+            if (!target.controlledBy) {
+                target.controlledBy = rival.id;
+                rival.territories.push(target.id);
+                actions.push(`${rival.name} claimed ${target.name}`);
+            }
+        }
+    }
+    
+    // 3. Attack player territory (if aggressive enough and player has territories)
+    const playerTerritories = allTerritories.filter(t => t.controlledBy === "player");
+    
+    if (playerTerritories.length > 0 && Math.random() < rival.aggressiveness * EXPANDED_SYSTEMS_CONFIG.territoryAttackChance) {
+        const target = playerTerritories[Math.floor(Math.random() * playerTerritories.length)];
+        const attackStrength = rival.powerRating + (rival.gangSize * 15);
+        
+        actions.push({
+            type: "territory_attack",
+            attacker: rival.name,
+            attackerId: rival.id,
+            territory: target,
+            attackStrength: attackStrength
+        });
+    }
+    
+    // 4. Collect income from territories
+    rival.territories.forEach(territoryId => {
+        const territory = allTerritories.find(t => t.id === territoryId);
+        if (territory) {
+            rival.wealth += territory.baseIncome * 0.5; // Half income as they're AI
+        }
+    });
+    
+    // 5. Increase power over time
+    rival.powerRating += Math.floor(Math.random() * 5);
+    
+    return actions;
+}
+
+// ==================== 5. RESPECT-BASED RELATIONSHIP SYSTEM ====================
+
+// Initialize respect for all factions/rivals
+function initializeRespectSystem(player) {
+    if (!player.relationships) {
+        player.relationships = {
+            // Factions
+            torrino: 0,
+            kozlov: 0,
+            chen: 0,
+            morales: 0,
+            police: -20, // Starts slightly negative
+            
+            // Rival kingpins
+            torrino_boss: 0,
+            kozlov_boss: 0,
+            chen_boss: 0,
+            morales_boss: 0,
+            independent_boss: 0,
+            
+            // Special groups
+            civilians: 0,
+            underground: 0
+        };
+    }
+}
+
+// Modify respect with a faction/rival
+function modifyRespect(player, targetId, change, reason = "") {
+    if (!player.relationships) initializeRespectSystem(player);
+    
+    const oldValue = player.relationships[targetId] || 0;
+    const newValue = Math.max(-100, Math.min(100, oldValue + change));
+    
+    player.relationships[targetId] = newValue;
+    
+    // Respect affects related outcomes
+    const effects = calculateRespectEffects(targetId, newValue);
+    
+    return {
+        target: targetId,
+        oldValue: oldValue,
+        newValue: newValue,
+        change: change,
+        reason: reason,
+        effects: effects
+    };
+}
+
+// Calculate benefits/penalties from respect level
+function calculateRespectEffects(targetId, respectValue) {
+    const effects = {
+        priceModifier: 1.0,
+        jobAccessModifier: 1.0,
+        attackChance: 0,
+        supportChance: 0,
+        specialMissionsAvailable: false
+    };
+    
+    // High respect (60-100)
+    if (respectValue >= 60) {
+        effects.priceModifier = 0.8; // 20% discount
+        effects.jobAccessModifier = 1.3; // 30% better jobs
+        effects.supportChance = 0.25; // 25% chance they'll help in crisis
+        effects.specialMissionsAvailable = true;
+    }
+    // Moderate respect (20-59)
+    else if (respectValue >= 20) {
+        effects.priceModifier = 0.9; // 10% discount
+        effects.jobAccessModifier = 1.1; // 10% better jobs
+        effects.supportChance = 0.1;
+    }
+    // Neutral (-19 to 19)
+    else if (respectValue >= -19) {
+        // No modifiers
+    }
+    // Low respect (-20 to -59)
+    else if (respectValue >= -60) {
+        effects.priceModifier = 1.2; // 20% markup
+        effects.attackChance = 0.15; // 15% chance of sabotage
+    }
+    // Very low respect (-60 to -100)
+    else {
+        effects.priceModifier = 1.5; // 50% markup
+        effects.attackChance = 0.35; // 35% chance of attacks
+        effects.jobAccessModifier = 0.7; // Limited access
+    }
+    
+    return effects;
+}
+
+// Natural respect decay toward neutral over time
+function processRespectDecay(player) {
+    if (!player.relationships) return;
+    
+    Object.keys(player.relationships).forEach(targetId => {
+        const current = player.relationships[targetId];
+        
+        // Decay toward 0 (neutral)
+        if (current > 0) {
+            player.relationships[targetId] = Math.floor(current * EXPANDED_SYSTEMS_CONFIG.respectDecayRate);
+        } else if (current < 0) {
+            player.relationships[targetId] = Math.ceil(current * EXPANDED_SYSTEMS_CONFIG.respectDecayRate);
+        }
+    });
+}
+
+// ==================== INTEGRATION & INITIALIZATION ====================
+
+// Initialize all expanded systems for a new game
+function initializeExpandedSystems(player) {
+    // Gang members
+    if (!player.gang.gangMembers) {
+        player.gang.gangMembers = [];
+    }
+    
+    // Territories
+    if (!player.territoriesEx) {
+        player.territoriesEx = JSON.parse(JSON.stringify(EXPANDED_TERRITORIES)); // Deep clone
+    }
+    
+    // Rival kingpins
+    if (!player.rivalKingpins) {
+        player.rivalKingpins = JSON.parse(JSON.stringify(RIVAL_KINGPINS));
+    }
+    
+    // Respect system removed — factions use streetReputation in player.js
+    // initializeRespectSystem(player);
+    
+    // Event tracking
+    if (!player.interactiveEvents) {
+        player.interactiveEvents = {
+            lastEventTime: 0,
+            eventsTriggered: [],
+            eventCooldown: 300000 // 5 minutes between events
+        };
+    }
+}
+
+// Export all systems for use in main game
+default {
+    CONFIG: EXPANDED_SYSTEMS_CONFIG,
+    ROLES: GANG_MEMBER_ROLES,
+    TERRITORIES: TERRITORIES,
+    EVENTS: INTERACTIVE_EVENTS,
+    RIVALS: RIVAL_KINGPINS,
+    
+    // Gang functions
+    generateGangMember,
+    calculateMemberEffectiveness,
+    updateMemberLoyalty,
+    
+    // Territory functions
+    assignMembersToTerritory,
+    calculateTerritoryDefense,
+    processTerritoryAttack,
+    
+    // Event functions
+    triggerInteractiveEvent,
+    processEventChoice,
+    
+    // Rival functions
+    processRivalTurn,
+    
+    // Respect functions
+    initializeRespectSystem,
+    modifyRespect,
+    processRespectDecay,
+    
+    // Initialization
+    initializeExpandedSystems
+};
+
+// ==================== EXPANDED UI SCREENS (merged from expanded-ui.js) ====================
+
+// ==================== GANG MANAGEMENT UI ====================
+
+function showGangManagementScreen() {
+  const gangMembers = player.gang.gangMembers || [];
+  
+  let html = `
+    <div class="expanded-screen gang-management-screen">
+      <h2> Gang Management</h2>
+      <div class="gang-stats">
+        <p><strong>Active Members:</strong> ${gangMembers.filter(m => m.status === "active").length}</p>
+        <p><strong>Total Gang Size:</strong> ${gangMembers.length}</p>
+        <p><strong>Average Loyalty:</strong> ${calculateAverageLoyalty(gangMembers)}%</p>
+      </div>
+      
+      <div class="member-list">
+        ${gangMembers.map(member => renderGangMember(member)).join('')}
+      </div>
+      
+      <div class="gang-actions">
+        <button onclick="recruitGangMemberExpanded()"> Recruit New Member ($5,000)</button>
+        <button onclick="closeScreen()">← Back</button>
+      </div>
+    </div>
+  `;
+  
+  showCustomScreen(html);
+}
+
+function renderGangMember(member) {
+  const roleData = member.roleData || { name: "Soldier", icon: "\u2694\uFE0F" };
+  const statusIcon = {
+    "active": "",
+    "injured": "",
+    "jailed": "",
+    "dead": ""
+  }[member.status] || "";
+  
+  const loyaltyColor = member.stats.loyalty > 70 ? "green" : 
+             member.stats.loyalty > 40 ? "orange" : "red";
+  
+  return `
+    <div class="gang-member-card ${member.status}">
+      <div class="member-header">
+        <h3>${roleData.icon} ${member.name}</h3>
+        <span class="status-badge">${statusIcon} ${member.status}</span>
+      </div>
+      
+      <div class="member-role">
+        <strong>${roleData.name}</strong> - Level ${member.level}
+      </div>
+      
+      <div class="member-stats">
+        <div class="stat"> Violence: ${member.stats.violence}</div>
+        <div class="stat"> Stealth: ${member.stats.stealth}</div>
+        <div class="stat"> Intelligence: ${member.stats.intelligence}</div>
+        <div class="stat" style="color: ${loyaltyColor}"> Loyalty: ${member.stats.loyalty}%</div>
+      </div>
+      
+      ${member.perk ? `
+        <div class="member-perk">
+          <strong> ${member.perk.name}:</strong> ${member.perk.effect}
+        </div>
+      ` : ''}
+      
+      ${member.traits && member.traits.length > 0 ? `
+        <div class="member-traits">
+          ${member.traits.map(t => `<span class="trait-badge">${t.name}</span>`).join('')}
+        </div>
+      ` : ''}
+      
+      ${member.assignedTo ? `
+        <div class="assignment"> Assigned to: ${member.assignedTo}</div>
+      ` : ''}
+      
+      ${member.status === "active" ? `
+        <div class="member-actions">
+          <button onclick="assignMemberToTerritory('${member.id}')"> Assign to Territory</button>
+          <button onclick="dismissMember('${member.id}')"> Dismiss</button>
+        </div>
+      ` : ''}
+    </div>
+  `;
+}
+
+function calculateAverageLoyalty(members) {
+  if (members.length === 0) return 0;
+  const activeMembers = members.filter(m => m.status === "active");
+  if (activeMembers.length === 0) return 0;
+  
+  const total = activeMembers.reduce((sum, m) => sum + m.stats.loyalty, 0);
+  return Math.floor(total / activeMembers.length);
+}
+
+window.recruitGangMemberExpanded = function() {
+  if (player.money < 5000) {
+    ui.toast("Not enough money to recruit! Need $5,000.", 'error');
+    return;
+  }
+  
+  const newMember = generateExpandedGangMember();
+  player.gang.gangMembers.push(newMember);
+  player.gang.members++;
+  player.money -= 5000;
+  
+  GameLogging.logEvent(`Recruited ${newMember.roleData.icon} ${newMember.name} (${newMember.roleData.name}) to your gang!`);
+  
+  showGangManagementScreen(); // Refresh
+  updateUI();
+};
+
+window.dismissMember = async function(memberId) {
+  const member = player.gang.gangMembers.find(m => m.id === memberId);
+  if (!member) return;
+  
+  if (!await ui.confirm(`Are you sure you want to dismiss ${member.name}? This cannot be undone.`)) {
+    return;
+  }
+  
+  // Remove from territories if assigned
+  if (member.assignedTo && player.territoriesEx) {
+    const territory = player.territoriesEx.find(t => t.id === member.assignedTo);
+    if (territory) {
+      territory.defendingMembers = territory.defendingMembers.filter(id => id !== memberId);
+    }
+  }
+  
+  member.status = "dismissed";
+  player.gang.members--;
+  
+  GameLogging.logEvent(`${member.name} has been dismissed from your gang.`);
+  showGangManagementScreen();
+  updateUI();
+};
+
+// ==================== TERRITORY MAP UI ====================
+
+function showTerritoryMapScreen() {
+  const territories = player.territoriesEx || EXPANDED_TERRITORIES;
+  
+  let html = `
+    <div class="expanded-screen territory-map-screen">
+      <h2> Territory Control Map</h2>
+      <p class="subtitle">Assign gang members to defend your territories from rival attacks</p>
+      
+      <div class="territory-grid">
+        ${territories.map(territory => renderTerritory(territory)).join('')}
+      </div>
+      
+      <div class="territory-legend">
+        <h3>Risk Levels:</h3>
+        <span class="risk-low">Low Risk</span>
+        <span class="risk-medium">Medium Risk</span>
+        <span class="risk-high">High Risk</span>
+        <span class="risk-very-high">Very High Risk</span>
+      </div>
+      
+      <button onclick="closeScreen()">← Back</button>
+    </div>
+  `;
+  
+  showCustomScreen(html);
+}
+
+function renderTerritory(territory) {
+  const isControlled = territory.controlledBy === "player";
+  const defenseStrength = isControlled ? calculateExpandedTerritoryDefense(territory, player) : 0;
+  const defenders = territory.defendingMembers || [];
+  
+  return `
+    <div class="territory-card ${territory.riskLevel.replace(' ', '-')} ${isControlled ? 'controlled' : 'uncontrolled'}">
+      <h3>${territory.name}</h3>
+      <p class="territory-description">${territory.description}</p>
+      
+      <div class="territory-info">
+        <div> Income: $${territory.baseIncome.toLocaleString()}/day</div>
+        <div> Defense Required: ${territory.defenseRequired}</div>
+        <div> Risk: ${territory.riskLevel}</div>
+      </div>
+      
+      ${isControlled ? `
+        <div class="territory-status controlled">
+          <strong> CONTROLLED</strong>
+          <div> Defense Strength: ${defenseStrength}</div>
+          <div> Fortification Level: ${territory.fortificationLevel}</div>
+          <div> Defenders: ${defenders.length}</div>
+        </div>
+        
+        <div class="territory-actions">
+          <button onclick="manageDefenders('${territory.id}')"> Manage Defenders</button>
+          <button onclick="fortifyExpandedTerritory('${territory.id}')"> Fortify ($10,000)</button>
+        </div>
+      ` : `
+        <div class="territory-status uncontrolled">
+          <strong> Not Controlled</strong>
+          ${territory.controlledBy ? `<div>Held by: ${territory.controlledBy}</div>` : `<div>Available for takeover</div>`}
+        </div>
+        
+        ${!territory.controlledBy ? `
+          <button onclick="claimExpandedTerritory('${territory.id}')"> Claim Territory ($${territory.baseIncome})</button>
+        ` : ''}
+      `}
+    </div>
+  `;
+}
+
+window.manageDefenders = function(territoryId) {
+  const territory = player.territoriesEx.find(t => t.id === territoryId);
+  if (!territory) return;
+  
+  const availableMembers = player.gang.gangMembers.filter(m => m.status === "active");
+  const currentDefenders = territory.defendingMembers || [];
+  
+  let html = `
+    <div class="defender-manager">
+      <h2> Manage Defenders: ${territory.name}</h2>
+      <p>Select gang members to defend this territory</p>
+      
+      <div class="current-defenders">
+        <h3>Current Defenders (${currentDefenders.length}):</h3>
+        ${currentDefenders.map(id => {
+          const member = player.gang.gangMembers.find(m => m.id === id);
+          return member ? `
+            <div class="defender-item">
+              ${member.roleData.icon} ${member.name} (${member.roleData.name})
+              <button onclick="removeDefender('${territoryId}', '${id}')">Remove</button>
+            </div>
+          ` : '';
+        }).join('')}
+      </div>
+      
+      <div class="available-members">
+        <h3>Available Members:</h3>
+        ${availableMembers.filter(m => !currentDefenders.includes(m.id)).map(member => `
+          <div class="member-item">
+            ${member.roleData.icon} ${member.name} (${member.roleData.name})
+            - Effectiveness: ${calculateMemberEffectiveness(member, 'defense')}
+            <button onclick="addDefender('${territoryId}', '${member.id}')">Add</button>
+          </div>
+        `).join('')}
+      </div>
+      
+      <button onclick="showTerritoryMapScreen()">← Back to Map</button>
+    </div>
+  `;
+  
+  showCustomScreen(html);
+};
+
+window.addDefender = function(territoryId, memberId) {
+  const result = assignMembersToExpandedTerritory(territoryId, [memberId], player);
+  if (result.success) {
+    GameLogging.logEvent(result.message);
+  }
+  manageDefenders(territoryId);
+  updateUI();
+};
+
+window.removeDefender = function(territoryId, memberId) {
+  const territory = player.territoriesEx.find(t => t.id === territoryId);
+  if (!territory) return;
+  
+  territory.defendingMembers = territory.defendingMembers.filter(id => id !== memberId);
+  
+  const member = player.gang.gangMembers.find(m => m.id === memberId);
+  if (member) {
+    member.assignedTo = null;
+  }
+  
+  GameLogging.logEvent(`Removed ${member.name} from ${territory.name} defense`);
+  manageDefenders(territoryId);
+  updateUI();
+};
+
+window.fortifyExpandedTerritory = function(territoryId) {
+  if (player.money < 10000) {
+    ui.toast("Not enough money! Fortifications cost $10,000.", 'error');
+    return;
+  }
+  
+  const territory = player.territoriesEx.find(t => t.id === territoryId);
+  if (!territory) return;
+  
+  player.money -= 10000;
+  territory.fortificationLevel++;
+  
+  GameLogging.logEvent(`Fortified ${territory.name}! Defense +10`);
+  showTerritoryMapScreen();
+  updateUI();
+};
+
+window.claimExpandedTerritory = function(territoryId) {
+  const territory = player.territoriesEx.find(t => t.id === territoryId);
+  if (!territory) return;
+  
+  if (player.money < territory.baseIncome) {
+    ui.toast(`Not enough money to claim this territory! Need $${territory.baseIncome.toLocaleString()}`, 'error');
+    return;
+  }
+  
+  player.money -= territory.baseIncome;
+  territory.controlledBy = "player";
+  
+  GameLogging.logEvent(` Claimed ${territory.name}! Now earning $${territory.baseIncome}/day.`);
+  showTerritoryMapScreen();
+  updateUI();
+};
+
+// ==================== INTERACTIVE EVENT UI ====================
+
+let currentEvent = null;
+
+function checkAndTriggerInteractiveEvent() {
+  if (!EXPANDED_SYSTEMS_CONFIG.interactiveEventsEnabled) return;
+  
+  const now = Date.now();
+  const lastEvent = player.interactiveEvents?.lastEventTime || 0;
+  const cooldown = player.interactiveEvents?.eventCooldown || 300000;
+  
+  if (now - lastEvent < cooldown) return;
+  
+  // 20% chance per check
+  if (Math.random() > 0.2) return;
+  
+  const event = triggerInteractiveEvent(player);
+  if (!event) return;
+  
+  player.interactiveEvents.lastEventTime = now;
+  player.interactiveEvents.eventsTriggered.push(event.id);
+  
+  showInteractiveEvent(event);
+}
+
+function showInteractiveEvent(event) {
+  currentEvent = event;
+  
+  let html = `
+    <div class="interactive-event">
+      <h2>${event.title}</h2>
+      <p class="event-description">${event.description}</p>
+      
+      <div class="event-choices">
+        ${event.choices.map((choice, index) => {
+          const reqCheck = checkChoiceRequirements(choice.requirements);
+          const disabled = !reqCheck.canChoose;
+          
+          return `
+            <div class="event-choice ${disabled ? 'disabled' : ''}" 
+               onclick="${disabled ? '' : `makeEventChoice(${index})`}">
+              <h3>${choice.text}</h3>
+              ${choice.successChance < 1 ? `<div class="success-chance">Success Chance: ${Math.floor(choice.successChance * 100)}%</div>` : ''}
+              ${renderRequirements(choice.requirements)}
+              ${disabled ? `<div class="requirements-not-met"> ${reqCheck.reason}</div>` : ''}
+            </div>
+          `;
+        }).join('')}
+      </div>
+      
+      <button onclick="closeScreen(); updateUI();" style="margin-top: 20px; padding: 12px 25px; background: #95a5a6; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1em;">Close</button>
+    </div>
+  `;
+  
+  showCustomScreen(html);
+}
+
+function checkChoiceRequirements(requirements) {
+  if (requirements.money && player.money < requirements.money) {
+    return { canChoose: false, reason: `Need $${requirements.money.toLocaleString()}` };
+  }
+  if (requirements.gangMembers && player.gang.gangMembers.filter(m => m.status === "active").length < requirements.gangMembers) {
+    return { canChoose: false, reason: `Need ${requirements.gangMembers} gang members` };
+  }
+  if (requirements.violence && player.skills.violence < requirements.violence) {
+    return { canChoose: false, reason: `Need Violence ${requirements.violence}` };
+  }
+  if (requirements.intelligence && player.skills.intelligence < requirements.intelligence) {
+    return { canChoose: false, reason: `Need Intelligence ${requirements.intelligence}` };
+  }
+  if (requirements.charisma && player.skills.charisma < requirements.charisma) {
+    return { canChoose: false, reason: `Need Charisma ${requirements.charisma}` };
+  }
+  
+  return { canChoose: true };
+}
+
+function renderRequirements(requirements) {
+  const reqs = [];
+  if (requirements.money) reqs.push(` $${requirements.money.toLocaleString()}`);
+  if (requirements.gangMembers) reqs.push(` ${requirements.gangMembers} members`);
+  if (requirements.violence) reqs.push(` Violence ${requirements.violence}`);
+  if (requirements.intelligence) reqs.push(` Intelligence ${requirements.intelligence}`);
+  if (requirements.charisma) reqs.push(` Charisma ${requirements.charisma}`);
+  
+  return reqs.length > 0 ? `<div class="requirements">Requires: ${reqs.join(', ')}</div>` : '';
+}
+
+window.makeEventChoice = function(choiceIndex) {
+  if (!currentEvent) return;
+  
+  const result = processEventChoice(currentEvent, choiceIndex, player);
+  
+  if (!result.success) {
+    ui.toast(result.message, 'error');
+    return;
+  }
+  
+  // Show outcome
+  const outcome = result.outcome;
+  let outcomeHtml = `
+    <div class="event-outcome ${result.eventSuccess ? 'success' : 'failure'}">
+      <h2>${result.eventSuccess ? ' SUCCESS!' : ' FAILURE!'}</h2>
+      <p class="outcome-message">${outcome.message}</p>
+      
+      <div class="outcome-effects">
+        ${result.result.money ? `<div> Money: ${result.result.money > 0 ? '+' : ''}$${result.result.money.toLocaleString()}</div>` : ''}
+        ${result.result.heat ? `<div> Heat: ${result.result.heat > 0 ? '+' : ''}${result.result.heat}</div>` : ''}
+        ${result.result.respect ? `<div>⭐ Respect: ${result.result.respect > 0 ? '+' : ''}${result.result.respect}</div>` : ''}
+        ${result.result.loyalty ? `<div> Gang Loyalty: ${result.result.loyalty > 0 ? '+' : ''}${result.result.loyalty}%</div>` : ''}
+        ${result.result.lostMembers ? `<div> Lost: ${result.result.lostMembers.join(', ')}</div>` : ''}
+        ${result.result.jailed ? `<div> You've been arrested!</div>` : ''}
+      </div>
+      
+      <button onclick="closeScreen(); updateUI();">Continue</button>
+    </div>
+  `;
+  
+  showCustomScreen(outcomeHtml);
+  currentEvent = null;
+  
+  if (result.result.jailed) {
+    setTimeout(() => {
+      closeScreen();
+      sendToJail();
+    }, 3000);
+  }
+};
+
+// ==================== RIVAL KINGPINS UI ====================
+
+function showRivalActivityScreen() {
+  const rivals = player.rivalKingpins || RIVAL_KINGPINS;
+  
+  let html = `
+    <div class="expanded-screen rivals-screen">
+      <h2> Rival Kingpins</h2>
+      <p class="subtitle">Track your competitors and plan your moves</p>
+      
+      <div class="rivals-grid">
+        ${rivals.map(rival => renderRival(rival)).join('')}
+      </div>
+      
+      <button onclick="closeScreen()">← Back</button>
+    </div>
+  `;
+  
+  showCustomScreen(html);
+}
+
+function renderRival(rival) {
+  const playerRespect = player.relationships?.[rival.id] || 0;
+  const respectColor = playerRespect > 20 ? 'green' : playerRespect < -20 ? 'red' : 'gray';
+  
+  return `
+    <div class="rival-card">
+      <h3>${rival.name}</h3>
+      <div class="rival-faction">${rival.faction.toUpperCase()}</div>
+      
+      <div class="rival-stats">
+        <div> Power: ${rival.powerRating}</div>
+        <div> Gang Size: ${rival.gangSize}</div>
+        <div> Wealth: $${rival.wealth.toLocaleString()}</div>
+        <div> Territories: ${rival.territories.length}</div>
+        <div style="color: ${respectColor}">⭐ Respect: ${playerRespect > 0 ? '+' : ''}${playerRespect}</div>
+      </div>
+      
+      <div class="rival-personality">
+        <strong>Personality:</strong> ${rival.personality}
+        <div> Aggressiveness: ${Math.floor(rival.aggressiveness * 100)}%</div>
+      </div>
+      
+      <div class="rival-ability">
+        <strong> Special:</strong> ${formatSpecialAbility(rival.specialAbility)}
+      </div>
+    </div>
+  `;
+}
+
+// formatSpecialAbility — already defined in main game.js code
+// ==================== RESPECT/RELATIONSHIPS UI ====================
+
+function showRelationshipsScreen() {
+  const relationships = player.relationships || {};
+  
+  let html = `
+    <div class="expanded-screen relationships-screen">
+      <h2>⭐ Relationships & Respect</h2>
+      <p class="subtitle">Your standing with factions and rivals</p>
+      
+      <div class="relationships-grid">
+        ${Object.entries(relationships).map(([targetId, respect]) => {
+          return renderRelationship(targetId, respect);
+        }).join('')}
+      </div>
+      
+      <div class="respect-legend">
+        <h3>Respect Levels:</h3>
+        <div class="legend-item"><span class="respect-bar very-high"></span> 60-100: Allied</div>
+        <div class="legend-item"><span class="respect-bar high"></span> 20-59: Friendly</div>
+        <div class="legend-item"><span class="respect-bar neutral"></span> -19 to 19: Neutral</div>
+        <div class="legend-item"><span class="respect-bar low"></span> -20 to -59: Hostile</div>
+        <div class="legend-item"><span class="respect-bar very-low"></span> -60 to -100: Enemy</div>
+      </div>
+      
+      <button onclick="closeScreen()">← Back</button>
+    </div>
+  `;
+  
+  showCustomScreen(html);
+}
+
+function renderRelationship(targetId, respect) {
+  const respectLevel = 
+    respect >= 60 ? 'very-high' :
+    respect >= 20 ? 'high' :
+    respect >= -19 ? 'neutral' :
+    respect >= -60 ? 'low' : 'very-low';
+  
+  const respectLabel =
+    respect >= 60 ? ' Allied' :
+    respect >= 20 ? ' Friendly' :
+    respect >= -19 ? ' Neutral' :
+    respect >= -60 ? ' Hostile' : ' Enemy';
+  
+  return `
+    <div class="relationship-card ${respectLevel}">
+      <h3>${formatTargetName(targetId)}</h3>
+      <div class="respect-value">${respectLabel} (${respect > 0 ? '+' : ''}${respect})</div>
+      <div class="respect-bar-container">
+        <div class="respect-bar-fill ${respectLevel}" style="width: ${Math.abs(respect)}%; ${respect < 0 ? 'transform: scaleX(-1);' : ''}"></div>
+      </div>
+    </div>
+  `;
+}
+
+function formatTargetName(targetId) {
+  const names = {
+    "torrino": "Torrino Family",
+    "kozlov": "Kozlov Bratva",
+    "chen": "Chen Triad",
+    "morales": "Morales Cartel",
+    "police": "Police Department",
+    "torrino_boss": "Don Vittorio Torrino",
+    "kozlov_boss": "Yuri Kozlov",
+    "chen_boss": "Chen Wei",
+    "morales_boss": "Isabella Morales",
+    "independent_boss": "Marcus 'The Jackal' Kane",
+    "civilians": "Civilians",
+    "underground": "Criminal Underground"
+  };
+  
+  return names[targetId] || targetId;
+}
+
+// ==================== UTILITY FUNCTIONS ====================
+
+function showCustomScreen(html) {
+  // Create modal overlay
+  const overlay = document.createElement('div');
+  overlay.id = 'expanded-screen-overlay';
+  overlay.className = 'expanded-screen-overlay';
+  overlay.innerHTML = html;
+  
+  document.body.appendChild(overlay);
+}
+
+window.closeScreen = function() {
+  const overlay = document.getElementById('expanded-screen-overlay');
+  if (overlay) {
+    overlay.remove();
+  }
+};
+
+// Export all UI functions
+default {
+  showGangManagementScreen,
+  showTerritoryMapScreen,
+  showInteractiveEvent,
+  checkAndTriggerInteractiveEvent,
+  showRivalActivityScreen,
+  showRelationshipsScreen
+};
+
+// Expose merged expanded UI functions to window (for onclick handlers in dynamic HTML)
+window.showGangManagementScreen = showGangManagementScreen;
+window.showTerritoryMapScreen = showTerritoryMapScreen;
+window.showRelationshipsScreen = showRelationshipsScreen;
+window.showRivalActivityScreen = function() {
+  if (typeof showRivalsScreen === 'function') showRivalsScreen();
+};
+window.closeScreen = closeScreen;
+
+// ==================== END MERGED EXPANDED SYSTEMS ====================
+
 
 // Specialist Roles for Gang Members (operations & training mechanics)
 const specialistRoles = [
@@ -1320,7 +3075,7 @@ const betrayalEvents = [
 
 // District Types with Different Benefits
 // CANONICAL territory data — the Territory Map and all territory functions reference this.
-// See also: expanded-systems.js TERRITORIES (5 war zones for gang wars)
+// See also: EXPANDED_TERRITORIES above (5 war zones for gang wars)
 //           multiplayer.js cityDistricts (5 zones for multiplayer area control)
 const districtTypes = [
   {
@@ -2888,14 +4643,14 @@ function generateGangOperationsHTML() {
         <h5>${operation.name}</h5>
         <p><small>${operation.description}</small></p>
         <div style="margin: 5px 0;">
-          <small><strong>Required:</strong> ${(() => { const eKey = SPECIALIZATION_TO_EXPANDED[operation.requiredRole]; const eName = eKey && typeof ExpandedSystems !== 'undefined' && ExpandedSystems.ROLES && ExpandedSystems.ROLES[eKey] ? ExpandedSystems.ROLES[eKey].name : null; return eName || operation.requiredRole.charAt(0).toUpperCase() + operation.requiredRole.slice(1); })()}</small><br>
+          <small><strong>Required:</strong> ${(() => { const eKey = SPECIALIZATION_TO_EXPANDED[operation.requiredRole]; const eName = eKey && GANG_MEMBER_ROLES[eKey] ? GANG_MEMBER_ROLES[eKey].name : null; return eName || operation.requiredRole.charAt(0).toUpperCase() + operation.requiredRole.slice(1); })()}</small><br>
           <small><strong>Duration:</strong> ${operation.duration} hours</small><br>
           <small><strong>Reward:</strong> $${operation.rewards.money[0]}-${operation.rewards.money[1]}</small>
         </div>
         <select id="member-select-${operation.id}" style="margin: 5px 0; padding: 5px; width: 100%;">
           <option value="">Select a member</option>
           ${availableMembers.map(member => {
-            const eName = member.role && typeof ExpandedSystems !== 'undefined' && ExpandedSystems.ROLES && ExpandedSystems.ROLES[member.role] ? ExpandedSystems.ROLES[member.role].name : member.specialization;
+            const eName = member.role && GANG_MEMBER_ROLES[member.role] ? GANG_MEMBER_ROLES[member.role].name : member.specialization;
             return `<option value="${member.name}">${member.name} (${eName}, Lvl ${member.experienceLevel})</option>`;
           }).join('')}
         </select>
@@ -2945,7 +4700,7 @@ function generateGangMembersHTML() {
   player.gang.gangMembers.forEach((member, index) => {
     const role = specialistRoles.find(r => r.id === member.specialization);
     // Prefer expanded role name (richer info) over legacy specialization name
-    const expandedRole = member.role && ExpandedSystems ? ExpandedSystems.ROLES[member.role] : null;
+    const expandedRole = member.role ? GANG_MEMBER_ROLES[member.role] : null;
     const roleName = expandedRole ? `${expandedRole.icon || ''} ${expandedRole.name}`.trim() : (role ? role.name : 'Unassigned');
     const perkText = expandedRole && expandedRole.perk ? `<br><strong>Perk:</strong> <em>${expandedRole.perk.name}</em> — ${expandedRole.perk.effect}` : '';
     const statusText = member.onOperation ? 'On Operation' : 
@@ -3012,7 +4767,7 @@ function generateTrainingProgramsHTML() {
         <select id="training-member-${program.id}" style="width: 100%; padding: 5px; margin: 5px 0;">
           <option value="">Select a member</option>
           ${availableMembers.map(member => {
-            const eName = member.role && typeof ExpandedSystems !== 'undefined' && ExpandedSystems.ROLES && ExpandedSystems.ROLES[member.role] ? ExpandedSystems.ROLES[member.role].name : member.specialization;
+            const eName = member.role && GANG_MEMBER_ROLES[member.role] ? GANG_MEMBER_ROLES[member.role].name : member.specialization;
             return `<option value="${member.name}">${member.name} (${eName})</option>`;
           }).join('')}
         </select>
@@ -3193,8 +4948,8 @@ async function assignRole(memberIndex) {
   
   // Build role list from expanded roles if available, fallback to legacy
   let roleList, promptText;
-  if (ExpandedSystems && ExpandedSystems.CONFIG.gangRolesEnabled) {
-    const roles = ExpandedSystems.ROLES;
+  if (EXPANDED_SYSTEMS_CONFIG.gangRolesEnabled) {
+    const roles = GANG_MEMBER_ROLES;
     const roleKeys = Object.keys(roles);
     promptText = `Assign ${member.name} to a role:<br><br>Available roles:<br>${roleKeys.map(k => `<strong>${k}</strong>: ${roles[k].name} — ${roles[k].description}${roles[k].perk ? ` (${roles[k].perk.effect})` : ''}`).join('<br>')}<br><br>Enter role ID (${roleKeys.join(', ')}):`;
     
@@ -5360,7 +7115,6 @@ function hideAllScreens() {
   document.getElementById("jailbreak-screen").style.display = "none";
   document.getElementById("recruitment-screen").style.display = "none";
   document.getElementById("casino-screen").style.display = "none";
-  document.getElementById("pharmacy-screen").style.display = "none";
   document.getElementById("mini-games-screen").style.display = "none";
   document.getElementById("missions-screen").style.display = "none";
   document.getElementById("business-screen").style.display = "none";
@@ -10532,9 +12286,9 @@ function recruitMember(index) {
     
     // EXPANDED: Create enhanced gang member with role system if enabled
     let newMember;
-    if (ExpandedSystems && ExpandedSystems.CONFIG.gangRolesEnabled) {
+    if (EXPANDED_SYSTEMS_CONFIG.gangRolesEnabled) {
       // Generate expanded gang member with role
-      newMember = ExpandedSystems.generateGangMember(null, recruit.name);
+      newMember = generateExpandedGangMember(null, recruit.name);
       
       // Merge with legacy data & derive specialization from expanded role
       newMember.experienceLevel = recruit.experienceLevel;
@@ -15411,11 +17165,11 @@ function activateGameplaySystems() {
   initializeCompetitionSystem();
 
   // Initialize expanded systems (gang roles, territory wars, etc.)
-  ExpandedSystems.initializeExpandedSystems(player);
+  initializeExpandedSystems(player);
 
   // Start rival AI and interactive events
   // Rival AI system removed — rivals screen retained for local rankings/competition
-  setInterval(() => { if (gameplayActive) ExpandedUI.checkAndTriggerInteractiveEvent(); }, 60000);
+  setInterval(() => { if (gameplayActive) checkAndTriggerInteractiveEvent(); }, 60000);
 
   // Initialize UI Events
   if (typeof initUIEvents === 'function') {
@@ -17582,7 +19336,7 @@ function showRivalsScreen() {
   hideAllScreens();
   document.getElementById('statistics-screen').style.display = 'block';
   
-  const rivals = player.rivalKingpins || (window.ExpandedSystems ? window.ExpandedSystems.RIVALS : []);
+  const rivals = player.rivalKingpins || RIVAL_KINGPINS;
   const playerRankings = {};
   COMPETITION_SYSTEM.leaderboardCategories.forEach(category => {
     playerRankings[category.id] = getPlayerRanking(category.id);
@@ -17640,7 +19394,7 @@ function showRivalsTab() {
   document.getElementById('competition-tab-btn').style.background = 'rgba(52, 73, 94, 0.6)';
   document.getElementById('competition-tab-btn').style.color = '#95a5a6';
   
-  const rivals = player.rivalKingpins || (window.ExpandedSystems ? window.ExpandedSystems.RIVALS : []);
+  const rivals = player.rivalKingpins || RIVAL_KINGPINS;
   
   const content = `
     <div>
