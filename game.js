@@ -2070,7 +2070,7 @@ function initializeExpandedSystems(player) {
 }
 
 // Export all systems for use in main game
-default {
+export default {
     CONFIG: EXPANDED_SYSTEMS_CONFIG,
     ROLES: GANG_MEMBER_ROLES,
     TERRITORIES: TERRITORIES,
