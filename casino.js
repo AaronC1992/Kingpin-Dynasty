@@ -32,9 +32,7 @@ function updateCasinoWallet() {
 }
 
 function getCasinoBetRange() {
-  const minBet = Math.floor(100 + player.level * 50);
-  const maxBet = Math.floor(minBet * 20);
-  return { minBet, maxBet, defaultBet: minBet };
+  return { defaultBet: 100 };
 }
 
 function getGamblingLuckBonus() {
@@ -111,7 +109,7 @@ function bjCardHTML(card, hidden) {
 }
 
 export function startBlackjack() {
-  const { minBet, maxBet, defaultBet } = getCasinoBetRange();
+  const { defaultBet } = getCasinoBetRange();
   const gameSelect = document.getElementById('casino-game-select');
   if (gameSelect) gameSelect.style.display = 'none';
 
@@ -121,11 +119,10 @@ export function startBlackjack() {
       <h3 style="color: #f1c40f; margin-bottom: 15px;">🃏 Blackjack</h3>
       <p style="color: #bdc3c7;">Place your bet:</p>
       <div style="display:flex;justify-content:center;align-items:center;gap:10px;margin:15px 0;">
-        <button onclick="document.getElementById('bj-bet-input').value=Math.max(${minBet},parseInt(document.getElementById('bj-bet-input').value||0)-${minBet})" style="background:#e74c3c;color:white;border:none;border-radius:5px;padding:8px 14px;cursor:pointer;font-size:1.1em;">−</button>
-        <input id="bj-bet-input" type="number" min="${minBet}" max="${maxBet}" value="${defaultBet}" style="width:120px;text-align:center;font-size:1.3em;padding:8px;border-radius:5px;border:2px solid #f1c40f;background:#1a1a1a;color:#f1c40f;" />
-        <button onclick="document.getElementById('bj-bet-input').value=Math.min(${maxBet},parseInt(document.getElementById('bj-bet-input').value||0)+${minBet})" style="background:#27ae60;color:white;border:none;border-radius:5px;padding:8px 14px;cursor:pointer;font-size:1.1em;">+</button>
+        <button onclick="document.getElementById('bj-bet-input').value=Math.max(1,parseInt(document.getElementById('bj-bet-input').value||0)-100)" style="background:#e74c3c;color:white;border:none;border-radius:5px;padding:8px 14px;cursor:pointer;font-size:1.1em;">−</button>
+        <input id="bj-bet-input" type="number" min="1" value="${defaultBet}" style="width:120px;text-align:center;font-size:1.3em;padding:8px;border-radius:5px;border:2px solid #f1c40f;background:#1a1a1a;color:#f1c40f;" />
+        <button onclick="document.getElementById('bj-bet-input').value=parseInt(document.getElementById('bj-bet-input').value||0)+100" style="background:#27ae60;color:white;border:none;border-radius:5px;padding:8px 14px;cursor:pointer;font-size:1.1em;">+</button>
       </div>
-      <div style="color:#7f8c8d;font-size:0.85em;margin-bottom:10px;">Min: $${minBet.toLocaleString()} | Max: $${maxBet.toLocaleString()}</div>
       <button onclick="bjDeal()" style="background:linear-gradient(135deg,#27ae60,#2ecc71);color:white;padding:12px 30px;border:none;border-radius:8px;cursor:pointer;font-size:1.2em;font-weight:bold;">Deal Cards</button>
       <button onclick="showCasino()" style="background:#7f8c8d;color:white;padding:12px 20px;border:none;border-radius:8px;cursor:pointer;font-size:1em;margin-left:10px;">Back to Games</button>
     </div>`;
@@ -133,9 +130,8 @@ export function startBlackjack() {
 
 export function bjDeal() {
   const betInput = document.getElementById('bj-bet-input');
-  const { minBet, maxBet } = getCasinoBetRange();
-  let bet = parseInt(betInput.value) || minBet;
-  bet = Math.max(minBet, Math.min(maxBet, bet));
+  let bet = parseInt(betInput.value) || 1;
+  bet = Math.max(1, bet);
 
   if (player.money < bet) {
     _showBriefNotification(`Need $${bet.toLocaleString()} to play!`, 'danger');
@@ -313,7 +309,7 @@ const SLOT_SYMBOLS = ['🍒','🍋','🍊','🍇','💎','7️⃣','🔔','⭐']
 const SLOT_PAYOUTS = { '7️⃣': 10, '💎': 7, '⭐': 5, '🔔': 4, '🍇': 3, '🍊': 2, '🍋': 1.5, '🍒': 1 };
 
 export function startSlots() {
-  const { minBet, maxBet, defaultBet } = getCasinoBetRange();
+  const { defaultBet } = getCasinoBetRange();
   const gameSelect = document.getElementById('casino-game-select');
   if (gameSelect) gameSelect.style.display = 'none';
 
@@ -328,9 +324,9 @@ export function startSlots() {
       </div>
       <div id="slot-result" style="min-height:30px;margin:10px 0;color:#f1c40f;font-size:1.2em;font-weight:bold;"></div>
       <div style="display:flex;justify-content:center;align-items:center;gap:10px;margin:15px 0;">
-        <button onclick="document.getElementById('slot-bet-input').value=Math.max(${minBet},parseInt(document.getElementById('slot-bet-input').value||0)-${minBet})" style="background:#e74c3c;color:white;border:none;border-radius:5px;padding:8px 14px;cursor:pointer;">−</button>
-        <input id="slot-bet-input" type="number" min="${minBet}" max="${maxBet}" value="${defaultBet}" style="width:120px;text-align:center;font-size:1.2em;padding:8px;border-radius:5px;border:2px solid #f1c40f;background:#1a1a1a;color:#f1c40f;" />
-        <button onclick="document.getElementById('slot-bet-input').value=Math.min(${maxBet},parseInt(document.getElementById('slot-bet-input').value||0)+${minBet})" style="background:#27ae60;color:white;border:none;border-radius:5px;padding:8px 14px;cursor:pointer;">+</button>
+        <button onclick="document.getElementById('slot-bet-input').value=Math.max(1,parseInt(document.getElementById('slot-bet-input').value||0)-100)" style="background:#e74c3c;color:white;border:none;border-radius:5px;padding:8px 14px;cursor:pointer;">−</button>
+        <input id="slot-bet-input" type="number" min="1" value="${defaultBet}" style="width:120px;text-align:center;font-size:1.2em;padding:8px;border-radius:5px;border:2px solid #f1c40f;background:#1a1a1a;color:#f1c40f;" />
+        <button onclick="document.getElementById('slot-bet-input').value=parseInt(document.getElementById('slot-bet-input').value||0)+100" style="background:#27ae60;color:white;border:none;border-radius:5px;padding:8px 14px;cursor:pointer;">+</button>
       </div>
       <button id="slot-spin-btn" onclick="slotSpin()" style="background:linear-gradient(135deg,#e67e22,#f39c12);color:white;padding:14px 40px;border:none;border-radius:10px;cursor:pointer;font-size:1.3em;font-weight:bold;">🎰 SPIN!</button>
       <button onclick="showCasino()" style="background:#7f8c8d;color:white;padding:12px 20px;border:none;border-radius:8px;cursor:pointer;font-size:1em;margin-left:10px;">Back</button>
@@ -341,9 +337,8 @@ export function startSlots() {
 }
 
 export function slotSpin() {
-  const { minBet, maxBet } = getCasinoBetRange();
-  let bet = parseInt(document.getElementById('slot-bet-input').value) || minBet;
-  bet = Math.max(minBet, Math.min(maxBet, bet));
+  let bet = parseInt(document.getElementById('slot-bet-input').value) || 1;
+  bet = Math.max(1, bet);
 
   if (player.money < bet) {
     _showBriefNotification(`Need $${bet.toLocaleString()} to spin!`, 'danger');
@@ -444,7 +439,7 @@ function slotResolve(symbols, bet) {
 const ROULETTE_REDS = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
 
 export function startRoulette() {
-  const { minBet, maxBet, defaultBet } = getCasinoBetRange();
+  const { defaultBet } = getCasinoBetRange();
   const gameSelect = document.getElementById('casino-game-select');
   if (gameSelect) gameSelect.style.display = 'none';
 
@@ -458,7 +453,7 @@ export function startRoulette() {
 
       <div style="display:flex;justify-content:center;align-items:center;gap:10px;margin:10px 0;">
         <span style="color:#f1c40f;">Bet Amount:</span>
-        <input id="rou-bet-input" type="number" min="${minBet}" max="${maxBet}" value="${defaultBet}" style="width:110px;text-align:center;font-size:1.1em;padding:6px;border-radius:5px;border:2px solid #f1c40f;background:#1a1a1a;color:#f1c40f;" />
+        <input id="rou-bet-input" type="number" min="1" value="${defaultBet}" style="width:110px;text-align:center;font-size:1.1em;padding:6px;border-radius:5px;border:2px solid #f1c40f;background:#1a1a1a;color:#f1c40f;" />
       </div>
 
       <div style="margin:15px 0;">
@@ -498,9 +493,8 @@ export function startRoulette() {
 }
 
 export function rouletteAddBet(type) {
-  const { minBet, maxBet } = getCasinoBetRange();
-  let amount = parseInt(document.getElementById('rou-bet-input').value) || minBet;
-  amount = Math.max(minBet, Math.min(maxBet, amount));
+  let amount = parseInt(document.getElementById('rou-bet-input').value) || 1;
+  amount = Math.max(1, amount);
 
   const s = _rouletteState;
   if (s.totalBet + amount > player.money) {
@@ -628,7 +622,7 @@ export function rouletteSpin() {
 // ═══════════════════════════════════════════════════════════════════════
 
 export function startDiceGame() {
-  const { minBet, maxBet, defaultBet } = getCasinoBetRange();
+  const { defaultBet } = getCasinoBetRange();
   const gameSelect = document.getElementById('casino-game-select');
   if (gameSelect) gameSelect.style.display = 'none';
 
@@ -639,9 +633,9 @@ export function startDiceGame() {
       <p style="color:#bdc3c7;">Roll higher than the dealer to win. Doubles beat everything!</p>
 
       <div style="display:flex;justify-content:center;align-items:center;gap:10px;margin:15px 0;">
-        <button onclick="document.getElementById('dice-bet-input').value=Math.max(${minBet},parseInt(document.getElementById('dice-bet-input').value||0)-${minBet})" style="background:#e74c3c;color:white;border:none;border-radius:5px;padding:8px 14px;cursor:pointer;">−</button>
-        <input id="dice-bet-input" type="number" min="${minBet}" max="${maxBet}" value="${defaultBet}" style="width:120px;text-align:center;font-size:1.2em;padding:8px;border-radius:5px;border:2px solid #f1c40f;background:#1a1a1a;color:#f1c40f;" />
-        <button onclick="document.getElementById('dice-bet-input').value=Math.min(${maxBet},parseInt(document.getElementById('dice-bet-input').value||0)+${minBet})" style="background:#27ae60;color:white;border:none;border-radius:5px;padding:8px 14px;cursor:pointer;">+</button>
+        <button onclick="document.getElementById('dice-bet-input').value=Math.max(1,parseInt(document.getElementById('dice-bet-input').value||0)-100)" style="background:#e74c3c;color:white;border:none;border-radius:5px;padding:8px 14px;cursor:pointer;">−</button>
+        <input id="dice-bet-input" type="number" min="1" value="${defaultBet}" style="width:120px;text-align:center;font-size:1.2em;padding:8px;border-radius:5px;border:2px solid #f1c40f;background:#1a1a1a;color:#f1c40f;" />
+        <button onclick="document.getElementById('dice-bet-input').value=parseInt(document.getElementById('dice-bet-input').value||0)+100" style="background:#27ae60;color:white;border:none;border-radius:5px;padding:8px 14px;cursor:pointer;">+</button>
       </div>
 
       <div id="dice-reels" style="display:flex;justify-content:center;gap:30px;margin:20px 0;">
@@ -669,9 +663,8 @@ export function startDiceGame() {
 }
 
 export function diceRoll() {
-  const { minBet, maxBet } = getCasinoBetRange();
-  let bet = parseInt(document.getElementById('dice-bet-input').value) || minBet;
-  bet = Math.max(minBet, Math.min(maxBet, bet));
+  let bet = parseInt(document.getElementById('dice-bet-input').value) || 1;
+  bet = Math.max(1, bet);
 
   if (player.money < bet) {
     _showBriefNotification(`Need $${bet.toLocaleString()} to roll!`, 'danger');
