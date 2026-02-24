@@ -75,7 +75,7 @@ body.season-winter {
     background: linear-gradient(to bottom, #1a1a1a, #000000);
     color: #d4af37;
     padding: 6px 10px;
-    z-index: 10;
+    z-index: 20;
     display: flex;
     align-items: center;
     gap: 10px;
