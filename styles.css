@@ -2128,6 +2128,37 @@ p, ul {
     min-width: 0 !important;
 }
 
+/* Mobile bottom bar content occlusion fix — add bottom padding so content isn't hidden behind quick-actions bar */
+.mobile-device #game {
+    padding-bottom: 70px !important;
+}
+
+/* Mobile stats: hide secondary stats by default, show on toggle */
+.mobile-device .stats-secondary {
+    display: none !important;
+}
+.mobile-device .stats-secondary.stats-expanded {
+    display: flex !important;
+    flex-wrap: wrap;
+    gap: 3px;
+    justify-content: center;
+}
+.mobile-device #stats-toggle-btn {
+    display: inline-block !important;
+    background: none;
+    border: 1px solid #555;
+    color: #c0a062;
+    font-size: 8px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin: 2px auto;
+    font-family: Georgia, serif;
+}
+#stats-toggle-btn {
+    display: none;
+}
+
 /* Hide less critical stats on very small mobile screens to prevent overflow */
 @media (max-width: 480px) {
     .mobile-device #season-display,

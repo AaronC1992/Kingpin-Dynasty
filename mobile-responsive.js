@@ -63,12 +63,16 @@ export const MobileSystem = {
     
     // Setup responsive event handlers
     // JS RESPONSIBILITY: Detect changes and update body classes; CSS reacts automatically
+    _resizeTimer: null,
     setupResponsiveHandling() {
-        // Handle window resize
+        // Handle window resize (debounced to avoid excessive reflows)
         window.addEventListener('resize', () => {
-            this.detectDevice();
-            this.applyDeviceClasses(); // Update classes; CSS handles rest
-            this.updateMobileNavigationState();
+            if (this._resizeTimer) clearTimeout(this._resizeTimer);
+            this._resizeTimer = setTimeout(() => {
+                this.detectDevice();
+                this.applyDeviceClasses(); // Update classes; CSS handles rest
+                this.updateMobileNavigationState();
+            }, 150);
         });
         
         // Handle orientation change
@@ -124,12 +128,7 @@ export const MobileSystem = {
         this.mobileNavigationActive = true;
     },
     
-    // Create mobile menu button (disabled - ledger now in quick bar)
-    createMobileMenuButton() {
-        // Ledger button moved to quick actions bar
-        // No floating button needed
-        return;
-    },
+    // createMobileMenuButton removed — was dead code (ledger in quick bar),
     
     // Setup swipe gestures for mobile action panel
     setupSwipeGestures() {
@@ -366,12 +365,7 @@ export const MobileSystem = {
         }
     },
     
-    // Show swipe hint to help users discover the gesture
-    // Show hint removed - ledger now in quick bar
-    showLogButtonHint() {
-        // No longer needed
-        return;
-    },
+    // showLogButtonHint removed — was dead code (ledger in quick bar),
     
     // Emergency cleanup function to remove any stuck overlays
     cleanupOverlays() {
@@ -604,10 +598,7 @@ export const MobileSystem = {
         }
     },
     
-    // Create mobile action log display
-    createMobileActionLog() {
-        // This is handled in the slide menu
-    },
+    // createMobileActionLog removed — was dead code (handled in slide menu),
     
     // JS RESPONSIBILITY: Touch-specific enhancements (feedback, scroll optimization)
     // CSS RESPONSIBILITY: Button sizing via .mobile-device class
@@ -624,23 +615,20 @@ export const MobileSystem = {
         this.preventInputZoom();
     },
     
-    // Add touch feedback to interactive elements
+    // Add touch feedback via event delegation (covers dynamically created elements)
     addTouchFeedback() {
-        const interactiveElements = document.querySelectorAll('button, .clickable');
-        
-        interactiveElements.forEach(element => {
-            element.addEventListener('touchstart', function() {
-                this.style.opacity = '0.7';
-            });
-            
-            element.addEventListener('touchend', function() {
-                this.style.opacity = '1';
-            });
-            
-            element.addEventListener('touchcancel', function() {
-                this.style.opacity = '1';
-            });
-        });
+        document.body.addEventListener('touchstart', (e) => {
+            const el = e.target.closest('button, .clickable');
+            if (el) el.style.opacity = '0.7';
+        }, { passive: true });
+        document.body.addEventListener('touchend', (e) => {
+            const el = e.target.closest('button, .clickable');
+            if (el) el.style.opacity = '1';
+        }, { passive: true });
+        document.body.addEventListener('touchcancel', (e) => {
+            const el = e.target.closest('button, .clickable');
+            if (el) el.style.opacity = '1';
+        }, { passive: true });
     },
     
     // Handle orientation change

@@ -1928,63 +1928,7 @@ const RIVAL_KINGPINS = [
 ];
 
 // Rival AI turn - called periodically
-function processRivalTurn(rival, allTerritories, player) {
-    const actions = [];
-    
-    // 1. Grow gang (if has money)
-    if (rival.wealth > 5000 && rival.gangSize < 20 && Math.random() < 0.4) {
-        rival.gangSize += 1;
-        rival.wealth -= 5000;
-        actions.push(`${rival.name} recruited a new soldier`);
-    }
-    
-    // 2. Attempt territory expansion
-    if (Math.random() < rival.aggressiveness * 0.5) {
-        const uncontrolledTerritories = allTerritories.filter(t => 
-            !t.controlledBy || (t.controlledBy !== rival.id && t.controlledBy !== "player")
-        );
-        
-        if (uncontrolledTerritories.length > 0) {
-            const target = uncontrolledTerritories[Math.floor(Math.random() * uncontrolledTerritories.length)];
-            
-            // Attempt to claim neutral territory
-            if (!target.controlledBy) {
-                target.controlledBy = rival.id;
-                rival.territories.push(target.id);
-                actions.push(`${rival.name} claimed ${target.name}`);
-            }
-        }
-    }
-    
-    // 3. Attack player territory (if aggressive enough and player has territories)
-    const playerTerritories = allTerritories.filter(t => t.controlledBy === "player");
-    
-    if (playerTerritories.length > 0 && Math.random() < rival.aggressiveness * EXPANDED_SYSTEMS_CONFIG.territoryAttackChance) {
-        const target = playerTerritories[Math.floor(Math.random() * playerTerritories.length)];
-        const attackStrength = rival.powerRating + (rival.gangSize * 15);
-        
-        actions.push({
-            type: "territory_attack",
-            attacker: rival.name,
-            attackerId: rival.id,
-            territory: target,
-            attackStrength: attackStrength
-        });
-    }
-    
-    // 4. Collect income from territories
-    rival.territories.forEach(territoryId => {
-        const territory = allTerritories.find(t => t.id === territoryId);
-        if (territory) {
-            rival.wealth += territory.baseIncome * 0.5; // Half income as they're AI
-        }
-    });
-    
-    // 5. Increase power over time
-    rival.powerRating += Math.floor(Math.random() * 5);
-    
-    return actions;
-}
+// processRivalTurn removed — dead code (never called)
 
 // ==================== 5. RESPECT-BASED RELATIONSHIP SYSTEM ====================
 
@@ -2147,8 +2091,7 @@ default {
     triggerInteractiveEvent,
     processEventChoice,
     
-    // Rival functions
-    processRivalTurn,
+    // Rival functions removed (processRivalTurn was dead code)
     
     // Respect functions
     initializeRespectSystem,
@@ -10092,6 +10035,11 @@ let recruitmentTimer = null;
 let activeEvents = [];
 let newsTimer = null;
 let weatherTimer = null;
+let seasonalEventTimer = null;
+let crackdownTimer = null;
+let cleanupTimer = null;
+let suspicionTimer = null;
+let fbiTimer = null;
 let currentWeather = "clear";
 let currentSeason = "spring";
 
@@ -11182,8 +11130,22 @@ function cleanupExpiredEvents() {
   player.activeEvents = activeEvents;
 }
 
+// Clear all event timers (prevents stacking if called twice)
+function clearEventTimers() {
+  if (weatherTimer) { clearInterval(weatherTimer); weatherTimer = null; }
+  if (newsTimer) { clearInterval(newsTimer); newsTimer = null; }
+  if (seasonalEventTimer) { clearInterval(seasonalEventTimer); seasonalEventTimer = null; }
+  if (crackdownTimer) { clearInterval(crackdownTimer); crackdownTimer = null; }
+  if (cleanupTimer) { clearInterval(cleanupTimer); cleanupTimer = null; }
+  if (suspicionTimer) { clearInterval(suspicionTimer); suspicionTimer = null; }
+  if (fbiTimer) { clearInterval(fbiTimer); fbiTimer = null; }
+}
+
 // Start event system timers
 function startEventTimers() {
+  // Clear any existing timers first to prevent stacking
+  clearEventTimers();
+
   // Weather changes every 15-45 minutes
   weatherTimer = setInterval(() => {
     if (!gameplayActive) return;
@@ -11197,31 +11159,31 @@ function startEventTimers() {
   }, 30 * 60 * 1000);
   
   // Seasonal events check every hour
-  setInterval(() => {
+  seasonalEventTimer = setInterval(() => {
     if (!gameplayActive) return;
     checkSeasonalEvents();
   }, 60 * 60 * 1000);
   
   // Police crackdowns check every 20 minutes
-  setInterval(() => {
+  crackdownTimer = setInterval(() => {
     if (!gameplayActive) return;
     triggerPoliceCrackdown();
   }, 20 * 60 * 1000);
   
   // Cleanup expired events every 5 minutes
-  setInterval(() => {
+  cleanupTimer = setInterval(() => {
     if (!gameplayActive) return;
     cleanupExpiredEvents();
   }, 5 * 60 * 1000);
   
   // Suspicion consequences check every 60 seconds
-  setInterval(() => {
+  suspicionTimer = setInterval(() => {
     if (!gameplayActive) return;
     checkSuspicionConsequences();
   }, 60 * 1000);
   
   // FBI investigation escalation check every 90 seconds
-  setInterval(() => {
+  fbiTimer = setInterval(() => {
     if (!gameplayActive) return;
     checkFBIInvestigation();
   }, 90 * 1000);
