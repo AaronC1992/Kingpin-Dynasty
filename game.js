@@ -2105,97 +2105,7 @@ export default {
 // ==================== EXPANDED UI SCREENS (merged from expanded-ui.js) ====================
 
 // ==================== GANG MANAGEMENT UI ====================
-
-function showGangManagementScreen() {
-  const gangMembers = player.gang.gangMembers || [];
-  
-  let html = `
-    <div class="expanded-screen gang-management-screen">
-      <h2> Gang Management</h2>
-      <div class="gang-stats">
-        <p><strong>Active Members:</strong> ${gangMembers.filter(m => m.status === "active").length}</p>
-        <p><strong>Total Gang Size:</strong> ${gangMembers.length}</p>
-        <p><strong>Average Loyalty:</strong> ${calculateAverageLoyalty(gangMembers)}%</p>
-      </div>
-      
-      <div class="member-list">
-        ${gangMembers.map(member => renderGangMember(member)).join('')}
-      </div>
-      
-      <div class="gang-actions">
-        <button onclick="recruitGangMemberExpanded()"> Recruit New Member ($5,000)</button>
-        <button onclick="closeScreen()">← Back</button>
-      </div>
-    </div>
-  `;
-  
-  showCustomScreen(html);
-}
-
-function renderGangMember(member) {
-  const roleData = member.roleData || { name: "Soldier", icon: "\u2694\uFE0F" };
-  const statusIcon = {
-    "active": "",
-    "injured": "",
-    "jailed": "",
-    "dead": ""
-  }[member.status] || "";
-  
-  const loyaltyColor = member.stats.loyalty > 70 ? "green" : 
-             member.stats.loyalty > 40 ? "orange" : "red";
-  
-  return `
-    <div class="gang-member-card ${member.status}">
-      <div class="member-header">
-        <h3>${roleData.icon} ${member.name}</h3>
-        <span class="status-badge">${statusIcon} ${member.status}</span>
-      </div>
-      
-      <div class="member-role">
-        <strong>${roleData.name}</strong> - Level ${member.level}
-      </div>
-      
-      <div class="member-stats">
-        <div class="stat"> Violence: ${member.stats.violence}</div>
-        <div class="stat"> Stealth: ${member.stats.stealth}</div>
-        <div class="stat"> Intelligence: ${member.stats.intelligence}</div>
-        <div class="stat" style="color: ${loyaltyColor}"> Loyalty: ${member.stats.loyalty}%</div>
-      </div>
-      
-      ${member.perk ? `
-        <div class="member-perk">
-          <strong> ${member.perk.name}:</strong> ${member.perk.effect}
-        </div>
-      ` : ''}
-      
-      ${member.traits && member.traits.length > 0 ? `
-        <div class="member-traits">
-          ${member.traits.map(t => `<span class="trait-badge">${t.name}</span>`).join('')}
-        </div>
-      ` : ''}
-      
-      ${member.assignedTo ? `
-        <div class="assignment"> Assigned to: ${member.assignedTo}</div>
-      ` : ''}
-      
-      ${member.status === "active" ? `
-        <div class="member-actions">
-          <button onclick="assignMemberToTerritory('${member.id}')"> Assign to Territory</button>
-          <button onclick="dismissMember('${member.id}')"> Dismiss</button>
-        </div>
-      ` : ''}
-    </div>
-  `;
-}
-
-function calculateAverageLoyalty(members) {
-  if (members.length === 0) return 0;
-  const activeMembers = members.filter(m => m.status === "active");
-  if (activeMembers.length === 0) return 0;
-  
-  const total = activeMembers.reduce((sum, m) => sum + m.stats.loyalty, 0);
-  return Math.floor(total / activeMembers.length);
-}
+// (showGangManagementScreen defined later at Crew Details section)
 
 window.recruitGangMemberExpanded = function() {
   if (player.money < 5000) {
@@ -2688,7 +2598,6 @@ window.closeScreen = function() {
 // Export all UI functions (exposed via window below)
 
 // Expose merged expanded UI functions to window (for onclick handlers in dynamic HTML)
-window.showGangManagementScreen = showGangManagementScreen;
 window.showTerritoryMapScreen = showTerritoryMapScreen;
 window.showRelationshipsScreen = showRelationshipsScreen;
 window.showRivalActivityScreen = function() {
