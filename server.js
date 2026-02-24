@@ -364,6 +364,15 @@ const gameState = {
     jailBots: [], // Server-managed bot inmates (max 3, 0 if 3+ real players in jail)
     // Unified territory system — 8 districts, server-authoritative
     territories: {},
+    // Phase C: Competitive Features
+    alliances: new Map(),   // id -> { id, name, tag, leader, members[], createdAt, treasury, motto }
+    bounties: [],           // { id, posterId, posterName, targetId, targetName, reward, reason, postedAt, expiresAt }
+    season: {               // Ranked season state
+        number: 1,
+        startedAt: Date.now(),
+        endsAt: Date.now() + (30 * 24 * 60 * 60 * 1000), // 30 days
+        ratings: new Map()  // playerId -> { elo, tier, wins, losses }
+    },
     serverStats: {
         startTime: Date.now(),
         totalConnections: 0,
@@ -665,7 +674,51 @@ function handleClientMessage(clientId, message, ws) {
         case 'war_bet':
             handleWarBet(clientId, message);
             break;
-            
+
+        // ==================== PHASE C: COMPETITIVE FEATURES ====================
+        case 'alliance_create':
+            handleAllianceCreate(clientId, message);
+            break;
+        case 'alliance_invite':
+            handleAllianceInvite(clientId, message);
+            break;
+        case 'alliance_join':
+            handleAllianceJoin(clientId, message);
+            break;
+        case 'alliance_leave':
+            handleAllianceLeave(clientId, message);
+            break;
+        case 'alliance_kick':
+            handleAllianceKick(clientId, message);
+            break;
+        case 'alliance_betray':
+            handleAllianceBetray(clientId, message);
+            break;
+        case 'alliance_info':
+            handleAllianceInfo(clientId, message);
+            break;
+        case 'alliance_deposit':
+            handleAllianceDeposit(clientId, message);
+            break;
+        case 'post_bounty':
+            handlePostBounty(clientId, message);
+            break;
+        case 'cancel_bounty':
+            handleCancelBounty(clientId, message);
+            break;
+        case 'bounty_list':
+            handleBountyList(clientId, message);
+            break;
+        case 'season_info':
+            handleSeasonInfo(clientId, message);
+            break;
+        case 'siege_declare':
+            handleSiegeDeclare(clientId, message);
+            break;
+        case 'siege_fortify':
+            handleSiegeFortify(clientId, message);
+            break;
+
         default:
             console.log(`⚠️ Unknown message type: ${message.type}`);
     }
@@ -1132,6 +1185,18 @@ function handleTerritoryWar(clientId, message) {
         // Offline defender — moderate NPC resistance
         defenseScore += 150;
     }
+
+    // Alliance defense bonus: +15% if defender is in an alliance, +5% per online ally
+    const defenderAlliance = defenderId ? findPlayerAlliance(defenderId) : null;
+    if (defenderAlliance) {
+        defenseScore = Math.floor(defenseScore * 1.15); // Base alliance defense bonus
+        const onlineAllies = defenderAlliance.members.filter(mId => mId !== defenderId && clients.has(mId));
+        defenseScore += onlineAllies.length * Math.floor(defenseScore * 0.05); // +5% per online ally
+    }
+
+    // Fortification bonus (from siege_fortify upgrades)
+    defenseScore += (terr.fortification || 0);
+
     defenseScore += Math.floor(Math.random() * 200); // Randomness
 
     const victory = attackScore > defenseScore;
@@ -1366,6 +1431,13 @@ function handlePlayerChallenge(clientId, message) {
     }
     if (!targetPlayer || !targetState) return fail('Target not found or offline.');
 
+    // Alliance protection — can't fight alliance members
+    const challengerAlliance = findPlayerAlliance(clientId);
+    const targetAlliance = findPlayerAlliance(targetId);
+    if (challengerAlliance && targetAlliance && challengerAlliance.id === targetAlliance.id) {
+        return fail('You can\'t fight a member of your own alliance.');
+    }
+
     // Cooldown check
     const now = Date.now();
     const lastFight = pvpCooldowns.get(clientId) || 0;
@@ -1437,6 +1509,12 @@ function handlePlayerChallenge(clientId, message) {
         challenger.pvpWins = (challenger.pvpWins || 0) + 1;
         targetPlayer.pvpLosses = (targetPlayer.pvpLosses || 0) + 1;
 
+        // Update ELO ratings (ranked season)
+        updateElo(clientId, targetId, true);
+
+        // Auto-claim bounties on the defeated player
+        const bountyClaim = autoClaimBounty(clientId, targetId);
+
         // Apply health damage
         challengerState.health = Math.max(1, (challengerState.health || 100) - winnerDmg);
         targetState.health = Math.max(1, (targetState.health || 100) - loserDmg);
@@ -1448,10 +1526,13 @@ function handlePlayerChallenge(clientId, message) {
             winner: challenger.name,
             loser: targetPlayer.name,
             repChange: repGain,
-            healthDamage: { winner: winnerDmg, loser: loserDmg }
+            healthDamage: { winner: winnerDmg, loser: loserDmg },
+            bountyClaimed: bountyClaim || null,
+            eloChange: getEloChange(clientId)
         });
 
         addGlobalChatMessage('System', `⚔️ ${challenger.name} defeated ${targetPlayer.name} in combat!`, '#e74c3c');
+        if (bountyClaim) addGlobalChatMessage('System', `💀 ${challenger.name} claimed a $${bountyClaim.reward.toLocaleString()} bounty on ${targetPlayer.name}!`, '#ff6600');
         persistedLeaderboard = generateLeaderboard();
         broadcastToAll({ type: 'player_ranked', leaderboard: persistedLeaderboard });
         scheduleWorldSave();
@@ -1467,6 +1548,12 @@ function handlePlayerChallenge(clientId, message) {
         targetPlayer.pvpWins = (targetPlayer.pvpWins || 0) + 1;
         challenger.pvpLosses = (challenger.pvpLosses || 0) + 1;
 
+        // Update ELO ratings (ranked season)
+        updateElo(targetId, clientId, true);
+
+        // Auto-claim bounties on the defeated player
+        const bountyClaim = autoClaimBounty(targetId, clientId);
+
         // Apply health damage
         challengerState.health = Math.max(1, (challengerState.health || 100) - loserDmg);
         targetState.health = Math.max(1, (targetState.health || 100) - winnerDmg);
@@ -1478,10 +1565,13 @@ function handlePlayerChallenge(clientId, message) {
             winner: targetPlayer.name,
             loser: challenger.name,
             repChange: repGain,
-            healthDamage: { winner: winnerDmg, loser: loserDmg }
+            healthDamage: { winner: winnerDmg, loser: loserDmg },
+            bountyClaimed: bountyClaim || null,
+            eloChange: getEloChange(targetId)
         });
 
         addGlobalChatMessage('System', `⚔️ ${targetPlayer.name} defeated ${challenger.name} in combat!`, '#e74c3c');
+        if (bountyClaim) addGlobalChatMessage('System', `💀 ${targetPlayer.name} claimed a $${bountyClaim.reward.toLocaleString()} bounty on ${challenger.name}!`, '#ff6600');
         persistedLeaderboard = generateLeaderboard();
         broadcastToAll({ type: 'player_ranked', leaderboard: persistedLeaderboard });
         scheduleWorldSave();
@@ -2000,6 +2090,11 @@ function sendWorldState(clientId, ws) {
     gameState.playerStates.forEach((state, id) => {
         playerStatesObj[id] = state;
     });
+
+    // Prune expired bounties on world state request
+    pruneExpiredBounties();
+    checkSeasonRotation();
+
     ws.send(JSON.stringify({
         type: 'world_update',
         playerCount: gameState.players.size,
@@ -2007,7 +2102,10 @@ function sendWorldState(clientId, ws) {
         cityDistricts: gameState.cityDistricts,
         cityEvents: gameState.cityEvents,
         activeHeists: gameState.activeHeists,
-        territories: gameState.territories
+        territories: gameState.territories,
+        activeBounties: gameState.bounties.length,
+        seasonNumber: gameState.season.number,
+        seasonEndsAt: gameState.season.endsAt
     }));
 }
 
@@ -2762,6 +2860,876 @@ function handleWarBet(clientId, message) {
     scheduleWorldSave();
 }
 
+// ==================== PHASE C: ALLIANCE SYSTEM ====================
+// Player-created alliances (max 4 members). Server-authoritative.
+
+const MAX_ALLIANCE_SIZE = 4;
+const ALLIANCE_CREATE_COST = 10000;
+
+function findPlayerAlliance(playerId) {
+    for (const [, alliance] of gameState.alliances) {
+        if (alliance.members.includes(playerId)) return alliance;
+    }
+    return null;
+}
+
+function handleAllianceCreate(clientId, message) {
+    const player = gameState.players.get(clientId);
+    if (!player) return;
+    const ws = clients.get(clientId);
+    const fail = (err) => { if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'alliance_result', success: false, error: err })); };
+
+    if (findPlayerAlliance(clientId)) return fail('You are already in an alliance. Leave first.');
+
+    const name = (message.name || '').trim().substring(0, 24);
+    const tag  = (message.tag  || '').trim().substring(0, 4).toUpperCase();
+    if (!name || name.length < 3) return fail('Alliance name must be 3-24 characters.');
+    if (!tag || tag.length < 2) return fail('Alliance tag must be 2-4 characters.');
+
+    // Check name uniqueness
+    for (const [, a] of gameState.alliances) {
+        if (a.name.toLowerCase() === name.toLowerCase() || a.tag === tag) {
+            return fail('An alliance with that name or tag already exists.');
+        }
+    }
+
+    // Cost check
+    if ((player.money || 0) < ALLIANCE_CREATE_COST) return fail(`Creating an alliance costs $${ALLIANCE_CREATE_COST.toLocaleString()}.`);
+    player.money -= ALLIANCE_CREATE_COST;
+    const ps = gameState.playerStates.get(clientId);
+    if (ps) { ps.money = player.money; ps.lastUpdate = Date.now(); }
+
+    const allianceId = 'ally_' + Date.now() + '_' + clientId.slice(-4);
+    const alliance = {
+        id: allianceId,
+        name: name,
+        tag: tag,
+        leader: clientId,
+        members: [clientId],
+        createdAt: Date.now(),
+        treasury: 0,
+        motto: (message.motto || 'United we stand.').substring(0, 80)
+    };
+    gameState.alliances.set(allianceId, alliance);
+
+    console.log(`🤝 ALLIANCE CREATED: [${tag}] ${name} by ${player.name}`);
+
+    if (ws && ws.readyState === 1) {
+        ws.send(JSON.stringify({ type: 'alliance_result', success: true, action: 'created', alliance: sanitizeAlliance(alliance) }));
+    }
+
+    addGlobalChatMessage('System', `🤝 ${player.name} founded the alliance [${tag}] ${name}!`, '#c0a062');
+    broadcastPlayerStates();
+    scheduleWorldSave();
+}
+
+function handleAllianceInvite(clientId, message) {
+    const player = gameState.players.get(clientId);
+    if (!player) return;
+    const ws = clients.get(clientId);
+    const fail = (err) => { if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'alliance_result', success: false, error: err })); };
+
+    const alliance = findPlayerAlliance(clientId);
+    if (!alliance) return fail('You are not in an alliance.');
+    if (alliance.leader !== clientId) return fail('Only the leader can invite members.');
+    if (alliance.members.length >= MAX_ALLIANCE_SIZE) return fail(`Alliance is full (max ${MAX_ALLIANCE_SIZE}).`);
+
+    // Find target player
+    const targetName = message.targetPlayer;
+    let targetId = null;
+    for (const [id, p] of gameState.players.entries()) {
+        if (p.name === targetName && id !== clientId) { targetId = id; break; }
+    }
+    if (!targetId) return fail('Player not found or offline.');
+    if (findPlayerAlliance(targetId)) return fail('That player is already in an alliance.');
+
+    // Send invite to target
+    const tgtWs = clients.get(targetId);
+    if (tgtWs && tgtWs.readyState === 1) {
+        tgtWs.send(JSON.stringify({
+            type: 'alliance_invite',
+            allianceId: alliance.id,
+            allianceName: alliance.name,
+            allianceTag: alliance.tag,
+            inviterName: player.name
+        }));
+    }
+
+    if (ws && ws.readyState === 1) {
+        ws.send(JSON.stringify({ type: 'alliance_result', success: true, action: 'invited', targetPlayer: targetName }));
+    }
+}
+
+function handleAllianceJoin(clientId, message) {
+    const player = gameState.players.get(clientId);
+    if (!player) return;
+    const ws = clients.get(clientId);
+    const fail = (err) => { if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'alliance_result', success: false, error: err })); };
+
+    if (findPlayerAlliance(clientId)) return fail('You are already in an alliance.');
+
+    const alliance = gameState.alliances.get(message.allianceId);
+    if (!alliance) return fail('Alliance not found.');
+    if (alliance.members.length >= MAX_ALLIANCE_SIZE) return fail('Alliance is full.');
+
+    alliance.members.push(clientId);
+
+    console.log(`🤝 ${player.name} joined [${alliance.tag}] ${alliance.name}`);
+
+    // Notify all alliance members
+    alliance.members.forEach(mId => {
+        const mWs = clients.get(mId);
+        if (mWs && mWs.readyState === 1) {
+            mWs.send(JSON.stringify({ type: 'alliance_result', success: true, action: 'member_joined', alliance: sanitizeAlliance(alliance), newMember: player.name }));
+        }
+    });
+
+    addGlobalChatMessage('System', `🤝 ${player.name} joined [${alliance.tag}] ${alliance.name}!`, '#c0a062');
+    scheduleWorldSave();
+}
+
+function handleAllianceLeave(clientId, message) {
+    const player = gameState.players.get(clientId);
+    if (!player) return;
+    const ws = clients.get(clientId);
+    const fail = (err) => { if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'alliance_result', success: false, error: err })); };
+
+    const alliance = findPlayerAlliance(clientId);
+    if (!alliance) return fail('You are not in an alliance.');
+
+    alliance.members = alliance.members.filter(id => id !== clientId);
+
+    if (alliance.members.length === 0) {
+        // Alliance dissolved
+        gameState.alliances.delete(alliance.id);
+        addGlobalChatMessage('System', `💔 [${alliance.tag}] ${alliance.name} has been dissolved.`, '#e74c3c');
+    } else if (alliance.leader === clientId) {
+        // Transfer leadership to next member
+        alliance.leader = alliance.members[0];
+        const newLeaderName = gameState.players.get(alliance.leader)?.name || 'Unknown';
+        addGlobalChatMessage('System', `👑 ${newLeaderName} is now leader of [${alliance.tag}] ${alliance.name}.`, '#c0a062');
+    }
+
+    // Notify remaining members
+    alliance.members.forEach(mId => {
+        const mWs = clients.get(mId);
+        if (mWs && mWs.readyState === 1) {
+            mWs.send(JSON.stringify({ type: 'alliance_result', success: true, action: 'member_left', alliance: sanitizeAlliance(alliance), leftMember: player.name }));
+        }
+    });
+
+    if (ws && ws.readyState === 1) {
+        ws.send(JSON.stringify({ type: 'alliance_result', success: true, action: 'left', allianceName: alliance.name }));
+    }
+
+    console.log(`🚪 ${player.name} left [${alliance.tag}] ${alliance.name}`);
+    scheduleWorldSave();
+}
+
+function handleAllianceKick(clientId, message) {
+    const player = gameState.players.get(clientId);
+    if (!player) return;
+    const ws = clients.get(clientId);
+    const fail = (err) => { if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'alliance_result', success: false, error: err })); };
+
+    const alliance = findPlayerAlliance(clientId);
+    if (!alliance) return fail('You are not in an alliance.');
+    if (alliance.leader !== clientId) return fail('Only the leader can kick members.');
+
+    // Find target
+    let targetId = null;
+    for (const [id, p] of gameState.players.entries()) {
+        if (p.name === message.targetPlayer && id !== clientId) { targetId = id; break; }
+    }
+    if (!targetId || !alliance.members.includes(targetId)) return fail('Player not in your alliance.');
+
+    alliance.members = alliance.members.filter(id => id !== targetId);
+
+    // Notify kicked player
+    const tgtWs = clients.get(targetId);
+    if (tgtWs && tgtWs.readyState === 1) {
+        tgtWs.send(JSON.stringify({ type: 'alliance_result', success: true, action: 'kicked', allianceName: alliance.name }));
+    }
+
+    // Notify remaining members
+    alliance.members.forEach(mId => {
+        const mWs = clients.get(mId);
+        if (mWs && mWs.readyState === 1) {
+            mWs.send(JSON.stringify({ type: 'alliance_result', success: true, action: 'member_kicked', alliance: sanitizeAlliance(alliance), kickedMember: message.targetPlayer }));
+        }
+    });
+
+    addGlobalChatMessage('System', `🚫 ${message.targetPlayer} was kicked from [${alliance.tag}] ${alliance.name}.`, '#e74c3c');
+    scheduleWorldSave();
+}
+
+function handleAllianceBetray(clientId, message) {
+    const player = gameState.players.get(clientId);
+    if (!player) return;
+    const ws = clients.get(clientId);
+    const fail = (err) => { if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'alliance_result', success: false, error: err })); };
+
+    const alliance = findPlayerAlliance(clientId);
+    if (!alliance) return fail('You are not in an alliance.');
+    if (alliance.members.length < 2) return fail('Nothing to betray — you are alone.');
+
+    // Betrayal: steal 25% of alliance treasury, -50 rep
+    const stolen = Math.floor(alliance.treasury * 0.25);
+    alliance.treasury -= stolen;
+    player.money = (player.money || 0) + stolen;
+    player.reputation = Math.max(0, (player.reputation || 0) - 50);
+    const ps = gameState.playerStates.get(clientId);
+    if (ps) { ps.money = player.money; ps.reputation = player.reputation; ps.lastUpdate = Date.now(); }
+
+    // Remove from alliance
+    alliance.members = alliance.members.filter(id => id !== clientId);
+    if (alliance.members.length === 0) {
+        gameState.alliances.delete(alliance.id);
+    } else if (alliance.leader === clientId) {
+        alliance.leader = alliance.members[0];
+    }
+
+    // Notify former allies
+    alliance.members.forEach(mId => {
+        const mWs = clients.get(mId);
+        if (mWs && mWs.readyState === 1) {
+            mWs.send(JSON.stringify({
+                type: 'alliance_result', success: true, action: 'betrayed',
+                alliance: sanitizeAlliance(alliance), traitor: player.name, stolenAmount: stolen
+            }));
+        }
+    });
+
+    if (ws && ws.readyState === 1) {
+        ws.send(JSON.stringify({ type: 'alliance_result', success: true, action: 'betrayal_success', stolen: stolen, newMoney: player.money }));
+    }
+
+    console.log(`🗡️ BETRAYAL: ${player.name} betrayed [${alliance.tag}] ${alliance.name}, stole $${stolen}`);
+    addGlobalChatMessage('System', `🗡️ ${player.name} BETRAYED [${alliance.tag}] ${alliance.name} and stole $${stolen.toLocaleString()} from the treasury!`, '#8b0000');
+    broadcastPlayerStates();
+    scheduleWorldSave();
+}
+
+function handleAllianceInfo(clientId, message) {
+    const ws = clients.get(clientId);
+    if (!ws || ws.readyState !== 1) return;
+
+    const alliance = findPlayerAlliance(clientId);
+    const allAlliances = [];
+    for (const [, a] of gameState.alliances) {
+        allAlliances.push(sanitizeAlliance(a));
+    }
+
+    ws.send(JSON.stringify({
+        type: 'alliance_info_result',
+        myAlliance: alliance ? sanitizeAlliance(alliance) : null,
+        allAlliances: allAlliances
+    }));
+}
+
+function handleAllianceDeposit(clientId, message) {
+    const player = gameState.players.get(clientId);
+    if (!player) return;
+    const ws = clients.get(clientId);
+    const fail = (err) => { if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'alliance_result', success: false, error: err })); };
+
+    const alliance = findPlayerAlliance(clientId);
+    if (!alliance) return fail('You are not in an alliance.');
+
+    const amount = Math.max(0, Math.min(parseInt(message.amount) || 0, 100000));
+    if (amount < 100) return fail('Minimum deposit is $100.');
+    if ((player.money || 0) < amount) return fail('Not enough cash.');
+
+    player.money -= amount;
+    alliance.treasury += amount;
+    const ps = gameState.playerStates.get(clientId);
+    if (ps) { ps.money = player.money; ps.lastUpdate = Date.now(); }
+
+    // Notify all alliance members
+    alliance.members.forEach(mId => {
+        const mWs = clients.get(mId);
+        if (mWs && mWs.readyState === 1) {
+            mWs.send(JSON.stringify({
+                type: 'alliance_result', success: true, action: 'deposit',
+                alliance: sanitizeAlliance(alliance), depositor: player.name, amount: amount
+            }));
+        }
+    });
+
+    console.log(`💰 ${player.name} deposited $${amount} into [${alliance.tag}] treasury`);
+    scheduleWorldSave();
+}
+
+function sanitizeAlliance(alliance) {
+    const memberNames = alliance.members.map(id => {
+        const p = gameState.players.get(id);
+        return p ? p.name : 'Offline';
+    });
+    return {
+        id: alliance.id,
+        name: alliance.name,
+        tag: alliance.tag,
+        leaderName: gameState.players.get(alliance.leader)?.name || 'Unknown',
+        members: memberNames,
+        memberCount: alliance.members.length,
+        maxMembers: MAX_ALLIANCE_SIZE,
+        treasury: alliance.treasury,
+        motto: alliance.motto,
+        createdAt: alliance.createdAt
+    };
+}
+
+// ==================== PHASE C: BOUNTY BOARD ====================
+// Players post bounties on other players. Bounties auto-claim on PvP defeat.
+
+const BOUNTY_MIN = 5000;
+const BOUNTY_MAX = 500000;
+const BOUNTY_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
+const MAX_ACTIVE_BOUNTIES = 20;
+
+function handlePostBounty(clientId, message) {
+    const player = gameState.players.get(clientId);
+    if (!player) return;
+    const ws = clients.get(clientId);
+    const fail = (err) => { if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'bounty_result', success: false, error: err })); };
+
+    const targetName = (message.targetPlayer || '').trim();
+    const reward = Math.max(0, Math.min(parseInt(message.reward) || 0, BOUNTY_MAX));
+    const reason = (message.reason || 'Wanted dead or alive.').substring(0, 60);
+
+    if (!targetName) return fail('Specify a target player.');
+    if (reward < BOUNTY_MIN) return fail(`Minimum bounty is $${BOUNTY_MIN.toLocaleString()}.`);
+    if ((player.money || 0) < reward) return fail('Not enough cash for the bounty.');
+
+    // Find target
+    let targetId = null;
+    for (const [id, p] of gameState.players.entries()) {
+        if (p.name === targetName && id !== clientId) { targetId = id; break; }
+    }
+    if (!targetId) return fail('Target not found or offline.');
+
+    // Check duplicate bounty on same target by same poster
+    const existing = gameState.bounties.find(b => b.posterId === clientId && b.targetId === targetId);
+    if (existing) return fail('You already have a bounty on this player.');
+
+    // Prune expired bounties
+    pruneExpiredBounties();
+
+    if (gameState.bounties.length >= MAX_ACTIVE_BOUNTIES) return fail('Bounty board is full. Try again later.');
+
+    // Deduct money upfront
+    player.money -= reward;
+    const ps = gameState.playerStates.get(clientId);
+    if (ps) { ps.money = player.money; ps.lastUpdate = Date.now(); }
+
+    const bounty = {
+        id: 'bounty_' + Date.now() + '_' + clientId.slice(-4),
+        posterId: clientId,
+        posterName: player.name,
+        targetId: targetId,
+        targetName: targetName,
+        reward: reward,
+        reason: reason,
+        postedAt: Date.now(),
+        expiresAt: Date.now() + BOUNTY_DURATION_MS
+    };
+    gameState.bounties.push(bounty);
+
+    console.log(`💀 BOUNTY POSTED: ${player.name} placed $${reward.toLocaleString()} bounty on ${targetName}`);
+
+    if (ws && ws.readyState === 1) {
+        ws.send(JSON.stringify({ type: 'bounty_result', success: true, action: 'posted', bounty: bounty, newMoney: player.money }));
+    }
+
+    // Notify target
+    const tgtWs = clients.get(targetId);
+    if (tgtWs && tgtWs.readyState === 1) {
+        tgtWs.send(JSON.stringify({
+            type: 'bounty_alert',
+            bounty: bounty,
+            message: `${player.name} put a $${reward.toLocaleString()} bounty on your head!`
+        }));
+    }
+
+    addGlobalChatMessage('System', `💀 ${player.name} placed a $${reward.toLocaleString()} bounty on ${targetName}! Reason: "${reason}"`, '#ff6600');
+    broadcastPlayerStates();
+    scheduleWorldSave();
+}
+
+function handleCancelBounty(clientId, message) {
+    const player = gameState.players.get(clientId);
+    if (!player) return;
+    const ws = clients.get(clientId);
+    const fail = (err) => { if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'bounty_result', success: false, error: err })); };
+
+    const bountyIdx = gameState.bounties.findIndex(b => b.id === message.bountyId && b.posterId === clientId);
+    if (bountyIdx === -1) return fail('Bounty not found or you are not the poster.');
+
+    // Refund 50% (cancellation fee)
+    const bounty = gameState.bounties[bountyIdx];
+    const refund = Math.floor(bounty.reward * 0.5);
+    player.money = (player.money || 0) + refund;
+    const ps = gameState.playerStates.get(clientId);
+    if (ps) { ps.money = player.money; ps.lastUpdate = Date.now(); }
+
+    gameState.bounties.splice(bountyIdx, 1);
+
+    if (ws && ws.readyState === 1) {
+        ws.send(JSON.stringify({ type: 'bounty_result', success: true, action: 'cancelled', refund: refund, newMoney: player.money }));
+    }
+
+    console.log(`❌ ${player.name} cancelled bounty on ${bounty.targetName} (refund: $${refund})`);
+    scheduleWorldSave();
+}
+
+function handleBountyList(clientId, message) {
+    const ws = clients.get(clientId);
+    if (!ws || ws.readyState !== 1) return;
+
+    pruneExpiredBounties();
+
+    ws.send(JSON.stringify({
+        type: 'bounty_list_result',
+        bounties: gameState.bounties.map(b => ({
+            id: b.id,
+            posterName: b.posterName,
+            targetName: b.targetName,
+            reward: b.reward,
+            reason: b.reason,
+            postedAt: b.postedAt,
+            expiresAt: b.expiresAt,
+            timeLeft: Math.max(0, b.expiresAt - Date.now())
+        }))
+    }));
+}
+
+function autoClaimBounty(winnerId, loserId) {
+    // Called after PvP combat — winner claims any active bounties on the loser
+    const winner = gameState.players.get(winnerId);
+    if (!winner) return null;
+
+    pruneExpiredBounties();
+
+    // Find all bounties on the loser (can claim multiple)
+    let totalReward = 0;
+    const claimed = [];
+    gameState.bounties = gameState.bounties.filter(b => {
+        if (b.targetId === loserId) {
+            totalReward += b.reward;
+            claimed.push({ posterName: b.posterName, reward: b.reward, targetName: b.targetName });
+            return false; // Remove claimed bounty
+        }
+        return true;
+    });
+
+    if (totalReward > 0) {
+        winner.money = (winner.money || 0) + totalReward;
+        const ps = gameState.playerStates.get(winnerId);
+        if (ps) { ps.money = winner.money; ps.lastUpdate = Date.now(); }
+        console.log(`💰 BOUNTY CLAIMED: ${winner.name} collected $${totalReward} in bounties`);
+        return { reward: totalReward, count: claimed.length };
+    }
+    return null;
+}
+
+function pruneExpiredBounties() {
+    const now = Date.now();
+    const expired = gameState.bounties.filter(b => b.expiresAt <= now);
+
+    // Refund expired bounties to posters
+    expired.forEach(b => {
+        const poster = gameState.players.get(b.posterId);
+        if (poster) {
+            poster.money = (poster.money || 0) + b.reward;
+            const ps = gameState.playerStates.get(b.posterId);
+            if (ps) { ps.money = poster.money; ps.lastUpdate = Date.now(); }
+            console.log(`⏰ Bounty on ${b.targetName} expired — refunded $${b.reward} to ${poster.name}`);
+        }
+    });
+
+    if (expired.length > 0) {
+        gameState.bounties = gameState.bounties.filter(b => b.expiresAt > now);
+    }
+}
+
+// ==================== PHASE C: RANKED SEASON & ELO ====================
+// ELO-based combat rating with rank tiers. Seasons last 30 days.
+
+const ELO_K = 32;
+const ELO_TIERS = [
+    { name: 'Bronze',  min: 0,    icon: '🥉' },
+    { name: 'Silver',  min: 1000, icon: '🥈' },
+    { name: 'Gold',    min: 1500, icon: '🥇' },
+    { name: 'Diamond', min: 2000, icon: '💎' },
+    { name: 'Kingpin', min: 2500, icon: '👑' }
+];
+
+function getOrCreateRating(playerId) {
+    if (!gameState.season.ratings.has(playerId)) {
+        gameState.season.ratings.set(playerId, { elo: 1000, tier: 'Bronze', wins: 0, losses: 0 });
+    }
+    return gameState.season.ratings.get(playerId);
+}
+
+function getEloTier(elo) {
+    for (let i = ELO_TIERS.length - 1; i >= 0; i--) {
+        if (elo >= ELO_TIERS[i].min) return ELO_TIERS[i];
+    }
+    return ELO_TIERS[0];
+}
+
+function updateElo(winnerId, loserId, isRanked) {
+    if (!isRanked) return;
+
+    const winnerRating = getOrCreateRating(winnerId);
+    const loserRating  = getOrCreateRating(loserId);
+
+    // Standard ELO calculation
+    const expectedWinner = 1 / (1 + Math.pow(10, (loserRating.elo - winnerRating.elo) / 400));
+    const expectedLoser  = 1 / (1 + Math.pow(10, (winnerRating.elo - loserRating.elo) / 400));
+
+    winnerRating.elo = Math.max(0, Math.round(winnerRating.elo + ELO_K * (1 - expectedWinner)));
+    loserRating.elo  = Math.max(0, Math.round(loserRating.elo  + ELO_K * (0 - expectedLoser)));
+
+    winnerRating.wins++;
+    loserRating.losses++;
+
+    // Update tiers
+    winnerRating.tier = getEloTier(winnerRating.elo).name;
+    loserRating.tier  = getEloTier(loserRating.elo).name;
+}
+
+function getEloChange(playerId) {
+    const rating = gameState.season.ratings.get(playerId);
+    if (!rating) return null;
+    const tier = getEloTier(rating.elo);
+    return { elo: rating.elo, tier: tier.name, icon: tier.icon };
+}
+
+function handleSeasonInfo(clientId, message) {
+    const ws = clients.get(clientId);
+    if (!ws || ws.readyState !== 1) return;
+
+    checkSeasonRotation();
+
+    const myRating = getOrCreateRating(clientId);
+    const myTier = getEloTier(myRating.elo);
+
+    // Build top players by ELO
+    const topRatings = [];
+    for (const [pId, r] of gameState.season.ratings) {
+        const p = gameState.players.get(pId);
+        if (p) {
+            const t = getEloTier(r.elo);
+            topRatings.push({ name: p.name, elo: r.elo, tier: t.name, icon: t.icon, wins: r.wins, losses: r.losses });
+        }
+    }
+    topRatings.sort((a, b) => b.elo - a.elo);
+
+    ws.send(JSON.stringify({
+        type: 'season_info_result',
+        season: {
+            number: gameState.season.number,
+            startedAt: gameState.season.startedAt,
+            endsAt: gameState.season.endsAt,
+            timeLeft: Math.max(0, gameState.season.endsAt - Date.now())
+        },
+        myRating: { elo: myRating.elo, tier: myTier.name, icon: myTier.icon, wins: myRating.wins, losses: myRating.losses },
+        topPlayers: topRatings.slice(0, 10)
+    }));
+}
+
+function checkSeasonRotation() {
+    if (Date.now() < gameState.season.endsAt) return;
+
+    // Season over — record results and start new season
+    console.log(`🏆 Season ${gameState.season.number} ended!`);
+
+    // Broadcast season end
+    const topRatings = [];
+    for (const [pId, r] of gameState.season.ratings) {
+        const p = gameState.players.get(pId);
+        if (p) topRatings.push({ name: p.name, elo: r.elo, tier: getEloTier(r.elo).name });
+    }
+    topRatings.sort((a, b) => b.elo - a.elo);
+    const champion = topRatings[0];
+
+    if (champion) {
+        addGlobalChatMessage('System', `🏆 Season ${gameState.season.number} is over! Champion: ${champion.name} (${champion.elo} ELO, ${champion.tier})!`, '#ffd700');
+    }
+
+    // Soft reset: regress all ELOs toward 1200
+    for (const [, r] of gameState.season.ratings) {
+        r.elo = Math.round(r.elo * 0.6 + 1200 * 0.4); // Weighted toward 1200
+        r.wins = 0;
+        r.losses = 0;
+        r.tier = getEloTier(r.elo).name;
+    }
+
+    gameState.season.number++;
+    gameState.season.startedAt = Date.now();
+    gameState.season.endsAt = Date.now() + (30 * 24 * 60 * 60 * 1000);
+
+    broadcastToAll({
+        type: 'season_reset',
+        seasonNumber: gameState.season.number,
+        champion: champion || null
+    });
+
+    scheduleWorldSave();
+}
+
+// ==================== PHASE C: TERRITORY SIEGE & FORTIFICATION ====================
+// Enhanced territory control: fortify territories, multi-phase siege attacks.
+
+const FORTIFY_COST_PER_POINT = 500; // $500 per defense point
+const FORTIFY_MAX = 200;            // Max fortification bonus
+const SIEGE_ENERGY_COST = 60;
+const SIEGE_MONEY_COST = 5000;
+const SIEGE_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
+const siegeCooldowns = new Map();
+
+function handleSiegeDeclare(clientId, message) {
+    const attacker = gameState.players.get(clientId);
+    const attackerState = gameState.playerStates.get(clientId);
+    if (!attacker || !attackerState) return;
+    const ws = clients.get(clientId);
+    const fail = (err) => { if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'siege_result', success: false, error: err })); };
+
+    // Cooldown
+    const lastSiege = siegeCooldowns.get(clientId) || 0;
+    const now = Date.now();
+    if (now - lastSiege < SIEGE_COOLDOWN_MS) {
+        const remaining = Math.ceil((SIEGE_COOLDOWN_MS - (now - lastSiege)) / 60000);
+        return fail(`Siege cooldown — wait ${remaining} more minute(s).`);
+    }
+
+    const districtId = message.district;
+    if (!districtId || !TERRITORY_IDS.includes(districtId)) return fail('Invalid district.');
+    const terr = gameState.territories[districtId];
+    if (!terr) return fail('Territory data missing.');
+    if (!terr.owner) return fail('No owner — claim it instead.');
+    if (terr.owner === attacker.name) return fail('You own this territory.');
+
+    // Jail check
+    if (attackerState.inJail) return fail('Can\'t siege from jail.');
+
+    // Resource checks
+    if ((attackerState.energy || 0) < SIEGE_ENERGY_COST) return fail(`Not enough energy (${SIEGE_ENERGY_COST} required).`);
+    if ((attacker.money || 0) < SIEGE_MONEY_COST) return fail(`Siege costs $${SIEGE_MONEY_COST.toLocaleString()}.`);
+
+    const gangMembers = Math.max(0, Math.min(message.gangMembers || 0, 100));
+    const attackPower = Math.max(0, Math.min(message.power || 0, 5000));
+    if (gangMembers < 8) return fail('Need at least 8 gang members for a siege.');
+
+    // Deduct resources
+    attackerState.energy = Math.max(0, (attackerState.energy || 100) - SIEGE_ENERGY_COST);
+    attacker.money -= SIEGE_MONEY_COST;
+    const ps = gameState.playerStates.get(clientId);
+    if (ps) { ps.money = attacker.money; ps.lastUpdate = Date.now(); }
+
+    siegeCooldowns.set(clientId, now);
+
+    // === MULTI-PHASE SIEGE CALCULATION ===
+    // Phase 1: Breach (attacker power vs fortification)
+    const fortScore = (terr.defenseRating || 100) + (terr.fortification || 0);
+    const breachPower = attackPower + (gangMembers * 12) + Math.floor(Math.random() * 150);
+    const breachSuccess = breachPower > fortScore;
+
+    if (!breachSuccess) {
+        // Siege repelled at the walls
+        const repLoss = 8 + Math.floor(Math.random() * 8);
+        attacker.reputation = Math.max(0, (attacker.reputation || 0) - repLoss);
+        if (ps) ps.reputation = attacker.reputation;
+
+        const healthDmg = 20 + Math.floor(Math.random() * 20);
+        attackerState.health = Math.max(1, (attackerState.health || 100) - healthDmg);
+        attackerState.wantedLevel = Math.min(100, (attackerState.wantedLevel || 0) + 15);
+
+        // Fortification slightly damaged even on defense success
+        terr.fortification = Math.max(0, (terr.fortification || 0) - 10);
+
+        if (ws && ws.readyState === 1) {
+            ws.send(JSON.stringify({
+                type: 'siege_result', success: true, victory: false, phase: 'breach_failed',
+                district: districtId, owner: terr.owner, repLoss, healthDamage: healthDmg,
+                energy: attackerState.energy, money: attacker.money
+            }));
+        }
+
+        // Notify defender
+        notifySiegeDefender(terr.owner, districtId, attacker.name, false);
+
+        addGlobalChatMessage('System', `🏰 ${attacker.name}'s siege on ${districtId.replace(/_/g, ' ')} was repelled!`, '#27ae60');
+        broadcastPlayerStates();
+        scheduleWorldSave();
+        return;
+    }
+
+    // Phase 2: Assault (attacker vs defender combat strength)
+    let defenseScore = (terr.defenseRating || 100);
+    let defenderId = null;
+    for (const [id, p] of gameState.players.entries()) {
+        if (p.name === terr.owner) {
+            defenderId = id;
+            const defState = gameState.playerStates.get(id);
+            defenseScore += (p.level || 1) * 15;
+            defenseScore += Math.floor((p.reputation || 0) * 0.5);
+            break;
+        }
+    }
+    if (!defenderId) defenseScore += 150; // Offline bonus
+
+    // Alliance defense bonus during siege
+    if (defenderId) {
+        const defAlliance = findPlayerAlliance(defenderId);
+        if (defAlliance) {
+            const onlineAllies = defAlliance.members.filter(mId => mId !== defenderId && clients.has(mId));
+            defenseScore += onlineAllies.length * 50; // Each online ally adds +50 defense
+        }
+    }
+
+    const assaultScore = attackPower + (gangMembers * 15) + (attacker.level || 1) * 8 + Math.floor(Math.random() * 200);
+    defenseScore += Math.floor(Math.random() * 200);
+    const siegeVictory = assaultScore > defenseScore;
+
+    // Casualties
+    let membersLost = 0;
+    const casualtyRate = siegeVictory ? 0.15 : 0.35;
+    for (let i = 0; i < gangMembers; i++) {
+        if (Math.random() < casualtyRate) membersLost++;
+    }
+
+    const healthDmg = siegeVictory
+        ? 15 + Math.floor(Math.random() * 20)
+        : 30 + Math.floor(Math.random() * 30);
+    attackerState.health = Math.max(1, (attackerState.health || 100) - healthDmg);
+    attackerState.wantedLevel = Math.min(100, (attackerState.wantedLevel || 0) + (siegeVictory ? 25 : 15));
+
+    if (siegeVictory) {
+        const oldOwner = terr.owner;
+        terr.owner = attacker.name;
+        terr.defenseRating = Math.max(50, (terr.defenseRating || 100) - 30);
+        terr.fortification = Math.max(0, (terr.fortification || 0) - Math.floor((terr.fortification || 0) * 0.5));
+
+        const repGain = 20 + Math.floor(Math.random() * 15);
+        attacker.reputation = (attacker.reputation || 0) + repGain;
+        if (ps) ps.reputation = attacker.reputation;
+
+        // Update ELO if both players are online
+        if (defenderId) updateElo(clientId, defenderId, true);
+
+        console.log(`🏰 SIEGE SUCCESS: ${attacker.name} conquered ${districtId} from ${oldOwner}`);
+
+        if (ws && ws.readyState === 1) {
+            ws.send(JSON.stringify({
+                type: 'siege_result', success: true, victory: true, phase: 'conquered',
+                district: districtId, oldOwner, repGain, membersLost, healthDamage: healthDmg,
+                energy: attackerState.energy, money: attacker.money,
+                territories: gameState.territories
+            }));
+        }
+
+        notifySiegeDefender(oldOwner, districtId, attacker.name, true);
+
+        broadcastToAll({
+            type: 'territory_ownership_changed',
+            territories: gameState.territories,
+            attacker: attacker.name, defender: oldOwner, seized: [districtId], method: 'siege'
+        });
+
+        addGlobalChatMessage('System', `🏰 ${attacker.name} laid siege to ${districtId.replace(/_/g, ' ')} and conquered it from ${oldOwner}!`, '#8b0000');
+    } else {
+        terr.defenseRating = Math.min(300, (terr.defenseRating || 100) + 15);
+
+        const repLoss = 10 + Math.floor(Math.random() * 10);
+        attacker.reputation = Math.max(0, (attacker.reputation || 0) - repLoss);
+        if (ps) ps.reputation = attacker.reputation;
+
+        // 40% arrest chance on siege failure
+        let jailed = false, jailTime = 0;
+        if (Math.random() < 0.40) {
+            jailTime = 20 + Math.floor(Math.random() * 25);
+            attackerState.inJail = true;
+            attackerState.jailTime = jailTime;
+            jailed = true;
+        }
+
+        console.log(`🏰 SIEGE FAILED: ${attacker.name} failed to siege ${districtId}${jailed ? ' — ARRESTED' : ''}`);
+
+        if (ws && ws.readyState === 1) {
+            ws.send(JSON.stringify({
+                type: 'siege_result', success: true, victory: false, phase: 'assault_failed',
+                district: districtId, owner: terr.owner, repLoss, membersLost, healthDamage: healthDmg,
+                energy: attackerState.energy, money: attacker.money, jailed, jailTime
+            }));
+        }
+
+        notifySiegeDefender(terr.owner, districtId, attacker.name, false);
+
+        addGlobalChatMessage('System', `🏰 ${attacker.name}'s siege on ${districtId.replace(/_/g, ' ')} failed!${jailed ? ' Arrested!' : ''}`, '#e74c3c');
+    }
+
+    broadcastPlayerStates();
+    scheduleWorldSave();
+}
+
+function notifySiegeDefender(ownerName, districtId, attackerName, lost) {
+    for (const [id, p] of gameState.players.entries()) {
+        if (p.name === ownerName) {
+            const defWs = clients.get(id);
+            if (defWs && defWs.readyState === 1) {
+                defWs.send(JSON.stringify({
+                    type: lost ? 'territory_war_defense_lost' : 'territory_war_defense_held',
+                    district: districtId,
+                    attackerName: attackerName,
+                    method: 'siege',
+                    territories: lost ? gameState.territories : undefined
+                }));
+            }
+            break;
+        }
+    }
+}
+
+function handleSiegeFortify(clientId, message) {
+    const player = gameState.players.get(clientId);
+    if (!player) return;
+    const ws = clients.get(clientId);
+    const fail = (err) => { if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'fortify_result', success: false, error: err })); };
+
+    const districtId = message.district;
+    if (!districtId || !TERRITORY_IDS.includes(districtId)) return fail('Invalid district.');
+    const terr = gameState.territories[districtId];
+    if (!terr) return fail('Territory data missing.');
+    if (terr.owner !== player.name) return fail('You don\'t own this territory.');
+
+    const points = Math.max(1, Math.min(parseInt(message.points) || 1, 50)); // Max 50 points at once
+    const currentFort = terr.fortification || 0;
+    if (currentFort >= FORTIFY_MAX) return fail(`Territory already at maximum fortification (${FORTIFY_MAX}).`);
+
+    const actualPoints = Math.min(points, FORTIFY_MAX - currentFort);
+    const cost = actualPoints * FORTIFY_COST_PER_POINT;
+    if ((player.money || 0) < cost) return fail(`Not enough cash. ${actualPoints} points costs $${cost.toLocaleString()}.`);
+
+    player.money -= cost;
+    terr.fortification = currentFort + actualPoints;
+    const ps = gameState.playerStates.get(clientId);
+    if (ps) { ps.money = player.money; ps.lastUpdate = Date.now(); }
+
+    console.log(`🏗️ ${player.name} fortified ${districtId} +${actualPoints} (now ${terr.fortification})`);
+
+    if (ws && ws.readyState === 1) {
+        ws.send(JSON.stringify({
+            type: 'fortify_result', success: true,
+            district: districtId, fortification: terr.fortification,
+            cost: cost, money: player.money
+        }));
+    }
+
+    scheduleWorldSave();
+}
+
 function generateLeaderboard() {
     const players = Array.from(gameState.players.values());
 
@@ -2796,11 +3764,23 @@ function generateLeaderboard() {
         .slice(0, 10)
         .map(([name, count]) => ({ name, territories: count }));
 
+    // ELO ranked leaders (Season)
+    const byElo = [];
+    for (const [pId, r] of gameState.season.ratings) {
+        const p = gameState.players.get(pId);
+        if (p && (r.wins + r.losses) > 0) {
+            const t = getEloTier(r.elo);
+            byElo.push({ name: p.name, elo: r.elo, tier: t.name, icon: t.icon, wins: r.wins, losses: r.losses });
+        }
+    }
+    byElo.sort((a, b) => b.elo - a.elo);
+
     return {
         reputation: byReputation,
         wealth: byWealth,
         combat: byPvpWins,
-        territories: byTerritories
+        territories: byTerritories,
+        ranked: byElo.slice(0, 10)
     };
 }
 

@@ -1494,6 +1494,16 @@ async function handleServerMessage(message) {
                     const myDmg = isWinner ? message.healthDamage.winner : message.healthDamage.loser;
                     if (myDmg) player.health = Math.max(1, (player.health || 100) - myDmg);
                 }
+                // Show bounty claim toast
+                if (isWinner && message.bountyClaimed) {
+                    showMPToast(`💀 Bounty collected! +$${message.bountyClaimed.reward.toLocaleString()}`, '#ff6600', 5000);
+                    player.money = (player.money || 0) + message.bountyClaimed.reward;
+                    playNotificationSound('cash');
+                }
+                // Show ELO change
+                if (message.eloChange && isWinner) {
+                    showMPToast(`${message.eloChange.icon} Ranked: ${message.eloChange.elo} ELO (${message.eloChange.tier})`, '#c0a062', 4000);
+                }
             } else {
                 // Spectator — show toast
                 showMPToast(`\u2694\uFE0F ${message.winner} defeated ${message.loser}!`, '#8b0000');
@@ -1565,6 +1575,48 @@ async function handleServerMessage(message) {
             } else {
                 showSystemMessage(message.error || 'Bet failed.', '#e74c3c');
             }
+            break;
+
+        // ==================== PHASE C: COMPETITIVE FEATURE HANDLERS ====================
+        case 'alliance_result':
+            handleAllianceResult(message);
+            break;
+
+        case 'alliance_invite':
+            handleAllianceInviteReceived(message);
+            break;
+
+        case 'alliance_info_result':
+            handleAllianceInfoResult(message);
+            break;
+
+        case 'bounty_result':
+            handleBountyResult(message);
+            break;
+
+        case 'bounty_alert':
+            handleBountyAlert(message);
+            break;
+
+        case 'bounty_list_result':
+            handleBountyListResult(message);
+            break;
+
+        case 'season_info_result':
+            handleSeasonInfoResult(message);
+            break;
+
+        case 'season_reset':
+            showMPToast(`🏆 Season ${message.seasonNumber} has begun!${message.champion ? ` Last champion: ${message.champion.name}` : ''}`, '#ffd700', 8000);
+            playNotificationSound('victory');
+            break;
+
+        case 'siege_result':
+            handleSiegeResult(message);
+            break;
+
+        case 'fortify_result':
+            handleFortifyResult(message);
             break;
 
         default:
@@ -2615,6 +2667,18 @@ function showOnlineWorld() {
                 <button onclick="showCityEvents()" style="background: #333; color: #9b59b6; padding: 15px; border: 1px solid #9b59b6; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">
                      Street News<br><small style="color: #ccc;">Special opportunities</small>
                 </button>
+                <button onclick="showAlliancePanel()" style="background: #333; color: #c0a062; padding: 15px; border: 2px solid #c0a062; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">
+                    🤝 Alliances<br><small style="color: #ccc;">Form a crew</small>
+                </button>
+                <button onclick="showBountyBoard()" style="background: linear-gradient(180deg, #4a2600 0%, #1a0a00 100%); color: #ff6600; padding: 15px; border: 1px solid #ff6600; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">
+                    💀 Bounty Board<br><small style="color: #ffaa66;">Put a price on heads</small>
+                </button>
+                <button onclick="showRankedSeason()" style="background: linear-gradient(180deg, #1a1a3a 0%, #0a0a1a 100%); color: #ffd700; padding: 15px; border: 1px solid #ffd700; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">
+                    🏆 Ranked Season<br><small style="color: #ffe066;">ELO combat rating</small>
+                </button>
+                <button onclick="showSiegePanel()" style="background: linear-gradient(180deg, #2a1a00 0%, #0a0600 100%); color: #e67e22; padding: 15px; border: 1px solid #e67e22; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">
+                    🏰 Territory Siege<br><small style="color: #f0a050;">Fortify & conquer</small>
+                </button>
             </div>
         </div>
         
@@ -2881,7 +2945,7 @@ function loadGlobalLeaderboard() {
 
     // Backwards compatibility: if serverData is an array (old format), wrap it
     const categories = Array.isArray(serverData)
-        ? { reputation: serverData, wealth: [], combat: [], territories: [] }
+        ? { reputation: serverData, wealth: [], combat: [], territories: [], ranked: [] }
         : serverData;
 
     const cat = _leaderboardCategory;
@@ -2892,7 +2956,8 @@ function loadGlobalLeaderboard() {
         { key: 'reputation', label: '⭐ Rep', color: '#f39c12' },
         { key: 'wealth', label: '💰 Wealth', color: '#2ecc71' },
         { key: 'combat', label: '⚔️ Combat', color: '#e74c3c' },
-        { key: 'territories', label: '🏛️ Turf', color: '#3498db' }
+        { key: 'territories', label: '🏛️ Turf', color: '#3498db' },
+        { key: 'ranked', label: '🏆 ELO', color: '#ffd700' }
     ];
     const tabHTML = `<div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">${tabs.map(t =>
         `<button onclick="_leaderboardCategory='${t.key}';loadGlobalLeaderboard();" style="background:${_leaderboardCategory === t.key ? t.color : '#222'};color:${_leaderboardCategory === t.key ? '#000' : '#ccc'};border:1px solid ${t.color};padding:5px 10px;border-radius:4px;cursor:pointer;font-family:Georgia,serif;font-size:0.8em;">${t.label}</button>`
@@ -2910,6 +2975,7 @@ function loadGlobalLeaderboard() {
             else if (cat === 'wealth') detail = `$${(entry.money || 0).toLocaleString()}`;
             else if (cat === 'combat') detail = `${entry.pvpWins || 0}W / ${entry.pvpLosses || 0}L`;
             else if (cat === 'territories') detail = `${entry.territories || 0} owned`;
+            else if (cat === 'ranked') detail = `${entry.icon || ''} ${entry.elo || 0} ELO (${entry.tier || '?'}) ${entry.wins || 0}W/${entry.losses || 0}L`;
 
             return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px;margin:4px 0;background:rgba(0,0,0,0.3);border-radius:5px;${isMe ? 'border:2px solid #2ecc71;' : ''}">
                 <div>
@@ -4247,4 +4313,553 @@ function participateInEvent(eventType, district) {
     // Update UI
     if (typeof updateUI === 'function') updateUI();
     if (typeof checkLevelUp === 'function') checkLevelUp();
+}
+
+// ==================== PHASE C: ALLIANCE PANEL ====================
+
+let _currentAllianceData = null;
+
+function showAlliancePanel() {
+    if (!ensureConnected()) return;
+
+    // Request alliance info from server
+    if (onlineWorldState.socket && onlineWorldState.socket.readyState === WebSocket.OPEN) {
+        onlineWorldState.socket.send(JSON.stringify({ type: 'alliance_info' }));
+    }
+
+    const content = document.getElementById('multiplayer-content');
+    content.innerHTML = `
+        <h2 style="color: #c0a062; font-family: Georgia, serif;">🤝 Alliances</h2>
+        <p style="color: #ccc;">Form powerful alliances with other players. Share territory bonuses, deposit to a shared treasury, or betray your allies for personal gain.</p>
+        <div id="alliance-panel-content" style="color: #888; text-align: center; padding: 30px;">Loading alliance data...</div>
+        <div style="text-align: center; margin-top: 30px;">
+            <button onclick="showOnlineWorld()" style="background: #333; color: #c0a062; padding: 12px 25px; border: 1px solid #c0a062; border-radius: 8px; cursor: pointer; font-family: Georgia, serif;">← Back to Commission</button>
+        </div>
+    `;
+    hideAllScreens();
+    document.getElementById('multiplayer-screen').style.display = 'block';
+}
+
+function handleAllianceInfoResult(message) {
+    _currentAllianceData = message;
+    const container = document.getElementById('alliance-panel-content');
+    if (!container) return;
+
+    const myAlliance = message.myAlliance;
+    const allAlliances = message.allAlliances || [];
+
+    let html = '';
+
+    if (myAlliance) {
+        // Show my alliance details
+        const isLeader = myAlliance.leaderName === (player.name || '');
+        html += `
+            <div style="background: rgba(0,0,0,0.8); padding: 20px; border-radius: 12px; border: 2px solid #c0a062; margin-bottom: 20px;">
+                <h3 style="color: #c0a062; margin: 0 0 5px 0;">[${escapeHTML(myAlliance.tag)}] ${escapeHTML(myAlliance.name)}</h3>
+                <p style="color: #888; font-style: italic; margin: 5px 0;">"${escapeHTML(myAlliance.motto)}"</p>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin: 15px 0;">
+                    <div style="text-align: center; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 6px;">
+                        <div style="color: #c0a062; font-size: 1.3em; font-weight: bold;">${myAlliance.memberCount}/${myAlliance.maxMembers}</div>
+                        <div style="color: #888; font-size: 0.8em;">Members</div>
+                    </div>
+                    <div style="text-align: center; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 6px;">
+                        <div style="color: #2ecc71; font-size: 1.3em; font-weight: bold;">$${(myAlliance.treasury || 0).toLocaleString()}</div>
+                        <div style="color: #888; font-size: 0.8em;">Treasury</div>
+                    </div>
+                    <div style="text-align: center; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 6px;">
+                        <div style="color: #f39c12; font-size: 1.3em; font-weight: bold;">👑 ${escapeHTML(myAlliance.leaderName)}</div>
+                        <div style="color: #888; font-size: 0.8em;">Leader</div>
+                    </div>
+                </div>
+                <h4 style="color: #ccc; margin: 10px 0 5px;">Members:</h4>
+                ${myAlliance.members.map(m => `<div style="padding:5px;color:${m === myAlliance.leaderName ? '#ffd700' : '#ccc'};">${m === myAlliance.leaderName ? '👑' : '🤵'} ${escapeHTML(m)}</div>`).join('')}
+                <div style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap;">
+                    <button onclick="allianceDeposit()" style="background: #2ecc71; color: #000; padding: 8px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">💰 Deposit</button>
+                    ${isLeader ? `<button onclick="allianceInvitePrompt()" style="background: #3498db; color: #fff; padding: 8px 15px; border: none; border-radius: 6px; cursor: pointer;">➕ Invite</button>` : ''}
+                    ${isLeader ? `<button onclick="allianceKickPrompt()" style="background: #e74c3c; color: #fff; padding: 8px 15px; border: none; border-radius: 6px; cursor: pointer;">🚫 Kick</button>` : ''}
+                    <button onclick="allianceLeave()" style="background: #666; color: #fff; padding: 8px 15px; border: none; border-radius: 6px; cursor: pointer;">🚪 Leave</button>
+                    <button onclick="allianceBetray()" style="background: linear-gradient(180deg,#8b0000,#4a0000); color: #ff4444; padding: 8px 15px; border: 1px solid #ff0000; border-radius: 6px; cursor: pointer; font-weight: bold;">🗡️ Betray</button>
+                </div>
+            </div>
+        `;
+    } else {
+        // Show create alliance form
+        html += `
+            <div style="background: rgba(0,0,0,0.8); padding: 20px; border-radius: 12px; border: 2px solid #c0a062; margin-bottom: 20px;">
+                <h3 style="color: #c0a062; margin: 0 0 10px 0;">Found an Alliance</h3>
+                <p style="color: #888;">Cost: $10,000 | Max 4 members</p>
+                <div style="display: grid; gap: 10px; margin: 15px 0;">
+                    <input id="alliance-name-input" type="text" placeholder="Alliance Name (3-24 chars)" maxlength="24" style="padding: 10px; background: #222; color: #c0a062; border: 1px solid #c0a062; border-radius: 6px;">
+                    <input id="alliance-tag-input" type="text" placeholder="Tag (2-4 chars, e.g. MAFIA)" maxlength="4" style="padding: 10px; background: #222; color: #c0a062; border: 1px solid #c0a062; border-radius: 6px; text-transform: uppercase;">
+                    <input id="alliance-motto-input" type="text" placeholder="Motto (optional)" maxlength="80" style="padding: 10px; background: #222; color: #c0a062; border: 1px solid #c0a062; border-radius: 6px;">
+                </div>
+                <button onclick="createAlliance()" style="background: #c0a062; color: #000; padding: 12px 25px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-family: Georgia, serif; width: 100%;">🤝 Found Alliance ($10,000)</button>
+            </div>
+        `;
+    }
+
+    // Show all alliances
+    if (allAlliances.length > 0) {
+        html += `<div style="background: rgba(0,0,0,0.6); padding: 15px; border-radius: 10px; border: 1px solid #555;">
+            <h3 style="color: #ccc; margin: 0 0 10px 0;">All Active Alliances</h3>
+            ${allAlliances.map(a => `
+                <div style="padding: 10px; margin: 5px 0; background: rgba(255,255,255,0.05); border-radius: 6px; border-left: 3px solid #c0a062;">
+                    <strong style="color: #c0a062;">[${escapeHTML(a.tag)}] ${escapeHTML(a.name)}</strong>
+                    <span style="color: #888; margin-left: 10px;">${a.memberCount}/${a.maxMembers} members | Leader: ${escapeHTML(a.leaderName)} | Treasury: $${(a.treasury || 0).toLocaleString()}</span>
+                </div>
+            `).join('')}
+        </div>`;
+    }
+
+    container.innerHTML = html;
+}
+
+function createAlliance() {
+    const name = document.getElementById('alliance-name-input')?.value?.trim();
+    const tag = document.getElementById('alliance-tag-input')?.value?.trim();
+    const motto = document.getElementById('alliance-motto-input')?.value?.trim();
+    if (!name || !tag) { showSystemMessage('Enter a name and tag.', '#e74c3c'); return; }
+    sendMP({ type: 'alliance_create', name, tag, motto });
+}
+
+function allianceInvitePrompt() {
+    const target = prompt('Enter player name to invite:');
+    if (target) sendMP({ type: 'alliance_invite', targetPlayer: target.trim() });
+}
+
+function allianceKickPrompt() {
+    const target = prompt('Enter member name to kick:');
+    if (target) sendMP({ type: 'alliance_kick', targetPlayer: target.trim() });
+}
+
+function allianceDeposit() {
+    const amount = prompt('Amount to deposit into alliance treasury ($100 min):');
+    if (amount) sendMP({ type: 'alliance_deposit', amount: parseInt(amount) });
+}
+
+function allianceLeave() {
+    if (confirm('Leave your alliance? This cannot be undone.')) {
+        sendMP({ type: 'alliance_leave' });
+    }
+}
+
+function allianceBetray() {
+    if (confirm('⚠️ BETRAY your alliance?!\n\nYou will steal 25% of the treasury but lose 50 reputation.\nThis is irreversible and everyone will know.')) {
+        sendMP({ type: 'alliance_betray' });
+    }
+}
+
+function handleAllianceResult(message) {
+    if (!message.success) {
+        showSystemMessage(message.error || 'Alliance action failed.', '#e74c3c');
+        return;
+    }
+
+    switch (message.action) {
+        case 'created':
+            showMPToast(`🤝 Alliance [${message.alliance.tag}] ${message.alliance.name} founded!`, '#c0a062', 5000);
+            playNotificationSound('victory');
+            if (typeof updateUI === 'function') updateUI();
+            showAlliancePanel(); // Refresh
+            break;
+        case 'invited':
+            showMPToast(`✉️ Invite sent to ${message.targetPlayer}.`, '#3498db');
+            break;
+        case 'member_joined':
+            showMPToast(`🤝 ${message.newMember} joined the alliance!`, '#2ecc71');
+            playNotificationSound('alert');
+            showAlliancePanel();
+            break;
+        case 'left':
+            showMPToast(`🚪 You left ${message.allianceName}.`, '#888');
+            showAlliancePanel();
+            break;
+        case 'kicked':
+            showMPToast(`🚫 You were kicked from ${message.allianceName}!`, '#e74c3c');
+            playNotificationSound('defeat');
+            showAlliancePanel();
+            break;
+        case 'member_left':
+            showMPToast(`🚪 ${message.leftMember} left the alliance.`, '#888');
+            break;
+        case 'member_kicked':
+            showMPToast(`🚫 ${message.kickedMember} was kicked.`, '#e74c3c');
+            break;
+        case 'betrayed':
+            showMPToast(`🗡️ ${message.traitor} BETRAYED the alliance! Stole $${(message.stolenAmount || 0).toLocaleString()}!`, '#8b0000', 7000);
+            playNotificationSound('combat');
+            showAlliancePanel();
+            break;
+        case 'betrayal_success':
+            showMPToast(`🗡️ Betrayal successful! Stole $${(message.stolen || 0).toLocaleString()}!`, '#ff6600', 5000);
+            playNotificationSound('cash');
+            player.money = message.newMoney || player.money;
+            if (typeof updateUI === 'function') updateUI();
+            showAlliancePanel();
+            break;
+        case 'deposit':
+            showMPToast(`💰 ${message.depositor} deposited $${(message.amount || 0).toLocaleString()} to treasury.`, '#2ecc71');
+            if (message.alliance) _currentAllianceData = { myAlliance: message.alliance, allAlliances: _currentAllianceData?.allAlliances || [] };
+            break;
+    }
+}
+
+function handleAllianceInviteReceived(message) {
+    playNotificationSound('alert');
+    showMPToast(`✉️ ${message.inviterName} invited you to [${message.allianceTag}] ${message.allianceName}!`, '#c0a062', 10000);
+    // Show accept/decline popup
+    const modal = document.createElement('div');
+    modal.id = 'alliance-invite-modal';
+    modal.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:10000;';
+    modal.innerHTML = `
+        <div style="background:#1a1a1a;padding:30px;border-radius:12px;border:2px solid #c0a062;max-width:400px;text-align:center;">
+            <h3 style="color:#c0a062;margin:0 0 10px;">🤝 Alliance Invite</h3>
+            <p style="color:#ccc;">${escapeHTML(message.inviterName)} invited you to join:</p>
+            <h2 style="color:#ffd700;margin:10px 0;">[${escapeHTML(message.allianceTag)}] ${escapeHTML(message.allianceName)}</h2>
+            <div style="display:flex;gap:15px;justify-content:center;margin-top:20px;">
+                <button onclick="sendMP({type:'alliance_join',allianceId:'${message.allianceId}'});document.getElementById('alliance-invite-modal').remove();" style="background:#2ecc71;color:#000;padding:12px 25px;border:none;border-radius:8px;cursor:pointer;font-weight:bold;">✅ Accept</button>
+                <button onclick="document.getElementById('alliance-invite-modal').remove();" style="background:#e74c3c;color:#fff;padding:12px 25px;border:none;border-radius:8px;cursor:pointer;">❌ Decline</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+// ==================== PHASE C: BOUNTY BOARD ====================
+
+function showBountyBoard() {
+    if (!ensureConnected()) return;
+
+    // Request bounty list from server
+    sendMP({ type: 'bounty_list' });
+
+    const content = document.getElementById('multiplayer-content');
+    content.innerHTML = `
+        <h2 style="color: #ff6600; font-family: Georgia, serif;">💀 Bounty Board</h2>
+        <p style="color: #ccc;">Place bounties on rival players. Kill the target in PvP combat to auto-collect the reward.</p>
+
+        <div style="background: rgba(0,0,0,0.8); padding: 20px; border-radius: 12px; border: 2px solid #ff6600; margin-bottom: 20px;">
+            <h3 style="color: #ff6600; margin: 0 0 10px;">Post a Bounty</h3>
+            <div style="display: grid; gap: 10px;">
+                <input id="bounty-target-input" type="text" placeholder="Target player name" style="padding: 10px; background: #222; color: #ff6600; border: 1px solid #ff6600; border-radius: 6px;">
+                <input id="bounty-reward-input" type="number" placeholder="Reward ($5,000 - $500,000)" min="5000" max="500000" style="padding: 10px; background: #222; color: #ff6600; border: 1px solid #ff6600; border-radius: 6px;">
+                <input id="bounty-reason-input" type="text" placeholder="Reason (optional)" maxlength="60" style="padding: 10px; background: #222; color: #ff6600; border: 1px solid #ff6600; border-radius: 6px;">
+            </div>
+            <button onclick="postBounty()" style="background: #ff6600; color: #000; padding: 12px 25px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-family: Georgia, serif; width: 100%; margin-top: 10px;">💀 Post Bounty (money deducted upfront)</button>
+        </div>
+
+        <div id="bounty-list-content" style="color: #888; text-align: center; padding: 20px;">Loading bounties...</div>
+
+        <div style="text-align: center; margin-top: 30px;">
+            <button onclick="showOnlineWorld()" style="background: #333; color: #c0a062; padding: 12px 25px; border: 1px solid #c0a062; border-radius: 8px; cursor: pointer; font-family: Georgia, serif;">← Back to Commission</button>
+        </div>
+    `;
+    hideAllScreens();
+    document.getElementById('multiplayer-screen').style.display = 'block';
+}
+
+function postBounty() {
+    const target = document.getElementById('bounty-target-input')?.value?.trim();
+    const reward = parseInt(document.getElementById('bounty-reward-input')?.value);
+    const reason = document.getElementById('bounty-reason-input')?.value?.trim();
+    if (!target) { showSystemMessage('Enter a target name.', '#e74c3c'); return; }
+    if (!reward || reward < 5000) { showSystemMessage('Minimum bounty is $5,000.', '#e74c3c'); return; }
+    sendMP({ type: 'post_bounty', targetPlayer: target, reward, reason });
+}
+
+function handleBountyResult(message) {
+    if (!message.success) {
+        showSystemMessage(message.error || 'Bounty action failed.', '#e74c3c');
+        return;
+    }
+    if (message.action === 'posted') {
+        showMPToast(`💀 Bounty posted on ${message.bounty.targetName}!`, '#ff6600', 4000);
+        playNotificationSound('combat');
+        player.money = message.newMoney || player.money;
+        if (typeof updateUI === 'function') updateUI();
+        sendMP({ type: 'bounty_list' }); // Refresh list
+    } else if (message.action === 'cancelled') {
+        showMPToast(`Bounty cancelled. Refund: $${(message.refund || 0).toLocaleString()} (50% cancellation fee)`, '#888', 4000);
+        player.money = message.newMoney || player.money;
+        if (typeof updateUI === 'function') updateUI();
+        sendMP({ type: 'bounty_list' });
+    }
+}
+
+function handleBountyAlert(message) {
+    playNotificationSound('alert');
+    showMPToast(`💀 ${message.message}`, '#ff0000', 8000);
+}
+
+function handleBountyListResult(message) {
+    const container = document.getElementById('bounty-list-content');
+    if (!container) return;
+
+    const bounties = message.bounties || [];
+    if (bounties.length === 0) {
+        container.innerHTML = '<div style="color:#888;text-align:center;padding:20px;">No active bounties. The streets are calm... for now.</div>';
+        return;
+    }
+
+    container.innerHTML = `
+        <h3 style="color: #ff6600; margin: 0 0 10px;">Active Bounties (${bounties.length})</h3>
+        ${bounties.map(b => {
+            const timeLeft = Math.max(0, Math.floor(b.timeLeft / 60000));
+            const isMyBounty = b.posterName === (player.name || '');
+            const isOnMe = b.targetName === (player.name || '');
+            return `
+                <div style="padding: 12px; margin: 8px 0; background: rgba(${isOnMe ? '139,0,0' : '255,102,0'},0.15); border-radius: 8px; border-left: 4px solid ${isOnMe ? '#ff0000' : '#ff6600'};">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong style="color: #ff6600; font-size: 1.1em;">💀 ${escapeHTML(b.targetName)}</strong>
+                            ${isOnMe ? '<span style="color:#ff0000;font-weight:bold;margin-left:8px;">⚠️ THAT\'S YOU!</span>' : ''}
+                            <div style="color: #888; font-size: 0.85em;">${escapeHTML(b.reason || 'Wanted dead or alive.')}</div>
+                            <div style="color: #666; font-size: 0.8em;">Posted by: ${escapeHTML(b.posterName)} | Expires in ${timeLeft} min</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="color: #2ecc71; font-size: 1.3em; font-weight: bold;">$${b.reward.toLocaleString()}</div>
+                            ${isMyBounty ? `<button onclick="sendMP({type:'cancel_bounty',bountyId:'${b.id}'})" style="background:#e74c3c;color:#fff;padding:4px 10px;border:none;border-radius:4px;cursor:pointer;font-size:0.8em;margin-top:5px;">Cancel</button>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('')}
+    `;
+}
+
+// ==================== PHASE C: RANKED SEASON ====================
+
+function showRankedSeason() {
+    if (!ensureConnected()) return;
+
+    sendMP({ type: 'season_info' });
+
+    const content = document.getElementById('multiplayer-content');
+    content.innerHTML = `
+        <h2 style="color: #ffd700; font-family: Georgia, serif;">🏆 Ranked Season</h2>
+        <p style="color: #ccc;">Compete in ranked PvP combat. Your ELO rating determines your tier. Seasons last 30 days with soft resets.</p>
+        <div id="season-info-content" style="color: #888; text-align: center; padding: 30px;">Loading season data...</div>
+        <div style="text-align: center; margin-top: 30px;">
+            <button onclick="showOnlineWorld()" style="background: #333; color: #c0a062; padding: 12px 25px; border: 1px solid #c0a062; border-radius: 8px; cursor: pointer; font-family: Georgia, serif;">← Back to Commission</button>
+        </div>
+    `;
+    hideAllScreens();
+    document.getElementById('multiplayer-screen').style.display = 'block';
+}
+
+function handleSeasonInfoResult(message) {
+    const container = document.getElementById('season-info-content');
+    if (!container) return;
+
+    const season = message.season;
+    const myRating = message.myRating;
+    const topPlayers = message.topPlayers || [];
+    const daysLeft = Math.max(0, Math.ceil(season.timeLeft / (24 * 60 * 60 * 1000)));
+
+    const tiers = [
+        { name: 'Bronze', min: 0, color: '#cd7f32', icon: '🥉' },
+        { name: 'Silver', min: 1000, color: '#c0c0c0', icon: '🥈' },
+        { name: 'Gold', min: 1500, color: '#ffd700', icon: '🥇' },
+        { name: 'Diamond', min: 2000, color: '#b9f2ff', icon: '💎' },
+        { name: 'Kingpin', min: 2500, color: '#ff4500', icon: '👑' }
+    ];
+
+    const currentTier = tiers.find(t => t.name === myRating.tier) || tiers[0];
+    const nextTier = tiers[tiers.indexOf(currentTier) + 1];
+    const eloToNext = nextTier ? nextTier.min - myRating.elo : 0;
+
+    container.innerHTML = `
+        <div style="background: rgba(0,0,0,0.8); padding: 20px; border-radius: 12px; border: 2px solid #ffd700; margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="color: #ffd700; margin: 0;">Season ${season.number}</h3>
+                <span style="color: #888;">${daysLeft} days remaining</span>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin: 15px 0;">
+                <div style="text-align: center; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px; border: 2px solid ${currentTier.color};">
+                    <div style="font-size: 2em;">${currentTier.icon}</div>
+                    <div style="color: ${currentTier.color}; font-size: 1.4em; font-weight: bold;">${myRating.elo}</div>
+                    <div style="color: ${currentTier.color}; font-weight: bold;">${currentTier.name}</div>
+                    ${nextTier ? `<div style="color: #888; font-size: 0.8em; margin-top: 5px;">${eloToNext} to ${nextTier.icon} ${nextTier.name}</div>` : '<div style="color: #ffd700; font-size: 0.8em; margin-top: 5px;">MAX TIER</div>'}
+                </div>
+                <div style="text-align: center; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                    <div style="color: #2ecc71; font-size: 1.8em; font-weight: bold;">${myRating.wins}</div>
+                    <div style="color: #888;">Wins</div>
+                </div>
+                <div style="text-align: center; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                    <div style="color: #e74c3c; font-size: 1.8em; font-weight: bold;">${myRating.losses}</div>
+                    <div style="color: #888;">Losses</div>
+                </div>
+            </div>
+        </div>
+
+        <div style="background: rgba(0,0,0,0.6); padding: 15px; border-radius: 10px; border: 1px solid #ffd700; margin-bottom: 15px;">
+            <h3 style="color: #ffd700; margin: 0 0 10px;">Tier Progression</h3>
+            <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                ${tiers.map(t => `
+                    <div style="text-align: center; padding: 8px 12px; background: ${t.name === myRating.tier ? 'rgba(255,215,0,0.2)' : 'rgba(255,255,255,0.03)'}; border-radius: 6px; border: 1px solid ${t.name === myRating.tier ? t.color : '#333'};">
+                        <div style="font-size: 1.3em;">${t.icon}</div>
+                        <div style="color: ${t.color}; font-size: 0.85em; font-weight: bold;">${t.name}</div>
+                        <div style="color: #666; font-size: 0.7em;">${t.min}+</div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+
+        <div style="background: rgba(0,0,0,0.6); padding: 15px; border-radius: 10px; border: 1px solid #555;">
+            <h3 style="color: #ccc; margin: 0 0 10px;">Season Leaderboard</h3>
+            ${topPlayers.length === 0 ? '<div style="color:#888;text-align:center;">No ranked matches yet this season.</div>' :
+              topPlayers.map((p, i) => `
+                <div style="display:flex;justify-content:space-between;padding:8px;margin:4px 0;background:rgba(255,255,255,0.03);border-radius:5px;${p.name === (player.name || '') ? 'border:2px solid #ffd700;' : ''}">
+                    <div><span style="color:${i < 3 ? '#ffd700' : '#ccc'};">#${i+1}</span> <strong style="color:#ecf0f1;margin-left:8px;">${escapeHTML(p.name)}</strong></div>
+                    <div style="color:#888;">${p.icon} ${p.elo} ELO | ${p.wins}W/${p.losses}L</div>
+                </div>
+              `).join('')}
+        </div>
+    `;
+}
+
+// ==================== PHASE C: TERRITORY SIEGE PANEL ====================
+
+function showSiegePanel() {
+    if (!ensureConnected()) return;
+
+    const territories = onlineWorldState.territories || {};
+    const playerName = player.name || '';
+
+    // Categorize territories
+    const ownedByMe = Object.entries(territories).filter(([, t]) => t.owner === playerName);
+    const attackable = Object.entries(territories).filter(([, t]) => t.owner && t.owner !== playerName);
+
+    const content = document.getElementById('multiplayer-content');
+    content.innerHTML = `
+        <h2 style="color: #e67e22; font-family: Georgia, serif;">🏰 Territory Siege & Fortification</h2>
+        <p style="color: #ccc;">Fortify your territories with defensive upgrades, or launch devastating siege attacks against rival Dons.</p>
+
+        ${ownedByMe.length > 0 ? `
+        <div style="background: rgba(0,0,0,0.8); padding: 20px; border-radius: 12px; border: 2px solid #27ae60; margin-bottom: 20px;">
+            <h3 style="color: #27ae60; margin: 0 0 10px;">🏗️ Fortify Your Territories</h3>
+            <p style="color: #888; font-size: 0.9em;">$500 per fortification point (max 200). Higher fortification = harder to siege.</p>
+            ${ownedByMe.map(([id, t]) => `
+                <div style="padding: 12px; margin: 8px 0; background: rgba(39,174,96,0.1); border-radius: 8px; border-left: 4px solid #27ae60;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong style="color: #27ae60;">${id.replace(/_/g, ' ')}</strong>
+                            <div style="color: #888; font-size: 0.85em;">Defense: ${t.defenseRating || 100} | Fort: ${t.fortification || 0}/200</div>
+                        </div>
+                        <div style="display: flex; gap: 5px;">
+                            <button onclick="fortifyTerritory('${id}', 10)" style="background:#27ae60;color:#000;padding:6px 12px;border:none;border-radius:4px;cursor:pointer;font-weight:bold;">+10 ($5K)</button>
+                            <button onclick="fortifyTerritory('${id}', 25)" style="background:#2ecc71;color:#000;padding:6px 12px;border:none;border-radius:4px;cursor:pointer;font-weight:bold;">+25 ($12.5K)</button>
+                            <button onclick="fortifyTerritory('${id}', 50)" style="background:#1abc9c;color:#000;padding:6px 12px;border:none;border-radius:4px;cursor:pointer;font-weight:bold;">+50 ($25K)</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('')}
+        </div>` : '<div style="background:rgba(0,0,0,0.6);padding:15px;border-radius:10px;color:#888;text-align:center;margin-bottom:20px;">You don\'t own any territories to fortify. Claim or conquer one first.</div>'}
+
+        <div style="background: rgba(0,0,0,0.8); padding: 20px; border-radius: 12px; border: 2px solid #e67e22; margin-bottom: 20px;">
+            <h3 style="color: #e67e22; margin: 0 0 10px;">⚔️ Launch a Siege</h3>
+            <p style="color: #888; font-size: 0.9em;">Cost: $5,000 + 60 energy | Requires 8+ gang members | Multi-phase battle | 1hr cooldown</p>
+            ${attackable.length === 0 ? '<div style="color:#888;text-align:center;padding:15px;">No territories to siege. All are unclaimed or yours.</div>' :
+              attackable.map(([id, t]) => `
+                <div style="padding: 12px; margin: 8px 0; background: rgba(231,76,60,0.1); border-radius: 8px; border-left: 4px solid #e67e22;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong style="color: #e67e22;">${id.replace(/_/g, ' ')}</strong>
+                            <div style="color: #888; font-size: 0.85em;">Owner: ${escapeHTML(t.owner)} | Defense: ${t.defenseRating || 100} | Fort: ${t.fortification || 0}</div>
+                        </div>
+                        <button onclick="declareSiege('${id}')" style="background:linear-gradient(180deg,#e67e22,#a0520a);color:#fff;padding:8px 18px;border:none;border-radius:6px;cursor:pointer;font-weight:bold;">🏰 Siege!</button>
+                    </div>
+                </div>
+              `).join('')}
+        </div>
+
+        <div style="text-align: center; margin-top: 30px;">
+            <button onclick="showOnlineWorld()" style="background: #333; color: #c0a062; padding: 12px 25px; border: 1px solid #c0a062; border-radius: 8px; cursor: pointer; font-family: Georgia, serif;">← Back to Commission</button>
+        </div>
+    `;
+    hideAllScreens();
+    document.getElementById('multiplayer-screen').style.display = 'block';
+}
+
+function fortifyTerritory(districtId, points) {
+    sendMP({ type: 'siege_fortify', district: districtId, points: points });
+}
+
+function declareSiege(districtId) {
+    if (!confirm(`Launch a siege on ${districtId.replace(/_/g, ' ')}?\n\nCost: $5,000 + 60 energy\nRequires: 8+ gang members\n\nThis is a multi-phase assault. Casualties are expected.`)) return;
+
+    const gangMembers = (player.gangMembers || []).length;
+    const power = typeof calculatePower === 'function' ? calculatePower() : 0;
+
+    sendMP({
+        type: 'siege_declare',
+        district: districtId,
+        gangMembers: gangMembers,
+        power: power
+    });
+}
+
+function handleSiegeResult(message) {
+    if (!message.success) {
+        showSystemMessage(message.error || 'Siege failed.', '#e74c3c');
+        return;
+    }
+
+    // Sync money/energy
+    if (message.money !== undefined) player.money = message.money;
+    if (message.energy !== undefined) player.energy = message.energy;
+
+    if (message.victory) {
+        playNotificationSound('victory');
+        showMPToast(`🏰 SIEGE VICTORY! Conquered ${(message.district || '').replace(/_/g, ' ')}! +${message.repGain || 0} rep`, '#27ae60', 6000);
+        logAction(`🏰 Your siege on ${(message.district || '').replace(/_/g, ' ')} was successful! Conquered from ${message.oldOwner}. Lost ${message.membersLost || 0} gang members.`);
+    } else {
+        playNotificationSound('defeat');
+        const phase = message.phase === 'breach_failed' ? 'Walls held firm!' : 'Assault repelled!';
+        showMPToast(`🏰 Siege failed — ${phase}${message.jailed ? ' ARRESTED!' : ''}`, '#e74c3c', 6000);
+        logAction(`🏰 Siege on ${(message.district || '').replace(/_/g, ' ')} failed. ${phase} Lost ${message.membersLost || 0} gang members, -${message.repLoss || 0} rep.`);
+
+        if (message.jailed) {
+            player.inJail = true;
+            player.jailTime = message.jailTime || 20;
+            if (window.EventBus) EventBus.emit('jailStatusChanged', { inJail: true, jailTime: player.jailTime });
+        }
+    }
+
+    // Update territories
+    if (message.territories) onlineWorldState.territories = message.territories;
+    if (typeof updateUI === 'function') updateUI();
+}
+
+function handleFortifyResult(message) {
+    if (!message.success) {
+        showSystemMessage(message.error || 'Fortification failed.', '#e74c3c');
+        return;
+    }
+    player.money = message.money || player.money;
+    showMPToast(`🏗️ ${(message.district || '').replace(/_/g, ' ')} fortified to ${message.fortification}/200!`, '#27ae60', 3000);
+    playNotificationSound('cash');
+    if (typeof updateUI === 'function') updateUI();
+    // Update local territory data
+    if (onlineWorldState.territories[message.district]) {
+        onlineWorldState.territories[message.district].fortification = message.fortification;
+    }
+}
+
+// ==================== UTILITY HELPERS ====================
+
+function sendMP(msg) {
+    if (onlineWorldState.socket && onlineWorldState.socket.readyState === WebSocket.OPEN) {
+        onlineWorldState.socket.send(JSON.stringify(msg));
+    } else {
+        showSystemMessage('Not connected to server.', '#e74c3c');
+    }
+}
+
+function ensureConnected() {
+    if (!onlineWorldState.isConnected) {
+        showSystemMessage('Connect to the online world first.', '#e74c3c');
+        return false;
+    }
+    return true;
 }
