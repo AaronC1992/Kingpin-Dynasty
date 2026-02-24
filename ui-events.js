@@ -16,11 +16,11 @@ function refreshMoneyDisplay() {
 
     // Always show money — jail status is shown on the jail screen, not the status bar
     const money = player.money || 0;
-    moneyEl.innerText = `Money: $${formatMoney(money)}`;
+    moneyEl.innerText = `Cash: $${formatMoney(money)}`;
 
     if (dirtyEl) {
         const dirty = player.dirtyMoney || 0;
-        dirtyEl.innerText = `Dirty Money: $${formatMoney(dirty)}`;
+        dirtyEl.innerText = `Dirty: $${formatMoney(dirty)}`;
     }
 }
 
@@ -35,7 +35,7 @@ export function initUIEvents() {
 
     EventBus.on('wantedLevelChanged', ({ oldValue, newValue }) => {
         const el = document.getElementById('wanted-level-display');
-        if (el) el.innerText = `Wanted Level: ${newValue}`;
+        if (el) el.innerText = `Heat: ${newValue}`;
     });
 
     EventBus.on('reputationChanged', ({ oldValue, newValue }) => {
@@ -56,6 +56,6 @@ export function initUIEvents() {
     // Initial paint
     refreshMoneyDisplay();
     const wanted = document.getElementById('wanted-level-display');
-    if (wanted) wanted.innerText = `Wanted Level: ${player.wantedLevel}`;
+    if (wanted) wanted.innerText = `Heat: ${player.wantedLevel}`;
 }
 

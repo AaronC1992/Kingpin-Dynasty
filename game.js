@@ -6401,7 +6401,7 @@ function updateUI() {
   const dirtyMoneyDisplay = document.getElementById("dirty-money-display");
   if (dirtyMoneyDisplay) {
     const dirtyAmount = player.dirtyMoney || 0;
-    dirtyMoneyDisplay.innerText = `Dirty Money: $${dirtyAmount.toLocaleString()}`;
+    dirtyMoneyDisplay.innerText = `Dirty: $${dirtyAmount.toLocaleString()}`;
   }
   
   // Update suspicion display in stats bar
@@ -6422,13 +6422,13 @@ function updateUI() {
     suspicionDisplay.style.display = suspicion > 0 ? 'block' : 'none';
   }
   
-  document.getElementById("power-display").innerText = `Power: ${player.power}`;
+  document.getElementById("power-display").innerText = `Influence: ${player.power}`;
   
   // Add territory display if player has territories
   const territoryDisplay = document.getElementById("territory-display");
   if (territoryDisplay) {
     if (player.territories.length > 0) {
-      territoryDisplay.innerText = `Territories: ${player.territories.length} | Income: $${player.territoryIncome.toLocaleString()}/week`;
+      territoryDisplay.innerText = `Turf: ${player.territories.length} | Tribute: $${player.territoryIncome.toLocaleString()}/week`;
       territoryDisplay.style.display = 'block';
     } else {
       territoryDisplay.style.display = 'none';
@@ -6449,7 +6449,7 @@ function updateUI() {
     }
   }
   
-  document.getElementById("health-display").innerText = `Health: ${player.health}`;
+  document.getElementById("health-display").innerText = `Condition: ${player.health}`;
   
   // Update energy display with timer (compact format)
   let energyText = `Energy: ${player.energy}/${player.maxEnergy}`;
@@ -6467,7 +6467,7 @@ function updateUI() {
   
   // Add new UI elements if they exist
   if (document.getElementById("level-display")) {
-    document.getElementById("level-display").innerText = `Level: ${player.level}`;
+    document.getElementById("level-display").innerText = `Rank: ${player.level}`;
   }
   if (document.getElementById("experience-display")) {
     const xpNeeded = Math.floor(player.level * 500 + Math.pow(player.level, 2) * 80 + Math.pow(player.level, 3) * 5);
