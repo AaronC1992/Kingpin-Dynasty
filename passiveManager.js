@@ -26,13 +26,14 @@ function hasPassive(factionKey) {
  * Applies daily passive effects. Should be called once per in-game day.
  */
 export function applyDailyPassives() {
-    // Torrino: "The Books" - 5% interest on unspent cash
+    // Torrino: "The Books" - 5% interest on unspent cash (capped)
     if (hasPassive('torrino')) {
         const interestRate = crimeFamilies.torrino.passive.value;
-        const interest = Math.floor(player.money * interestRate);
+        const maxInterest = 50000; // Hard cap to prevent runaway exponential wealth
+        const interest = Math.min(maxInterest, Math.floor(player.money * interestRate));
         if (interest > 0) {
             player.money += interest;
-            if (window.logAction) window.logAction(` Torrino "The Books" passive: Earned $${interest} interest on your cash.`);
+            if (window.logAction) window.logAction(` Torrino "The Books" passive: Earned $${interest.toLocaleString()} interest on your cash.${interest >= maxInterest ? ' (capped)' : ''}`);
         }
     }
 

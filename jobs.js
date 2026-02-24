@@ -31,22 +31,22 @@ export const jobs = [
     
     // High-tech/Vehicle jobs
     { name: "Luxury Car Ring", payout: [10000, 22000], risk: "high", jailChance: 30, wantedLevelGain: 4, healthLoss: 5, requiredItems: ["Luxury Automobile"], reputation: 20, energyCost: 15 },
-    { name: "Cross-Border Smuggling", payout: [25000, 55000], risk: "extreme", jailChance: 35, wantedLevelGain: 7, healthLoss: 10, requiredItems: ["Private Airplane", "Gasoline"], reputation: 50, energyCost: 30 },
+    { name: "Cross-Border Smuggling", payout: [15000, 35000], risk: "extreme", jailChance: 35, wantedLevelGain: 7, healthLoss: 10, requiredItems: ["Private Airplane", "Gasoline"], reputation: 50, energyCost: 30 },
     
     // Gang-based jobs
     { name: "Turf War", payout: [5000, 14000], risk: "very high", jailChance: 45, wantedLevelGain: 5, healthLoss: 30, requiredItems: ["Gang Recruit"], reputation: 25, energyCost: 20 },
     { name: "Underground Boxing", payout: [4000, 10000], risk: "high", jailChance: 25, wantedLevelGain: 2, healthLoss: 40, requiredItems: ["Brass Knuckles"], reputation: 18, energyCost: 12 },
     
     // Property-based jobs
-    { name: "Illegal Gambling Den", payout: [16000, 35000], risk: "very high", jailChance: 30, wantedLevelGain: 4, healthLoss: 5, requiredItems: ["Criminal Safehouse"], reputation: 35, energyCost: 22 },
-    { name: "Money Laundering", payout: [20000, 48000], risk: "high", jailChance: 20, wantedLevelGain: 3, healthLoss: 0, requiredItems: ["Basement Hideout", "Luxury Automobile"], reputation: 45, energyCost: 25, special: "launder_money" },
+    { name: "Illegal Gambling Den", payout: [10000, 22000], risk: "very high", jailChance: 30, wantedLevelGain: 4, healthLoss: 5, requiredItems: ["Criminal Safehouse"], reputation: 35, energyCost: 22 },
+    { name: "Money Laundering", payout: [12000, 30000], risk: "high", jailChance: 20, wantedLevelGain: 3, healthLoss: 0, requiredItems: ["Basement Hideout", "Luxury Automobile"], reputation: 45, energyCost: 25, special: "launder_money" },
     
     // Counterfeiting job (pays dirty money only)
-    { name: "Counterfeiting Money", payout: [25000, 70000], risk: "extreme", jailChance: 45, wantedLevelGain: 8, healthLoss: 0, requiredItems: ["Basement Hideout", "Fake ID Kit"], reputation: 40, energyCost: 20, paysDirty: true },
+    { name: "Counterfeiting Money", payout: [12000, 35000], risk: "extreme", jailChance: 45, wantedLevelGain: 8, healthLoss: 0, requiredItems: ["Basement Hideout", "Fake ID Kit"], reputation: 40, energyCost: 20, paysDirty: true },
     
     // Elite endgame jobs
-    { name: "International Arms Trade", payout: [70000, 140000], risk: "legendary", jailChance: 60, wantedLevelGain: 12, healthLoss: 10, requiredItems: ["Private Airplane", "Tommy Gun", "Bulletproof Vest"], reputation: 60, energyCost: 35 },
-    { name: "Take Over the City", payout: [280000, 700000], risk: "legendary", jailChance: 70, wantedLevelGain: 15, healthLoss: 20, requiredItems: ["Gang Recruit", "Underground Bunker", "Tommy Gun", "Luxury Automobile"], reputation: 80, energyCost: 40 }
+    { name: "International Arms Trade", payout: [35000, 75000], risk: "legendary", jailChance: 60, wantedLevelGain: 12, healthLoss: 10, requiredItems: ["Private Airplane", "Tommy Gun", "Bulletproof Vest"], reputation: 60, energyCost: 35 },
+    { name: "Take Over the City", payout: [100000, 250000], risk: "legendary", jailChance: 70, wantedLevelGain: 15, healthLoss: 20, requiredItems: ["Gang Recruit", "Underground Bunker", "Tommy Gun", "Luxury Automobile"], reputation: 80, energyCost: 40 }
 ];
 
 // Stolen car types with base values and damage probabilities

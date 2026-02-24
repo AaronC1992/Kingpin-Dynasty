@@ -93,7 +93,7 @@ export const realEstateProperties = [
         gangCapacity: 25, 
         description: "An impenetrable fortress that serves as the ultimate criminal headquarters.",
         power: 300,
-        income: 12000
+        income: 5000
     },
     { 
         name: "Luxury Penthouse", 
@@ -102,7 +102,7 @@ export const realEstateProperties = [
         gangCapacity: 20, 
         description: "A high-class penthouse that provides legitimacy and luxury for your operations.",
         power: 250,
-        income: 20000
+        income: 8000
     },
     { 
         name: "Private Island", 
@@ -111,7 +111,7 @@ export const realEstateProperties = [
         gangCapacity: 50, 
         description: "Your own private island - the ultimate symbol of criminal success.",
         power: 500,
-        income: 50000
+        income: 15000
     }
 ];
 
@@ -177,7 +177,7 @@ export const businessTypes = [
         baseIncome: 250000,
         maxLevel: 5,
         upgradeMultiplier: 2.0,
-        incomeMultiplier: 1.6,
+        incomeMultiplier: 1.3,
         launderingCapacity: 1000000,
         legitimacy: 40,
         category: "gambling"
@@ -200,10 +200,10 @@ export const businessTypes = [
         name: "Counterfeiting Operation",
         description: "A hidden printing press churning out fake bills — high profit, but the money needs laundering",
         basePrice: 4000000,
-        baseIncome: 180000,
+        baseIncome: 120000,
         maxLevel: 5,
         upgradeMultiplier: 1.7,
-        incomeMultiplier: 1.5,
+        incomeMultiplier: 1.3,
         launderingCapacity: 0,
         legitimacy: 10,
         category: "illegal",
@@ -214,10 +214,10 @@ export const businessTypes = [
         name: "Drug Lab",
         description: "A clandestine lab cooking up product in an abandoned building — massive returns, massive risk",
         basePrice: 6000000,
-        baseIncome: 220000,
+        baseIncome: 150000,
         maxLevel: 5,
         upgradeMultiplier: 1.8,
-        incomeMultiplier: 1.5,
+        incomeMultiplier: 1.3,
         launderingCapacity: 0,
         legitimacy: 5,
         category: "illegal",
@@ -228,10 +228,10 @@ export const businessTypes = [
         name: "Chop Shop",
         description: "Strip stolen cars for parts and sell them on the black market — pairs well with Boost a Ride",
         basePrice: 3500000,
-        baseIncome: 140000,
+        baseIncome: 90000,
         maxLevel: 5,
         upgradeMultiplier: 1.6,
-        incomeMultiplier: 1.4,
+        incomeMultiplier: 1.25,
         launderingCapacity: 0,
         legitimacy: 15,
         category: "illegal",
