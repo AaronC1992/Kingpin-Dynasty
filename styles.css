@@ -556,7 +556,7 @@ button:disabled {
     height: 100vh;
     background: #0a0a0a;
     overflow-y: auto;
-    padding: 120px 260px 20px 290px;
+    padding: 110px 260px 20px 290px;
     box-sizing: border-box;
     z-index: 5;
     scrollbar-width: thin;
@@ -565,13 +565,13 @@ button:disabled {
 
 /* For screens without side panels (like intro, character creation) */
 .game-screen.full-width {
-    padding: 120px 20px 20px 20px;
+    padding: 110px 20px 20px 20px;
 }
 
 /* Page Header - Always visible at top of each screen */
 .page-header {
     position: fixed;
-    top: 50px;
+    top: 44px;
     left: 290px;
     right: 260px;
     background: linear-gradient(to bottom, #1a1a1a 0%, #0a0a0a 100%);
@@ -981,10 +981,10 @@ p, ul {
 
 #right-panel {
     position: fixed;
-    top: 50px;
+    top: 44px;
     right: 0;
     width: 220px;
-    height: calc(100vh - 50px);
+    height: calc(100vh - 44px);
     background: #111;
     color: #d4af37;
     padding: 15px;
@@ -1158,10 +1158,10 @@ p, ul {
 
 #action-log {
     position: fixed;
-    top: 50px;
+    top: 44px;
     left: 0;
     width: 250px;
-    height: calc(100vh - 50px);
+    height: calc(100vh - 44px);
     background: #111;
     color: #e0e0e0;
     padding: 15px;
@@ -1448,14 +1448,14 @@ p, ul {
     
     #action-log {
         width: 200px;
-        top: 50px;
-        height: calc(100vh - 50px);
+        top: 44px;
+        height: calc(100vh - 44px);
     }
     
     #right-panel {
         width: 180px;
-        top: 50px;
-        height: calc(100vh - 50px);
+        top: 44px;
+        height: calc(100vh - 44px);
         padding: 10px;
         font-size: 11px;
     }
@@ -1510,15 +1510,15 @@ p, ul {
     }
     
     #action-log {
-        top: 50px;
-        height: calc(100vh - 50px);
+        top: 44px;
+        height: calc(100vh - 44px);
         width: 180px;
     }
     
     #right-panel {
         width: 160px;
-        top: 50px;
-        height: calc(100vh - 50px);
+        top: 44px;
+        height: calc(100vh - 44px);
         padding: 8px;
         font-size: 10px;
     }
