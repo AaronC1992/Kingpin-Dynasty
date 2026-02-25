@@ -16,6 +16,7 @@ const ALLOWED_ORIGINS = [
     'http://mafiaborn.com',
     'https://www.mafiaborn.com',
     'http://www.mafiaborn.com',
+    'https://aaronc1992.github.io',
     'http://localhost:3000',
     'http://127.0.0.1:3000'
 ];
