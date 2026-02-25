@@ -89,6 +89,12 @@ const server = http.createServer(async (req, res) => {
         };
 
         try {
+            // ── GET /api/version ────────────────────────────
+            if (urlPath === '/api/version' && req.method === 'GET') {
+                const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, 'package.json'), 'utf8'));
+                return json(200, { version: pkg.version });
+            }
+
             // ── POST /api/register ─────────────────────────
             if (urlPath === '/api/register' && req.method === 'POST') {
                 const { username, password } = await readBody();

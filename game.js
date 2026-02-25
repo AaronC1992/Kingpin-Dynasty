@@ -16627,7 +16627,6 @@ function deleteSavedGame() {
 function checkForUpdates() {
   const btn = document.getElementById('check-updates-btn');
   if (!btn) return;
-  const originalText = btn.textContent;
   btn.disabled = true;
   btn.style.cursor = 'wait';
   btn.innerHTML = '⏳ Checking for updates...';
@@ -16639,34 +16638,72 @@ function checkForUpdates() {
     btn.innerHTML = frames[frameIdx];
   }, 700);
 
-  // Clear all caches then hard reload after the animation plays
+  // Build the server API URL the same way auth.js does
+  let apiBase;
+  try {
+    if (window.__MULTIPLAYER_SERVER_URL__) {
+      apiBase = window.__MULTIPLAYER_SERVER_URL__.replace(/^ws/, 'http').replace(/\/$/, '');
+    } else {
+      const h = window.location.hostname;
+      apiBase = (h === 'localhost' || h === '127.0.0.1') ? 'http://localhost:3000' : 'https://mafia-born.onrender.com';
+    }
+  } catch { apiBase = 'https://mafia-born.onrender.com'; }
+
+  // Fetch the server version after showing the animation for a couple seconds
   setTimeout(async () => {
     clearInterval(animInterval);
-    btn.innerHTML = '✅ Update found! Reloading...';
-    btn.style.borderColor = '#2ecc71';
-    btn.style.color = '#2ecc71';
+    try {
+      const resp = await fetch(`${apiBase}/api/version`, { cache: 'no-store' });
+      const data = await resp.json();
+      const serverVersion = data.version;
+      const localVersion = CURRENT_VERSION;
 
-    // Clear service workers
-    if ('serviceWorker' in navigator) {
-      const registrations = await navigator.serviceWorker.getRegistrations();
-      for (const reg of registrations) {
-        await reg.unregister();
+      if (serverVersion !== localVersion) {
+        btn.innerHTML = `🆕 Update found! v${localVersion} → v${serverVersion}`;
+        btn.style.borderColor = '#2ecc71';
+        btn.style.color = '#2ecc71';
+
+        // Clear service workers
+        if ('serviceWorker' in navigator) {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          for (const reg of registrations) await reg.unregister();
+        }
+        // Clear Cache Storage API
+        if ('caches' in window) {
+          const cacheNames = await caches.keys();
+          for (const name of cacheNames) await caches.delete(name);
+        }
+
+        // Short pause so player sees the message, then reload
+        setTimeout(() => {
+          window.location.href = window.location.pathname + '?v=' + Date.now();
+        }, 1500);
+      } else {
+        btn.innerHTML = `✅ You're up to date! (v${localVersion})`;
+        btn.style.borderColor = '#2ecc71';
+        btn.style.color = '#2ecc71';
+        setTimeout(() => {
+          btn.innerHTML = 'Check for Updates';
+          btn.style.borderColor = '#c0a062';
+          btn.style.color = '#c0a062';
+          btn.disabled = false;
+          btn.style.cursor = 'pointer';
+        }, 3000);
       }
+    } catch (err) {
+      console.error('Version check failed:', err);
+      btn.innerHTML = '⚠️ Could not reach server';
+      btn.style.borderColor = '#e74c3c';
+      btn.style.color = '#e74c3c';
+      setTimeout(() => {
+        btn.innerHTML = 'Check for Updates';
+        btn.style.borderColor = '#c0a062';
+        btn.style.color = '#c0a062';
+        btn.disabled = false;
+        btn.style.cursor = 'pointer';
+      }, 3000);
     }
-
-    // Clear Cache Storage API
-    if ('caches' in window) {
-      const cacheNames = await caches.keys();
-      for (const name of cacheNames) {
-        await caches.delete(name);
-      }
-    }
-
-    // Short pause so player sees the "Update found" message, then reload
-    setTimeout(() => {
-      window.location.href = window.location.pathname + '?v=' + Date.now();
-    }, 800);
-  }, 3000);
+  }, 2500);
 }
 
 function forceNewGame() {
