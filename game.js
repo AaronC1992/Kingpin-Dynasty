@@ -16624,6 +16624,51 @@ function deleteSavedGame() {
 }
 
 // Function to force a fresh start - now shows save selection for deletion
+function checkForUpdates() {
+  const btn = document.getElementById('check-updates-btn');
+  if (!btn) return;
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.style.cursor = 'wait';
+  btn.innerHTML = '⏳ Checking for updates...';
+
+  const frames = ['⏳ Checking...', '🔄 Scanning files...', '📡 Contacting server...', '📦 Verifying version...'];
+  let frameIdx = 0;
+  const animInterval = setInterval(() => {
+    frameIdx = (frameIdx + 1) % frames.length;
+    btn.innerHTML = frames[frameIdx];
+  }, 700);
+
+  // Clear all caches then hard reload after the animation plays
+  setTimeout(async () => {
+    clearInterval(animInterval);
+    btn.innerHTML = '✅ Update found! Reloading...';
+    btn.style.borderColor = '#2ecc71';
+    btn.style.color = '#2ecc71';
+
+    // Clear service workers
+    if ('serviceWorker' in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      for (const reg of registrations) {
+        await reg.unregister();
+      }
+    }
+
+    // Clear Cache Storage API
+    if ('caches' in window) {
+      const cacheNames = await caches.keys();
+      for (const name of cacheNames) {
+        await caches.delete(name);
+      }
+    }
+
+    // Short pause so player sees the "Update found" message, then reload
+    setTimeout(() => {
+      window.location.href = window.location.pathname + '?v=' + Date.now();
+    }, 800);
+  }, 3000);
+}
+
 function forceNewGame() {
   showDeleteSaveSelection();
 }
@@ -20140,6 +20185,7 @@ window.confirmResetGame = confirmResetGame;
 window.showSaveSystem = showSaveSystem;
 window.showOptions = showOptions;
 window.restartGame = restartGame;
+window.checkForUpdates = checkForUpdates;
 window.forceNewGame = forceNewGame;
 window.saveToSlot = saveToSlot;
 window.loadGameFromSlot = loadGameFromSlot;
