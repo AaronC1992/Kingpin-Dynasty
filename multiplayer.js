@@ -1099,10 +1099,10 @@ async function handleServerMessage(message) {
                 // overwritten by the multiplayer world-update snapshot.
                 const selfPs = onlineWorldState.playerStates[onlineWorldState.playerId];
                 if (selfPs) {
-                    player.inJail = !!selfPs.inJail;
-                    // Only sync jailTime from server if NOT locally counting down
-                    // This prevents the server's stale value from fighting the local countdown
+                    // Only sync jail state from server if NOT locally counting down
+                    // This prevents the server from killing the local timer
                     if (!window._jailTimerActive) {
+                        player.inJail = !!selfPs.inJail;
                         player.jailTime = selfPs.jailTime || 0;
                     }
                     if (typeof selfPs.wantedLevel === 'number') player.wantedLevel = selfPs.wantedLevel;
@@ -1640,85 +1640,32 @@ async function handleServerMessage(message) {
             handleFortifyResult(message);
             break;
 
+        case 'player_released':
+            // Server says our sentence is served
+            if (message.playerId === onlineWorldState.playerId) {
+                if (typeof stopJailTimer === 'function') stopJailTimer();
+                window._jailTimerActive = false;
+                player.inJail = false;
+                player.jailTime = 0;
+                if (window.EventBus) {
+                    try { EventBus.emit('jailStatusChanged', { inJail: false, jailTime: 0 }); } catch(e) {}
+                }
+                if (typeof updateUI === 'function') updateUI();
+                alert('You served your sentence and are now free.');
+                if (typeof goBackToMainMenu === 'function') goBackToMainMenu();
+            }
+            break;
+
         default:
             console.log('Unknown message type:', message.type);
     }
 }
 
-// Update jail visibility for online players and bots
+// Update jail visibility — no longer renders a separate section.
+// The prisoner-list div (game.js updatePrisonerList) handles all display.
 function updateJailVisibility() {
     const jailStatusContainer = document.getElementById('online-jail-status');
-    if (!jailStatusContainer) return;
-    
-    let jailHTML = '<h4 style="color: #8b0000; margin: 0 0 15px 0; font-family: \'Georgia\', serif;">🔒 Made Men In The Can</h4>';
-    
-    const playersInJail = Object.values(onlineWorldState.playerStates || {}).filter(p => p.inJail);
-    const bots = (onlineWorldState.jailRoster && onlineWorldState.jailRoster.bots) || [];
-    const isPlayerInJail = player && player.inJail;
-    
-    if (playersInJail.length === 0 && bots.length === 0) {
-        jailHTML += '<div style="color: #95a5a6; font-style: italic; text-align: center;">No inmates currently in jail</div>';
-    } else {
-        // Show real online players in jail
-        playersInJail.forEach(prisoner => {
-            const timeLeft = Math.max(0, Math.ceil(prisoner.jailTime));
-            const isMe = prisoner.playerId === onlineWorldState.playerId;
-            jailHTML += `
-                <div style="background: rgba(139, 0, 0, 0.2); padding: 10px; margin: 8px 0; border-radius: 6px; border-left: 4px solid #8b0000;">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <strong style="color: #8b0000; font-family: 'Georgia', serif;">🟢 ${escapeHTML(prisoner.name)}</strong>
-                            <br><small style="color: #ecf0f1;">Time Left: ${timeLeft}s</small>
-                            <br><small style="color: #e74c3c;">Online Player</small>
-                        </div>
-                        <div>
-                            ${!isMe && !isPlayerInJail ? `
-                                <button onclick="attemptPlayerJailbreak('${prisoner.playerId}', '${escapeHTML(prisoner.name)}')" 
-                                        style="background: #f39c12; color: white; border: none; padding: 6px 12px; 
-                                               border-radius: 4px; cursor: pointer; font-size: 0.8em;">
-                                    🔓 Break Out
-                                </button>
-                            ` : isMe ? `
-                                <span style="color: #95a5a6; font-style: italic;">You</span>
-                            ` : `
-                                <span style="color: #95a5a6; font-size: 0.8em;">Can't help from jail</span>
-                            `}
-                        </div>
-                    </div>
-                </div>
-            `;
-        });
-
-        // Show jail bots
-        bots.forEach(bot => {
-            const difficultyColor = ['#2ecc71', '#f39c12', '#e74c3c'][bot.difficulty - 1] || '#f39c12';
-            const difficultyText = bot.securityLevel || ['Easy', 'Medium', 'Hard'][bot.difficulty - 1] || 'Unknown';
-            jailHTML += `
-                <div style="background: rgba(52, 73, 94, 0.4); padding: 10px; margin: 8px 0; border-radius: 6px; border-left: 4px solid ${difficultyColor};">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <strong style="color: #ecf0f1; font-family: 'Georgia', serif;">${escapeHTML(bot.name)}</strong>
-                            <br><small style="color: #95a5a6;">Sentence: ${bot.sentence}s</small>
-                            <br><small style="color: ${difficultyColor};">Difficulty: ${difficultyText}</small>
-                        </div>
-                        <div>
-                            ${!isPlayerInJail ? `
-                                <button onclick="attemptBotJailbreak('${bot.botId}', '${escapeHTML(bot.name)}')" 
-                                        style="background: #3498db; color: white; border: none; padding: 6px 12px; 
-                                               border-radius: 4px; cursor: pointer; font-size: 0.8em;">
-                                    🔓 Break Out (${bot.breakoutSuccess}%)
-                                </button>
-                            ` : `
-                                <span style="color: #95a5a6; font-size: 0.8em;">Can't help from jail</span>
-                            `}
-                        </div>
-                    </div>
-                </div>
-            `;
-        });
-    }
-    
-    jailStatusContainer.innerHTML = jailHTML;
+    if (jailStatusContainer) jailStatusContainer.innerHTML = '';
 }
 
 // Update online player list
@@ -4909,3 +4856,37 @@ function ensureConnected() {
     }
     return true;
 }
+
+// ==================== SERVER STATUS TOOLTIP ====================
+// Periodically ping the server and update the sign-in button tooltip
+(function initServerStatusTooltip() {
+    function updateSignInTooltip(text) {
+        const introBtn = document.getElementById('intro-login-btn');
+        if (introBtn) introBtn.title = text;
+    }
+
+    function checkServerStatus() {
+        // If we already have an active WebSocket connection, the server is up
+        if (onlineWorldState.isConnected) {
+            updateSignInTooltip('Server is online \u2705');
+            return;
+        }
+        // Quick HTTP ping to the server health endpoint (Render responds to GET /)
+        const serverOrigin = onlineWorld.serverUrl.replace(/^ws/, 'http');
+        fetch(serverOrigin, { method: 'GET', mode: 'no-cors', cache: 'no-store' })
+            .then(() => {
+                updateSignInTooltip('Server is online \u2705');
+            })
+            .catch(() => {
+                updateSignInTooltip('Server appears offline \u274c');
+            });
+    }
+
+    // Run once DOM is ready and then every 30 seconds
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => { checkServerStatus(); });
+    } else {
+        checkServerStatus();
+    }
+    setInterval(checkServerStatus, 30000);
+})();
