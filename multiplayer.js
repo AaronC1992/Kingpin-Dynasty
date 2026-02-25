@@ -2245,14 +2245,6 @@ function showGlobalChat() {
         if (mobileActions) mobileActions.style.display = 'none';
     }
     
-    // Clean up any existing mobile back buttons first
-    const existingMobileBackBtns = document.querySelectorAll('button[style*="position: fixed"]');
-    existingMobileBackBtns.forEach(btn => {
-        if (btn.innerHTML === '← Back') {
-            btn.remove();
-        }
-    });
-    
     // Ensure multiplayer screen exists
     let multiplayerScreen = document.getElementById('multiplayer-screen');
     if (!multiplayerScreen) {
@@ -2326,16 +2318,6 @@ function showGlobalChat() {
     if (window.innerWidth <= 768) {
         const mobileActions = document.querySelector('.mobile-quick-actions');
         if (mobileActions) mobileActions.style.display = 'flex';
-        
-        // Add mobile-specific back button if needed
-        const chatContainer = multiplayerScreen.querySelector('div');
-        if (chatContainer) {
-            const mobileBackBtn = document.createElement('button');
-            mobileBackBtn.innerHTML = '← Back';
-            mobileBackBtn.style.cssText = 'position: fixed; top: 10px; left: 10px; background: linear-gradient(45deg, #8b0000, #5a0000); color: white; padding: 10px 15px; border: 1px solid #ff0000; border-radius: 5px; cursor: pointer; z-index: 1000; font-family: "Georgia", serif;';
-            mobileBackBtn.onclick = goBackToMainMenu;
-            document.body.appendChild(mobileBackBtn);
-        }
     }
     
 }

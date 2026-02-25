@@ -1,4 +1,4 @@
-﻿import { initOnboarding, updateTracker } from './onboarding.js';
+import { initOnboarding, updateTracker } from './onboarding.js';
 import { applyDailyPassives, getDrugIncomeMultiplier, getViolenceHeatMultiplier, getWeaponPriceMultiplier } from './passiveManager.js';
 import { showEmpireOverview } from './empireOverview.js';
 import { player, gainExperience, checkLevelUp, regenerateEnergy, startEnergyRegenTimer, startEnergyRegeneration, skillTreeDefinitions, availablePerks, achievements } from './player.js';
@@ -11735,14 +11735,6 @@ function goBackToMainMenu() {
     alert("You can't leave while you're in jail! You must serve your time or attempt a breakout.");
     return;
   }
-  
-  // Remove any mobile-specific back buttons first
-  const mobileBackBtns = document.querySelectorAll('button[style*="position: fixed"]');
-  mobileBackBtns.forEach(btn => {
-    if (btn.innerHTML === '← Back') {
-      btn.remove();
-    }
-  });
   
   hideAllScreens();
   
