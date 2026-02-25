@@ -89,7 +89,7 @@ window.createSaveDataForCloud = function () {
         reputation: Math.floor(player.reputation),
         empireRating: empireRating.totalScore,
         playtime: playtime,
-        gameVersion: "1.4.7",
+        gameVersion: "1.5.2",
         data: saveData
     };
 };
@@ -114,7 +114,7 @@ window.applyCloudSave = function (cloudEntry) {
         playtime: cloudEntry.playtime || '0:00',
         saveDate: cloudEntry.saveDate || new Date().toISOString(),
         isAutoSave: false,
-        gameVersion: cloudEntry.gameVersion || '1.4.7',
+        gameVersion: cloudEntry.gameVersion || '1.5.2',
         data: saveData
     };
     localStorage.setItem(`gameSlot_${SAVE_SYSTEM.currentSlot || 1}`, JSON.stringify(localEntry));
@@ -6792,12 +6792,6 @@ function toggleQuickActionPref(id) {
 window.toggleQuickActionPref = toggleQuickActionPref;
 
 function resetQuickActionPrefs() {
-  player.quickActionPrefs = [...DEFAULT_QUICK_ACTIONS];
-  updateQuickActions();
-  showQuickActionCustomizer();
-}
-window.resetQuickActionPrefs = resetQuickActionPrefs;
-
   player.quickActionPrefs = [...DEFAULT_QUICK_ACTIONS];
   updateQuickActions();
   showQuickActionCustomizer();
@@ -13920,8 +13914,19 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = "1.4.7";
+const CURRENT_VERSION = "1.5.2";
 const VERSION_UPDATES = {
+  "1.5.2": {
+    title: "February 2026 Update - Version Sync & Bug Fixes",
+    date: "February 2026",
+    changes: [
+      "Unified version number across PC and mobile — both now show v1.5.2",
+      "Fixed duplicate code block that could break mobile Settings buttons on load",
+      "Fixed mobile nav bar customizer and quick action customizer in Settings",
+      "Save system now uses dynamic version constant instead of hardcoded strings",
+      "Server cloud save default version updated to match current release"
+    ]
+  },
   "1.4.7": {
     title: "February 2026 Update - Multiplayer & UI Polish",
     date: "February 2026",
@@ -18139,7 +18144,7 @@ function saveGameToSlot(slotNumber, customName = null, isAutoSave = false) {
       playtime: playtime,
       saveDate: new Date().toISOString(),
       isAutoSave: isAutoSave,
-      gameVersion: "1.3.8",
+      gameVersion: CURRENT_VERSION,
       data: saveData
     };
     

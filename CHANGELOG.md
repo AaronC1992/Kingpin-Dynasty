@@ -5,6 +5,15 @@ All notable changes to From Dusk To Don (Mafia Born) will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.2] - 2026-02-25
+
+### Fixed
+- **Version sync** — PC and mobile now display the same version number (1.5.2)
+- **Duplicate code block** in game.js (`resetQuickActionPrefs` body appeared twice) — orphaned statements ran at module scope on load, potentially crashing initialization and breaking all Settings buttons on mobile
+- **Mobile nav bar customizer** and **quick action customizer** buttons in Settings now work reliably
+- **Save system** gameVersion now uses the `CURRENT_VERSION` constant instead of a hardcoded string
+- **Server cloud save** default version updated from 1.3.8 to current release
+
 ## [1.4.3] - 2026-02-24
 
 ### Fixed
