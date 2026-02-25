@@ -401,6 +401,10 @@ export const MobileSystem = {
             backdrop-filter: blur(10px);
         `;
         
+        // Determine if tutorial is still active
+        const tutorialStep = localStorage.getItem('tutorialStep');
+        const tutorialDone = !tutorialStep || tutorialStep === 'skipped' || tutorialStep === 'complete';
+        
         // Add quick actions and navigation
         mobileMenu.innerHTML = `
             <div style="color: #c0a062; font-family: 'Georgia', serif;">
@@ -424,11 +428,11 @@ export const MobileSystem = {
                     Business
                 </button>
                 
-                <button onclick="MobileSystem.toggleObjectiveTracker(); MobileSystem.toggleMobileMenu();" 
+                ${!tutorialDone ? `<button onclick="MobileSystem.toggleObjectiveTracker(); MobileSystem.toggleMobileMenu();" 
                         style="width: 100%; margin: 5px 0; padding: 12px; background: linear-gradient(45deg, #333, #000); 
                                color: #c0a062; border: 1px solid #c0a062; border-radius: 6px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
                     Objective
-                </button>
+                </button>` : ''}
                 
                 <button onclick="showSkills(); MobileSystem.toggleMobileMenu();" 
                         style="width: 100%; margin: 5px 0; padding: 12px; background: linear-gradient(45deg, #333, #000); 
@@ -554,32 +558,108 @@ export const MobileSystem = {
             box-shadow: 0 -5px 15px rgba(0,0,0,0.5);
         `;
         
+        // Get customized tabs from localStorage, or use defaults
+        const tabs = this.getMobileNavTabs();
+        const colCount = tabs.length;
+        
+        let buttonsHTML = '';
+        tabs.forEach(tab => {
+            const def = this.mobileNavTabDefs[tab.id];
+            if (!def) return;
+            const isSafehouse = tab.id === 'safehouse';
+            const bgStyle = isSafehouse 
+                ? 'background: linear-gradient(45deg, #8b0000, #5a0000); color: white; border: 1px solid #ff0000;'
+                : 'background: linear-gradient(45deg, #333, #000); color: #c0a062; border: 1px solid #c0a062;';
+            buttonsHTML += `
+                <button onclick="${def.action}" 
+                        style="padding: 8px 4px; ${bgStyle} border-radius: 5px; 
+                               font-size: ${colCount > 4 ? '9px' : '10px'}; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 44px; display: flex; align-items: center; justify-content: center;">
+                    ${def.label}
+                </button>`;
+        });
+        
         quickActionsBar.innerHTML = `
-            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; font-family: 'Georgia', serif; max-width: 100%;">
-                <button onclick="showStore()" 
-                        style="padding: 8px 4px; background: linear-gradient(45deg, #333, #000); color: #c0a062; border: 1px solid #c0a062; border-radius: 5px; 
-                               font-size: 10px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 44px; display: flex; align-items: center; justify-content: center;">
-                    Market
-                </button>
-                <button onclick="MobileSystem.openActionPanel()" 
-                        style="padding: 8px 4px; background: linear-gradient(45deg, #333, #000); color: #c0a062; border: 1px solid #c0a062; border-radius: 5px; 
-                               font-size: 10px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 44px; display: flex; align-items: center; justify-content: center;">
-                    Ledger
-                </button>
-                <button onclick="MobileSystem.toggleObjectiveTracker()" 
-                        style="padding: 8px 4px; background: linear-gradient(45deg, #333, #000); color: #c0a062; border: 1px solid #c0a062; border-radius: 5px; 
-                               font-size: 9px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 44px; display: flex; align-items: center; justify-content: center;">
-                    Objective
-                </button>
-                <button onclick="goBackToMainMenu()" 
-                        style="padding: 8px 4px; background: linear-gradient(45deg, #8b0000, #5a0000); color: white; border: 1px solid #ff0000; border-radius: 5px; 
-                               font-size: 9px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 44px; display: flex; align-items: center; justify-content: center;">
-                    Safehouse
-                </button>
+            <div style="display: grid; grid-template-columns: repeat(${colCount}, 1fr); gap: 4px; font-family: 'Georgia', serif; max-width: 100%;">
+                ${buttonsHTML}
             </div>
         `;
         
         document.body.appendChild(quickActionsBar);
+    },
+    
+    // All available mobile nav tab definitions
+    mobileNavTabDefs: {
+        safehouse:  { label: 'Safehouse', action: 'goBackToMainMenu()',                   locked: true },
+        market:     { label: 'Market',    action: 'showStore()' },
+        ledger:     { label: 'Ledger',    action: 'MobileSystem.openActionPanel()' },
+        objective:  { label: 'Objective', action: 'MobileSystem.toggleObjectiveTracker()' },
+        stash:      { label: 'Stash',     action: 'showInventory()' },
+        jobs:       { label: 'Jobs',      action: 'showJobs()' },
+        doctor:     { label: 'Doctor',    action: 'showHospital()' },
+        skills:     { label: 'Skills',    action: 'showSkills()' },
+        casino:     { label: 'Casino',    action: 'showCasino()' },
+        settings:   { label: 'Settings',  action: 'showOptions()' },
+        worldchat:  { label: 'Chat',      action: 'showWorldChat()' },
+        family:     { label: 'Family',    action: 'showGang()' },
+        properties: { label: 'Property',  action: 'showRealEstate()' },
+        missions:   { label: 'Missions',  action: 'showMissions()' },
+        stats:      { label: 'Stats',     action: 'showPlayerStats()' },
+    },
+    
+    // Default tabs (these are used when no customization has been saved)
+    defaultMobileNavTabs: ['safehouse', 'market', 'ledger', 'stash'],
+    
+    // Get the current mobile nav tab configuration
+    getMobileNavTabs() {
+        // During tutorial, always show Objective instead of the 4th slot
+        const tutorialStep = localStorage.getItem('tutorialStep');
+        const tutorialDone = !tutorialStep || tutorialStep === 'skipped' || tutorialStep === 'complete';
+        
+        try {
+            const saved = localStorage.getItem('mobileNavTabs');
+            if (saved) {
+                let tabs = JSON.parse(saved);
+                // Ensure safehouse is always first
+                if (!tabs.some(t => t.id === 'safehouse')) {
+                    tabs.unshift({ id: 'safehouse' });
+                }
+                // During tutorial, replace last non-safehouse slot with objective
+                if (!tutorialDone && !tabs.some(t => t.id === 'objective')) {
+                    // Replace the last tab with objective
+                    if (tabs.length > 1) {
+                        tabs[tabs.length - 1] = { id: 'objective' };
+                    } else {
+                        tabs.push({ id: 'objective' });
+                    }
+                }
+                return tabs;
+            }
+        } catch(e) { /* use defaults */ }
+        
+        // Default config
+        const defaults = this.defaultMobileNavTabs.map(id => ({ id }));
+        if (!tutorialDone) {
+            // Replace last tab with objective during tutorial
+            defaults[defaults.length - 1] = { id: 'objective' };
+        }
+        return defaults;
+    },
+    
+    // Save mobile nav tab configuration
+    saveMobileNavTabs(tabIds) {
+        // Always ensure safehouse is included
+        if (!tabIds.includes('safehouse')) {
+            tabIds.unshift('safehouse');
+        }
+        const tabs = tabIds.map(id => ({ id }));
+        localStorage.setItem('mobileNavTabs', JSON.stringify(tabs));
+        this.createMobileQuickActions(); // Rebuild the bar immediately
+    },
+    
+    // Reset mobile nav tabs to defaults
+    resetMobileNavTabs() {
+        localStorage.removeItem('mobileNavTabs');
+        this.createMobileQuickActions();
     },
 
     // Remove quick actions bar when not needed

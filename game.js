@@ -6798,6 +6798,131 @@ function resetQuickActionPrefs() {
 }
 window.resetQuickActionPrefs = resetQuickActionPrefs;
 
+  player.quickActionPrefs = [...DEFAULT_QUICK_ACTIONS];
+  updateQuickActions();
+  showQuickActionCustomizer();
+}
+window.resetQuickActionPrefs = resetQuickActionPrefs;
+
+// ==================== MOBILE NAV BAR CUSTOMIZER ====================
+function showMobileNavCustomizer() {
+  const defs = MobileSystem.mobileNavTabDefs;
+  const allIds = Object.keys(defs);
+  
+  // Get current selection (excluding objective which is auto-managed)
+  let currentTabs;
+  try {
+    const saved = localStorage.getItem('mobileNavTabs');
+    currentTabs = saved ? JSON.parse(saved).map(t => t.id) : [...MobileSystem.defaultMobileNavTabs];
+  } catch { currentTabs = [...MobileSystem.defaultMobileNavTabs]; }
+
+  // Build the grid of available tabs
+  let html = `
+    <div class="page-header">
+      <h1><span class="icon"></span> Mobile Nav Bar</h1>
+      <div class="breadcrumb">
+        <a href="#" onclick="goBackToMainMenu(); return false;">SafeHouse</a>
+        <span class="separator">›</span>
+        <a href="#" onclick="showOptions(); return false;">Settings</a>
+        <span class="separator">›</span>
+        <span class="current">Mobile Nav</span>
+      </div>
+    </div>
+
+    <div style="max-width:700px;margin:0 auto;">
+      <p style="color:#bdc3c7;text-align:center;margin-bottom:10px;font-size:0.95em;">
+        Choose up to <strong>5 tabs</strong> for your mobile bottom navigation bar.<br>
+        <span style="color:#e74c3c;">Safehouse is locked and always shown.</span>
+      </p>
+      <p style="color:#95a5a6;text-align:center;margin-bottom:20px;font-size:0.85em;">
+        During the tutorial, the last slot is automatically replaced with Objective.
+      </p>
+
+      <div id="mnav-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:25px;">
+        ${allIds.map(id => {
+          const def = defs[id];
+          const active = currentTabs.includes(id);
+          const locked = id === 'safehouse';
+          const isObjective = id === 'objective';
+          return `<label data-mnavid="${id}" onclick="${locked || isObjective ? '' : `toggleMobileNavTab('${id}')`}" 
+            style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:10px;
+            cursor:${locked || isObjective ? 'not-allowed' : 'pointer'};transition:all 0.2s;
+            background:${active ? 'rgba(46,204,113,0.15)' : locked ? 'rgba(139,0,0,0.2)' : isObjective ? 'rgba(52,73,94,0.2)' : 'rgba(52,73,94,0.5)'};
+            border:2px solid ${locked ? '#ff0000' : active ? '#2ecc71' : isObjective ? '#555' : '#555'};
+            opacity:${isObjective ? '0.5' : '1'};">
+            <span style="font-size:1.4em;">${locked ? '🔒' : isObjective ? '🎓' : active ? '✅' : '⬜'}</span>
+            <div>
+              <span style="color:${locked ? '#ff6b6b' : '#ecf0f1'};font-weight:bold;">${def.label}</span>
+              ${locked ? '<br><small style="color:#ff6b6b;">Always shown</small>' : ''}
+              ${isObjective ? '<br><small style="color:#95a5a6;">Auto during tutorial</small>' : ''}
+            </div>
+          </label>`;
+        }).join('')}
+      </div>
+
+      <div style="text-align:center;margin-bottom:15px;">
+        <span id="mnav-count" style="color:#bdc3c7;font-size:0.9em;">Selected: ${currentTabs.length} / 5</span>
+      </div>
+
+      <div style="text-align:center;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+        <button onclick="resetMobileNavTabs()" style="background:#95a5a6;color:#fff;padding:12px 24px;border:none;border-radius:8px;cursor:pointer;font-size:1em;">↺ Reset to Default</button>
+        <button onclick="showOptions()" style="background:linear-gradient(135deg,#d4af37,#b8962e);color:#1a1a2e;padding:12px 24px;border:none;border-radius:8px;cursor:pointer;font-weight:bold;font-size:1em;">✔ Done</button>
+      </div>
+
+      <!-- Live preview -->
+      <div style="margin-top:25px;padding:15px;background:rgba(0,0,0,0.4);border-radius:10px;border:1px solid #555;">
+        <p style="color:#95a5a6;text-align:center;margin-bottom:10px;font-size:0.85em;">Preview:</p>
+        <div id="mnav-preview" style="display:grid;grid-template-columns:repeat(${currentTabs.length}, 1fr);gap:4px;font-family:'Georgia',serif;">
+          ${currentTabs.map(id => {
+            const def = defs[id];
+            if (!def) return '';
+            const isSH = id === 'safehouse';
+            return `<div style="padding:8px 4px;${isSH ? 'background:linear-gradient(45deg,#8b0000,#5a0000);color:white;border:1px solid #ff0000;' : 'background:linear-gradient(45deg,#333,#000);color:#c0a062;border:1px solid #c0a062;'}border-radius:5px;font-size:10px;font-weight:bold;text-align:center;min-height:36px;display:flex;align-items:center;justify-content:center;">${def.label}</div>`;
+          }).join('')}
+        </div>
+      </div>
+    </div>`;
+
+  hideAllScreens();
+  const screen = document.getElementById('statistics-screen');
+  screen.style.display = 'block';
+  const content = document.getElementById('statistics-content') || screen;
+  content.innerHTML = html;
+}
+window.showMobileNavCustomizer = showMobileNavCustomizer;
+
+function toggleMobileNavTab(id) {
+  let currentTabs;
+  try {
+    const saved = localStorage.getItem('mobileNavTabs');
+    currentTabs = saved ? JSON.parse(saved).map(t => t.id) : [...MobileSystem.defaultMobileNavTabs];
+  } catch { currentTabs = [...MobileSystem.defaultMobileNavTabs]; }
+
+  const idx = currentTabs.indexOf(id);
+  if (idx !== -1) {
+    // Don't allow removing safehouse
+    if (id === 'safehouse') return;
+    currentTabs.splice(idx, 1);
+  } else {
+    // Max 5 tabs
+    if (currentTabs.length >= 5) {
+      if (typeof logAction === 'function') logAction('⚠️ Maximum 5 tabs allowed. Remove one first.');
+      return;
+    }
+    currentTabs.push(id);
+  }
+  
+  MobileSystem.saveMobileNavTabs(currentTabs);
+  showMobileNavCustomizer(); // Re-render
+}
+window.toggleMobileNavTab = toggleMobileNavTab;
+
+function resetMobileNavTabs() {
+  MobileSystem.resetMobileNavTabs();
+  showMobileNavCustomizer();
+}
+window.resetMobileNavTabs = resetMobileNavTabs;
+
 // Update remaining right-panel elements (energy timer, quick buy labels, etc.)
 function updateRightPanelExtras() {
   // Update energy timer
@@ -14872,6 +14997,10 @@ function completeTutorial() {
   const objSection = document.getElementById('objective-tracker-section');
   if (objSection) objSection.style.display = 'none';
   logAction("🎓 Tutorial completed. You're ready to make your mark on the criminal underworld. Stay sharp out there.");
+  // Rebuild mobile nav bar to swap out Objective tab
+  if (typeof MobileSystem !== 'undefined' && MobileSystem.createMobileQuickActions) {
+    MobileSystem.createMobileQuickActions();
+  }
   
   // If tutorial was started from intro (new game), start the game proper
   // If tutorial was from menu, we should return to main menu
