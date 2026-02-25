@@ -64,6 +64,8 @@ export function initOnboarding() {
     const savedStep = localStorage.getItem('tutorialStep');
     if (savedStep === 'skipped') {
         isTutorialActive = false;
+        const objSection = document.getElementById('objective-tracker-section');
+        if (objSection) objSection.style.display = 'none';
         return;
     }
     if (savedStep) {
@@ -75,6 +77,8 @@ export function initOnboarding() {
     
     if (currentStepIndex >= tutorialSteps.length - 1) {
         isTutorialActive = false;
+        const objSection = document.getElementById('objective-tracker-section');
+        if (objSection) objSection.style.display = 'none';
         return;
     }
 
@@ -98,6 +102,9 @@ function skipTutorial() {
     // Update desktop tracker
     const trackerTextDesktop = document.getElementById('tutorial-tracker-text');
     if (trackerTextDesktop) trackerTextDesktop.textContent = 'Tutorial Skipped';
+    // Hide the objective tracker section entirely
+    const objSection = document.getElementById('objective-tracker-section');
+    if (objSection) objSection.style.display = 'none';
     
     // Remove desktop progress bar and step counter (with Skip button)
     const progressBar = document.getElementById('tutorial-progress-bar-desktop');

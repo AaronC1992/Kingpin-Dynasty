@@ -14862,8 +14862,8 @@ async function skipTutorial() {
         if (tracker) tracker.remove();
         const overlay = document.getElementById('tutorial-tracker-overlay');
         if (overlay) overlay.remove();
-        const trackerText = document.getElementById('tutorial-tracker-text');
-        if (trackerText) trackerText.textContent = 'Tutorial Skipped';
+        const objSection = document.getElementById('objective-tracker-section');
+        if (objSection) objSection.style.display = 'none';
         const progressBar = document.getElementById('tutorial-progress-bar-desktop');
         if (progressBar) progressBar.remove();
         const stepCounter = document.getElementById('tutorial-step-counter-desktop');
@@ -14876,6 +14876,9 @@ async function skipTutorial() {
 function completeTutorial() {
   document.getElementById("tutorial-screen").style.display = "none";
   clearTutorialHighlights(); // Clear any tutorial highlighting
+  // Hide the objective tracker section
+  const objSection = document.getElementById('objective-tracker-section');
+  if (objSection) objSection.style.display = 'none';
   logAction("🎓 Tutorial completed. You're ready to make your mark on the criminal underworld. Stay sharp out there.");
   
   // If tutorial was started from intro (new game), start the game proper
