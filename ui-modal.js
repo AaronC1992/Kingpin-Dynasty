@@ -160,7 +160,7 @@ export class ModalSystem {
             {
                 text: 'Forget It',
                 class: 'modal-btn-secondary',
-                callback: () => false,
+                callback: () => true,
                 value: false
             },
             {

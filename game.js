@@ -14841,11 +14841,34 @@ function previousTutorialStep() {
 
 async function skipTutorial() {
   if (await ui.confirm("Are you sure you want to skip the tutorial? You can always refer to the action log for guidance during gameplay.")) {
-    clearTutorialHighlights(); // Clear any tutorial highlighting
+    clearTutorialHighlights();
+    // If onboarding.js tutorial tracker is active, clean it up
+    if (typeof window._onboardingSkipTutorial === 'function') {
+      window._onboardingSkipTutorial();
+    }
     if (tutorialFromMenu) {
       completeTutorialFromMenu();
     } else {
-      completeTutorial();
+      // If we're already in the game (not on the intro/tutorial screen),
+      // just mark tutorial done and clean up — don't restart the game
+      const tutScreen = document.getElementById('tutorial-screen');
+      if (tutScreen && tutScreen.style.display !== 'none') {
+        completeTutorial();
+      } else {
+        // Already playing — just clean up tutorial UI elements
+        localStorage.setItem('tutorialStep', 'skipped');
+        logAction("Tutorial skipped. You're on your own, wiseguy.");
+        const tracker = document.getElementById('tutorial-tracker');
+        if (tracker) tracker.remove();
+        const overlay = document.getElementById('tutorial-tracker-overlay');
+        if (overlay) overlay.remove();
+        const trackerText = document.getElementById('tutorial-tracker-text');
+        if (trackerText) trackerText.textContent = 'Tutorial Skipped';
+        const progressBar = document.getElementById('tutorial-progress-bar-desktop');
+        if (progressBar) progressBar.remove();
+        const stepCounter = document.getElementById('tutorial-step-counter-desktop');
+        if (stepCounter) stepCounter.remove();
+      }
     }
   }
 }

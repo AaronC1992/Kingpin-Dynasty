@@ -108,6 +108,7 @@ function skipTutorial() {
 
 // Expose skip function globally
 window.skipTutorial = skipTutorial;
+window._onboardingSkipTutorial = skipTutorial;
 
 function createTrackerUI() {
     const isMobileDevice = document.body.classList.contains('mobile-device') || window.innerWidth <= 768;

@@ -175,7 +175,7 @@ export function showAuthModal(onSuccessOrOpts) {
     overlay.innerHTML = `
         <div class="auth-modal">
             <button class="auth-close" id="auth-close-btn" ${required ? 'style="display:none;"' : ''}>&times;</button>
-            <h2 class="auth-title" id="auth-modal-title">${startOnRegister ? '📝 Create Account' : '🔐 Sign In'}</h2>
+            <h2 class="auth-title" id="auth-modal-title">${startOnRegister ? '📝 Create Account' : 'Sign In'}</h2>
             <p class="auth-subtitle" id="auth-modal-subtitle">${required ? 'An account is required to play' : 'Play across all your devices'}</p>
             
             <div id="auth-form-area">
@@ -252,7 +252,7 @@ export function showAuthModal(onSuccessOrOpts) {
             confirmField.style.display = 'block';
             toggleEl.innerHTML = 'Already have an account? <span class="auth-link" id="auth-switch-link">Sign in</span>';
         } else {
-            titleEl.textContent = '🔐 Sign In';
+            titleEl.textContent = 'Sign In';
             subtitleEl.textContent = 'Play across all your devices';
             submitBtn.textContent = 'Sign In';
             confirmField.style.display = 'none';
@@ -473,7 +473,7 @@ export function updateAuthStatusUI() {
             introLoginBtn.textContent = `☁️ ${authUsername}`;
             introLoginBtn.title = 'Manage cloud account';
         } else {
-            introLoginBtn.textContent = '🔐 Sign In';
+            introLoginBtn.textContent = 'Sign In';
             introLoginBtn.title = 'Sign in to save across devices';
         }
     }
