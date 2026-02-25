@@ -266,13 +266,19 @@ const server = http.createServer(async (req, res) => {
                 res.end(`Server Error: ${error.code}`, 'utf-8');
             }
         } else {
-            // Add CORS headers for cross-origin requests
-            res.writeHead(200, { 
+            // Add CORS and cache-control headers
+            // no-cache forces browsers to revalidate with the server every time,
+            // so players always get the latest version after an update
+            const headers = { 
                 'Content-Type': contentType,
                 'Access-Control-Allow-Origin': '*',
                 'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
-                'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-            });
+                'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+            };
+            res.writeHead(200, headers);
             // Don't specify encoding for binary files (images, etc.)
             if (contentType.startsWith('text/') || contentType.includes('javascript') || contentType.includes('json')) {
                 res.end(content, 'utf-8');
