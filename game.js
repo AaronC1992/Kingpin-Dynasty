@@ -16808,34 +16808,80 @@ function checkForUpdates() {
           for (const name of cacheNames) await caches.delete(name);
         }
 
-        // Short pause so player sees the message, then reload
+        // Short pause so player sees the message, then hard-reload bypassing cache
         setTimeout(() => {
-          window.location.href = window.location.pathname + '?v=' + Date.now();
+          // Force a true cache-busting reload:
+          // 1. Try the modern hard-reload API first
+          // 2. Fall back to cache-busted URL with timestamp on ALL resources
+          if (window.location.reload) {
+            window.location.reload(true); // true = bypass cache (deprecated but still works in most browsers)
+          } else {
+            window.location.href = window.location.origin + window.location.pathname + '?_cb=' + Date.now();
+          }
         }, 1500);
       } else {
+        // Versions match — but the player might still be running stale cached JS.
+        // Compare the version baked into THIS file vs what the server reports.
+        // If both match, we're genuinely up to date.
         btn.innerHTML = `✅ You're up to date! (v${localVersion})`;
         btn.style.borderColor = '#2ecc71';
         btn.style.color = '#2ecc71';
+
+        // Offer a force-refresh option in case assets are still cached
         setTimeout(() => {
-          btn.innerHTML = 'Check for Updates';
-          btn.style.borderColor = '#c0a062';
-          btn.style.color = '#c0a062';
+          btn.innerHTML = '🔄 Force Refresh';
+          btn.title = 'Click to force-reload all game files from server';
+          btn.style.borderColor = '#3498db';
+          btn.style.color = '#3498db';
           btn.disabled = false;
           btn.style.cursor = 'pointer';
+          btn.onclick = async () => {
+            btn.innerHTML = '⏳ Clearing cache...';
+            btn.disabled = true;
+            // Clear service workers
+            if ('serviceWorker' in navigator) {
+              const regs = await navigator.serviceWorker.getRegistrations();
+              for (const r of regs) await r.unregister();
+            }
+            // Clear Cache Storage API
+            if ('caches' in window) {
+              const names = await caches.keys();
+              for (const n of names) await caches.delete(n);
+            }
+            setTimeout(() => {
+              window.location.reload(true);
+            }, 500);
+          };
         }, 3000);
       }
     } catch (err) {
       console.error('Version check failed:', err);
-      btn.innerHTML = '⚠️ Could not reach server';
+      btn.innerHTML = '⚠️ Server offline — try Force Refresh';
       btn.style.borderColor = '#e74c3c';
       btn.style.color = '#e74c3c';
       setTimeout(() => {
-        btn.innerHTML = 'Check for Updates';
-        btn.style.borderColor = '#c0a062';
-        btn.style.color = '#c0a062';
+        btn.innerHTML = '🔄 Force Refresh';
+        btn.title = 'Click to force-reload all game files';
+        btn.style.borderColor = '#3498db';
+        btn.style.color = '#3498db';
         btn.disabled = false;
         btn.style.cursor = 'pointer';
-      }, 3000);
+        btn.onclick = async () => {
+          btn.innerHTML = '⏳ Clearing cache...';
+          btn.disabled = true;
+          if ('serviceWorker' in navigator) {
+            const regs = await navigator.serviceWorker.getRegistrations();
+            for (const r of regs) await r.unregister();
+          }
+          if ('caches' in window) {
+            const names = await caches.keys();
+            for (const n of names) await caches.delete(n);
+          }
+          setTimeout(() => {
+            window.location.reload(true);
+          }, 500);
+        };
+      }, 2000);
     }
   }, 2500);
 }
