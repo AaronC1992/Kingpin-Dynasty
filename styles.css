@@ -149,10 +149,6 @@ body.season-winter {
 }
 
 .stats-secondary {
-    display: none;
-}
-
-.stats-secondary.stats-expanded {
     display: contents;
 }
 
@@ -2122,41 +2118,12 @@ p, ul {
     padding-bottom: 70px !important;
 }
 
-/* Mobile stats: hide secondary stats by default, show on toggle */
+/* Stats secondary always visible */
 .mobile-device .stats-secondary {
-    display: none !important;
-}
-.mobile-device .stats-secondary.stats-expanded {
     display: flex !important;
     flex-wrap: wrap;
     gap: 3px;
     justify-content: center;
-}
-.mobile-device #stats-toggle-btn {
-    display: inline-block !important;
-    background: none;
-    border: 1px solid #555;
-    color: #c0a062;
-    font-size: 8px;
-    padding: 2px 8px;
-    border-radius: 4px;
-    cursor: pointer;
-    margin: 2px auto;
-    font-family: Georgia, serif;
-}
-#stats-toggle-btn {
-    display: inline-block;
-    background: none;
-    border: 1px solid #555;
-    color: #c0a062;
-    font-size: 9px;
-    padding: 1px 8px;
-    border-radius: 3px;
-    cursor: pointer;
-    font-family: Georgia, serif;
-    flex-shrink: 0;
-    white-space: nowrap;
-    line-height: 1.4;
 }
 
 /* Hide less critical stats on very small mobile screens to prevent overflow */

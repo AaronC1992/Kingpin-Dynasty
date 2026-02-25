@@ -18,7 +18,7 @@ const onlineWorld = {
             return 'wss://mafia-born.onrender.com';
         }
     })(),
-    updateInterval: 3000, // 3 second update interval for world state
+    updateInterval: 2000, // 2 second update interval for world state
     reconnectInterval: 5000, // 5 seconds between reconnect attempts
     events: {
         PLAYER_CONNECT: 'player_connect',
@@ -1006,6 +1006,10 @@ function connectToOnlineWorld() {
             
             logAction(` Connected to online world! Player ID: ${onlineWorldState.playerId}`);
             showWelcomeMessage();
+            
+            // Deferred name correction: once player data fully loads, re-send with the real name
+            // This fixes the wrong name appearing briefly after login
+            _scheduleNameCorrection();
         };
         
         onlineWorldState.socket.onmessage = function(event) {
@@ -1076,6 +1080,19 @@ async function handleServerMessage(message) {
                 updateJailVisibility();
                 updateOnlinePlayerList();
 
+                // Also refresh the chat player list and nearby players for faster sync
+                const allPlayers = Object.values(message.playerStates);
+                onlineWorldState.nearbyPlayers = allPlayers.map(p => ({
+                    name: p.name,
+                    level: p.level || 1,
+                    color: p.playerId === onlineWorldState.playerId ? '#c0a062' : '#3498db',
+                    playerId: p.playerId
+                }));
+                const chatPlayerList = document.getElementById('chat-player-list');
+                if (chatPlayerList) {
+                    chatPlayerList.innerHTML = generateOnlinePlayersHTML();
+                }
+
                 // SERVER-AUTHORITATIVE SYNC: only sync jail/wanted state from
                 // the server. Money, reputation, level, territory are owned by
                 // the local (single-player) game engine and must NOT be
@@ -1083,7 +1100,11 @@ async function handleServerMessage(message) {
                 const selfPs = onlineWorldState.playerStates[onlineWorldState.playerId];
                 if (selfPs) {
                     player.inJail = !!selfPs.inJail;
-                    player.jailTime = selfPs.jailTime || 0;
+                    // Only sync jailTime from server if NOT locally counting down
+                    // This prevents the server's stale value from fighting the local countdown
+                    if (!window._jailTimerActive) {
+                        player.jailTime = selfPs.jailTime || 0;
+                    }
                     if (typeof selfPs.wantedLevel === 'number') player.wantedLevel = selfPs.wantedLevel;
                     updateUI(); // reflect authoritative corrections
                 }
@@ -2007,6 +2028,31 @@ function showPvpResultModal(message, isWinner) {
     }
 
     if (typeof updateUI === 'function') updateUI();
+}
+
+// Deferred name correction — retries a few times after connect to push the real name to the server
+let _nameCorrectionAttempts = 0;
+function _scheduleNameCorrection() {
+    _nameCorrectionAttempts = 0;
+    const interval = setInterval(() => {
+        _nameCorrectionAttempts++;
+        const realName = player.name && player.name.trim() !== '' ? player.name.trim() : null;
+        if (realName && onlineWorldState.isConnected && onlineWorldState.socket && onlineWorldState.socket.readyState === WebSocket.OPEN) {
+            // Push corrected name to server
+            onlineWorldState.socket.send(JSON.stringify({
+                type: 'player_update',
+                playerId: onlineWorldState.playerId,
+                playerName: realName,
+                money: player.money,
+                reputation: player.reputation,
+                level: player.level || 1,
+                territory: player.territory
+            }));
+            clearInterval(interval);
+        } else if (_nameCorrectionAttempts >= 10) {
+            clearInterval(interval); // Give up after 10 attempts (10 seconds)
+        }
+    }, 1000);
 }
 
 // Sync player state to server

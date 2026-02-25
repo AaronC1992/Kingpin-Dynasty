@@ -340,7 +340,47 @@ const interval = setInterval(function ping() {
 
 wss.on('close', function close() {
   clearInterval(interval);
+  clearInterval(jailTickInterval);
 });
+
+// Server-side jail timer: decrement jailTime every second for all jailed players
+const jailTickInterval = setInterval(function jailTick() {
+    let changed = false;
+    gameState.playerStates.forEach((state, id) => {
+        if (state.inJail && state.jailTime > 0) {
+            state.jailTime--;
+            if (state.jailTime <= 0) {
+                state.jailTime = 0;
+                state.inJail = false;
+                changed = true;
+                const p = gameState.players.get(id);
+                const pName = p ? p.name : 'Unknown';
+                console.log(`🔓 ${pName} served their sentence (server-side release)`);
+                addGlobalChatMessage('System', `🔓 ${pName} was released from jail!`, '#2ecc71');
+                // Notify the specific client
+                const ws = clients.get(id);
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({ type: 'player_released', playerId: id, playerName: pName }));
+                }
+            }
+        }
+    });
+    // Also decrement bot sentences
+    gameState.jailBots.forEach(bot => {
+        if (bot.sentence > 0) bot.sentence--;
+    });
+    // Remove expired bots and refill
+    const beforeLen = gameState.jailBots.length;
+    gameState.jailBots = gameState.jailBots.filter(b => b.sentence > 0);
+    if (gameState.jailBots.length !== beforeLen) {
+        updateJailBots();
+        changed = true;
+    }
+    if (changed) {
+        broadcastPlayerStates();
+        broadcastJailRoster();
+    }
+}, 1000);
 
 // Bot names used for jail bot inmates
 const JAIL_BOT_NAMES = [
@@ -1686,6 +1726,20 @@ function handlePlayerUpdate(clientId, message) {
     if (message.reputation !== undefined) player.reputation = message.reputation;
     if (message.level !== undefined) player.level = message.level;
     if (message.territory !== undefined) player.territory = message.territory;
+    
+    // Allow name correction (e.g. Anonymous_xxx -> real name after game loads)
+    if (message.playerName && message.playerName.trim() !== '' && !message.playerName.startsWith('Anonymous_')) {
+        const newName = sanitizePlayerName(message.playerName);
+        if (newName && newName !== player.name) {
+            player.name = ensureUniqueName(newName);
+            const sess = sessions.get(clients.get(clientId));
+            if (sess) sess.playerName = player.name;
+            // Also update playerState name
+            const ps = gameState.playerStates.get(clientId);
+            if (ps) ps.name = player.name;
+            console.log(`📝 Player name updated: ${player.name} (ID: ${clientId})`);
+        }
+    }
     
     player.lastActive = Date.now();
     

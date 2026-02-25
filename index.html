@@ -103,8 +103,7 @@
                     <p id="wanted-level-display">Heat: 0</p>
                     <p id="level-display">Rank: 1</p>
                 </div>
-                <button id="stats-toggle-btn" onclick="document.querySelector('.stats-secondary').classList.toggle('stats-expanded'); this.textContent = this.textContent.includes('▼') ? '▲ Less' : '▼ More'">▼ More</button>
-                <div class="stats-secondary">
+                <div class="stats-secondary stats-expanded">
                     <p id="dirty-money-display">Dirty: $0</p>
                     <p id="suspicion-display">Suspicion: 0%</p>
                     <p id="power-display">Influence: 0</p>
@@ -622,7 +621,7 @@
                 <p>• Earns respect</p>
             </div>
             
-            <button onclick="refreshPrisoners()">Scout</button>
+            <button onclick="if(typeof requestJailRoster==='function') requestJailRoster(); if(typeof updateJailbreakPrisonerList==='function') updateJailbreakPrisonerList();">Refresh Intel</button>
             <div class="page-nav">
                 <button class="nav-btn-back" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
             </div>
