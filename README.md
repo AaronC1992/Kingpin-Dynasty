@@ -1,6 +1,6 @@
 # Mafia Born
 
-**v1.4.3** | A deep criminal empire-building browser game where you rise from street thug to legendary kingpin. Build your crew, claim territory, run businesses, and outmanoeuvre rival crime families — all from your browser.
+**v1.5.3** | A deep criminal empire-building browser game where you rise from street thug to legendary kingpin. Build your crew, claim territory, run businesses, and outmanoeuvre rival crime families — all from your browser.
 
 ## **[PLAY NOW](https://mafiaborn.com/)**
 
@@ -112,15 +112,15 @@ Compatible with Chrome, Firefox, Safari, Edge, and their mobile counterparts.
 
 ---
 
-## Recent Changes (v1.4.3)
+## Recent Changes (v1.5.3)
 
-- **Economy rebalance** — tuned job payouts, energy costs, and progression curves for a better flow
-- **Comprehensive layout overhaul** — fixed content alignment across all 31 game screens at every breakpoint
-- **Tutorial polish** — skip button now properly cleans up after use; progress tracker removed on completion
-- **Ledger polish** — sticky heading, tighter log entry spacing, gradient header
-- **Consolidated CSS** — merged expanded-styles.css into a single stylesheet
-- **5 runtime error hotfixes** — resolved crashes in gang, territory, faction, and UI systems
-- **Responsive media query fixes** — corrected sidebar offsets, page-header positioning, and stats bar layout at all screen sizes
+- **Ghost UI fix** — fixed page-header breadcrumbs persisting on screen after switching pages on mobile
+- **Update checker overhaul** — Check for Updates now clears service workers, Cache Storage, and redirects with a cache-buster query to bypass GitHub Pages CDN caching
+- **Mobile page-header** — header now spans full screen width on mobile instead of using desktop sidebar offsets
+- **Screen transition cleanup** — added `.screen-active` class system with MutationObserver for reliable show/hide of fixed-position elements
+- **Force Refresh** — dedicated button to bust all cached files when auto-update reports you're up to date
+- **Version sync** — unified version number across PC and mobile (v1.5.2)
+- **Mobile Settings fix** — nav bar customizer and quick action customizer buttons now work reliably
 
 ---
 

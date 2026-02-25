@@ -5,6 +5,18 @@ All notable changes to From Dusk To Don (Mafia Born) will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.3] - 2026-02-25
+
+### Fixed
+- **Ghost UI** — fixed `.page-header` breadcrumbs remaining visible on screen after navigating away on mobile (position: fixed elements escaping hidden parent)
+- **Check for Updates** — replaced deprecated `window.location.reload(true)` with `forceHardReload()` that clears service workers, Cache Storage API, then redirects with a `?_cb=` cache-buster to bypass GitHub Pages CDN
+- **Mobile page-header** — added `.mobile-device .page-header` CSS rule so header spans full width instead of using desktop sidebar offsets
+
+### Added
+- `forceHardReload()` utility function for reliable cache-busting across all modern browsers
+- `.screen-active` class system with MutationObserver to auto-hide fixed-position elements inside inactive screens
+- Force Refresh button shown after version check reports you're up to date
+
 ## [1.5.2] - 2026-02-25
 
 ### Fixed

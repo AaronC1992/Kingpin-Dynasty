@@ -2021,6 +2021,22 @@ p, ul {
     display: none !important;
 }
 
+/* On mobile, page-headers must span the full width (no sidebars) */
+.mobile-device .page-header {
+    left: 0 !important;
+    right: 0 !important;
+    top: 44px !important;
+    padding: 8px 15px !important;
+}
+
+/* Hide page-headers inside inactive screens.
+   position:fixed elements can escape parent display:none in some mobile browsers.
+   The .screen-active class is toggled by hideAllScreens/show* functions. */
+.game-screen:not(.screen-active) > .page-header {
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
 .mobile-device .game-screen,
 .mobile-device #menu,
 .mobile-device #store-screen,

@@ -89,7 +89,7 @@ window.createSaveDataForCloud = function () {
         reputation: Math.floor(player.reputation),
         empireRating: empireRating.totalScore,
         playtime: playtime,
-        gameVersion: "1.5.2",
+        gameVersion: "1.5.3",
         data: saveData
     };
 };
@@ -114,7 +114,7 @@ window.applyCloudSave = function (cloudEntry) {
         playtime: cloudEntry.playtime || '0:00',
         saveDate: cloudEntry.saveDate || new Date().toISOString(),
         isAutoSave: false,
-        gameVersion: cloudEntry.gameVersion || '1.5.2',
+        gameVersion: cloudEntry.gameVersion || '1.5.3',
         data: saveData
     };
     localStorage.setItem(`gameSlot_${SAVE_SYSTEM.currentSlot || 1}`, JSON.stringify(localEntry));
@@ -7061,6 +7061,10 @@ function hasRequiredItems(requiredItems) {
 function hideAllScreens() {
   // Always scroll to top on screen transitions
   window.scrollTo(0, 0);
+  
+  // Remove .screen-active from all game screens so their fixed page-headers hide properly
+  document.querySelectorAll('.game-screen.screen-active').forEach(s => s.classList.remove('screen-active'));
+  
   document.getElementById("menu").style.display = "none";
   document.getElementById("gameplay").style.display = "none";
   document.getElementById("jobs-screen").style.display = "none";
@@ -7098,6 +7102,36 @@ function hideAllScreens() {
   const multiplayerScreen = document.getElementById("multiplayer-screen");
   if (multiplayerScreen) multiplayerScreen.style.display = "none";
 }
+
+// Auto-sync .screen-active class with display state so CSS can hide
+// fixed-position page-headers inside inactive screens (mobile ghost fix).
+(function setupScreenActiveObserver() {
+  const observer = new MutationObserver(mutations => {
+    for (const m of mutations) {
+      if (m.type === 'attributes' && m.attributeName === 'style') {
+        const el = m.target;
+        if (el.classList.contains('game-screen')) {
+          if (el.style.display === 'block') {
+            el.classList.add('screen-active');
+          } else {
+            el.classList.remove('screen-active');
+          }
+        }
+      }
+    }
+  });
+  // Observe all game-screens once DOM is ready
+  const startObserving = () => {
+    document.querySelectorAll('.game-screen').forEach(screen => {
+      observer.observe(screen, { attributes: true, attributeFilter: ['style'] });
+    });
+  };
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startObserving);
+  } else {
+    startObserving();
+  }
+})();
 
 // Function to show jobs
 function showJobs() {
@@ -13914,8 +13948,19 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = "1.5.2";
+const CURRENT_VERSION = "1.5.3";
 const VERSION_UPDATES = {
+  "1.5.3": {
+    title: "February 2026 Update - Ghost UI & Update Checker Fix",
+    date: "February 2026",
+    changes: [
+      "Fixed ghost breadcrumb/page-header staying on screen when switching pages (mobile)",
+      "Check for Updates now properly clears browser cache and forces a real refresh",
+      "Mobile page-header now spans full screen width instead of desktop sidebar offsets",
+      "Added .screen-active class system with MutationObserver for cleaner screen transitions",
+      "Force Refresh button reliably busts GitHub Pages CDN cache"
+    ]
+  },
   "1.5.2": {
     title: "February 2026 Update - Version Sync & Bug Fixes",
     date: "February 2026",
@@ -16757,6 +16802,28 @@ function deleteSavedGame() {
   showDeleteSaveSelection();
 }
 
+// Force-reload the page bypassing all caches (GitHub Pages CDN, browser, service worker).
+// window.location.reload(true) is deprecated and ignored by modern browsers, so we
+// redirect to a cache-busted URL which forces the CDN to serve fresh files.
+async function forceHardReload() {
+  // 1. Clear service workers
+  if ('serviceWorker' in navigator) {
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    for (const reg of registrations) await reg.unregister();
+  }
+  // 2. Clear Cache Storage API
+  if ('caches' in window) {
+    const cacheNames = await caches.keys();
+    for (const name of cacheNames) await caches.delete(name);
+  }
+  // 3. Navigate to a cache-busted URL. The ?_cb= param forces the CDN/browser
+  //    to treat this as a new page request, fetching fresh HTML which in turn
+  //    loads fresh JS/CSS because their URLs are unchanged but the HTML is new.
+  const url = new URL(window.location.href);
+  url.searchParams.set('_cb', Date.now().toString());
+  window.location.replace(url.toString());
+}
+
 // Function to force a fresh start - now shows save selection for deletion
 function checkForUpdates() {
   const btn = document.getElementById('check-updates-btn');
@@ -16793,36 +16860,13 @@ function checkForUpdates() {
       const localVersion = CURRENT_VERSION;
 
       if (serverVersion !== localVersion) {
-        btn.innerHTML = `🆕 Update found! v${localVersion} → v${serverVersion}`;
+        btn.innerHTML = `🆕 Update found! v${localVersion} → v${serverVersion} — Updating...`;
         btn.style.borderColor = '#2ecc71';
         btn.style.color = '#2ecc71';
 
-        // Clear service workers
-        if ('serviceWorker' in navigator) {
-          const registrations = await navigator.serviceWorker.getRegistrations();
-          for (const reg of registrations) await reg.unregister();
-        }
-        // Clear Cache Storage API
-        if ('caches' in window) {
-          const cacheNames = await caches.keys();
-          for (const name of cacheNames) await caches.delete(name);
-        }
-
-        // Short pause so player sees the message, then hard-reload bypassing cache
-        setTimeout(() => {
-          // Force a true cache-busting reload:
-          // 1. Try the modern hard-reload API first
-          // 2. Fall back to cache-busted URL with timestamp on ALL resources
-          if (window.location.reload) {
-            window.location.reload(true); // true = bypass cache (deprecated but still works in most browsers)
-          } else {
-            window.location.href = window.location.origin + window.location.pathname + '?_cb=' + Date.now();
-          }
-        }, 1500);
+        // Short pause so player sees the message, then force reload
+        setTimeout(() => forceHardReload(), 1800);
       } else {
-        // Versions match — but the player might still be running stale cached JS.
-        // Compare the version baked into THIS file vs what the server reports.
-        // If both match, we're genuinely up to date.
         btn.innerHTML = `✅ You're up to date! (v${localVersion})`;
         btn.style.borderColor = '#2ecc71';
         btn.style.color = '#2ecc71';
@@ -16835,22 +16879,10 @@ function checkForUpdates() {
           btn.style.color = '#3498db';
           btn.disabled = false;
           btn.style.cursor = 'pointer';
-          btn.onclick = async () => {
+          btn.onclick = () => {
             btn.innerHTML = '⏳ Clearing cache...';
             btn.disabled = true;
-            // Clear service workers
-            if ('serviceWorker' in navigator) {
-              const regs = await navigator.serviceWorker.getRegistrations();
-              for (const r of regs) await r.unregister();
-            }
-            // Clear Cache Storage API
-            if ('caches' in window) {
-              const names = await caches.keys();
-              for (const n of names) await caches.delete(n);
-            }
-            setTimeout(() => {
-              window.location.reload(true);
-            }, 500);
+            forceHardReload();
           };
         }, 3000);
       }
@@ -16866,20 +16898,10 @@ function checkForUpdates() {
         btn.style.color = '#3498db';
         btn.disabled = false;
         btn.style.cursor = 'pointer';
-        btn.onclick = async () => {
+        btn.onclick = () => {
           btn.innerHTML = '⏳ Clearing cache...';
           btn.disabled = true;
-          if ('serviceWorker' in navigator) {
-            const regs = await navigator.serviceWorker.getRegistrations();
-            for (const r of regs) await r.unregister();
-          }
-          if ('caches' in window) {
-            const names = await caches.keys();
-            for (const n of names) await caches.delete(n);
-          }
-          setTimeout(() => {
-            window.location.reload(true);
-          }, 500);
+          forceHardReload();
         };
       }, 2000);
     }
