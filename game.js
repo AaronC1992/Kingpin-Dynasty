@@ -89,7 +89,7 @@ window.createSaveDataForCloud = function () {
         reputation: Math.floor(player.reputation),
         empireRating: empireRating.totalScore,
         playtime: playtime,
-        gameVersion: "1.4.3",
+        gameVersion: "1.4.7",
         data: saveData
     };
 };
@@ -114,7 +114,7 @@ window.applyCloudSave = function (cloudEntry) {
         playtime: cloudEntry.playtime || '0:00',
         saveDate: cloudEntry.saveDate || new Date().toISOString(),
         isAutoSave: false,
-        gameVersion: cloudEntry.gameVersion || '1.4.3',
+        gameVersion: cloudEntry.gameVersion || '1.4.7',
         data: saveData
     };
     localStorage.setItem(`gameSlot_${SAVE_SYSTEM.currentSlot || 1}`, JSON.stringify(localEntry));
@@ -13803,8 +13803,22 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = "1.4.3";
+const CURRENT_VERSION = "1.4.7";
 const VERSION_UPDATES = {
+  "1.4.7": {
+    title: "February 2026 Update - Multiplayer & UI Polish",
+    date: "February 2026",
+    changes: [
+      "Fixed jail timer not ticking down while serving sentence",
+      "Simplified jail breakout to 2 sections — Online Players + Rival Family Members",
+      "Removed flashy button pulse animations — clean hover/click transitions instead",
+      "Faster world chat sync and player name correction",
+      "Server status tooltip on Sign In button shows if server is online",
+      "Removed duplicate jail inmate list (Made Men In The Can section)",
+      "Added GitHub Pages to CORS allowed origins for auth",
+      "Removed More button from stats bar — all stats always visible"
+    ]
+  },
   "1.4.3": {
     title: "February 2026 Update - Layout & Economy Overhaul",
     date: "February 2026",

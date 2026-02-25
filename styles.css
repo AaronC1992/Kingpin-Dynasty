@@ -1358,12 +1358,18 @@ p, ul {
     background: linear-gradient(to bottom, #8b0000, #500000);
     border: 2px solid #d4af37;
     color: #d4af37;
-    animation: buttonPulse 1.5s infinite;
+    transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
-@keyframes buttonPulse {
-    0%, 100% { transform: scale(1); box-shadow: 0 0 10px rgba(212, 175, 55, 0.3); }
-    50% { transform: scale(1.05); box-shadow: 0 0 20px rgba(212, 175, 55, 0.6); }
+#intro-screen button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(212, 175, 55, 0.35);
+    background: linear-gradient(to bottom, #a00000, #600000);
+}
+
+#intro-screen button:active {
+    transform: translateY(0) scale(0.97);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.5);
 }
 
 /* Responsive Design */
