@@ -15109,7 +15109,7 @@ function showInventory() {
     <button onclick="goBackToMainMenu()" style="background:#95a5a6;color:white;padding:12px 25px;border:none;border-radius:8px;cursor:pointer;">🏠 Back to Menu</button>
   </div>`;
   
-  document.getElementById("inventory-list").innerHTML = html;
+  document.getElementById("stash-content").innerHTML = html;
 }
 
 function equipItem(index) {
