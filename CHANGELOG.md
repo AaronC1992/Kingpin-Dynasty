@@ -5,6 +5,15 @@ All notable changes to From Dusk To Don (Mafia Born) will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.9] - 2026-02-26
+
+### Added
+- **Status Bar customisation** — new section in Settings lets players toggle visibility of every HUD stat (Cash, Health, Energy, Heat, Rank, Dirty Money, Suspicion, Influence, Turf, District, XP, Skill Points, Season, Weather)
+- Preferences stored in localStorage and applied on every UI update and game load
+
+### Removed
+- **Interactive random encounters** — disabled the popup events system (police raid choice, rival scandal / blackmail, arms deal, betrayal rumor, witness problem) that interrupted gameplay
+
 ## [1.5.8] - 2026-02-26
 
 ### Added

@@ -196,6 +196,7 @@ window.applyCloudSave = function (cloudEntry) {
     localStorage.setItem(`gameSlot_${SAVE_SYSTEM.currentSlot || 1}`, JSON.stringify(localEntry));
     updateUI();
     applyUIToggles();
+    applyStatBarPrefs();
     if (!gameplayActive) {
         // If on intro screen, jump into the game
         activateGameplaySystems();
@@ -1195,7 +1196,7 @@ const SPECIALIZATION_TO_EXPANDED = {
 const EXPANDED_SYSTEMS_CONFIG = {
     gangRolesEnabled: true,
     territoryWarsEnabled: true,
-    interactiveEventsEnabled: true,
+    interactiveEventsEnabled: false, // Disabled — interactive random encounters removed
     rivalKingpinsEnabled: true,
     respectSystemEnabled: true,
     
@@ -6683,6 +6684,9 @@ function updateUI() {
     }
   }
 
+  // Apply user stat-bar visibility preferences (hides toggled-off stats)
+  applyStatBarPrefs();
+
   // Update right panel
   updateRightPanel();
   updateRightPanelExtras();
@@ -7339,6 +7343,45 @@ function applyUIToggles() {
   }
 }
 window.applyUIToggles = applyUIToggles;
+
+// ── Status-bar customisation ──────────────────────────────────
+// List of every toggleable stat-bar element id and its localStorage key
+const STAT_BAR_ITEMS = [
+  'money-display', 'health-display', 'energy-display',
+  'wanted-level-display', 'level-display', 'dirty-money-display',
+  'suspicion-display', 'power-display', 'territory-display',
+  'current-territory-display', 'experience-display', 'skill-points-display',
+  'season-display', 'weather-display'
+];
+
+function toggleStatDisplay(checkbox) {
+  const statId = checkbox.getAttribute('data-stat');
+  localStorage.setItem('statBar_' + statId, checkbox.checked ? 'true' : 'false');
+  applyStatBarPrefs();
+}
+window.toggleStatDisplay = toggleStatDisplay;
+
+// Apply stored show/hide preferences to every stat-bar element
+function applyStatBarPrefs() {
+  STAT_BAR_ITEMS.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const visible = localStorage.getItem('statBar_' + id) !== 'false'; // default visible
+    if (!visible) {
+      el.style.display = 'none';
+    }
+    // If visible, don't force display here — let updateUI set the natural value
+  });
+}
+window.applyStatBarPrefs = applyStatBarPrefs;
+
+// Sync stat-bar checkboxes with saved prefs (called in showOptions)
+function syncStatBarCheckboxes() {
+  document.querySelectorAll('.stat-toggle').forEach(cb => {
+    const statId = cb.getAttribute('data-stat');
+    cb.checked = localStorage.getItem('statBar_' + statId) !== 'false';
+  });
+}
 
 // Update remaining right-panel elements (energy timer, quick buy labels, etc.)
 function updateRightPanelExtras() {
@@ -14280,6 +14323,7 @@ function startGameAfterIntro() {
 
   // Apply saved UI panel toggle preferences
   applyUIToggles();
+  applyStatBarPrefs();
   
   // Log the beginning of the journey
   logAction(`🌆 ${player.name} steps into the shadows of the city. The streets whisper promises of power and wealth, but first... survival.`);
@@ -14290,8 +14334,16 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = "1.5.8";
+const CURRENT_VERSION = "1.5.9";
 const VERSION_UPDATES = {
+  "1.5.9": {
+    title: "Status Bar Customisation & Event Cleanup",
+    date: "February 2026",
+    changes: [
+      "New Status Bar section in Settings — toggle visibility of every HUD stat individually",
+      "Removed interactive random encounters (police raid popup, rival scandal, arms deal, etc.)"
+    ]
+  },
   "1.5.8": {
     title: "Item System Overhaul - Equipment & Durability",
     date: "February 2026",
@@ -16955,6 +17007,9 @@ function showOptions() {
   if (toggleMobileNavCb) {
     toggleMobileNavCb.checked = localStorage.getItem('mobileNavEnabled') !== 'false';
   }
+
+  // Sync stat-bar visibility checkboxes
+  syncStatBarCheckboxes();
 }
 
 // Function to save the game
@@ -17761,9 +17816,8 @@ function activateGameplaySystems() {
   // Initialize expanded systems (gang roles, territory wars, etc.)
   initializeExpandedSystems(player);
 
-  // Start rival AI and interactive events
-  // Rival AI system removed — rivals screen retained for local rankings/competition
-  setInterval(() => { if (gameplayActive) checkAndTriggerInteractiveEvent(); }, 60000);
+  // Interactive events system disabled (random encounters removed)
+  // setInterval(() => { if (gameplayActive) checkAndTriggerInteractiveEvent(); }, 60000);
 
   // Initialize UI Events
   if (typeof initUIEvents === 'function') {
@@ -18720,6 +18774,7 @@ function loadGameFromSlot(slotNumber) {
     // Update UI
     updateUI();
     applyUIToggles();
+    applyStatBarPrefs();
     
     // Don't automatically navigate to any screen - let the caller handle that
     // Note: If player is in jail, applySaveData() already showed the jail screen

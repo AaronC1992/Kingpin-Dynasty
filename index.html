@@ -533,6 +533,68 @@
                     <span>Show Mobile Nav Bar (bottom)</span>
                 </label>
             </div>
+            <div class="section-header">Status Bar</div>
+            <div class="content-card" style="display:flex; flex-direction:column; gap:8px;">
+                <p style="color:#95a5a6; font-size:0.85em; margin:0 0 6px 0;">Choose which stats appear in your HUD:</p>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                        <input type="checkbox" class="stat-toggle" data-stat="money-display" checked onchange="toggleStatDisplay(this)" style="width:16px; height:16px; accent-color:#c0a062;">
+                        <span style="color:#f1c40f;">Cash</span>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                        <input type="checkbox" class="stat-toggle" data-stat="health-display" checked onchange="toggleStatDisplay(this)" style="width:16px; height:16px; accent-color:#c0a062;">
+                        <span style="color:#e74c3c;">Condition</span>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                        <input type="checkbox" class="stat-toggle" data-stat="energy-display" checked onchange="toggleStatDisplay(this)" style="width:16px; height:16px; accent-color:#c0a062;">
+                        <span style="color:#2ecc71;">Energy</span>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                        <input type="checkbox" class="stat-toggle" data-stat="wanted-level-display" checked onchange="toggleStatDisplay(this)" style="width:16px; height:16px; accent-color:#c0a062;">
+                        <span style="color:#e67e22;">Heat</span>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                        <input type="checkbox" class="stat-toggle" data-stat="level-display" checked onchange="toggleStatDisplay(this)" style="width:16px; height:16px; accent-color:#c0a062;">
+                        <span style="color:#3498db;">Rank</span>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                        <input type="checkbox" class="stat-toggle" data-stat="dirty-money-display" checked onchange="toggleStatDisplay(this)" style="width:16px; height:16px; accent-color:#c0a062;">
+                        <span style="color:#9b59b6;">Dirty Money</span>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                        <input type="checkbox" class="stat-toggle" data-stat="suspicion-display" checked onchange="toggleStatDisplay(this)" style="width:16px; height:16px; accent-color:#c0a062;">
+                        <span style="color:#f39c12;">Suspicion</span>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                        <input type="checkbox" class="stat-toggle" data-stat="power-display" checked onchange="toggleStatDisplay(this)" style="width:16px; height:16px; accent-color:#c0a062;">
+                        <span style="color:#1abc9c;">Influence</span>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                        <input type="checkbox" class="stat-toggle" data-stat="territory-display" checked onchange="toggleStatDisplay(this)" style="width:16px; height:16px; accent-color:#c0a062;">
+                        <span style="color:#e67e22;">Turf / Tribute</span>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                        <input type="checkbox" class="stat-toggle" data-stat="current-territory-display" checked onchange="toggleStatDisplay(this)" style="width:16px; height:16px; accent-color:#c0a062;">
+                        <span style="color:#e67e22;">Current District</span>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                        <input type="checkbox" class="stat-toggle" data-stat="experience-display" checked onchange="toggleStatDisplay(this)" style="width:16px; height:16px; accent-color:#c0a062;">
+                        <span style="color:#3498db;">XP</span>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                        <input type="checkbox" class="stat-toggle" data-stat="skill-points-display" checked onchange="toggleStatDisplay(this)" style="width:16px; height:16px; accent-color:#c0a062;">
+                        <span style="color:#2ecc71;">Skill Points</span>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                        <input type="checkbox" class="stat-toggle" data-stat="season-display" checked onchange="toggleStatDisplay(this)" style="width:16px; height:16px; accent-color:#c0a062;">
+                        <span style="color:#95a5a6;">Season</span>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                        <input type="checkbox" class="stat-toggle" data-stat="weather-display" checked onchange="toggleStatDisplay(this)" style="width:16px; height:16px; accent-color:#c0a062;">
+                        <span style="color:#95a5a6;">Weather</span>
+                    </label>
+                </div>
+            </div>
             <div id="admin-settings-section" style="display:none;">
                 <div class="section-header" style="color: #e74c3c;">Administration</div>
                 <div class="content-card">
