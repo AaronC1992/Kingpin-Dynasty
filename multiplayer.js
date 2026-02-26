@@ -1343,6 +1343,7 @@ async function handleServerMessage(message) {
             player.jailTime = 0;
             if (typeof stopJailTimer === 'function') stopJailTimer();
             if (window.EventBus) EventBus.emit('jailStatusChanged', { inJail: false, jailTime: 0 });
+            syncJailStatus(false, 0);
             updateUI();
             if (typeof goBackToMainMenu === 'function') goBackToMainMenu();
             // Show the freed popup with gift option
@@ -1357,6 +1358,7 @@ async function handleServerMessage(message) {
             if (window.EventBus) EventBus.emit('jailStatusChanged', { inJail: true, jailTime: player.jailTime });
             if (typeof updateJailTimer === 'function') updateJailTimer();
             if (typeof generateJailPrisoners === 'function') generateJailPrisoners();
+            syncJailStatus(true, player.jailTime);
             updateUI();
             if (typeof showJailScreen === 'function') showJailScreen();
             showSystemMessage(message.message || 'Jailbreak failed and you were arrested!', '#8b0000');
@@ -1554,7 +1556,15 @@ async function handleServerMessage(message) {
                 if (message.expReward) player.experience += message.expReward;
                 if (message.cashReward) player.money += message.cashReward;
                 showSystemMessage(`🎉 ${message.message}`, '#2ecc71');
+                if (typeof checkLevelUp === 'function') checkLevelUp();
                 updateUI();
+                if (typeof updateJailbreakPrisonerList === 'function') updateJailbreakPrisonerList();
+                // Show visible alert so user sees the result
+                if (window.ui) {
+                    window.ui.alert(`${message.message}`, 'Jailbreak Successful');
+                } else {
+                    alert(message.message);
+                }
             } else {
                 logAction(`💀 ${message.message}`);
                 if (message.arrested) {
@@ -1565,12 +1575,20 @@ async function handleServerMessage(message) {
                     if (window.EventBus) EventBus.emit('jailStatusChanged', { inJail: true, jailTime: player.jailTime });
                     if (typeof updateJailTimer === 'function') updateJailTimer();
                     if (typeof generateJailPrisoners === 'function') generateJailPrisoners();
+                    syncJailStatus(true, player.jailTime);
                     updateUI();
                     if (typeof showJailScreen === 'function') showJailScreen();
                     showSystemMessage(`🚔 ${message.message}`, '#e74c3c');
                 } else {
                     showSystemMessage(`💀 ${message.message}`, '#f39c12');
                     updateUI();
+                    if (typeof updateJailbreakPrisonerList === 'function') updateJailbreakPrisonerList();
+                    // Show visible alert so user sees the failure
+                    if (window.ui) {
+                        window.ui.alert(`${message.message}`, 'Jailbreak Failed');
+                    } else {
+                        alert(message.message);
+                    }
                 }
             }
             break;
@@ -2024,6 +2042,18 @@ function syncPlayerState() {
                 gangMembers: (player.gangMembers || []).length,
                 power: typeof calculatePower === 'function' ? calculatePower() : 0
             }
+        }));
+    }
+}
+
+// Sync jail status to server so other players can see us in jail lists
+function syncJailStatus(inJail, jailTime) {
+    if (onlineWorldState.socket && onlineWorldState.socket.readyState === WebSocket.OPEN) {
+        onlineWorldState.socket.send(JSON.stringify({
+            type: 'jail_status_sync',
+            playerId: onlineWorldState.playerId,
+            inJail: !!inJail,
+            jailTime: jailTime || 0
         }));
     }
 }

@@ -4,7 +4,6 @@
  * Manages procedural generation of game content including:
  * - Random prisoners for jail and jailbreak missions
  * - Recruits for the gang
- * - Random encounters
  */
 
 import { player } from './player.js';
@@ -34,10 +33,7 @@ export const recruitNames = [
 export let jailPrisoners = [];
 export let jailbreakPrisoners = [];
 export let availableRecruits = [];
-export let randomEncounterRecruit = null;
-
 // Setters — ES module imports are read-only, so other modules must use these
-export function clearRandomEncounterRecruit() { randomEncounterRecruit = null; }
 export function setJailPrisoners(arr) { jailPrisoners = arr; }
 export function setJailbreakPrisoners(arr) { jailbreakPrisoners = arr; }
 
@@ -151,52 +147,6 @@ export function generateAvailableRecruits() {
     }
     
     return availableRecruits;
-}
-
-// Generate random encounter recruit — veterans only, chance scales with player level
-export function generateRandomEncounter() {
-    // Base 1% chance, +0.5% per player level (caps at ~15% around level 28)
-    const playerLevel = (typeof player !== 'undefined' && player.level) ? player.level : 1;
-    const encounterChance = Math.min(0.15, 0.01 + playerLevel * 0.005);
-    
-    if (Math.random() < encounterChance) {
-        const name = recruitNames[Math.floor(Math.random() * recruitNames.length)];
-        
-        // Only veteran recruits — experience level 7-10
-        // Higher player level slightly biases toward the top end
-        const levelBonus = Math.min(2, Math.floor(playerLevel / 10)); // 0-2 bonus from player level
-        let experienceLevel = Math.floor(Math.random() * 4) + 7; // 7-10 base
-        experienceLevel = Math.min(10, experienceLevel + Math.floor(Math.random() * (levelBonus + 1)));
-        
-        const baseCost = 3000; // Veterans cost more
-        const cost = baseCost + (experienceLevel * 800) + Math.floor(Math.random() * 1000);
-        const tributeMultiplier = 1 + (experienceLevel * 0.3);
-        
-        // Legacy specialization IDs — overridden during recruitment when gangRolesEnabled
-        const specializations = ["muscle", "thief", "dealer", "driver", "enforcer", "technician"];
-        const specialization = specializations[Math.floor(Math.random() * specializations.length)];
-        
-        randomEncounterRecruit = {
-            name: name,
-            experienceLevel: experienceLevel,
-            cost: cost,
-            tributeMultiplier: tributeMultiplier,
-            specialization: specialization,
-            loyalty: Math.floor(Math.random() * 15) + 85, // 85-100% loyalty for veteran encounters
-            encountered: true,
-            skills: {
-                violence: Math.floor(Math.random() * 3) + 3,
-                stealth: Math.floor(Math.random() * 3) + 3,
-                intelligence: Math.floor(Math.random() * 3) + 3
-            },
-            onOperation: false,
-            inTraining: false,
-            arrested: false
-        };
-        
-        return true;
-    }
-    return false;
 }
 
 

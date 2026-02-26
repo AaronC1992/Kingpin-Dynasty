@@ -700,6 +700,10 @@ function handleClientMessage(clientId, message, ws) {
             handleJailbreakBot(clientId, message);
             break;
 
+        case 'jail_status_sync':
+            handleJailStatusSync(clientId, message);
+            break;
+
         case 'send_gift':
             handleSendGift(clientId, message);
             break;
@@ -1829,6 +1833,45 @@ function handlePlayerUpdate(clientId, message) {
             leaderboard: persistedLeaderboard
         });
         scheduleWorldSave();
+    }
+}
+
+// Handle jail status sync from client (when player is jailed/released locally)
+function handleJailStatusSync(clientId, message) {
+    const player = gameState.players.get(clientId);
+    const playerState = gameState.playerStates.get(clientId);
+    if (!player || !playerState) return;
+
+    const wasInJail = !!playerState.inJail;
+    const isNowInJail = !!message.inJail;
+
+    playerState.inJail = isNowInJail;
+    playerState.jailTime = message.jailTime || 0;
+
+    if (wasInJail !== isNowInJail) {
+        if (isNowInJail) {
+            console.log(`🚔 ${player.name} jail status synced: IN JAIL (${playerState.jailTime}s)`);
+            addGlobalChatMessage('System', `🚔 ${player.name} was arrested and sent to jail!`, '#e74c3c');
+            broadcastToAll({
+                type: 'player_arrested',
+                playerId: clientId,
+                playerName: player.name,
+                jailTime: playerState.jailTime
+            });
+        } else {
+            console.log(`🔓 ${player.name} jail status synced: RELEASED`);
+            addGlobalChatMessage('System', `🔓 ${player.name} was released from jail!`, '#2ecc71');
+            broadcastToAll({
+                type: 'player_released',
+                playerId: clientId,
+                playerName: player.name
+            });
+        }
+
+        playerState.previousInJail = isNowInJail;
+        updateJailBots();
+        broadcastPlayerStates();
+        broadcastJailRoster();
     }
 }
 
