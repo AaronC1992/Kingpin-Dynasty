@@ -6684,6 +6684,20 @@ function updateUI() {
     }
   }
 
+  // Update ammo / gas / reputation HUD elements
+  const ammoDisplay = document.getElementById("ammo-display");
+  if (ammoDisplay) {
+    ammoDisplay.innerText = `Bullets: ${player.ammo || 0}`;
+  }
+  const gasDisplay = document.getElementById("gas-display");
+  if (gasDisplay) {
+    gasDisplay.innerText = `Gas: ${player.gas || 0}`;
+  }
+  const reputationDisplay = document.getElementById("reputation-display");
+  if (reputationDisplay) {
+    reputationDisplay.innerText = `Respect: ${Math.floor(player.reputation || 0)}`;
+  }
+
   // Apply user stat-bar visibility preferences (hides toggled-off stats)
   applyStatBarPrefs();
 
@@ -7351,8 +7365,12 @@ const STAT_BAR_ITEMS = [
   'wanted-level-display', 'level-display', 'dirty-money-display',
   'suspicion-display', 'power-display', 'territory-display',
   'current-territory-display', 'experience-display', 'skill-points-display',
-  'season-display', 'weather-display'
+  'season-display', 'weather-display', 'ammo-display', 'gas-display',
+  'reputation-display'
 ];
+
+// Stats that default to HIDDEN (player must opt-in)
+const STAT_BAR_DEFAULTS_OFF = ['ammo-display', 'gas-display', 'reputation-display'];
 
 function toggleStatDisplay(checkbox) {
   const statId = checkbox.getAttribute('data-stat');
@@ -7366,7 +7384,11 @@ function applyStatBarPrefs() {
   STAT_BAR_ITEMS.forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
-    const visible = localStorage.getItem('statBar_' + id) !== 'false'; // default visible
+    const key = 'statBar_' + id;
+    const stored = localStorage.getItem(key);
+    // Items in DEFAULTS_OFF list default to hidden unless explicitly turned on
+    const defaultsOff = STAT_BAR_DEFAULTS_OFF.includes(id);
+    const visible = stored !== null ? stored !== 'false' : !defaultsOff;
     if (!visible) {
       el.style.display = 'none';
     } else {
@@ -7383,7 +7405,9 @@ window.applyStatBarPrefs = applyStatBarPrefs;
 function syncStatBarCheckboxes() {
   document.querySelectorAll('.stat-toggle').forEach(cb => {
     const statId = cb.getAttribute('data-stat');
-    cb.checked = localStorage.getItem('statBar_' + statId) !== 'false';
+    const stored = localStorage.getItem('statBar_' + statId);
+    const defaultsOff = STAT_BAR_DEFAULTS_OFF.includes(statId);
+    cb.checked = stored !== null ? stored !== 'false' : !defaultsOff;
   });
 }
 

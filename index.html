@@ -114,6 +114,9 @@
                     <p id="season-display">Season: Spring</p>
                     <p id="weather-display">Weather: ☀️ Clear</p>
                     <p id="active-events-display" style="display: none;">Events: None</p>
+                    <p id="ammo-display" style="display: none;">Bullets: 0</p>
+                    <p id="gas-display" style="display: none;">Gas: 0</p>
+                    <p id="reputation-display" style="display: none;">Respect: 0</p>
                     <p class="auth-status-indicator" onclick="showAuthModal()" style="cursor: pointer;"></p>
                 </div>
             </div>
@@ -592,6 +595,18 @@
                     <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
                         <input type="checkbox" class="stat-toggle" data-stat="weather-display" checked onchange="toggleStatDisplay(this)" style="width:16px; height:16px; accent-color:#c0a062;">
                         <span style="color:#95a5a6;">Weather</span>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                        <input type="checkbox" class="stat-toggle" data-stat="ammo-display" onchange="toggleStatDisplay(this)" style="width:16px; height:16px; accent-color:#c0a062;">
+                        <span style="color:#e74c3c;">Bullets</span>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                        <input type="checkbox" class="stat-toggle" data-stat="gas-display" onchange="toggleStatDisplay(this)" style="width:16px; height:16px; accent-color:#c0a062;">
+                        <span style="color:#f39c12;">Gas</span>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                        <input type="checkbox" class="stat-toggle" data-stat="reputation-display" onchange="toggleStatDisplay(this)" style="width:16px; height:16px; accent-color:#c0a062;">
+                        <span style="color:#e67e22;">Respect</span>
                     </label>
                 </div>
             </div>
