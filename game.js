@@ -14178,8 +14178,15 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = "1.5.6";
+const CURRENT_VERSION = "1.5.7";
 const VERSION_UPDATES = {
+  "1.5.7": {
+    title: "February 2026 Update - Admin Panel Fix",
+    date: "February 2026",
+    changes: [
+      "Fixed Admin Panel not appearing in Settings after login/registration (admin flag now set immediately on auth)"
+    ]
+  },
   "1.5.6": {
     title: "February 2026 Update - Admin Tools & Economy Grind",
     date: "February 2026",

@@ -312,6 +312,8 @@ export function showAuthModal(onSuccessOrOpts) {
             } else {
                 await login(user, pass);
             }
+            // Set admin flag immediately so Settings shows admin panel
+            await checkAdmin();
             updateAuthStatusUI();
 
             // After a LOGIN (not register), try to auto-load the cloud save
