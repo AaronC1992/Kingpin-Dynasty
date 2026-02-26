@@ -5,6 +5,16 @@ All notable changes to From Dusk To Don (Mafia Born) will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.5] - 2026-02-26
+
+### Fixed
+- **Emoji encoding** — fixed ~920 lines of corrupted emoji characters (double-encoded UTF-8 mojibake) displaying as garbled symbols
+- **Check for Updates** — now uses `fetch(asset, { cache: 'reload' })` on all 25+ game files to properly bust the browser HTTP cache before reloading, so updates actually take effect
+- Cleaned up stale `?_cb=` URL params left by previous force-refresh logic
+
+### Changed
+- **Assassination odds lowered** — base chance 8%→5%, max cap 20%→15%, all bonuses reduced, target defense increased
+
 ## [1.5.4] - 2026-02-26
 
 ### Changed

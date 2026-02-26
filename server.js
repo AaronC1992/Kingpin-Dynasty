@@ -2696,37 +2696,37 @@ function handleAssassinationAttempt(clientId, message) {
     }
 
     // ---- Calculate success chance ----
-    // Base: 8% — this is HARD to pull off
-    let chance = 8;
+    // Base: 5% — assassination is extremely difficult
+    let chance = 5;
 
-    // Bullets: +0.5% per bullet, max +15% (30 bullets)
-    chance += Math.min(bulletsSent * 0.5, 15);
+    // Bullets: +0.3% per bullet, max +9% (30 bullets)
+    chance += Math.min(bulletsSent * 0.3, 9);
 
-    // Best gun power: +0.05% per power point, max +6% (120 power sniper)
-    chance += Math.min(bestGunPower * 0.05, 6);
+    // Best gun power: +0.03% per power point, max +4% (133 power)
+    chance += Math.min(bestGunPower * 0.03, 4);
 
-    // Extra guns: +1% per extra gun after the first, max +5%
-    chance += Math.min((gunCount - 1) * 1, 5);
+    // Extra guns: +0.5% per extra gun after the first, max +3%
+    chance += Math.min((gunCount - 1) * 0.5, 3);
 
-    // Vehicles: +2% per vehicle, max +6% (3 vehicles)
-    chance += Math.min(vehicleCount * 2, 6);
+    // Vehicles: +1% per vehicle, max +3% (3 vehicles)
+    chance += Math.min(vehicleCount * 1, 3);
 
-    // Gang members: +0.5% per member, max +10% (20 members)
-    chance += Math.min(gangMembers * 0.5, 10);
+    // Gang members: +0.3% per member, max +6% (20 members)
+    chance += Math.min(gangMembers * 0.3, 6);
 
-    // Level advantage: +0.5% per level above target, max +5%
+    // Level advantage: +0.3% per level above target, max +3%
     const levelDiff = attackerLevel - (target.level || 1);
-    if (levelDiff > 0) chance += Math.min(levelDiff * 0.5, 5);
+    if (levelDiff > 0) chance += Math.min(levelDiff * 0.3, 3);
 
-    // Total power bonus: +0.002% per power, max +5%
-    chance += Math.min(attackPower * 0.002, 5);
+    // Total power bonus: +0.001% per power, max +3%
+    chance += Math.min(attackPower * 0.001, 3);
 
     // Target defense: higher level targets are harder
     const targetLevel = target.level || 1;
-    chance -= Math.min(targetLevel * 0.3, 10);
+    chance -= Math.min(targetLevel * 0.4, 12);
 
-    // Clamp to 5%-20% — always risky, never guaranteed
-    chance = Math.max(5, Math.min(chance, 20));
+    // Clamp to 3%-15% — always risky, never guaranteed
+    chance = Math.max(3, Math.min(chance, 15));
 
     // Deduct energy
     attackerState.energy = Math.max(0, (attackerState.energy || 100) - energyCost);
