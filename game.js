@@ -76,6 +76,83 @@ window.showAuthModal = showAuthModal;
 window.getAuthState = getAuthState;
 window.updateAuthStatusUI = updateAuthStatusUI;
 
+// ==================== POWER RECALCULATION ====================
+// Power is derived from: equipped weapon + equipped armor + equipped vehicle + real estate + gang members
+// Items sitting in inventory but NOT equipped contribute NOTHING to power.
+function recalculatePower() {
+  let total = 0;
+  // Equipped weapon
+  if (player.equippedWeapon && typeof player.equippedWeapon === 'object') {
+    total += player.equippedWeapon.power || 0;
+  }
+  // Equipped armor
+  if (player.equippedArmor && typeof player.equippedArmor === 'object') {
+    total += player.equippedArmor.power || 0;
+  }
+  // Equipped vehicle
+  if (player.equippedVehicle && typeof player.equippedVehicle === 'object') {
+    total += player.equippedVehicle.power || 0;
+  }
+  // Real estate power
+  if (player.realEstate && player.realEstate.ownedProperties) {
+    player.realEstate.ownedProperties.forEach(p => { total += p.power || 0; });
+  }
+  // Gang member power
+  if (player.gang && player.gang.gangMembers) {
+    player.gang.gangMembers.forEach(m => { total += m.power || 0; });
+  }
+  player.power = total;
+  return total;
+}
+window.recalculatePower = recalculatePower;
+
+// ==================== DURABILITY SYSTEM ====================
+// Degrades equipped weapon, armor, and vehicle after jobs/combat.
+// When durability reaches 0 the item breaks and is removed.
+function degradeEquipment(context) {
+  const broken = [];
+  // Weapon: lose 1 durability per use
+  if (player.equippedWeapon && typeof player.equippedWeapon === 'object') {
+    player.equippedWeapon.durability = Math.max(0, (player.equippedWeapon.durability || 0) - 1);
+    if (player.equippedWeapon.durability <= 0) {
+      broken.push(player.equippedWeapon.name);
+      // Remove from inventory
+      const idx = player.inventory.findIndex(i => i === player.equippedWeapon);
+      if (idx !== -1) player.inventory.splice(idx, 1);
+      player.equippedWeapon = null;
+    }
+  }
+  // Armor: lose 1 durability per use
+  if (player.equippedArmor && typeof player.equippedArmor === 'object') {
+    player.equippedArmor.durability = Math.max(0, (player.equippedArmor.durability || 0) - 1);
+    if (player.equippedArmor.durability <= 0) {
+      broken.push(player.equippedArmor.name);
+      const idx = player.inventory.findIndex(i => i === player.equippedArmor);
+      if (idx !== -1) player.inventory.splice(idx, 1);
+      player.equippedArmor = null;
+    }
+  }
+  // Vehicle: lose 1 durability per use
+  if (player.equippedVehicle && typeof player.equippedVehicle === 'object') {
+    player.equippedVehicle.durability = Math.max(0, (player.equippedVehicle.durability || 0) - 1);
+    if (player.equippedVehicle.durability <= 0) {
+      broken.push(player.equippedVehicle.name);
+      const idx = player.inventory.findIndex(i => i === player.equippedVehicle);
+      if (idx !== -1) player.inventory.splice(idx, 1);
+      player.equippedVehicle = null;
+    }
+  }
+  if (broken.length > 0) {
+    recalculatePower();
+    const msg = broken.map(n => `Your ${n} broke from wear and tear!`).join(' ');
+    logAction(`💥 ${msg} You'll need to buy a replacement.`);
+    if (typeof showBriefNotification === 'function') {
+      showBriefNotification(`💥 ${broken.join(', ')} broke!`, 'danger');
+    }
+  }
+}
+window.degradeEquipment = degradeEquipment;
+
 // Bridge functions for auth.js cloud save/load
 window.createSaveDataForCloud = function () {
     const saveData = createSaveData();
@@ -820,6 +897,7 @@ async function startFactionMission(familyKey, missionId) {
     logAction(mission.story);
     
     showBriefNotification(`Mission complete! +$${earnings.toLocaleString()} & rep with ${crimeFamilies[familyKey].name}`, 'success');
+    degradeEquipment('faction_mission');
   } else {
     // Mission failed
     if (Math.random() * 100 < mission.jailChance) {
@@ -895,6 +973,7 @@ function startSignatureJob(familyKey) {
     logAction(`⭐ Signature Job "${sigJob.name}" completed for ${family.name}! +$${earnings.toLocaleString()} (dirty), +${sigJob.xpReward} XP, +5 family rep.`);
     flashSuccessScreen();
     alert(`Signature job complete! Earned $${earnings.toLocaleString()} and gained standing with ${family.name}.`);
+    degradeEquipment('signature_job');
     
     updateMissionProgress('reputation_changed');
   } else {
@@ -954,6 +1033,7 @@ async function startTerritoryMission(missionId) {
     logAction(mission.story);
     
     showBriefNotification(`Territory secured! +$${mission.rewards.passive_income}/tribute from ${mission.territory}`, 'success');
+    degradeEquipment('territory_mission');
   } else {
     // Mission failed
     if (Math.random() * 100 < mission.risks.jailChance) {
@@ -965,7 +1045,7 @@ async function startTerritoryMission(missionId) {
     if (Math.random() * 100 < mission.risks.gangMemberLoss && player.gang.gangMembers.length > 0) {
       const lostMember = player.gang.gangMembers.pop();
       player.gang.members = Math.max(0, player.gang.members - 1);
-      player.power -= (lostMember.power || 5);
+      recalculatePower();
       logAction(`${lostMember.name} was lost during the failed territory operation. The streets claimed another soldier.`);
     }
     
@@ -1044,6 +1124,7 @@ async function startBossBattle(battleId) {
     logAction(battle.story);
     
     await ui.alert(`${battle.boss.name} defeated! You've proven your dominance and earned legendary status in the underworld.`);
+    degradeEquipment('boss_battle');
   } else {
     // Defeat
     if (Math.random() * 100 < battle.risks.jailChance) {
@@ -1056,8 +1137,8 @@ async function startBossBattle(battleId) {
     for (let i = 0; i < gangLosses && player.gang.gangMembers.length > 0; i++) {
       const lostMember = player.gang.gangMembers.pop();
       player.gang.members = Math.max(0, player.gang.members - 1);
-      player.power -= (lostMember.power || 5);
     }
+    recalculatePower();
     
     // Health loss
     const healthLoss = Math.floor(Math.random() * battle.risks.healthLoss) + 10;
@@ -1933,7 +2014,8 @@ function applyEventOutcomes(outcome, player) {
     }
     
     if (outcome.power) {
-        player.power += outcome.power;
+        // Random events can still grant/remove power via recalculation
+        recalculatePower();
         changes.power = outcome.power;
     }
     
@@ -4850,6 +4932,7 @@ function completeGangOperation(operationData) {
     showBriefNotification(`${member.name} completed ${operation.name}: +$${moneyEarned.toLocaleString()}${moneyTag}`, 2000);
   }
   
+  degradeEquipment('gang_operation');
   updateUI();
 }
 
@@ -5188,7 +5271,8 @@ function triggerBetrayalEvent(event) {
   }
   
   if (consequences.powerLoss) {
-    player.power = Math.max(0, player.power - consequences.powerLoss);
+    // Power is derived from equipment/gang/real estate, so recalculate
+    recalculatePower();
   }
   
   if (consequences.territoryLoss) {
@@ -6798,7 +6882,10 @@ function adminResetStats() {
       player.gang.members = 0;
       player.ammo = 0;
       player.suspicionLevel = 0;
-      player.power = 0;
+      player.equippedWeapon = null;
+      player.equippedArmor = null;
+      player.equippedVehicle = null;
+      recalculatePower();
       showBriefNotification('Admin: Stats reset to defaults!', 'warning');
       logAction('[Admin] All stats reset to defaults');
       updateUI();
@@ -8177,6 +8264,7 @@ async function startJob(index) {
     logAction(`${getRandomNarration('jobSuccess')} (+$${earnings.toLocaleString()}${moneyType}).`);
   }
 
+  degradeEquipment('job');
   updateUI();
   // Only refresh the job list instead of reloading the entire jobs screen to prevent flashing
   if (document.getElementById("jobs-screen").style.display === "block") {
@@ -10002,6 +10090,7 @@ function expandTerritory() {
     updateMissionProgress('territory_controlled');
     
     showBriefNotification(`Territory expanded! +$${incomeGain.toLocaleString()}/week income.`, 'success');
+    degradeEquipment('territory_expand');
     logAction("🗺️ Your influence spreads like ink in water. New blocks fall under your protection, new corners pay tribute. The empire grows one street at a time.");
   } else {
     let losses = Math.floor(Math.random() * 3) + 1;
@@ -10150,8 +10239,8 @@ async function fireGangMember(memberIndex) {
   // Calculate loyalty impact based on how the member is treated
   const loyaltyImpact = Math.min(15, Math.floor(member.loyalty / 10)); // Higher loyalty members cause more impact when fired
   
-  // Remove power contribution
-  player.power -= (member.power || 5);
+  // Recalculate power after removing member
+  recalculatePower();
   
   // Reduce territory power for fired member
   const powerLoss = Math.floor((member.experienceLevel || 1) * 2) + 5;
@@ -11940,21 +12029,24 @@ function showPlayerStats() {
 
   // ---- SECTION 6: Equipment Bonuses ----
   let equipHTML = '';
-  if (player.equippedWeapon) {
+  if (player.equippedWeapon && typeof player.equippedWeapon === 'object') {
     const w = player.equippedWeapon;
-    equipHTML += row('Weapon', `${w.name || 'Unknown'} (+${w.power || w.attack || 0} power)`, '#e74c3c');
+    const durText = typeof w.durability === 'number' ? ` [${w.durability}/${w.maxDurability}]` : '';
+    equipHTML += row('Weapon', `${w.name || 'Unknown'} (+${w.power || 0} power)${durText}`, '#e74c3c');
   } else {
     equipHTML += row('Weapon', 'None equipped', '#7f8c8d');
   }
-  if (player.equippedArmor) {
+  if (player.equippedArmor && typeof player.equippedArmor === 'object') {
     const a = player.equippedArmor;
-    equipHTML += row('Armor', `${a.name || 'Unknown'} (+${a.defense || 0} defense)`, '#3498db');
+    const durText = typeof a.durability === 'number' ? ` [${a.durability}/${a.maxDurability}]` : '';
+    equipHTML += row('Armor', `${a.name || 'Unknown'} (+${a.power || 0} power)${durText}`, '#3498db');
   } else {
     equipHTML += row('Armor', 'None equipped', '#7f8c8d');
   }
-  if (player.equippedVehicle) {
+  if (player.equippedVehicle && typeof player.equippedVehicle === 'object') {
     const v = player.equippedVehicle;
-    equipHTML += row('Vehicle', `${v.name || 'Unknown'}`, '#e67e22');
+    const durText = typeof v.durability === 'number' ? ` [${v.durability}/${v.maxDurability}]` : '';
+    equipHTML += row('Vehicle', `${v.name || 'Unknown'} (+${v.power || 0} power)${durText}`, '#e67e22');
   } else {
     equipHTML += row('Vehicle', 'None', '#7f8c8d');
   }
@@ -12701,6 +12793,12 @@ function showStore() {
     // Resolve image source with case-safe mapping
     const imageSrc = getItemImage(item.name);
     
+    // One-of-each: disable purchase for already-owned weapon/armor/vehicle
+    const equipTypes = ['weapon', 'armor', 'vehicle'];
+    const isEquipType = equipTypes.includes(item.type);
+    const canBuy = player.money >= finalPrice && requirementMet && !(isEquipType && alreadyOwned);
+    const btnText = isEquipType && alreadyOwned ? 'Already Owned' : (player.money >= finalPrice ? 'Purchase' : 'Too Expensive');
+    
     return `
       <li style="display: flex; align-items: center; gap: 15px; padding: 15px; margin: 10px 0; background: rgba(52, 73, 94, 0.6); border-radius: 8px; border-left: 4px solid #3498db;">
         <div style="flex-shrink: 0;">
@@ -12730,15 +12828,15 @@ function showStore() {
         </div>
         <div style="flex-shrink: 0;">
           <button id="buy-btn-${index}" onclick="buyItem(${index})" 
-              style="background: ${player.money >= finalPrice && requirementMet ? '#27ae60' : '#7f8c8d'}; 
+              style="background: ${canBuy ? '#27ae60' : '#7f8c8d'}; 
                   color: white; padding: 12px 20px; border: none; border-radius: 6px; 
-                  cursor: ${player.money >= finalPrice && requirementMet ? 'pointer' : 'not-allowed'}; 
+                  cursor: ${canBuy ? 'pointer' : 'not-allowed'}; 
                   font-weight: bold; font-size: 14px; min-width: 120px;
                   transition: all 0.3s ease;"
-              ${player.money >= finalPrice && requirementMet ? '' : 'disabled'}
+              ${canBuy ? '' : 'disabled'}
               onmouseover="if(!this.disabled) this.style.background='#229954'"
               onmouseout="if(!this.disabled) this.style.background='#27ae60'">
-            ${player.money >= finalPrice ? 'Purchase' : 'Too Expensive'}
+            ${btnText}
           </button>
         </div>
       </li>
@@ -12831,6 +12929,16 @@ async function buyItem(index) {
   }
   
   if (player.money >= finalPrice) {
+    // One-of-each rule: weapon, armor, vehicle — can only own one of each specific item
+    const equipTypes = ['weapon', 'armor', 'vehicle'];
+    if (equipTypes.includes(item.type)) {
+      const alreadyOwned = player.inventory.some(i => i.name === item.name);
+      if (alreadyOwned) {
+        alert(`You already own a ${item.name}! You can only carry one of each item.`);
+        return;
+      }
+    }
+
     // Confirmation for expensive purchases (over $100K)
     if (finalPrice >= 100000 && item.type !== "ammo" && item.type !== "gas" && item.type !== "energy") {
       const pctOfWallet = ((finalPrice / player.money) * 100).toFixed(0);
@@ -12857,21 +12965,25 @@ async function buyItem(index) {
       logAction(`⚡ You down the ${item.name} in one gulp. The caffeine and chemicals surge through your veins - energy restored but your body pays the price (+${item.energyRestore} energy, -1 health).`);
     } else if (item.type === "utility") {
       // Utility items go to inventory and provide passive bonuses
-      player.inventory.push(item);
-      player.power += item.power;
+      const itemCopy = Object.assign({}, item);
+      player.inventory.push(itemCopy);
+      // Utility power recalculated (not equipped-based, always active)
+      recalculatePower();
       alert(`You bought a ${item.name} for $${finalPrice.toLocaleString()}.`);
       logAction(`🔧 You acquired a ${item.name} — a useful tool for any serious criminal enterprise.`);
     } else {
-      player.inventory.push(item);
-      player.power += item.power;
+      // Deep-copy item so each instance tracks its own durability
+      const itemCopy = Object.assign({}, item);
+      player.inventory.push(itemCopy);
+      // Power is NOT added here — only equipped items contribute via recalculatePower()
       
-      // Show vehicle photo for car/vehicle purchases
-      if (item.type === "car" || item.type === "vehicle") {
-        showVehiclePurchaseResult(item, finalPrice);
+      // Show vehicle photo for vehicle purchases
+      if (item.type === "vehicle") {
+        showVehiclePurchaseResult(itemCopy, finalPrice);
       }
     }
     
-    if (item.type !== "energy" && item.type !== "car" && item.type !== "vehicle" && item.type !== "utility") {
+    if (item.type !== "energy" && item.type !== "vehicle" && item.type !== "utility") {
       alert(`You bought a ${item.name} for $${finalPrice.toLocaleString()}.`);
       logAction(`🏛’ Deal sealed with a firm handshake. The ${item.name} is yours now - power on the streets costs $${finalPrice.toLocaleString()}, but respect is priceless.`);
     }
@@ -13270,7 +13382,7 @@ function checkAchievements() {
   if (t >= 10 && ac('territory_10')) unlockAchievement('territory_10');
   if (player.businesses && player.businesses.length >= 1 && ac('business_owner')) unlockAchievement('business_owner');
   // Items
-  if (player.inventory.some(i => i.type === 'weapon' || i.type === 'gun') && ac('armed_dangerous')) unlockAchievement('armed_dangerous');
+  if (player.inventory.some(i => i.type === 'weapon') && ac('armed_dangerous')) unlockAchievement('armed_dangerous');
   if (player.realEstate && player.realEstate.ownedProperties && player.realEstate.ownedProperties.length >= 1 && ac('property_owner')) unlockAchievement('property_owner');
   if (player.stolenCars && player.stolenCars.length >= 1 && ac('wheels')) unlockAchievement('wheels');
   // Jobs
@@ -14178,8 +14290,23 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = "1.5.7";
+const CURRENT_VERSION = "1.5.8";
 const VERSION_UPDATES = {
+  "1.5.8": {
+    title: "Item System Overhaul - Equipment & Durability",
+    date: "February 2026",
+    changes: [
+      "Power is now derived from EQUIPPED items only — unequipped items no longer boost power",
+      "Added durability system: weapons, armor, and vehicles degrade with use and eventually break",
+      "One-of-each limit: can only own one of each specific weapon/armor/vehicle at a time",
+      "Equip system now supports vehicles alongside weapons and armor",
+      "Inventory shows durability bars for all equipment",
+      "Store shows 'Already Owned' for equippable items you already possess",
+      "Unified item types: all guns now classified as 'weapon', all cars as 'vehicle'",
+      "Stats display shows equipped item durability",
+      "Save migration: old saves automatically upgraded with durability and fixed types"
+    ]
+  },
   "1.5.7": {
     title: "February 2026 Update - Admin Panel Fix",
     date: "February 2026",
@@ -14971,8 +15098,8 @@ function buyProperty(index) {
   
   // Purchase the property
   player.money -= property.price;
-  player.power += property.power;
   player.realEstate.ownedProperties.push({...property});
+  recalculatePower();
   
   // Update UI
   updateUI();
@@ -15501,16 +15628,18 @@ function showInventory() {
   // Categorize items
   const weapons = player.inventory.filter(i => i.type === 'weapon');
   const armor = player.inventory.filter(i => i.type === 'armor');
-  const vehicles = player.inventory.filter(i => i.type === 'car' || i.type === 'vehicle');
-  const other = player.inventory.filter(i => !['weapon','armor','car','vehicle'].includes(i.type));
+  const vehicles = player.inventory.filter(i => i.type === 'vehicle');
+  const other = player.inventory.filter(i => !['weapon','armor','vehicle'].includes(i.type));
   
   const totalPower = player.inventory.reduce((sum, i) => sum + (i.power || 0), 0);
+  const equippedPower = player.power || 0;
   
   let html = `
     <h2>🎒 Inventory</h2>
     <div style="padding: 10px; background: rgba(52,73,94,0.6); border-radius: 10px; margin-bottom: 15px;">
       <strong>Total Items:</strong> ${player.inventory.length} | 
-      <strong>Total Power:</strong> ${totalPower} | 
+      <strong>Equipped Power:</strong> <span style="color:#2ecc71;">${equippedPower}</span> | 
+      <strong>Inventory Power:</strong> ${totalPower} | 
       <strong>Ammo:</strong> ${player.ammo} | 
       <strong>Gas:</strong> ${player.gas}
     </div>`;
@@ -15520,15 +15649,21 @@ function showInventory() {
     let s = `<div style="margin-bottom:15px;"><h3 style="color:#e67e22;">${icon} ${title}</h3><div style="display:grid;gap:8px;">`;
     items.forEach((item, idx) => {
       const globalIdx = player.inventory.indexOf(item);
-      const equipped = player.equippedWeapon === item.name || player.equippedArmor === item.name;
+      const equipped = player.equippedWeapon === item || player.equippedArmor === item || player.equippedVehicle === item;
       const sellPrice = Math.floor((item.price || 0) * 0.4);
+      const hasDurability = typeof item.durability === 'number' && typeof item.maxDurability === 'number';
+      const durPct = hasDurability ? Math.round((item.durability / item.maxDurability) * 100) : 100;
+      const durColor = durPct > 60 ? '#2ecc71' : durPct > 30 ? '#f39c12' : '#e74c3c';
+      const durBar = hasDurability ? `<div style="margin-top:4px;width:120px;height:6px;background:#555;border-radius:3px;"><div style="width:${durPct}%;height:100%;background:${durColor};border-radius:3px;"></div></div><small style="color:${durColor};">${item.durability}/${item.maxDurability}</small>` : '';
+      const isEquippable = item.type === 'weapon' || item.type === 'armor' || item.type === 'vehicle';
       s += `<div style="padding:10px;background:rgba(0,0,0,0.4);border-radius:8px;border:2px solid ${equipped ? '#2ecc71' : '#34495e'};display:flex;justify-content:space-between;align-items:center;">
         <div>
           <strong style="color:${equipped ? '#2ecc71' : '#ecf0f1'};">${item.name} ${equipped ? '✅ EQUIPPED' : ''}</strong><br>
           <small style="color:#bdc3c7;">Power: +${item.power || 0}${item.price ? ` | Value: $${sellPrice.toLocaleString()}` : ''}</small>
+          ${durBar}
         </div>
         <div style="display:flex;gap:8px;">
-          ${(item.type === 'weapon' || item.type === 'armor') && !equipped ? 
+          ${isEquippable && !equipped ? 
             `<button onclick="equipItem(${globalIdx})" style="background:#3498db;color:white;border:none;padding:6px 12px;border-radius:5px;cursor:pointer;">Equip</button>` : ''}
           ${equipped ? 
             `<button onclick="unequipItem(${globalIdx})" style="background:#e67e22;color:white;border:none;padding:6px 12px;border-radius:5px;cursor:pointer;">Unequip</button>` : ''}
@@ -15574,11 +15709,17 @@ function equipItem(index) {
   const item = player.inventory[index];
   if (!item) return;
   if (item.type === 'weapon') {
-    player.equippedWeapon = item.name;
-    logAction(`🔫 Equipped ${item.name}.`);
+    player.equippedWeapon = item; // Store the actual item object (not just name)
+    recalculatePower();
+    logAction(`Equipped ${item.name} (Durability: ${item.durability || '?'}/${item.maxDurability || '?'}).`);
   } else if (item.type === 'armor') {
-    player.equippedArmor = item.name;
-    logAction(`🏛¡️ Equipped ${item.name}.`);
+    player.equippedArmor = item;
+    recalculatePower();
+    logAction(`Equipped ${item.name} (Durability: ${item.durability || '?'}/${item.maxDurability || '?'}).`);
+  } else if (item.type === 'vehicle') {
+    player.equippedVehicle = item;
+    recalculatePower();
+    logAction(`Equipped ${item.name} (Durability: ${item.durability || '?'}/${item.maxDurability || '?'}).`);
   }
   showInventory();
 }
@@ -15586,11 +15727,17 @@ function equipItem(index) {
 function unequipItem(index) {
   const item = player.inventory[index];
   if (!item) return;
-  if (item.type === 'weapon' && player.equippedWeapon === item.name) {
+  if (item.type === 'weapon' && player.equippedWeapon === item) {
     player.equippedWeapon = null;
+    recalculatePower();
     logAction(`Unequipped ${item.name}.`);
-  } else if (item.type === 'armor' && player.equippedArmor === item.name) {
+  } else if (item.type === 'armor' && player.equippedArmor === item) {
     player.equippedArmor = null;
+    recalculatePower();
+    logAction(`Unequipped ${item.name}.`);
+  } else if (item.type === 'vehicle' && player.equippedVehicle === item) {
+    player.equippedVehicle = null;
+    recalculatePower();
     logAction(`Unequipped ${item.name}.`);
   }
   showInventory();
@@ -15599,14 +15746,15 @@ function unequipItem(index) {
 function sellItem(index) {
   const item = player.inventory[index];
   if (!item) return;
-  // Unequip if currently equipped
-  if (player.equippedWeapon === item.name) player.equippedWeapon = null;
-  if (player.equippedArmor === item.name) player.equippedArmor = null;
+  // Unequip if currently equipped (reference comparison since we store objects)
+  if (player.equippedWeapon === item) player.equippedWeapon = null;
+  if (player.equippedArmor === item) player.equippedArmor = null;
+  if (player.equippedVehicle === item) player.equippedVehicle = null;
   
   const sellPrice = Math.floor((item.price || 0) * 0.4);
   player.money += sellPrice;
-  player.power -= (item.power || 0);
   player.inventory.splice(index, 1);
+  recalculatePower();
   logAction(`💰 Sold ${item.name} for $${sellPrice.toLocaleString()}.`);
   updateUI();
   showInventory();
@@ -15830,13 +15978,14 @@ function fenceSellItem(index, type) {
   const rate = type === 'drug' ? rates.drugs : rates.items;
   const fencePrice = Math.floor(item.price * rate);
   
-  // Unequip if equipped
-  if (player.equippedWeapon === item.name) player.equippedWeapon = null;
-  if (player.equippedArmor === item.name) player.equippedArmor = null;
+  // Unequip if equipped (reference comparison)
+  if (player.equippedWeapon === item) player.equippedWeapon = null;
+  if (player.equippedArmor === item) player.equippedArmor = null;
+  if (player.equippedVehicle === item) player.equippedVehicle = null;
   
   player.money += fencePrice;
-  player.power -= (item.power || 0);
   player.inventory.splice(index, 1);
+  recalculatePower();
   player.suspicionLevel = Math.min(100, (player.suspicionLevel || 0) + 1);
   
   if (player.statistics) {
@@ -16470,7 +16619,6 @@ async function hireRandomRecruit(buttonId) {
   
   // Hire the recruit
   player.money -= recruit.cost;
-  player.power += recruit.power;
   
   // Track statistics
   updateStatistic('gangMembersRecruited');
@@ -16485,6 +16633,7 @@ async function hireRandomRecruit(buttonId) {
   };
   player.gang.gangMembers.push(newMember);
   player.gang.members = player.gang.gangMembers.length; // Keep count in sync
+  recalculatePower();
   
   // Clear the recruitment event
   clearTimeout(recruitmentTimer);
@@ -18841,6 +18990,45 @@ function initializeMissingData() {
       }
     });
   }
+
+  // v1.5.8 — Item system migration: durability, type unification, equipped item objects
+  // Fix old "gun" types to "weapon" and "car" types to "vehicle"
+  if (player.inventory && player.inventory.length > 0) {
+    player.inventory.forEach(item => {
+      if (item.type === 'gun') item.type = 'weapon';
+      if (item.type === 'car') item.type = 'vehicle';
+      // Add durability to items that don't have it
+      if ((item.type === 'weapon' || item.type === 'armor' || item.type === 'vehicle') && typeof item.durability !== 'number') {
+        // Look up the store definition for max durability
+        const storeDef = (typeof storeItems !== 'undefined') ? storeItems.find(s => s.name === item.name) : null;
+        if (storeDef && storeDef.maxDurability) {
+          item.durability = storeDef.maxDurability;
+          item.maxDurability = storeDef.maxDurability;
+        } else {
+          // Reasonable defaults by type
+          item.maxDurability = item.type === 'weapon' ? 30 : item.type === 'armor' ? 35 : 40;
+          item.durability = item.maxDurability;
+        }
+      }
+    });
+  }
+
+  // Migrate equipped items from name strings to item objects
+  if (player.equippedWeapon && typeof player.equippedWeapon === 'string') {
+    const found = player.inventory.find(i => i.name === player.equippedWeapon && i.type === 'weapon');
+    player.equippedWeapon = found || null;
+  }
+  if (player.equippedArmor && typeof player.equippedArmor === 'string') {
+    const found = player.inventory.find(i => i.name === player.equippedArmor && i.type === 'armor');
+    player.equippedArmor = found || null;
+  }
+  if (player.equippedVehicle && typeof player.equippedVehicle === 'string') {
+    const found = player.inventory.find(i => i.name === player.equippedVehicle && i.type === 'vehicle');
+    player.equippedVehicle = found || null;
+  }
+
+  // Recalculate power from equipped items + real estate + gang (replaces old running counter)
+  recalculatePower();
 }
 
 // Save slots management

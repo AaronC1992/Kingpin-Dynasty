@@ -11,25 +11,25 @@
 
 // Store items
 export const storeItems = [
-    // === Low-tier Weapons ===
-    { name: "Brass Knuckles", price: 7500, power: 10, type: "weapon", description: "Crude but effective in a street fight. +10 attack power. No ammo needed." },
-    { name: "Switchblade", price: 12000, power: 20, type: "weapon", description: "Quick and concealable. +20 attack power. No ammo needed." },
-    { name: "Baseball Bat", price: 18000, power: 30, type: "weapon", description: "A classic problem-solver. +30 attack power. No ammo needed." },
+    // === Low-tier Weapons (melee) ===
+    { name: "Brass Knuckles", price: 7500, power: 10, type: "weapon", durability: 40, maxDurability: 40, description: "Crude but effective in a street fight. +10 attack power. No ammo needed." },
+    { name: "Switchblade", price: 12000, power: 20, type: "weapon", durability: 35, maxDurability: 35, description: "Quick and concealable. +20 attack power. No ammo needed." },
+    { name: "Baseball Bat", price: 18000, power: 30, type: "weapon", durability: 50, maxDurability: 50, description: "A classic problem-solver. +30 attack power. No ammo needed." },
     // === Mid-tier Guns ===
-    { name: "Pistol", price: 30000, power: 50, type: "gun", description: "Reliable sidearm for any occasion. +50 attack power. Requires Bullets." },
-    { name: "Revolver", price: 45000, power: 70, type: "gun", description: "Six shots, six problems solved. +70 attack power. Requires Bullets." },
-    { name: "Sawed-Off Shotgun", price: 125000, power: 90, type: "gun", description: "Devastating at close range. +90 attack power. Requires Bullets." },
-    { name: "Tommy Gun", price: 150000, power: 100, type: "gun", description: "The kingpin's weapon of choice. +100 attack power. Requires Bullets." },
-    { name: "Sniper Rifle", price: 250000, power: 120, type: "gun", description: "For when you need distance. +120 attack power. Requires Bullets." },
+    { name: "Pistol", price: 30000, power: 50, type: "weapon", durability: 30, maxDurability: 30, description: "Reliable sidearm for any occasion. +50 attack power. Requires Bullets." },
+    { name: "Revolver", price: 45000, power: 70, type: "weapon", durability: 35, maxDurability: 35, description: "Six shots, six problems solved. +70 attack power. Requires Bullets." },
+    { name: "Sawed-Off Shotgun", price: 125000, power: 90, type: "weapon", durability: 25, maxDurability: 25, description: "Devastating at close range. +90 attack power. Requires Bullets." },
+    { name: "Tommy Gun", price: 150000, power: 100, type: "weapon", durability: 20, maxDurability: 20, description: "The kingpin's weapon of choice. +100 attack power. Requires Bullets." },
+    { name: "Sniper Rifle", price: 250000, power: 120, type: "weapon", durability: 15, maxDurability: 15, description: "For when you need distance. +120 attack power. Requires Bullets." },
     // === Armor ===
-    { name: "Leather Jacket", price: 15000, power: 15, type: "armor", description: "Looks cool, stops a knife. +15 defense power. Basic protection against melee attacks." },
-    { name: "Stab Vest", price: 50000, power: 25, type: "armor", description: "Lightweight protection from blades. +25 defense power. Reduces damage from melee weapons." },
-    { name: "Bulletproof Vest", price: 100000, power: 40, type: "armor", description: "Standard issue for the paranoid. +40 defense power. Reduces damage from firearms." },
-    { name: "Reinforced Body Armor", price: 200000, power: 60, type: "armor", description: "Military-grade protection. +60 defense power. Best-in-class damage reduction." },
+    { name: "Leather Jacket", price: 15000, power: 15, type: "armor", durability: 50, maxDurability: 50, description: "Looks cool, stops a knife. +15 defense power. Basic protection against melee attacks." },
+    { name: "Stab Vest", price: 50000, power: 25, type: "armor", durability: 40, maxDurability: 40, description: "Lightweight protection from blades. +25 defense power. Reduces damage from melee weapons." },
+    { name: "Bulletproof Vest", price: 100000, power: 40, type: "armor", durability: 30, maxDurability: 30, description: "Standard issue for the paranoid. +40 defense power. Reduces damage from firearms." },
+    { name: "Reinforced Body Armor", price: 200000, power: 60, type: "armor", durability: 25, maxDurability: 25, description: "Military-grade protection. +60 defense power. Best-in-class damage reduction." },
     // === Vehicles ===
-    { name: "Armored Car", price: 120000, power: 25, type: "car", description: "Bulletproof windows, reinforced frame. +25 power. Requires Gasoline to operate." },
-    { name: "Luxury Automobile", price: 400000, power: 50, type: "car", description: "Travel in style and power. +50 power. Requires Gasoline. Boosts respect." },
-    { name: "Private Airplane", price: 1500000, power: 200, type: "vehicle", description: "Leave the country at a moment's notice. +200 power. Requires Gasoline. Unlocks escape options." },
+    { name: "Armored Car", price: 120000, power: 25, type: "vehicle", durability: 60, maxDurability: 60, description: "Bulletproof windows, reinforced frame. +25 power. Requires Gasoline to operate." },
+    { name: "Luxury Automobile", price: 400000, power: 50, type: "vehicle", durability: 45, maxDurability: 45, description: "Travel in style and power. +50 power. Requires Gasoline. Boosts respect." },
+    { name: "Private Airplane", price: 1500000, power: 200, type: "vehicle", durability: 30, maxDurability: 30, description: "Leave the country at a moment's notice. +200 power. Requires Gasoline. Unlocks escape options." },
     // === Supplies ===
     { name: "Bullets", price: 2500, power: 0, type: "ammo", description: "Standard ammunition. Required to use firearms in combat. Stock up before a fight." },
     { name: "Gasoline", price: 4000, power: 0, type: "gas", description: "Fuel for your vehicles. Required to operate cars and planes. Consumed per use." },

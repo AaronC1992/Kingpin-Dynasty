@@ -5,6 +5,27 @@ All notable changes to From Dusk To Don (Mafia Born) will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.8] - 2026-02-26
+
+### Added
+- **Durability system** — weapons, armor, and vehicles now have durability that degrades with each job, mission, or battle; items break when durability reaches 0
+- **One-of-each limit** — players can only own one of each specific weapon, armor, or vehicle at a time
+- **Vehicle equipping** — vehicles can now be equipped/unequipped from inventory, contributing power when equipped
+- **Durability bars** — inventory screen shows visual durability indicators with color-coded health (green/yellow/red)
+- **Equipment info in stats** — stats display now shows equipped item durability alongside power
+- **Store "Already Owned"** — purchase buttons disabled for equippable items already in inventory
+
+### Changed
+- **Power system overhaul** — power is now calculated from equipped items + real estate + gang members only; unequipped inventory items no longer contribute power
+- **Item type unification** — all guns now use type "weapon" (was "gun"), all cars now use type "vehicle" (was "car")
+- **Equipment stores objects** — equipped weapon/armor/vehicle now store the full item object instead of just the name string
+- **All `player.power` manipulations** replaced with centralized `recalculatePower()` function
+
+### Fixed
+- **Stats display** — equipment section now correctly reads item objects instead of treating strings as objects
+- **Achievement check** — removed obsolete `type === 'gun'` check (now just "weapon")
+- **Save migration** — old saves automatically get durability values, fixed types, and migrated equipped items from strings to objects
+
 ## [1.5.7] - 2026-02-26
 
 ### Added
