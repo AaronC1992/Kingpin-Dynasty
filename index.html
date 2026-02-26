@@ -90,7 +90,7 @@
         <!-- Stats bar at the top that is always visible -->
         <div id="stats-bar">
             <div class="player-info">
-                <img id="player-portrait" src="" alt="Player" style="display: none; cursor: pointer;" onclick="cheatGrantResources()" />
+                <img id="player-portrait" src="" alt="Player" style="display: none;" />
                 <div class="player-details">
                     <span id="player-name-display">Associate</span>
                 </div>
@@ -521,6 +521,23 @@
             <div class="content-card">
                 <button onclick="showQuickActionCustomizer()">⚡ Customize Quick Actions</button>
                 <button onclick="showMobileNavCustomizer()">📱 Customize Mobile Nav Bar</button>
+            </div>
+            <div class="section-header">UI Toggles</div>
+            <div class="content-card" style="display:flex; flex-direction:column; gap:10px;">
+                <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+                    <input type="checkbox" id="toggle-quick-bar" onchange="toggleQuickBar(this.checked)" style="width:18px; height:18px; accent-color:#c0a062;">
+                    <span>Show Quick Actions Panel (right side)</span>
+                </label>
+                <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+                    <input type="checkbox" id="toggle-mobile-nav" onchange="toggleMobileNav(this.checked)" style="width:18px; height:18px; accent-color:#c0a062;">
+                    <span>Show Mobile Nav Bar (bottom)</span>
+                </label>
+            </div>
+            <div id="admin-settings-section" style="display:none;">
+                <div class="section-header" style="color: #e74c3c;">Administration</div>
+                <div class="content-card">
+                    <button onclick="showAdminPanel()" style="border-color: #e74c3c; color: #e74c3c;">🛡️ Admin Panel</button>
+                </div>
             </div>
             <div class="page-nav">
                 <button class="nav-btn-back" onclick="goBackToMainMenu()">← Back to SafeHouse</button>

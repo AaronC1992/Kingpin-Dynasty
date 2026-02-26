@@ -22,6 +22,7 @@ const AUTH_API_BASE = (function () {
 let authToken = localStorage.getItem('mb_auth_token') || null;
 let authUsername = localStorage.getItem('mb_auth_user') || null;
 let isLoggedIn = !!authToken;
+let _isAdmin = false;
 
 // ── API helpers ────────────────────────────────────────────────
 async function apiFetch(endpoint, options = {}) {
@@ -134,7 +135,28 @@ function clearLocalAuth() {
 }
 
 export function getAuthState() {
-    return { isLoggedIn, username: authUsername, token: authToken };
+    return { isLoggedIn, username: authUsername, token: authToken, isAdmin: _isAdmin };
+}
+
+// ── Admin helpers ─────────────────────────────────────────────────
+export async function checkAdmin() {
+    if (!authToken) { _isAdmin = false; return false; }
+    try {
+        const data = await apiFetch('/api/admin/check', { method: 'GET' });
+        _isAdmin = !!data.isAdmin;
+        return _isAdmin;
+    } catch {
+        _isAdmin = false;
+        return false;
+    }
+}
+
+export async function adminModify(modifications) {
+    if (!authToken || !_isAdmin) throw new Error('Not admin');
+    return apiFetch('/api/admin/modify', {
+        method: 'POST',
+        body: modifications
+    });
 }
 
 // ── Verify saved token still valid on startup ──────────────────
@@ -144,6 +166,7 @@ export async function verifySession() {
         const info = await getProfile();
         authUsername = info.username;
         isLoggedIn = true;
+        _isAdmin = !!info.isAdmin;
         return true;
     } catch {
         clearLocalAuth();

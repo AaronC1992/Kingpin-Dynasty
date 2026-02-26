@@ -13,7 +13,7 @@ import { GameLogging } from './logging.js';
 import { ui, ModalSystem } from './ui-modal.js';
 import { MobileSystem, updateMobileActionLog } from './mobile-responsive.js';
 import { initUIEvents } from './ui-events.js';
-import { initAuth, showAuthModal, autoCloudSave, getAuthState, updateAuthStatusUI, checkPlayerName } from './auth.js';
+import { initAuth, showAuthModal, autoCloudSave, getAuthState, updateAuthStatusUI, checkPlayerName, checkAdmin, adminModify } from './auth.js';
 import {
   initCasino, getCasinoWins, resetCasinoWins,
   showCasino, startBlackjack, bjDeal, bjHit, bjStand, bjDouble,
@@ -118,6 +118,7 @@ window.applyCloudSave = function (cloudEntry) {
     };
     localStorage.setItem(`gameSlot_${SAVE_SYSTEM.currentSlot || 1}`, JSON.stringify(localEntry));
     updateUI();
+    applyUIToggles();
     if (!gameplayActive) {
         // If on intro screen, jump into the game
         activateGameplaySystems();
@@ -6625,25 +6626,227 @@ function updateUI() {
   updateTracker();
 }
 
-// ==================== CHEAT / DEBUG FUNCTION ====================
-function cheatGrantResources() {
-  try {
-    const cleanAmount = 100000;
-    const dirtyAmount = 100000;
-    const skillPointsAmount = 100;
-    const xpAmount = 100000;
-    player.money += cleanAmount;
-    player.dirtyMoney = (player.dirtyMoney || 0) + dirtyAmount;
-    player.skillPoints = (player.skillPoints || 0) + skillPointsAmount;
-    player.experience = (player.experience || 0) + xpAmount;
-    logAction(`🧠ª Cheat activated: +$${cleanAmount.toLocaleString()} clean, +$${dirtyAmount.toLocaleString()} dirty, +${skillPointsAmount} skill points, +${xpAmount.toLocaleString()} XP.`);
-    updateUI();
-  } catch (e) {
-    console.error('Cheat function error:', e);
+// ==================== ADMIN PANEL ====================
+function showAdminPanel() {
+  const authState = getAuthState();
+  if (!authState.isAdmin) {
+    if (window.ui && window.ui.alert) {
+      window.ui.alert('Access Denied', 'You do not have admin privileges.');
+    }
+    return;
+  }
+
+  hideAllScreens();
+  const container = document.getElementById('options-screen');
+  container.style.display = 'block';
+
+  container.innerHTML = `
+    <div class="content-header">
+      <h2 style="color: #e74c3c;">Admin Panel</h2>
+      <button class="back-btn" onclick="showOptions()">Back to Settings</button>
+    </div>
+
+    <div class="section-header" style="color: #e74c3c;">Quick Grants</div>
+    <div class="content-card" style="display:flex; flex-wrap:wrap; gap:8px;">
+      <button onclick="adminQuickGrant('money', 100000)" style="border-color:#e74c3c;">+$100K Clean</button>
+      <button onclick="adminQuickGrant('dirtyMoney', 100000)" style="border-color:#e74c3c;">+$100K Dirty</button>
+      <button onclick="adminQuickGrant('skillPoints', 100)" style="border-color:#e74c3c;">+100 Skill Pts</button>
+      <button onclick="adminQuickGrant('experience', 100000)" style="border-color:#e74c3c;">+100K XP</button>
+      <button onclick="adminQuickGrant('energy', 100)" style="border-color:#e74c3c;">+100 Energy</button>
+      <button onclick="adminQuickGrant('health', 100)" style="border-color:#e74c3c;">+100 Health</button>
+      <button onclick="adminQuickGrant('reputation', 500)" style="border-color:#e74c3c;">+500 Rep</button>
+      <button onclick="adminQuickGrant('ammo', 500)" style="border-color:#e74c3c;">+500 Ammo</button>
+      <button onclick="adminLevelUp(10)" style="border-color:#e74c3c;">+10 Levels</button>
+    </div>
+
+    <div class="section-header" style="color: #e74c3c;">Set Stats Directly</div>
+    <div class="content-card">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+        <label style="display:flex; flex-direction:column; gap:4px;">
+          <span>Level (${player.level})</span>
+          <input type="number" id="admin-level" value="${player.level}" min="1" style="padding:6px; background:#1a1a2e; color:#e0e0e0; border:1px solid #444; border-radius:4px;">
+        </label>
+        <label style="display:flex; flex-direction:column; gap:4px;">
+          <span>XP (${(player.experience || 0).toLocaleString()})</span>
+          <input type="number" id="admin-xp" value="${player.experience || 0}" min="0" style="padding:6px; background:#1a1a2e; color:#e0e0e0; border:1px solid #444; border-radius:4px;">
+        </label>
+        <label style="display:flex; flex-direction:column; gap:4px;">
+          <span>Clean Money ($${player.money.toLocaleString()})</span>
+          <input type="number" id="admin-money" value="${player.money}" min="0" style="padding:6px; background:#1a1a2e; color:#e0e0e0; border:1px solid #444; border-radius:4px;">
+        </label>
+        <label style="display:flex; flex-direction:column; gap:4px;">
+          <span>Dirty Money ($${(player.dirtyMoney || 0).toLocaleString()})</span>
+          <input type="number" id="admin-dirty" value="${player.dirtyMoney || 0}" min="0" style="padding:6px; background:#1a1a2e; color:#e0e0e0; border:1px solid #444; border-radius:4px;">
+        </label>
+        <label style="display:flex; flex-direction:column; gap:4px;">
+          <span>Reputation (${player.reputation})</span>
+          <input type="number" id="admin-rep" value="${player.reputation}" min="0" style="padding:6px; background:#1a1a2e; color:#e0e0e0; border:1px solid #444; border-radius:4px;">
+        </label>
+        <label style="display:flex; flex-direction:column; gap:4px;">
+          <span>Skill Points (${player.skillPoints || 0})</span>
+          <input type="number" id="admin-sp" value="${player.skillPoints || 0}" min="0" style="padding:6px; background:#1a1a2e; color:#e0e0e0; border:1px solid #444; border-radius:4px;">
+        </label>
+        <label style="display:flex; flex-direction:column; gap:4px;">
+          <span>Energy (${player.energy}/${player.maxEnergy})</span>
+          <input type="number" id="admin-energy" value="${player.energy}" min="0" style="padding:6px; background:#1a1a2e; color:#e0e0e0; border:1px solid #444; border-radius:4px;">
+        </label>
+        <label style="display:flex; flex-direction:column; gap:4px;">
+          <span>Health (${player.health})</span>
+          <input type="number" id="admin-health" value="${player.health}" min="0" max="100" style="padding:6px; background:#1a1a2e; color:#e0e0e0; border:1px solid #444; border-radius:4px;">
+        </label>
+        <label style="display:flex; flex-direction:column; gap:4px;">
+          <span>Wanted Level (${player.wantedLevel})</span>
+          <input type="number" id="admin-wanted" value="${player.wantedLevel}" min="0" max="100" style="padding:6px; background:#1a1a2e; color:#e0e0e0; border:1px solid #444; border-radius:4px;">
+        </label>
+        <label style="display:flex; flex-direction:column; gap:4px;">
+          <span>Gang Members (${player.gang.members})</span>
+          <input type="number" id="admin-gang" value="${player.gang.members}" min="0" style="padding:6px; background:#1a1a2e; color:#e0e0e0; border:1px solid #444; border-radius:4px;">
+        </label>
+        <label style="display:flex; flex-direction:column; gap:4px;">
+          <span>Ammo (${player.ammo || 0})</span>
+          <input type="number" id="admin-ammo" value="${player.ammo || 0}" min="0" style="padding:6px; background:#1a1a2e; color:#e0e0e0; border:1px solid #444; border-radius:4px;">
+        </label>
+        <label style="display:flex; flex-direction:column; gap:4px;">
+          <span>Suspicion (${player.suspicionLevel || 0})</span>
+          <input type="number" id="admin-suspicion" value="${player.suspicionLevel || 0}" min="0" max="100" style="padding:6px; background:#1a1a2e; color:#e0e0e0; border:1px solid #444; border-radius:4px;">
+        </label>
+      </div>
+      <div style="margin-top:12px; display:flex; gap:8px;">
+        <button onclick="adminApplyStats()" style="border-color:#e74c3c; color:#e74c3c; flex:1;">Apply All Changes</button>
+        <button onclick="adminResetStats()" style="border-color:#ff6b6b; color:#ff6b6b;">Reset to Defaults</button>
+      </div>
+    </div>
+
+    <div class="section-header" style="color: #e74c3c;">Jail Controls</div>
+    <div class="content-card" style="display:flex; flex-wrap:wrap; gap:8px;">
+      <button onclick="adminJailRelease()" style="border-color:#e74c3c;">Release from Jail</button>
+      <button onclick="adminClearWanted()" style="border-color:#e74c3c;">Clear Wanted Level</button>
+      <button onclick="adminFullHeal()" style="border-color:#e74c3c;">Full Heal + Energy</button>
+    </div>
+
+    <div class="section-header" style="color: #e74c3c;">Skills (Set All)</div>
+    <div class="content-card" style="display:flex; flex-wrap:wrap; gap:8px;">
+      <button onclick="adminSetAllSkills(5)" style="border-color:#e74c3c;">Set All Skills to 5</button>
+      <button onclick="adminSetAllSkills(10)" style="border-color:#e74c3c;">Set All Skills to 10</button>
+      <button onclick="adminSetAllSkills(25)" style="border-color:#e74c3c;">Set All Skills to 25</button>
+      <button onclick="adminSetAllSkills(0)" style="border-color:#e74c3c;">Reset All Skills to 0</button>
+    </div>
+  `;
+}
+
+function adminQuickGrant(stat, amount) {
+  if (stat === 'experience') {
+    player.experience = (player.experience || 0) + amount;
+    checkLevelUp();
+  } else if (stat === 'dirtyMoney') {
+    player.dirtyMoney = (player.dirtyMoney || 0) + amount;
+  } else if (stat === 'skillPoints') {
+    player.skillPoints = (player.skillPoints || 0) + amount;
+  } else {
+    player[stat] = (player[stat] || 0) + amount;
+  }
+  showBriefNotification(`Admin: +${amount.toLocaleString()} ${stat}`, 'success');
+  logAction(`[Admin] Granted +${amount.toLocaleString()} ${stat}`);
+  updateUI();
+  showAdminPanel(); // Refresh panel to show updated values
+}
+
+function adminLevelUp(count) {
+  for (let i = 0; i < count; i++) {
+    player.experience = (player.experience || 0) + Math.floor(player.level * 250 + Math.pow(player.level, 2) * 30);
+    checkLevelUp();
+  }
+  showBriefNotification(`Admin: +${count} levels (now ${player.level})`, 'success');
+  logAction(`[Admin] Granted +${count} level ups (now level ${player.level})`);
+  updateUI();
+  showAdminPanel();
+}
+
+function adminApplyStats() {
+  const getValue = (id) => parseInt(document.getElementById(id).value) || 0;
+  player.level = Math.max(1, getValue('admin-level'));
+  player.experience = Math.max(0, getValue('admin-xp'));
+  player.money = Math.max(0, getValue('admin-money'));
+  player.dirtyMoney = Math.max(0, getValue('admin-dirty'));
+  player.reputation = Math.max(0, getValue('admin-rep'));
+  player.skillPoints = Math.max(0, getValue('admin-sp'));
+  player.energy = Math.max(0, getValue('admin-energy'));
+  player.health = Math.max(0, Math.min(100, getValue('admin-health')));
+  player.wantedLevel = Math.max(0, Math.min(100, getValue('admin-wanted')));
+  player.gang.members = Math.max(0, getValue('admin-gang'));
+  player.ammo = Math.max(0, getValue('admin-ammo'));
+  player.suspicionLevel = Math.max(0, Math.min(100, getValue('admin-suspicion')));
+  showBriefNotification('Admin: Stats updated!', 'success');
+  logAction('[Admin] Stats manually set via admin panel');
+  updateUI();
+  showAdminPanel();
+}
+
+function adminResetStats() {
+  if (window.ui && window.ui.confirm) {
+    window.ui.confirm('Reset Stats', 'Reset ALL stats to starting values? This cannot be undone.', () => {
+      player.level = 1;
+      player.experience = 0;
+      player.money = 0;
+      player.dirtyMoney = 0;
+      player.reputation = 0;
+      player.skillPoints = 0;
+      player.energy = 100;
+      player.maxEnergy = 100;
+      player.health = 100;
+      player.wantedLevel = 0;
+      player.gang.members = 0;
+      player.ammo = 0;
+      player.suspicionLevel = 0;
+      player.power = 0;
+      showBriefNotification('Admin: Stats reset to defaults!', 'warning');
+      logAction('[Admin] All stats reset to defaults');
+      updateUI();
+      showAdminPanel();
+    });
   }
 }
-if (typeof window !== 'undefined') {
-  window.cheatGrantResources = cheatGrantResources;
+
+function adminJailRelease() {
+  player.inJail = false;
+  player.jailTime = 0;
+  player.breakoutAttempts = 3;
+  showBriefNotification('Admin: Released from jail!', 'success');
+  logAction('[Admin] Released from jail');
+  updateUI();
+}
+
+function adminClearWanted() {
+  player.wantedLevel = 0;
+  player.suspicionLevel = 0;
+  showBriefNotification('Admin: Wanted level cleared!', 'success');
+  logAction('[Admin] Wanted level and suspicion cleared');
+  updateUI();
+  showAdminPanel();
+}
+
+function adminFullHeal() {
+  player.health = 100;
+  player.energy = player.maxEnergy || 100;
+  showBriefNotification('Admin: Fully healed + energy restored!', 'success');
+  logAction('[Admin] Full heal and energy restore');
+  updateUI();
+  showAdminPanel();
+}
+
+function adminSetAllSkills(level) {
+  if (player.skills) {
+    Object.keys(player.skills).forEach(skill => { player.skills[skill] = level; });
+  }
+  if (player.skillTrees) {
+    Object.keys(player.skillTrees).forEach(tree => {
+      Object.keys(player.skillTrees[tree]).forEach(sub => { player.skillTrees[tree][sub] = level; });
+    });
+  }
+  showBriefNotification(`Admin: All skills set to ${level}`, 'success');
+  logAction(`[Admin] All skills set to ${level}`);
+  updateUI();
+  showAdminPanel();
 }
 
 // Function to refresh the currently active screen
@@ -7013,6 +7216,42 @@ function resetMobileNavTabs() {
   showMobileNavCustomizer();
 }
 window.resetMobileNavTabs = resetMobileNavTabs;
+
+// ==================== UI PANEL TOGGLES ====================
+
+function toggleQuickBar(enabled) {
+  localStorage.setItem('quickBarEnabled', enabled ? 'true' : 'false');
+  const rightPanel = document.getElementById('right-panel');
+  if (rightPanel) {
+    rightPanel.style.display = enabled ? '' : 'none';
+  }
+}
+window.toggleQuickBar = toggleQuickBar;
+
+function toggleMobileNav(enabled) {
+  localStorage.setItem('mobileNavEnabled', enabled ? 'true' : 'false');
+  const mobileBar = document.getElementById('mobile-quick-actions');
+  if (mobileBar) {
+    mobileBar.style.display = enabled ? '' : 'none';
+  }
+}
+window.toggleMobileNav = toggleMobileNav;
+
+// Apply saved UI toggle preferences (called on game start)
+function applyUIToggles() {
+  const quickBarEnabled = localStorage.getItem('quickBarEnabled') !== 'false'; // default true
+  const mobileNavEnabled = localStorage.getItem('mobileNavEnabled') !== 'false'; // default true
+
+  const rightPanel = document.getElementById('right-panel');
+  if (rightPanel) {
+    rightPanel.style.display = quickBarEnabled ? '' : 'none';
+  }
+  const mobileBar = document.getElementById('mobile-quick-actions');
+  if (mobileBar) {
+    mobileBar.style.display = mobileNavEnabled ? '' : 'none';
+  }
+}
+window.applyUIToggles = applyUIToggles;
 
 // Update remaining right-panel elements (energy timer, quick buy labels, etc.)
 function updateRightPanelExtras() {
@@ -10086,7 +10325,7 @@ function updatePrisonerList() {
           <strong style="color: #ecf0f1;">${bot.name}</strong> - Sentence: ${bot.sentence}s
           <br><small style="color: ${difficultyColor};">Difficulty: ${difficultyText}</small>
           ${player.inJail ? '<br><span style="color: #95a5a6; font-size: 0.85em;">Cannot help others while imprisoned yourself</span>' :
-            `<br><button onclick="attemptBotJailbreak('${bot.botId}', '${bot.name}')" style="margin-top: 8px; background: #3498db; color: white; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer;">🔓 Break Out (${bot.breakoutSuccess}%)</button>`}
+            `<br><button onclick="attemptBotJailbreak('${bot.botId}', '${bot.name.replace(/'/g, "\\'").replace(/"/g, '&quot;')}')" style="margin-top: 8px; background: #3498db; color: white; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer;">🔓 Break Out (${bot.breakoutSuccess}%)</button>`}
         </div>
       `;
     });
@@ -12103,7 +12342,7 @@ function updateJailbreakPrisonerList() {
             </div>
             <div style="text-align: center; min-width: 180px;">
               <p><strong>Success Rate:</strong> <span style="color: #3498db">${bot.breakoutSuccess}%</span></p>
-              <button onclick="attemptBotJailbreak('${bot.botId}', '${bot.name}')" ${energyCheck ? '' : 'disabled'}
+              <button onclick="attemptBotJailbreak('${bot.botId}', '${bot.name.replace(/'/g, "\\'").replace(/"/g, '&quot;')}')" ${energyCheck ? '' : 'disabled'}
                       style="margin-top: 10px; width: 100%; background: ${energyCheck ? '#3498db' : '#555'}; color: white; border: none; padding: 10px; border-radius: 4px; cursor: ${energyCheck ? 'pointer' : 'not-allowed'};">
                 ${energyCheck ? '🔓 Attempt Breakout' : 'Not Enough Energy'}
               </button>
@@ -13926,6 +14165,9 @@ function startGameAfterIntro() {
   
   // Update UI with the player's name and initial state
   updateUI();
+
+  // Apply saved UI panel toggle preferences
+  applyUIToggles();
   
   // Log the beginning of the journey
   logAction(`🌆 ${player.name} steps into the shadows of the city. The streets whisper promises of power and wealth, but first... survival.`);
@@ -13936,8 +14178,21 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = "1.5.5";
+const CURRENT_VERSION = "1.5.6";
 const VERSION_UPDATES = {
+  "1.5.6": {
+    title: "February 2026 Update - Admin Tools & Economy Grind",
+    date: "February 2026",
+    changes: [
+      "Added Admin Panel with quick grants, stat editing, jail controls, and skill management",
+      "Replaced old cheat system with server-verified admin controls",
+      "Fixed mobile nav bar incorrectly appearing on PC after skipping tutorial",
+      "Added UI Toggles in Settings to show/hide Quick Actions Panel and Mobile Nav Bar",
+      "Drastically reduced all mission rewards (~90%) for a slower, grindier economy",
+      "Story campaign, faction ops, territory conquests, and boss battle payouts all rebalanced",
+      "Mission objective targets (earn/launder amounts) lowered to match new economy"
+    ]
+  },
   "1.5.5": {
     title: "February 2026 Update - Stability & Balance",
     date: "February 2026",
@@ -15060,8 +15315,8 @@ function completeTutorial() {
   const objSection = document.getElementById('objective-tracker-section');
   if (objSection) objSection.style.display = 'none';
   logAction("🎓 Tutorial completed. You're ready to make your mark on the criminal underworld. Stay sharp out there.");
-  // Rebuild mobile nav bar to swap out Objective tab
-  if (typeof MobileSystem !== 'undefined' && MobileSystem.createMobileQuickActions) {
+  // Rebuild mobile nav bar to swap out Objective tab (only on mobile/tablet)
+  if (typeof MobileSystem !== 'undefined' && MobileSystem.createMobileQuickActions && (MobileSystem.isMobile || MobileSystem.isTablet)) {
     MobileSystem.createMobileQuickActions();
   }
   
@@ -16522,6 +16777,23 @@ function showOptions() {
   if (settingsVersion) {
     settingsVersion.textContent = `Version ${CURRENT_VERSION}`;
   }
+
+  // Show admin section if user is admin
+  const adminSection = document.getElementById('admin-settings-section');
+  if (adminSection) {
+    const authState = getAuthState();
+    adminSection.style.display = authState.isAdmin ? 'block' : 'none';
+  }
+
+  // Sync UI toggle checkboxes with saved preferences
+  const toggleQuickBarCb = document.getElementById('toggle-quick-bar');
+  if (toggleQuickBarCb) {
+    toggleQuickBarCb.checked = localStorage.getItem('quickBarEnabled') !== 'false';
+  }
+  const toggleMobileNavCb = document.getElementById('toggle-mobile-nav');
+  if (toggleMobileNavCb) {
+    toggleMobileNavCb.checked = localStorage.getItem('mobileNavEnabled') !== 'false';
+  }
 }
 
 // Function to save the game
@@ -17229,26 +17501,6 @@ document.addEventListener('keydown', function(event) {
       skipTutorial();
     }
     return; // Don't process other keys during tutorial
-  }
-  
-  // Cheats: '=' for $100,000, '-' for 10 level ups (dev mode only)
-  // To enable: open browser console and type: window.DEV_MODE = true
-  if (window.DEV_MODE) {
-    if (event.key === '=') {
-      player.money += 100000;
-      showBriefNotification("Cheat: +$100,000!", 'success');
-      logAction("Cheat: You received $100,000!");
-      updateUI();
-    }
-    if (event.key === '-') {
-      for (let i = 0; i < 10; i++) {
-        player.experience += Math.floor(player.level * 250 + Math.pow(player.level, 2) * 30);
-        checkLevelUp();
-      }
-      showBriefNotification("Cheat: +10 level ups!", 'success');
-      logAction("Cheat: You gained 10 level ups!");
-      updateUI();
-    }
   }
   
   // Quick navigation
@@ -18306,6 +18558,7 @@ function loadGameFromSlot(slotNumber) {
     
     // Update UI
     updateUI();
+    applyUIToggles();
     
     // Don't automatically navigate to any screen - let the caller handle that
     // Note: If player is in jail, applySaveData() already showed the jail screen
@@ -20211,7 +20464,15 @@ window.startGame = startGame;
 window.updateUI = updateUI;
 window.logAction = logAction;
 window.alert = alert; // Overriding/wrapping standard alert if defined, or exposing custom one
-window.cheatGrantResources = cheatGrantResources;
+window.showAdminPanel = showAdminPanel;
+window.adminQuickGrant = adminQuickGrant;
+window.adminLevelUp = adminLevelUp;
+window.adminApplyStats = adminApplyStats;
+window.adminResetStats = adminResetStats;
+window.adminJailRelease = adminJailRelease;
+window.adminClearWanted = adminClearWanted;
+window.adminFullHeal = adminFullHeal;
+window.adminSetAllSkills = adminSetAllSkills;
 window.refreshCurrentScreen = refreshCurrentScreen;
 window.hideAllScreens = hideAllScreens;
 window.goBackToMainMenu = goBackToMainMenu;

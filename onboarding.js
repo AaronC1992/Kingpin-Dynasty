@@ -111,8 +111,8 @@ function skipTutorial() {
     if (progressBar) progressBar.remove();
     const stepCounter = document.getElementById('tutorial-step-counter-desktop');
     if (stepCounter) stepCounter.remove();
-    // Rebuild mobile nav bar to swap out Objective tab
-    if (typeof MobileSystem !== 'undefined' && MobileSystem.createMobileQuickActions) {
+    // Rebuild mobile nav bar to swap out Objective tab (only on mobile/tablet)
+    if (typeof MobileSystem !== 'undefined' && MobileSystem.createMobileQuickActions && (MobileSystem.isMobile || MobileSystem.isTablet)) {
         MobileSystem.createMobileQuickActions();
     }
 }

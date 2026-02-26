@@ -585,6 +585,11 @@ export const MobileSystem = {
         `;
         
         document.body.appendChild(quickActionsBar);
+
+        // Respect user's toggle preference
+        if (localStorage.getItem('mobileNavEnabled') === 'false') {
+            quickActionsBar.style.display = 'none';
+        }
     },
     
     // All available mobile nav tab definitions

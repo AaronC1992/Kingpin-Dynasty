@@ -22,7 +22,7 @@ export const storyCampaigns = {
                     { type: "complete_jobs", target: 5, current: 0, text: "Complete 5 jobs" },
                     { type: "earn_money", target: 500, current: 0, text: "Earn $500" }
                 ],
-                rewards: { money: 5000, experience: 100, reputation: 5 },
+                rewards: { money: 500, experience: 50, reputation: 2 },
                 dialogue: {
                     intro: "Every empire starts with a single step. The streets are watching — show them what you're made of.",
                     success: "Not bad, kid. You've got guts. But guts alone won't build an empire."
@@ -36,7 +36,7 @@ export const storyCampaigns = {
                     { type: "recruit_members", target: 3, current: 0, text: "Recruit 3 gang members" },
                     { type: "complete_faction_mission", target: 1, current: 0, text: "Complete 1 faction mission" }
                 ],
-                rewards: { money: 25000, experience: 200, reputation: 15 },
+                rewards: { money: 2500, experience: 100, reputation: 5 },
                 dialogue: {
                     intro: "You can't do this alone. Every boss needs soldiers, and every soldier needs a reason to follow.",
                     success: "Word on the street is you're putting together a crew. People are starting to pay attention."
@@ -50,7 +50,7 @@ export const storyCampaigns = {
                     { type: "control_territory", target: 3, current: 0, text: "Control 3 territories" },
                     { type: "win_boss_battle", target: 1, current: 0, text: "Defeat a rival boss" }
                 ],
-                rewards: { money: 100000, experience: 500, reputation: 30 },
+                rewards: { money: 10000, experience: 250, reputation: 10 },
                 dialogue: {
                     intro: "Lines on a map mean nothing without blood and money behind them. Time to carve out your slice of the city.",
                     success: "Three blocks under your flag. A rival boss sent running. You're not just a player anymore — you're a threat."
@@ -64,7 +64,7 @@ export const storyCampaigns = {
                     { type: "reach_reputation", target: 75, current: 0, text: "Reach 75 reputation" },
                     { type: "own_properties", target: 3, current: 0, text: "Own 3 properties" }
                 ],
-                rewards: { money: 500000, experience: 1000, reputation: 50 },
+                rewards: { money: 50000, experience: 500, reputation: 20 },
                 dialogue: {
                     intro: "Reputation. Property. Power. The three pillars of any criminal dynasty. Time to build yours.",
                     success: "Look at you — properties across the city, a name that opens doors and closes caskets. But this is just the beginning..."
@@ -87,9 +87,9 @@ export const storyCampaigns = {
                 description: "Your money is dirty and the feds are sniffing around. Time to go legitimate — on paper.",
                 objectives: [
                     { type: "own_businesses", target: 2, current: 0, text: "Own 2 businesses" },
-                    { type: "launder_money", target: 100000, current: 0, text: "Launder $100,000" }
+                    { type: "launder_money", target: 10000, current: 0, text: "Launder $10,000" }
                 ],
-                rewards: { money: 250000, experience: 400, reputation: 20 },
+                rewards: { money: 25000, experience: 200, reputation: 8 },
                 dialogue: {
                     intro: "\"Money's no good if you can't spend it,\" your accountant mutters, sliding a folder across the desk. \"The IRS has questions. We need fronts — and we need them yesterday.\"",
                     success: "The books are clean. The businesses look legit. But your accountant's nervous smile tells you this is a tightrope walk.",
@@ -97,7 +97,7 @@ export const storyCampaigns = {
                         prompt: "Your accountant suggests two approaches to the laundering operation:",
                         options: [
                             { text: "🏪 Go slow and careful — Small amounts through multiple businesses (Safer, less suspicion)", effect: "suspicion_decrease", value: -5 },
-                            { text: "💰 Push it all through fast — Maximum throughput, higher risk (More money, more heat)", effect: "money_bonus", value: 100000 }
+                            { text: "💰 Push it all through fast — Maximum throughput, higher risk (More money, more heat)", effect: "money_bonus", value: 10000 }
                         ]
                     }
                 },
@@ -110,7 +110,7 @@ export const storyCampaigns = {
                     { type: "reach_level", target: 15, current: 0, text: "Reach level 15" },
                     { type: "recruit_members", target: 8, current: 0, text: "Have 8 gang members" }
                 ],
-                rewards: { money: 500000, experience: 600, reputation: 25 },
+                rewards: { money: 50000, experience: 300, reputation: 10 },
                 dialogue: {
                     intro: "\"Boss, we got a problem.\" Your lieutenant's face is grim. \"Two of our stash houses got raided last night. Same time. That ain't coincidence — someone's talking.\"",
                     success: "The rat is found face-down in the river. Your crew tightens ranks. Trust is earned in blood now.",
@@ -132,7 +132,7 @@ export const storyCampaigns = {
                     { type: "complete_faction_mission", target: 5, current: 0, text: "Complete 5 faction missions" },
                     { type: "control_territory", target: 5, current: 0, text: "Control 5 territories" }
                 ],
-                rewards: { money: 250000, experience: 1500, reputation: 50 },
+                rewards: { money: 25000, experience: 750, reputation: 20 },
                 dialogue: {
                     intro: "An unmarked envelope arrives at your safehouse. Inside: a gold-embossed card with a time, a place, and five words — \"Your presence is required. Come alone.\"",
                     success: "You walk out of the summit as one of the five. The other bosses eye you with a mix of respect and calculation. Welcome to the big leagues.",
@@ -153,9 +153,9 @@ export const storyCampaigns = {
                 objectives: [
                     { type: "own_properties", target: 5, current: 0, text: "Own 5 properties" },
                     { type: "own_businesses", target: 5, current: 0, text: "Own 5 businesses" },
-                    { type: "earn_money", target: 5000000, current: 0, text: "Accumulate $5,000,000" }
+                    { type: "earn_money", target: 500000, current: 0, text: "Accumulate $500,000" }
                 ],
-                rewards: { money: 500000, experience: 3000, reputation: 75, title: "Shadow King" },
+                rewards: { money: 75000, experience: 1500, reputation: 30, title: "Shadow King" },
                 dialogue: {
                     intro: "\"They don't even know your name,\" your advisor whispers. \"The mayor dances on your strings. The police chief takes your calls. And yet — no one can touch you.\"",
                     success: "The city breathes because you allow it. Every deal, every dollar, every decision flows through your invisible hand. You are the Shadow King."
@@ -180,7 +180,7 @@ export const storyCampaigns = {
                     { type: "win_boss_battle", target: 2, current: 0, text: "Defeat 2 rival bosses" },
                     { type: "reach_reputation", target: 150, current: 0, text: "Reach 150 reputation" }
                 ],
-                rewards: { money: 500000, experience: 2000, reputation: 40 },
+                rewards: { money: 50000, experience: 1000, reputation: 15 },
                 dialogue: {
                     intro: "\"Don Castellano is on his deathbed,\" your consigliere informs you. \"Every family is positioning. The Torrinos think it's their birthright. The Kozlovs are sharpening knives. And the Chen Triad... they're already three moves ahead.\"",
                     success: "Two rival bosses lie broken. The remaining families whisper your name with fear and respect."
@@ -191,18 +191,18 @@ export const storyCampaigns = {
                 title: "Blood Money",
                 description: "Fund a war chest that will make the other families think twice about opposing you.",
                 objectives: [
-                    { type: "earn_money", target: 20000000, current: 0, text: "Accumulate $20,000,000" },
+                    { type: "earn_money", target: 2000000, current: 0, text: "Accumulate $2,000,000" },
                     { type: "own_businesses", target: 8, current: 0, text: "Own 8 businesses" },
-                    { type: "launder_money", target: 5000000, current: 0, text: "Launder $5,000,000" }
+                    { type: "launder_money", target: 500000, current: 0, text: "Launder $500,000" }
                 ],
-                rewards: { money: 1000000, experience: 3000, reputation: 50 },
+                rewards: { money: 100000, experience: 1500, reputation: 20 },
                 dialogue: {
                     intro: "\"Wars are won with money before they're won with bullets,\" your war advisor says, spreading financial reports across the table. \"We need a chest deep enough to drown our enemies in.\"",
                     success: "Your war chest bulges. Mercenaries answer your calls. Politicians pocket your envelopes. The stage is set.",
                     choice: {
                         prompt: "With your war chest ready, how do you approach the other families?",
                         options: [
-                            { text: "💰 Buy loyalty — Bribe key lieutenants to switch sides (Expensive but bloodless)", effect: "money_cost", value: -5000000 },
+                            { text: "💰 Buy loyalty — Bribe key lieutenants to switch sides (Expensive but bloodless)", effect: "money_cost", value: -500000 },
                             { text: "⚔️ Show strength — Launch raids on rival operations (Free but increases heat)", effect: "suspicion_increase", value: 15 }
                         ]
                     }
@@ -217,7 +217,7 @@ export const storyCampaigns = {
                     { type: "reach_reputation", target: 200, current: 0, text: "Reach 200 reputation" },
                     { type: "win_boss_battle", target: 3, current: 0, text: "Defeat 3 total bosses" }
                 ],
-                rewards: { money: 5000000, experience: 10000, reputation: 100, title: "The Don" },
+                rewards: { money: 500000, experience: 5000, reputation: 50, title: "The Don" },
                 dialogue: {
                     intro: "\"It's time,\" you say, standing at the window overlooking the city skyline. Below, your empire stretches to the horizon. Every light, every street, every soul — yours to command. The final meeting is tonight. Only one walks out as Don.\"",
                     success: "They kneel. Every family, every boss, every soldier. The ring is kissed, the oath is sworn. You are The Don — and from dusk to dawn, this city answers to you."
@@ -235,7 +235,7 @@ export const factionMissions = {
             id: "torrino_0",
             name: "Message Delivery",
             description: "Deliver an important message to a family associate across town. No questions asked.",
-            payout: [3000, 8000],
+            payout: [300, 800],
             risk: "low",
             jailChance: 5,
             energyCost: 8,
@@ -249,7 +249,7 @@ export const factionMissions = {
             id: "torrino_1",
             name: "Collect Overdue Debt",
             description: "A local shopkeeper hasn't paid protection money. Remind them of their obligations.",
-            payout: [6000, 16000],
+            payout: [600, 1600],
             risk: "medium",
             jailChance: 20,
             energyCost: 15,
@@ -263,7 +263,7 @@ export const factionMissions = {
             id: "torrino_2",
             name: "Intimidate Ritual Business",
             description: "A competing restaurant is cutting into family profits. Make them reconsider their location.",
-            payout: [12000, 30000],
+            payout: [1200, 3000],
             risk: "high",
             jailChance: 30,
             energyCost: 20,
@@ -277,7 +277,7 @@ export const factionMissions = {
             id: "torrino_3",
             name: "The Consigliere's Favor",
             description: "Don Torrino's advisor needs a personal matter handled. A judge's family is being... difficult about a court case.",
-            payout: [25000, 55000],
+            payout: [2500, 5500],
             risk: "high",
             jailChance: 35,
             energyCost: 25,
@@ -291,7 +291,7 @@ export const factionMissions = {
             id: "torrino_4",
             name: "Sunday Dinner",
             description: "The Don has invited you to the family's weekly dinner. But there's a test hidden in the hospitality.",
-            payout: [40000, 80000],
+            payout: [4000, 8000],
             risk: "medium",
             jailChance: 10,
             energyCost: 15,
@@ -314,7 +314,7 @@ export const factionMissions = {
             id: "kozlov_0",
             name: "Street Information",
             description: "Gather information about police patrol routes in the industrial district.",
-            payout: [4000, 10000],
+            payout: [400, 1000],
             risk: "low",
             jailChance: 10,
             energyCost: 10,
@@ -328,7 +328,7 @@ export const factionMissions = {
             id: "kozlov_1",
             name: "Weapons Smuggling Run",
             description: "Transport a shipment of illegal weapons across the city without getting caught.",
-            payout: [18000, 40000],
+            payout: [1800, 4000],
             risk: "high",
             jailChance: 35,
             energyCost: 25,
@@ -342,7 +342,7 @@ export const factionMissions = {
             id: "kozlov_2",
             name: "Border Crossing Operation",
             description: "Help smuggle goods across international borders using your connections.",
-            payout: [50000, 100000],
+            payout: [5000, 10000],
             risk: "extreme",
             jailChance: 45,
             energyCost: 35,
@@ -356,7 +356,7 @@ export const factionMissions = {
             id: "kozlov_3",
             name: "The Warehouse Job",
             description: "Raid a rival gang's weapons cache hidden in an abandoned warehouse. Take everything.",
-            payout: [30000, 65000],
+            payout: [3000, 6500],
             risk: "very high",
             jailChance: 40,
             energyCost: 30,
@@ -370,7 +370,7 @@ export const factionMissions = {
             id: "kozlov_4",
             name: "Red Winter",
             description: "The Bratva's Moscow contact has gone silent. Find out what happened — and clean up the mess.",
-            payout: [70000, 140000],
+            payout: [7000, 14000],
             risk: "extreme",
             jailChance: 50,
             energyCost: 40,
@@ -393,7 +393,7 @@ export const factionMissions = {
             id: "chen_0",
             name: "Digital Surveillance",
             description: "Monitor communications for suspicious activities using basic hacking tools.",
-            payout: [4000, 12000],
+            payout: [400, 1200],
             risk: "low",
             jailChance: 5,
             energyCost: 8,
@@ -407,7 +407,7 @@ export const factionMissions = {
             id: "chen_1",
             name: "High-Tech Heist",
             description: "Steal cutting-edge technology from a corporate facility using advanced techniques.",
-            payout: [15000, 35000],
+            payout: [1500, 3500],
             risk: "high",
             jailChance: 25,
             energyCost: 20,
@@ -421,7 +421,7 @@ export const factionMissions = {
             id: "chen_2",
             name: "Ghost in the Machine",
             description: "Hack into the city's banking network and reroute funds through untraceable shell companies.",
-            payout: [22000, 50000],
+            payout: [2200, 5000],
             risk: "medium",
             jailChance: 20,
             energyCost: 18,
@@ -435,7 +435,7 @@ export const factionMissions = {
             id: "chen_3",
             name: "Silk Road 2.0",
             description: "Establish a dark web marketplace for the Triad's international operations. Handle the logistics.",
-            payout: [45000, 90000],
+            payout: [4500, 9000],
             risk: "high",
             jailChance: 30,
             energyCost: 25,
@@ -449,7 +449,7 @@ export const factionMissions = {
             id: "chen_4",
             name: "The Dragon's Eye",
             description: "Steal a legendary jade artifact from a museum vault — the Triad's ancestral treasure, stolen decades ago.",
-            payout: [100000, 200000],
+            payout: [10000, 20000],
             risk: "extreme",
             jailChance: 45,
             energyCost: 35,
@@ -472,7 +472,7 @@ export const factionMissions = {
             id: "morales_0",
             name: "Neighborhood Watch",
             description: "Keep an eye on rival gang movements in cartel territory and report back.",
-            payout: [3500, 9000],
+            payout: [350, 900],
             risk: "low",
             jailChance: 15,
             energyCost: 12,
@@ -486,7 +486,7 @@ export const factionMissions = {
             id: "morales_1",
             name: "Drug Lab Protection",
             description: "Guard a secret drug manufacturing facility from rival gangs and police raids.",
-            payout: [20000, 45000],
+            payout: [2000, 4500],
             risk: "very high",
             jailChance: 40,
             energyCost: 30,
@@ -500,7 +500,7 @@ export const factionMissions = {
             id: "morales_2",
             name: "The Tunnel Project",
             description: "Oversee construction of a smuggling tunnel beneath the old industrial district.",
-            payout: [28000, 60000],
+            payout: [2800, 6000],
             risk: "medium",
             jailChance: 25,
             energyCost: 20,
@@ -514,7 +514,7 @@ export const factionMissions = {
             id: "morales_3",
             name: "Festival of the Dead",
             description: "During the annual street festival, the cartel moves its biggest shipment of the year. Ensure it arrives safely.",
-            payout: [65000, 130000],
+            payout: [6500, 13000],
             risk: "extreme",
             jailChance: 50,
             energyCost: 35,
@@ -528,7 +528,7 @@ export const factionMissions = {
             id: "morales_4",
             name: "El Jefe's Trust",
             description: "El Jefe has a personal request — his daughter has been kidnapped by a rival cartel. Get her back alive.",
-            payout: [120000, 250000],
+            payout: [12000, 25000],
             risk: "extreme",
             jailChance: 55,
             energyCost: 45,
@@ -559,10 +559,10 @@ export const territoryMissions = [
         requiredGangMembers: 5,
         energyCost: 25,
         rewards: {
-            money: 400000,
+            money: 40000,
             territory: 1,
             reputation: 15,
-            passive_income: 25000 // Per tribute collection
+            passive_income: 2500 // Per tribute collection
         },
         risks: {
             jailChance: 35,
@@ -580,10 +580,10 @@ export const territoryMissions = [
         requiredGangMembers: 8,
         energyCost: 35,
         rewards: {
-            money: 800000,
+            money: 80000,
             territory: 2,
             reputation: 25,
-            passive_income: 50000
+            passive_income: 5000
         },
         risks: {
             jailChance: 45,
@@ -601,10 +601,10 @@ export const territoryMissions = [
         requiredGangMembers: 3,
         energyCost: 15,
         rewards: {
-            money: 250000,
+            money: 25000,
             territory: 1,
             reputation: 10,
-            passive_income: 15000
+            passive_income: 1500
         },
         risks: {
             jailChance: 25,
@@ -622,10 +622,10 @@ export const territoryMissions = [
         requiredGangMembers: 7,
         energyCost: 30,
         rewards: {
-            money: 600000,
+            money: 60000,
             territory: 2,
             reputation: 20,
-            passive_income: 35000
+            passive_income: 3500
         },
         risks: {
             jailChance: 40,
@@ -643,10 +643,10 @@ export const territoryMissions = [
         requiredGangMembers: 12,
         energyCost: 45,
         rewards: {
-            money: 1200000,
+            money: 120000,
             territory: 3,
             reputation: 35,
-            passive_income: 80000
+            passive_income: 8000
         },
         risks: {
             jailChance: 55,
@@ -677,7 +677,7 @@ export const bossBattles = [
         },
         energyCost: 50,
         rewards: {
-            money: 1500000,
+            money: 150000,
             reputation: 35,
             territory: 2,
             experience: 500,
@@ -714,7 +714,7 @@ export const bossBattles = [
         },
         energyCost: 40,
         rewards: {
-            money: 1000000,
+            money: 100000,
             reputation: 30,
             wanted_level_reduction: 20, // Reduces wanted level
             experience: 400
@@ -750,7 +750,7 @@ export const bossBattles = [
         },
         energyCost: 60,
         rewards: {
-            money: 5000000,
+            money: 500000,
             reputation: 75,
             territory: 5,
             experience: 2000,

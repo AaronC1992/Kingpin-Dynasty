@@ -8,6 +8,12 @@ const { loadWorldState, saveWorldState, flushWorldState } = require('./worldPers
 // User accounts & authentication
 const userDB = require('./userDB');
 
+// ── Admin accounts (lowercase usernames) ───────────────────────
+const ADMIN_USERNAMES = new Set(['admin']);
+function isAdmin(username) {
+    return username && ADMIN_USERNAMES.has(username.toLowerCase());
+}
+
 // Server configuration
 const PORT = process.env.PORT || 3000;
 // Allowed origins for CORS (game website)
@@ -127,7 +133,26 @@ const server = http.createServer(async (req, res) => {
                 const username = userDB.validateToken(getToken());
                 if (!username) return json(401, { error: 'Not authenticated' });
                 const info = userDB.getUserInfo(username);
+                info.isAdmin = isAdmin(username);
                 return json(200, info);
+            }
+
+            // ── GET /api/admin/check ───────────────────────
+            if (urlPath === '/api/admin/check' && req.method === 'GET') {
+                const username = userDB.validateToken(getToken());
+                if (!username) return json(401, { error: 'Not authenticated' });
+                return json(200, { isAdmin: isAdmin(username) });
+            }
+
+            // ── POST /api/admin/modify ─────────────────────
+            if (urlPath === '/api/admin/modify' && req.method === 'POST') {
+                const username = userDB.validateToken(getToken());
+                if (!username) return json(401, { error: 'Not authenticated' });
+                if (!isAdmin(username)) return json(403, { error: 'Forbidden' });
+                const body = await readBody();
+                // Return the modifications for the client to apply locally
+                // The server trusts admin, the client applies changes to the local player object
+                return json(200, { ok: true, modifications: body });
             }
 
             // ── POST /api/save ─────────────────────────────
@@ -517,8 +542,8 @@ function sanitizePlayerName(raw) {
     name = name.replace(/\s+/g, ' ');
     // Enforce length
     if (name.length > 20) name = name.substring(0, 20);
-    // Fallback if empty or profane
-    if (!name || isProfane(name)) {
+    // Fallback if empty or profane (admins bypass the filter)
+    if (!name || (isProfane(name) && !ADMIN_USERNAMES.has(name.toLowerCase()))) {
         name = `Player_${Math.random().toString(36).slice(-4)}`;
     }
     return name;
