@@ -5,6 +5,24 @@ All notable changes to From Dusk To Don (Mafia Born) will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.4] - 2026-02-26
+
+### Changed
+- **Operations UI redesign** — replaced single-page wall of content with tabbed navigation (Story, Family Ops, Territory, Bosses)
+- Mission cards now use proper CSS classes with color-coded borders, status badges, and inline requirement tags
+- Crime families in Family Ops tab are collapsible accordion groups
+- Locked missions hidden behind a toggle to reduce visual clutter
+- Story campaign panel now shows a chapter progress bar with completion percentage
+- Compact faction intel strip at top shows all family reputations at a glance
+
+### Removed
+- Random encounters system removed from generators.js and game.js
+
+### Fixed
+- Bot jailbreak button now shows visible alert feedback on success/failure
+- Online players in jail now sync to server so other players can see them in jail lists
+- Added `syncJailStatus()` client function and `handleJailStatusSync()` server handler
+
 ## [1.5.3] - 2026-02-25
 
 ### Fixed

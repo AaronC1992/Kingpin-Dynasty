@@ -3849,6 +3849,559 @@ p, ul {
     margin-right: 10px;
 }
 
+/* ==================== OPERATIONS / MISSIONS SCREEN ==================== */
+
+/* Tab navigation bar */
+.ops-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid #333;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+
+.ops-tab {
+    flex: 1;
+    min-width: 140px;
+    padding: 14px 10px;
+    background: transparent;
+    color: #777;
+    border: none;
+    border-bottom: 3px solid transparent;
+    font-family: 'Georgia', serif;
+    font-size: 0.95em;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: color 0.25s, border-color 0.25s, background 0.25s;
+    text-align: center;
+    position: relative;
+}
+
+.ops-tab:hover {
+    color: #d4af37;
+    background: rgba(212,175,55,0.05);
+}
+
+.ops-tab.active {
+    color: #d4af37;
+    border-bottom-color: #d4af37;
+    background: rgba(212,175,55,0.08);
+}
+
+.ops-tab .tab-icon {
+    display: block;
+    font-size: 1.3em;
+    margin-bottom: 4px;
+}
+
+.ops-tab .tab-count {
+    display: inline-block;
+    background: #8b0000;
+    color: #fff;
+    font-size: 0.7em;
+    padding: 1px 6px;
+    border-radius: 8px;
+    margin-left: 6px;
+    vertical-align: middle;
+    font-family: Arial, sans-serif;
+}
+
+/* Tab content panels */
+.ops-panel {
+    display: none;
+    animation: opsFadeIn 0.3s ease;
+}
+
+.ops-panel.active {
+    display: block;
+}
+
+@keyframes opsFadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Faction intel strip (compact top bar) */
+.ops-intel-strip {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    padding: 12px;
+    background: rgba(20, 20, 20, 0.8);
+    border: 1px solid #333;
+    border-radius: 6px;
+    overflow-x: auto;
+    flex-wrap: wrap;
+}
+
+.ops-intel-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 4px;
+    border-left: 3px solid var(--family-color, #666);
+    white-space: nowrap;
+    flex-shrink: 0;
+    min-width: 0;
+}
+
+.ops-intel-chip .chip-name {
+    color: var(--family-color, #d4af37);
+    font-weight: bold;
+    font-size: 0.85em;
+}
+
+.ops-intel-chip .chip-meta {
+    color: #888;
+    font-size: 0.75em;
+}
+
+.ops-intel-chip .chip-rep {
+    color: #d4af37;
+    font-size: 0.8em;
+    font-weight: bold;
+}
+
+/* Section within a panel */
+.ops-section {
+    margin-bottom: 28px;
+}
+
+.ops-section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #d4af37;
+    font-family: 'Georgia', serif;
+    font-size: 1.15em;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(212,175,55,0.25);
+}
+
+.ops-section-title .title-icon {
+    font-size: 1.2em;
+}
+
+/* Mission card (used across all tabs) */
+.ops-card {
+    background: rgba(26, 26, 26, 0.7);
+    border: 1px solid #2a2a2a;
+    border-radius: 6px;
+    padding: 16px 18px;
+    margin-bottom: 12px;
+    transition: border-color 0.25s, box-shadow 0.25s, transform 0.15s;
+    position: relative;
+}
+
+.ops-card:hover {
+    border-color: #444;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    transform: translateY(-1px);
+}
+
+.ops-card.card-available {
+    border-left: 4px solid #2ecc71;
+}
+
+.ops-card.card-locked {
+    border-left: 4px solid #555;
+    opacity: 0.65;
+}
+
+.ops-card.card-locked:hover {
+    opacity: 0.85;
+}
+
+.ops-card.card-signature {
+    border-left: 4px solid #9b59b6;
+    background: rgba(155, 89, 182, 0.06);
+}
+
+.ops-card.card-boss {
+    border-left: 4px solid #9b59b6;
+}
+
+.ops-card .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.ops-card .card-title {
+    color: #e0e0e0;
+    font-family: 'Georgia', serif;
+    font-size: 1.05em;
+    font-weight: bold;
+    margin: 0;
+}
+
+.ops-card.card-available .card-title {
+    color: #f0e6d2;
+}
+
+.ops-card.card-locked .card-title {
+    color: #888;
+}
+
+.ops-card .card-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 3px;
+    font-size: 0.7em;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.card-badge.badge-available { background: rgba(46,204,113,0.2); color: #2ecc71; border: 1px solid rgba(46,204,113,0.3); }
+.card-badge.badge-locked { background: rgba(100,100,100,0.2); color: #888; border: 1px solid #444; }
+.card-badge.badge-signature { background: rgba(155,89,182,0.2); color: #9b59b6; border: 1px solid rgba(155,89,182,0.3); }
+.card-badge.badge-cooldown { background: rgba(230,126,34,0.2); color: #e67e22; border: 1px solid rgba(230,126,34,0.3); }
+.card-badge.badge-boss { background: rgba(155,89,182,0.2); color: #9b59b6; border: 1px solid rgba(155,89,182,0.3); }
+
+.ops-card .card-desc {
+    color: #aaa;
+    font-size: 0.88em;
+    line-height: 1.5;
+    margin-bottom: 10px;
+}
+
+/* Stat row inside a card */
+.ops-card .card-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+    margin-bottom: 10px;
+}
+
+.ops-card .stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.8em;
+    color: #999;
+}
+
+.ops-card .stat .stat-val {
+    color: #d4af37;
+    font-weight: bold;
+}
+
+.ops-card .stat .stat-val.val-danger {
+    color: #e74c3c;
+}
+
+.ops-card .stat .stat-val.val-ok {
+    color: #2ecc71;
+}
+
+/* Requirements strip */
+.ops-card .card-reqs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.ops-card .req-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 0.75em;
+    font-weight: 600;
+}
+
+.req-tag.req-met { background: rgba(46,204,113,0.12); color: #2ecc71; border: 1px solid rgba(46,204,113,0.2); }
+.req-tag.req-unmet { background: rgba(231,76,60,0.12); color: #e74c3c; border: 1px solid rgba(231,76,60,0.2); }
+
+/* Action button at card bottom */
+.ops-card .card-action {
+    display: inline-block;
+    padding: 10px 22px;
+    border: none;
+    border-radius: 4px;
+    font-family: 'Georgia', serif;
+    font-size: 0.9em;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: filter 0.2s, transform 0.15s;
+}
+
+.ops-card .card-action:hover:not(:disabled) {
+    filter: brightness(1.15);
+    transform: translateY(-1px);
+}
+
+.ops-card .card-action:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    filter: grayscale(0.5);
+}
+
+.card-action.act-go { background: linear-gradient(135deg, #2ecc71, #27ae60); color: #fff; }
+.card-action.act-boss { background: linear-gradient(135deg, #9b59b6, #8e44ad); color: #fff; }
+.card-action.act-signature { background: linear-gradient(135deg, #9b59b6, #7d3c98); color: #fff; }
+.card-action.act-locked { background: #333; color: #666; }
+
+/* Campaign (story) panel specifics */
+.ops-campaign-box {
+    background: rgba(26, 26, 26, 0.8);
+    border: 1px solid #333;
+    border-left: 4px solid #d4af37;
+    border-radius: 6px;
+    padding: 20px 22px;
+    margin-bottom: 16px;
+}
+
+.ops-campaign-box .chapter-label {
+    color: #d4af37;
+    font-family: 'Georgia', serif;
+    font-size: 0.8em;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 4px;
+}
+
+.ops-campaign-box .chapter-title {
+    color: #f0e6d2;
+    font-family: 'Georgia', serif;
+    font-size: 1.2em;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.ops-campaign-box .chapter-desc {
+    color: #bbb;
+    font-size: 0.9em;
+    line-height: 1.6;
+    margin-bottom: 16px;
+}
+
+.ops-objective {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    margin-bottom: 6px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 4px;
+    border-left: 3px solid #555;
+    transition: border-color 0.2s;
+}
+
+.ops-objective.obj-done {
+    border-left-color: #2ecc71;
+}
+
+.ops-objective .obj-check {
+    font-size: 1.1em;
+    flex-shrink: 0;
+}
+
+.ops-objective .obj-text {
+    color: #ccc;
+    font-size: 0.88em;
+    flex: 1;
+}
+
+.ops-objective.obj-done .obj-text {
+    color: #2ecc71;
+    text-decoration: line-through;
+    text-decoration-color: rgba(46,204,113,0.4);
+}
+
+.ops-objective .obj-progress {
+    color: #d4af37;
+    font-size: 0.8em;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+.ops-rewards-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 10px 14px;
+    background: rgba(46,204,113,0.08);
+    border: 1px solid rgba(46,204,113,0.15);
+    border-radius: 4px;
+    margin-top: 12px;
+}
+
+.ops-rewards-bar .reward-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.82em;
+    color: #aaa;
+}
+
+.ops-rewards-bar .reward-item .reward-val {
+    color: #2ecc71;
+    font-weight: bold;
+}
+
+/* Family group within faction tab */
+.ops-family-group {
+    margin-bottom: 22px;
+    border: 1px solid #2a2a2a;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.ops-family-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 16px;
+    background: rgba(0,0,0,0.5);
+    border-bottom: 1px solid #2a2a2a;
+    cursor: pointer;
+    transition: background 0.2s;
+    border-left: 4px solid var(--family-color, #666);
+}
+
+.ops-family-header:hover {
+    background: rgba(255,255,255,0.03);
+}
+
+.ops-family-header .fam-name {
+    color: var(--family-color, #d4af37);
+    font-family: 'Georgia', serif;
+    font-size: 1em;
+    font-weight: bold;
+}
+
+.ops-family-header .fam-meta {
+    color: #888;
+    font-size: 0.78em;
+}
+
+.ops-family-header .fam-toggle {
+    color: #666;
+    font-size: 1.2em;
+    transition: transform 0.25s;
+}
+
+.ops-family-header.expanded .fam-toggle {
+    transform: rotate(180deg);
+}
+
+.ops-family-body {
+    padding: 12px 16px;
+    display: none;
+}
+
+.ops-family-body.expanded {
+    display: block;
+}
+
+/* Territory info bar */
+.ops-territory-info {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 14px 16px;
+    background: rgba(20, 20, 20, 0.8);
+    border: 1px solid #333;
+    border-radius: 6px;
+    margin-bottom: 18px;
+    align-items: center;
+}
+
+.ops-territory-info .info-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85em;
+    color: #aaa;
+}
+
+.ops-territory-info .info-item .info-val {
+    color: #d4af37;
+    font-weight: bold;
+}
+
+/* Back button styled to match game theme */
+.ops-back-btn {
+    display: inline-block;
+    margin-top: 20px;
+    padding: 12px 28px;
+    background: linear-gradient(to bottom, #2c2c2c, #1a1a1a);
+    color: #d4af37;
+    border: 2px solid #d4af37;
+    border-radius: 3px;
+    font-family: 'Georgia', serif;
+    font-size: 0.95em;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.ops-back-btn:hover {
+    background: linear-gradient(to bottom, #3c3c3c, #2a2a2a);
+    box-shadow: 0 0 15px rgba(212,175,55,0.4);
+    transform: translateY(-2px);
+}
+
+/* Locked toggle link */
+.ops-locked-toggle {
+    display: inline-block;
+    padding: 6px 0;
+    color: #666;
+    font-size: 0.82em;
+    cursor: pointer;
+    border: none;
+    background: none;
+    transition: color 0.2s;
+    margin-top: 8px;
+}
+
+.ops-locked-toggle:hover {
+    color: #999;
+}
+
+/* Responsive adjustments for ops screen */
+@media (max-width: 900px) {
+    .ops-tabs {
+        gap: 0;
+    }
+    .ops-tab {
+        min-width: 0;
+        padding: 10px 6px;
+        font-size: 0.8em;
+    }
+    .ops-tab .tab-icon {
+        font-size: 1.1em;
+    }
+    .ops-intel-strip {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+    }
+    .ops-card .card-stats {
+        gap: 4px 10px;
+    }
+}
+
 /* Expanded screens responsive adjustments */
 @media (max-width: 768px) {
     .expanded-screen-overlay {

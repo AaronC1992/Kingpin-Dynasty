@@ -331,350 +331,448 @@ async function showMissions() {
     showBriefNotification("Can't access missions while in jail!", 'danger');
     return;
   }
-  
+
+  // Count available missions per tab for badges
+  const storyActive = storyCampaigns[player.missions.activeCampaign] && storyCampaigns[player.missions.activeCampaign].chapters[player.missions.currentChapter] ? 1 : 0;
+  let factionAvail = 0;
+  Object.keys(crimeFamilies).forEach(k => { factionAvail += (factionMissions[k] || []).filter(m => m.unlocked).length; });
+  const territoryAvail = territoryMissions.filter(m => player.missions.unlockedTerritoryMissions.includes(m.id)).length;
+  const bossAvail = bossBattles.filter(b => player.missions.unlockedBossBattles.includes(b.id)).length;
+
   let missionsHTML = `
-    <h2>Missions & Operations</h2>
-    
-    <!-- Faction Information Panel -->
-    <div style="background: rgba(44, 62, 80, 0.9); padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 2px solid #9b59b6;">
-      <h3 style="color: #9b59b6; margin-bottom: 10px;">Crime Family Intelligence</h3>
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px;">
-        ${Object.keys(crimeFamilies).map(familyKey => {
-          const family = crimeFamilies[familyKey];
-          const reputation = player.missions.factionReputation[familyKey];
-          const missions = factionMissions[familyKey] || [];
-          const unlockedCount = missions.filter(m => m.unlocked).length;
-          const totalCount = missions.length;
-          
-          return `
-            <div style="background: rgba(0, 0, 0, 0.3); padding: 10px; border-radius: 5px; border-left: 3px solid ${family.color};">
-              <strong style="color: ${family.color};">${family.name}</strong>
-              <br><small style="color: #bdc3c7;">Boss: ${family.boss}</small>
-              <br><small style="color: #95a5a6;">${family.specialty}</small>
-              <br><small style="color: #f39c12;">Reputation: ${reputation} | Missions: ${unlockedCount}/${totalCount}</small>
+    <!-- Faction Intel Strip -->
+    <div class="ops-intel-strip">
+      ${Object.keys(crimeFamilies).map(familyKey => {
+        const family = crimeFamilies[familyKey];
+        const reputation = player.missions.factionReputation[familyKey];
+        const missions = factionMissions[familyKey] || [];
+        const unlockedCount = missions.filter(m => m.unlocked).length;
+        const totalCount = missions.length;
+        return `
+          <div class="ops-intel-chip" style="--family-color:${family.color}">
+            <div>
+              <span class="chip-name">${family.name}</span>
+              <span class="chip-meta"> &middot; ${family.boss}</span>
             </div>
-          `;
-        }).join('')}
-      </div>
+            <span class="chip-rep">${reputation} Rep</span>
+            <span class="chip-meta">${unlockedCount}/${totalCount}</span>
+          </div>
+        `;
+      }).join('')}
     </div>
 
-    <div style="display: flex; gap: 15px;">
-      <!-- Left Column: Story Campaign -->
-      <div style="flex: 1; background: rgba(0, 0, 0, 0.8); padding: 15px; border-radius: 10px; border: 2px solid #c0a062;">
-        <h3 style="color: #c0a062; font-family: 'Georgia', serif;">The Story</h3>
-        ${generateCampaignHTML()}
-      </div>
-      
-      <!-- Right Column: Faction Missions (Larger) -->
-      <div style="flex: 2; background: rgba(0, 0, 0, 0.8); padding: 15px; border-radius: 10px; border: 2px solid #8b0000;">
-        <h3 style="color: #8b0000; font-family: 'Georgia', serif;">Family Business</h3>
-        <div style="max-height: 400px; overflow-y: auto; padding-right: 10px;">
-          ${generateFactionMissionsHTML()}
-        </div>
-      </div>
+    <!-- Tab Navigation -->
+    <div class="ops-tabs">
+      <button class="ops-tab active" onclick="switchOpsTab('story', this)">
+        <span class="tab-icon">&#128214;</span>
+        Story${storyActive ? '<span class="tab-count">!</span>' : ''}
+      </button>
+      <button class="ops-tab" onclick="switchOpsTab('factions', this)">
+        <span class="tab-icon">&#128081;</span>
+        Family Ops${factionAvail ? '<span class="tab-count">' + factionAvail + '</span>' : ''}
+      </button>
+      <button class="ops-tab" onclick="switchOpsTab('territory', this)">
+        <span class="tab-icon">&#127961;</span>
+        Territory${territoryAvail ? '<span class="tab-count">' + territoryAvail + '</span>' : ''}
+      </button>
+      <button class="ops-tab" onclick="switchOpsTab('bosses', this)">
+        <span class="tab-icon">&#128128;</span>
+        Bosses${bossAvail ? '<span class="tab-count">' + bossAvail + '</span>' : ''}
+      </button>
     </div>
-    
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
-      <!-- Territory Missions -->
-      <div style="background: rgba(44, 62, 80, 0.8); padding: 15px; border-radius: 10px; border: 2px solid #f39c12;">
-        <h3 style="color: #f39c12;">Territory Expansion</h3>
-        <div style="max-height: 400px; overflow-y: auto; padding-right: 10px;">
-          ${generateTerritoryMissionsHTML()}
-        </div>
-      </div>
-      
-      <!-- Boss Battles -->
-      <div style="background: rgba(44, 62, 80, 0.8); padding: 20px; border-radius: 10px; border: 2px solid #9b59b6;">
-        <h3 style="color: #9b59b6;">Boss Battles</h3>
-        ${generateBossBattlesHTML()}
-      </div>
+
+    <!-- Story Campaign Panel -->
+    <div id="ops-panel-story" class="ops-panel active">
+      ${generateCampaignHTML()}
     </div>
-    
-    <button onclick="goBackToMainMenu()" style="background: #95a5a6; color: white; padding: 15px 30px; border: none; border-radius: 8px; cursor: pointer; margin-top: 20px;">
-      Back to SafeHouse
-    </button>
+
+    <!-- Faction Missions Panel -->
+    <div id="ops-panel-factions" class="ops-panel">
+      ${generateFactionMissionsHTML()}
+    </div>
+
+    <!-- Territory Missions Panel -->
+    <div id="ops-panel-territory" class="ops-panel">
+      ${generateTerritoryMissionsHTML()}
+    </div>
+
+    <!-- Boss Battles Panel -->
+    <div id="ops-panel-bosses" class="ops-panel">
+      ${generateBossBattlesHTML()}
+    </div>
+
+    <button class="ops-back-btn" onclick="goBackToMainMenu()">Back to SafeHouse</button>
   `;
-  
+
   document.getElementById("missions-content").innerHTML = missionsHTML;
   hideAllScreens();
   document.getElementById("missions-screen").style.display = "block";
 }
 
+// Switch between Operations tabs
+function switchOpsTab(tabId, btn) {
+  document.querySelectorAll('.ops-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.ops-tab').forEach(t => t.classList.remove('active'));
+  const panel = document.getElementById('ops-panel-' + tabId);
+  if (panel) panel.classList.add('active');
+  if (btn) btn.classList.add('active');
+}
+
+// Toggle a family section open/closed
+function toggleFamilyGroup(familyKey) {
+  const header = document.querySelector(`[data-family-header="${familyKey}"]`);
+  const body = document.querySelector(`[data-family-body="${familyKey}"]`);
+  if (header && body) {
+    header.classList.toggle('expanded');
+    body.classList.toggle('expanded');
+  }
+}
+
+// Toggle locked missions visibility
+function toggleLockedMissions(familyKey) {
+  const el = document.querySelector(`[data-locked-group="${familyKey}"]`);
+  const btn = document.querySelector(`[data-locked-toggle="${familyKey}"]`);
+  if (el) {
+    const visible = el.style.display !== 'none';
+    el.style.display = visible ? 'none' : 'block';
+    if (btn) btn.textContent = visible ? 'Show locked missions...' : 'Hide locked missions';
+  }
+}
+
 // Function to generate campaign HTML
 function generateCampaignHTML() {
   const campaign = storyCampaigns[player.missions.activeCampaign];
-  if (!campaign) return "<p>No active campaign</p>";
+  if (!campaign) return `<div class="ops-section"><p style="color:#777;">No active campaign.</p></div>`;
   
   const currentChapter = campaign.chapters[player.missions.currentChapter];
-  if (!currentChapter) return "<p>Campaign completed!</p>";
+  if (!currentChapter) return `<div class="ops-section"><p style="color:#2ecc71;">Campaign completed! You've risen to the top.</p></div>`;
   
+  const totalChapters = campaign.chapters.length;
+  const chapterNum = player.missions.currentChapter + 1;
+  const completedObj = currentChapter.objectives.filter(o => o.current >= o.target).length;
+  const totalObj = currentChapter.objectives.length;
+  const progressPct = totalObj > 0 ? Math.round((completedObj / totalObj) * 100) : 0;
+
   let objectivesHTML = currentChapter.objectives.map(obj => {
     const isComplete = obj.current >= obj.target;
     return `
-      <div style="margin: 5px 0; padding: 8px; background: rgba(52, 73, 94, 0.6); border-radius: 5px;">
-        <span style="color: ${isComplete ? '#c0a062' : '#ecf0f1'}; font-family: 'Georgia', serif;">
-          ${isComplete ? 'âœ…' : 'ðŸ”²'} ${obj.text} (${obj.current}/${obj.target})
-        </span>
+      <div class="ops-objective ${isComplete ? 'obj-done' : ''}">
+        <span class="obj-check">${isComplete ? '&#9745;' : '&#9744;'}</span>
+        <span class="obj-text">${obj.text}</span>
+        <span class="obj-progress">${obj.current}/${obj.target}</span>
       </div>
     `;
   }).join('');
   
   return `
-    <h4>${campaign.name}</h4>
-    <h5 style="color: #f39c12;">Chapter ${player.missions.currentChapter + 1}: ${currentChapter.title}</h5>
-    <p style="margin: 10px 0;">${currentChapter.description}</p>
-    <div style="margin: 15px 0;">
-      <strong>Objectives:</strong>
-      ${objectivesHTML}
-    </div>
-    <div style="margin: 10px 0; padding: 10px; background: rgba(46, 204, 113, 0.2); border-radius: 5px;">
-      <small><strong>Rewards:</strong> $${currentChapter.rewards.money || 0}, ${currentChapter.rewards.experience || 0} XP, ${currentChapter.rewards.reputation || 0} Rep</small>
+    <div class="ops-section">
+      <div class="ops-section-title"><span class="title-icon">&#128214;</span> ${campaign.name}</div>
+      <div class="ops-campaign-box">
+        <div class="chapter-label">Chapter ${chapterNum} of ${totalChapters}</div>
+        <div class="chapter-title">${currentChapter.title}</div>
+        <div class="chapter-desc">${currentChapter.description}</div>
+        
+        <div style="margin-bottom:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <span style="color:#888;font-size:0.82em;font-weight:bold;text-transform:uppercase;letter-spacing:1px;">Objectives</span>
+            <span style="color:#d4af37;font-size:0.82em;font-weight:bold;">${completedObj}/${totalObj} &mdash; ${progressPct}%</span>
+          </div>
+          <div style="background:#1a1a1a;border-radius:3px;height:4px;overflow:hidden;">
+            <div style="width:${progressPct}%;height:100%;background:linear-gradient(90deg,#d4af37,#2ecc71);border-radius:3px;transition:width 0.3s;"></div>
+          </div>
+        </div>
+        
+        ${objectivesHTML}
+        
+        <div class="ops-rewards-bar">
+          ${currentChapter.rewards.money ? `<span class="reward-item">&#128176; <span class="reward-val">$${(currentChapter.rewards.money || 0).toLocaleString()}</span></span>` : ''}
+          ${currentChapter.rewards.experience ? `<span class="reward-item">&#11088; <span class="reward-val">${currentChapter.rewards.experience} XP</span></span>` : ''}
+          ${currentChapter.rewards.reputation ? `<span class="reward-item">&#128081; <span class="reward-val">+${currentChapter.rewards.reputation} Rep</span></span>` : ''}
+        </div>
+      </div>
     </div>
   `;
 }
 
 // Function to generate faction missions HTML
 function generateFactionMissionsHTML() {
-  let html = "";
+  let html = `<div class="ops-section">
+    <div class="ops-section-title"><span class="title-icon">&#128081;</span> Family Business</div>`;
   
   Object.keys(crimeFamilies).forEach(familyKey => {
     const family = crimeFamilies[familyKey];
     const missions = factionMissions[familyKey] || [];
     const reputation = player.missions.factionReputation[familyKey];
     
-    // Separate unlocked and locked missions
     const unlockedMissions = missions.filter(m => m.unlocked);
     const lockedMissions = missions.filter(m => !m.unlocked);
+    const totalCount = missions.length;
+    const unlockedCount = unlockedMissions.length;
+
+    // Check if first family should be expanded by default
+    const isFirst = Object.keys(crimeFamilies).indexOf(familyKey) === 0;
     
     html += `
-      <div style="margin: 10px 0; padding: 12px; background: rgba(52, 73, 94, 0.4); border-radius: 8px; border-left: 4px solid ${family.color};">
-        <h5 style="color: ${family.color}; margin-bottom: 8px;">${family.name}</h5>
-        <small style="color: #bdc3c7;">Reputation: ${reputation} | ${family.description}</small>
-        
-        <!-- Available Missions -->
-        ${unlockedMissions.map(mission => `
-          <div style="margin: 8px 0; padding: 10px; background: rgba(46, 204, 113, 0.1); border-radius: 5px; border: 1px solid rgba(46, 204, 113, 0.3);">
-            <strong style="color: #c0a062; font-family: 'Georgia', serif;">âœ… ${mission.name}</strong>
-            <br><small style="color: #ecf0f1;">${mission.description}</small>
-            <br><small style="color: #f39c12;">ðŸ’° Payout: $${mission.payout[0]}-${mission.payout[1]} | âš¡ Risk: ${mission.risk}</small>
-            ${mission.requiredItems && mission.requiredItems.length > 0 ? 
-              `<br><small style="color: #e67e22;">Required Items: ${mission.requiredItems.join(', ')}</small>` : ''}
-            <br><small style="color: #95a5a6;">Energy: ${mission.energyCost} | Rep Needed: ${mission.reputation}</small>
-            <br><button onclick="startFactionMission('${familyKey}', '${mission.id}')" 
-                  style="background: ${family.color}; color: white; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; margin-top: 5px; font-weight: bold;">
+      <div class="ops-family-group">
+        <div class="ops-family-header ${isFirst ? 'expanded' : ''}" style="--family-color:${family.color}" data-family-header="${familyKey}" onclick="toggleFamilyGroup('${familyKey}')">
+          <div>
+            <span class="fam-name">${family.name}</span>
+            <span class="fam-meta"> &middot; ${family.boss} &middot; ${family.specialty}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="chip-rep" style="color:#d4af37;font-size:0.85em;font-weight:bold;">${reputation} Rep</span>
+            <span class="fam-meta">${unlockedCount}/${totalCount}</span>
+            <span class="fam-toggle">&#9660;</span>
+          </div>
+        </div>
+        <div class="ops-family-body ${isFirst ? 'expanded' : ''}" data-family-body="${familyKey}">
+    `;
+
+    // Available missions
+    unlockedMissions.forEach(mission => {
+      html += `
+          <div class="ops-card card-available">
+            <div class="card-header">
+              <h4 class="card-title">${mission.name}</h4>
+              <span class="card-badge badge-available">Available</span>
+            </div>
+            <div class="card-desc">${mission.description}</div>
+            <div class="card-stats">
+              <span class="stat">&#128176; <span class="stat-val">$${mission.payout[0].toLocaleString()}-$${mission.payout[1].toLocaleString()}</span></span>
+              <span class="stat">Risk: <span class="stat-val">${mission.risk}</span></span>
+              <span class="stat">&#9889; <span class="stat-val">${mission.energyCost}</span></span>
+              <span class="stat">Rep: <span class="stat-val">${mission.reputation}</span></span>
+            </div>
+            ${mission.requiredItems && mission.requiredItems.length > 0 ? `
+            <div class="card-reqs">
+              ${mission.requiredItems.map(item => `<span class="req-tag ${hasRequiredItems([item]) ? 'req-met' : 'req-unmet'}">${item}</span>`).join('')}
+            </div>` : ''}
+            <button class="card-action act-go" onclick="startFactionMission('${familyKey}', '${mission.id}')" style="background:linear-gradient(135deg,${family.color},${family.color}dd);">
               Accept Mission
             </button>
           </div>
-        `).join('')}
-        
-        <!-- Locked Missions -->
-        ${lockedMissions.map(mission => {
-          const hasItems = hasRequiredItems(mission.requiredItems);
-          const hasReputation = reputation >= (mission.factionRep - 5);
-          const missingItems = mission.requiredItems.filter(item => !hasRequiredItems([item]));
-          const repNeeded = Math.max(0, (mission.factionRep - 5) - reputation);
-          
-          return `
-            <div style="margin: 8px 0; padding: 10px; background: rgba(231, 76, 60, 0.1); border-radius: 5px; border: 1px solid rgba(231, 76, 60, 0.3);">
-              <strong style="color: #8b0000; font-family: 'Georgia', serif;">LOCKED ${mission.name}</strong>
-              <br><small style="color: #bdc3c7;">${mission.description}</small>
-              <br><small style="color: #f39c12;">Payout: $${mission.payout[0]}-${mission.payout[1]} | Risk: ${mission.risk}</small>
-              <br><small style="color: #e67e22;">Required Items: ${mission.requiredItems.join(', ') || 'None'}</small>
-              <br><small style="color: #95a5a6;">Energy: ${mission.energyCost} | Rep Needed: ${mission.reputation}</small>
-              <br><strong style="color: #8b0000; font-family: 'Georgia', serif;">Requirements:</strong>
-              ${!hasReputation ? `<br><small style="color: #8b0000;">â€¢ Need ${repNeeded} more Respect</small>` : ''}
-              ${!hasItems && mission.requiredItems.length > 0 ? `<br><small style="color: #8b0000;">â€¢ Missing items: ${missingItems.join(', ')}</small>` : ''}
-              ${hasReputation && hasItems ? `<br><small style="color: #f39c12;">â€¢ Ready to unlock! Check mission availability...</small>` : ''}
-            </div>
-          `;
-        }).join('')}
-        
-        ${unlockedMissions.length === 0 && lockedMissions.length === 0 ? '<p><small>No missions available</small></p>' : ''}
-        
-        ${(() => {
-          // Signature Job - gated behind 20+ faction reputation
-          const sigJob = family.signatureJob;
-          if (!sigJob) return '';
-          const cooldowns = player.missions.signatureJobCooldowns || {};
-          const lastRun = cooldowns[sigJob.id] || 0;
-          const cooldownMs = (sigJob.cooldown || 24) * 60 * 60 * 1000;
-          const now = Date.now();
-          const onCooldown = (now - lastRun) < cooldownMs;
-          const remaining = onCooldown ? Math.ceil((cooldownMs - (now - lastRun)) / 60000) : 0;
-          const hasRep = reputation >= 20;
-          
-          if (!hasRep) {
-            return `
-              <div style="margin: 8px 0; padding: 10px; background: rgba(155,89,182,0.1); border-radius: 5px; border: 1px solid rgba(155,89,182,0.3);">
-                <strong style="color: #7f8c8d; font-family: 'Georgia', serif;">ðŸ”’ SIGNATURE JOB: ${sigJob.name}</strong>
-                <br><small style="color: #95a5a6;">${sigJob.description}</small>
-                <br><small style="color: #8b0000;">Requires 20 ${family.name} reputation (you have ${reputation})</small>
+      `;
+    });
+
+    // Locked missions (collapsed)
+    if (lockedMissions.length > 0) {
+      html += `<button class="ops-locked-toggle" data-locked-toggle="fac-${familyKey}" onclick="toggleLockedMissions('fac-${familyKey}')">Show ${lockedMissions.length} locked...</button>`;
+      html += `<div data-locked-group="fac-${familyKey}" style="display:none;">`;
+      lockedMissions.forEach(mission => {
+        const hasItems = hasRequiredItems(mission.requiredItems);
+        const hasRep = reputation >= (mission.factionRep - 5);
+        const missingItems = mission.requiredItems.filter(item => !hasRequiredItems([item]));
+        const repNeeded = Math.max(0, (mission.factionRep - 5) - reputation);
+        html += `
+            <div class="ops-card card-locked">
+              <div class="card-header">
+                <h4 class="card-title">&#128274; ${mission.name}</h4>
+                <span class="card-badge badge-locked">Locked</span>
               </div>
-            `;
-          }
-          
-          return `
-            <div style="margin: 8px 0; padding: 10px; background: rgba(155,89,182,0.15); border-radius: 5px; border: 1px solid rgba(155,89,182,0.5);">
-              <strong style="color: #9b59b6; font-family: 'Georgia', serif;">â­Â SIGNATURE JOB: ${sigJob.name}</strong>
-              <br><small style="color: #ecf0f1;">${sigJob.description}</small>
-              <br><small style="color: #f39c12;">ðŸ’° $${sigJob.baseReward.toLocaleString()} | âš¡ ${sigJob.xpReward} XP | Type: ${sigJob.type}</small>
-              <br>${onCooldown 
-                ? `<small style="color: #e67e22;">â³ Cooldown: ${remaining >= 60 ? Math.floor(remaining/60) + 'h ' + (remaining%60) + 'm' : remaining + 'm'} remaining</small>`
-                : `<button onclick="startSignatureJob('${familyKey}')" 
-                    style="background: #9b59b6; color: white; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; margin-top: 5px; font-weight: bold;">
-                  Execute Signature Job
-                </button>`
-              }
+              <div class="card-desc">${mission.description}</div>
+              <div class="card-stats">
+                <span class="stat">&#128176; <span class="stat-val">$${mission.payout[0].toLocaleString()}-$${mission.payout[1].toLocaleString()}</span></span>
+                <span class="stat">Risk: <span class="stat-val">${mission.risk}</span></span>
+              </div>
+              <div class="card-reqs">
+                ${!hasRep ? `<span class="req-tag req-unmet">Need ${repNeeded} more Rep</span>` : `<span class="req-tag req-met">Rep OK</span>`}
+                ${!hasItems && mission.requiredItems.length > 0 ? `<span class="req-tag req-unmet">Missing: ${missingItems.join(', ')}</span>` : ''}
+              </div>
             </div>
-          `;
-        })()}
+        `;
+      });
+      html += `</div>`;
+    }
+
+    // Signature Job
+    html += (() => {
+      const sigJob = family.signatureJob;
+      if (!sigJob) return '';
+      const cooldowns = player.missions.signatureJobCooldowns || {};
+      const lastRun = cooldowns[sigJob.id] || 0;
+      const cooldownMs = (sigJob.cooldown || 24) * 60 * 60 * 1000;
+      const now = Date.now();
+      const onCooldown = (now - lastRun) < cooldownMs;
+      const remaining = onCooldown ? Math.ceil((cooldownMs - (now - lastRun)) / 60000) : 0;
+      const hasRep = reputation >= 20;
+      
+      if (!hasRep) {
+        return `
+          <div class="ops-card card-locked" style="border-left-color:#9b59b6;">
+            <div class="card-header">
+              <h4 class="card-title">&#128274; Signature: ${sigJob.name}</h4>
+              <span class="card-badge badge-locked">Need 20 Rep</span>
+            </div>
+            <div class="card-desc">${sigJob.description}</div>
+            <div class="card-reqs">
+              <span class="req-tag req-unmet">Reputation: ${reputation}/20</span>
+            </div>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="ops-card card-signature">
+          <div class="card-header">
+            <h4 class="card-title">&#11088; Signature: ${sigJob.name}</h4>
+            <span class="card-badge ${onCooldown ? 'badge-cooldown' : 'badge-signature'}">${onCooldown ? 'Cooldown' : 'Ready'}</span>
+          </div>
+          <div class="card-desc">${sigJob.description}</div>
+          <div class="card-stats">
+            <span class="stat">&#128176; <span class="stat-val">$${sigJob.baseReward.toLocaleString()}</span></span>
+            <span class="stat">&#11088; <span class="stat-val">${sigJob.xpReward} XP</span></span>
+            <span class="stat">Type: <span class="stat-val">${sigJob.type}</span></span>
+          </div>
+          ${onCooldown 
+            ? `<div class="card-reqs"><span class="req-tag req-unmet">&#9203; ${remaining >= 60 ? Math.floor(remaining/60) + 'h ' + (remaining%60) + 'm' : remaining + 'm'} remaining</span></div>`
+            : `<button class="card-action act-signature" onclick="startSignatureJob('${familyKey}')">Execute Signature Job</button>`
+          }
+        </div>
+      `;
+    })();
+
+    html += `
+        </div>
       </div>
     `;
   });
   
+  html += `</div>`;
   return html;
 }
 
 // Function to generate territory missions HTML
 function generateTerritoryMissionsHTML() {
-  let html = "";
-  
-  // Gang Size Requirements Overview
-  html += `
-    <div style="margin-bottom: 15px; padding: 12px; background: rgba(52, 73, 94, 0.6); border-radius: 8px; border: 2px solid #f39c12;">
-      <h6 style="color: #f39c12; margin-bottom: 8px;">Gang Size Requirements Overview</h6>
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px;">
-        <small style="color: #c0a062; font-family: 'Georgia', serif;">ðŸ“ <strong>The Streets</strong>: 3+ soldiers (Easy)</small>
-        <small style="color: #f39c12;">ðŸ“ <strong>Docks</strong>: 5+ members (Medium)</small>
-        <small style="color: #8b0000; font-family: 'Georgia', serif;">ðŸ“ <strong>Downtown</strong>: 8+ soldiers (Hard)</small>
-      </div>
-      <div style="margin-top: 8px; padding: 8px; background: rgba(0,0,0,0.3); border-radius: 4px;">
-        <small style="color: #bdc3c7;">
-          <strong>Your Gang:</strong> ${player.gang.members} members | 
-          <strong>Reputation:</strong> ${player.reputation}
-        </small>
-      </div>
-    </div>
-  `;
-  
-  // Separate unlocked and locked missions
   const unlockedMissions = territoryMissions.filter(mission => 
     player.missions.unlockedTerritoryMissions.includes(mission.id)
   );
   const lockedMissions = territoryMissions.filter(mission => 
     !player.missions.unlockedTerritoryMissions.includes(mission.id)
   );
-  
-  // Display unlocked missions
+
+  let html = `
+    <div class="ops-section">
+      <div class="ops-section-title"><span class="title-icon">&#127961;</span> Territory Expansion</div>
+      <div class="ops-territory-info">
+        <span class="info-item">&#128101; Gang: <span class="info-val">${player.gang.members} members</span></span>
+        <span class="info-item">&#128081; Reputation: <span class="info-val">${player.reputation}</span></span>
+        <span class="info-item">Difficulty Key: <span class="info-val" style="color:#2ecc71;">Easy 3+</span> &middot; <span class="info-val" style="color:#f39c12;">Med 5+</span> &middot; <span class="info-val" style="color:#e74c3c;">Hard 8+</span></span>
+      </div>
+  `;
+
+  // Unlocked missions
   unlockedMissions.forEach(mission => {
-    const canAfford = player.gang.members >= mission.requiredGangMembers && player.energy >= mission.energyCost;
-    
+    const hasGang = player.gang.members >= mission.requiredGangMembers;
+    const hasEnergy = player.energy >= mission.energyCost;
+    const canStart = hasGang && hasEnergy;
+
     html += `
-      <div style="margin: 10px 0; padding: 12px; background: rgba(46, 204, 113, 0.1); border-radius: 8px; border: 1px solid rgba(46, 204, 113, 0.3);">
-        <h5 style="color: #c0a062; margin-bottom: 8px; font-family: 'Georgia', serif;">âœ… ${mission.name}</h5>
-        <p style="color: #ecf0f1; margin: 5px 0;"><small>${mission.description}</small></p>
-        
-        <!-- Requirements -->
-        <div style="margin: 8px 0; padding: 8px; background: rgba(52, 73, 94, 0.6); border-radius: 5px;">
-          <strong style="color: #f39c12;">Requirements:</strong><br>
-          <small style="color: ${player.gang.members >= mission.requiredGangMembers ? '#c0a062' : '#8b0000'};">
-            Gang Members: ${player.gang.members}/${mission.requiredGangMembers}
-          </small><br>
-          <small style="color: ${player.energy >= mission.energyCost ? '#c0a062' : '#8b0000'};">
-            Energy Cost: ${mission.energyCost}
-          </small><br>
-          <small style="color: #95a5a6;">Territory: ${mission.territory}</small>
+      <div class="ops-card card-available">
+        <div class="card-header">
+          <h4 class="card-title">${mission.name}</h4>
+          <span class="card-badge badge-available">Available</span>
         </div>
-        
-        <!-- Rewards -->
-        <div style="margin: 8px 0; padding: 8px; background: rgba(52, 73, 94, 0.6); border-radius: 5px;">
-          <strong style="color: #c0a062; font-family: 'Georgia', serif;">The Take:</strong><br>
-          <small style="color: #f39c12;">Money: $${mission.rewards.money.toLocaleString()}</small><br>
-          <small style="color: #3498db;">Territory: +${mission.rewards.territory}</small><br>
-          <small style="color: #9b59b6;">Reputation: +${mission.rewards.reputation}</small><br>
-          <small style="color: #2ecc71;">Passive Income: +$${mission.rewards.passive_income}/tribute</small>
+        <div class="card-desc">${mission.description}</div>
+        <div class="card-reqs">
+          <span class="req-tag ${hasGang ? 'req-met' : 'req-unmet'}">&#128101; Gang: ${player.gang.members}/${mission.requiredGangMembers}</span>
+          <span class="req-tag ${hasEnergy ? 'req-met' : 'req-unmet'}">&#9889; Energy: ${player.energy}/${mission.energyCost}</span>
+          <span class="req-tag req-met">&#127961; ${mission.territory}</span>
         </div>
-        
-        <!-- Risks -->
-        <div style="margin: 8px 0; padding: 8px; background: rgba(231, 76, 60, 0.2); border-radius: 5px;">
-          <strong style="color: #e74c3c;">Risks:</strong><br>
-          <small style="color: #e74c3c;">Jail Chance: ${mission.risks.jailChance}%</small><br>
-          <small style="color: #e74c3c;">Gang Loss Risk: ${mission.risks.gangMemberLoss}%</small><br>
-          <small style="color: #e74c3c;">Health Loss: ${mission.risks.healthLoss}</small>
+        <div class="card-stats">
+          <span class="stat">&#128176; <span class="stat-val">$${mission.rewards.money.toLocaleString()}</span></span>
+          <span class="stat">&#127961; <span class="stat-val">+${mission.rewards.territory}</span></span>
+          <span class="stat">&#128081; <span class="stat-val">+${mission.rewards.reputation} Rep</span></span>
+          <span class="stat">&#128176; <span class="stat-val">+$${mission.rewards.passive_income}/tribute</span></span>
         </div>
-        
-        <button onclick="startTerritoryMission('${mission.id}')" 
-            style="background: ${canAfford ? '#f39c12' : '#7f8c8d'}; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: ${canAfford ? 'pointer' : 'not-allowed'}; margin-top: 8px; font-weight: bold;"
-            ${canAfford ? '' : 'disabled title="Check requirements above"'}>
-          ${canAfford ? 'Launch Operation' : 'Requirements Not Met'}
+        <div class="card-stats">
+          <span class="stat">Jail: <span class="stat-val val-danger">${mission.risks.jailChance}%</span></span>
+          <span class="stat">Gang Loss: <span class="stat-val val-danger">${mission.risks.gangMemberLoss}%</span></span>
+          <span class="stat">Health Loss: <span class="stat-val val-danger">${mission.risks.healthLoss}</span></span>
+        </div>
+        <button class="card-action act-go" onclick="startTerritoryMission('${mission.id}')" ${canStart ? '' : 'disabled'}>
+          ${canStart ? 'Launch Operation' : 'Requirements Not Met'}
         </button>
       </div>
     `;
   });
-  
-  // Display locked missions
-  lockedMissions.forEach(mission => {
-    const gangNeeded = Math.max(0, mission.requiredGangMembers - player.gang.members);
-    const repNeeded = Math.max(0, (mission.difficulty === 'easy' ? 15 : mission.difficulty === 'medium' ? 30 : 50) - player.reputation);
-    
-    html += `
-      <div style="margin: 10px 0; padding: 12px; background: rgba(231, 76, 60, 0.1); border-radius: 8px; border: 1px solid rgba(231, 76, 60, 0.3);">
-        <h5 style="color: #e74c3c; margin-bottom: 8px;">LOCKED ${mission.name}</h5>
-        <p style="color: #bdc3c7; margin: 5px 0;"><small>${mission.description}</small></p>
-        
-        <!-- Future Requirements -->
-        <div style="margin: 8px 0; padding: 8px; background: rgba(52, 73, 94, 0.6); border-radius: 5px;">
-          <strong style="color: #f39c12;">Will Require:</strong><br>
-          <small style="color: #95a5a6;">Gang Members: ${mission.requiredGangMembers}</small><br>
-          <small style="color: #95a5a6;">Energy Cost: ${mission.energyCost}</small><br>
-          <small style="color: #95a5a6;">Territory: ${mission.territory}</small><br>
-          <small style="color: #95a5a6;">Difficulty: ${mission.difficulty.charAt(0).toUpperCase() + mission.difficulty.slice(1)}</small>
+
+  // Locked missions (hidden by default)
+  if (lockedMissions.length > 0) {
+    html += `<button class="ops-locked-toggle" data-locked-toggle="territory" onclick="toggleLockedMissions('territory')">Show ${lockedMissions.length} locked mission${lockedMissions.length > 1 ? 's' : ''}...</button>`;
+    html += `<div data-locked-group="territory" style="display:none;">`;
+    lockedMissions.forEach(mission => {
+      const gangNeeded = Math.max(0, mission.requiredGangMembers - player.gang.members);
+      const repNeeded = Math.max(0, (mission.difficulty === 'easy' ? 15 : mission.difficulty === 'medium' ? 30 : 50) - player.reputation);
+      html += `
+        <div class="ops-card card-locked">
+          <div class="card-header">
+            <h4 class="card-title">&#128274; ${mission.name}</h4>
+            <span class="card-badge badge-locked">${mission.difficulty}</span>
+          </div>
+          <div class="card-desc">${mission.description}</div>
+          <div class="card-reqs">
+            ${gangNeeded > 0 ? `<span class="req-tag req-unmet">Need ${gangNeeded} more gang members</span>` : `<span class="req-tag req-met">Gang size OK</span>`}
+            ${repNeeded > 0 ? `<span class="req-tag req-unmet">Need ${repNeeded} more reputation</span>` : `<span class="req-tag req-met">Reputation OK</span>`}
+          </div>
+          <div class="card-stats">
+            <span class="stat">&#128176; <span class="stat-val">$${mission.rewards.money.toLocaleString()}</span></span>
+            <span class="stat">&#128176; <span class="stat-val">+$${mission.rewards.passive_income}/tribute</span></span>
+          </div>
         </div>
-        
-        <!-- Unlock Requirements -->
-        <div style="margin: 8px 0; padding: 8px; background: rgba(231, 76, 60, 0.2); border-radius: 5px;">
-          <strong style="color: #e74c3c;">Unlock Requirements:</strong><br>
-          ${gangNeeded > 0 ? `<small style="color: #e74c3c;">â€¢ Need ${gangNeeded} more gang members</small><br>` : ''}
-          ${repNeeded > 0 ? `<small style="color: #e74c3c;">â€¢ Need ${repNeeded} more reputation</small><br>` : ''}
-          ${gangNeeded === 0 && repNeeded === 0 ? `<small style="color: #f39c12;">â€¢ Ready to unlock! Check mission availability...</small>` : ''}
-        </div>
-        
-        <!-- Future Rewards Preview -->
-        <div style="margin: 8px 0; padding: 8px; background: rgba(52, 73, 94, 0.4); border-radius: 5px;">
-          <strong style="color: #95a5a6;">Future Rewards:</strong><br>
-          <small style="color: #95a5a6;">Money: $${mission.rewards.money.toLocaleString()}</small><br>
-          <small style="color: #95a5a6;">Passive Income: +$${mission.rewards.passive_income}/tribute</small>
-        </div>
-      </div>
-    `;
-  });
-  
-  return html || '<p>No territory missions available</p>';
+      `;
+    });
+    html += `</div>`;
+  }
+
+  html += `</div>`;
+  return html;
 }
 
 // Function to generate boss battles HTML
 function generateBossBattlesHTML() {
-  return bossBattles.filter(battle => 
+  const available = bossBattles.filter(battle => 
     player.missions.unlockedBossBattles.includes(battle.id)
-  ).map(battle => `
-    <div style="margin: 10px 0; padding: 10px; background: rgba(52, 73, 94, 0.4); border-radius: 5px;">
-      <h5>${battle.name}</h5>
-      <p><small>${battle.description}</small></p>
-      <div style="margin: 8px 0; padding: 8px; background: rgba(155, 89, 182, 0.3); border-radius: 5px;">
-        <strong>${battle.boss.name}</strong><br>
-        <small>Power: ${battle.boss.power} | Gang: ${battle.boss.gang_size} members</small><br>
-        <small>Abilities: ${battle.boss.special_abilities.join(', ')}</small>
-      </div>
-      <div style="margin: 5px 0;">
-        <small><strong>Rewards:</strong> $${battle.rewards.money}, +${battle.rewards.reputation} rep, +${battle.rewards.territory} territory</small>
-      </div>
-      <button onclick="startBossBattle('${battle.id}')" 
-          style="background: #9b59b6; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; margin-top: 5px;"
-          ${player.power < battle.requirements.minPower || player.gang.members < battle.requirements.minGangMembers ? 'disabled title="Requirements not met"' : ''}>
-        ${player.power < battle.requirements.minPower || player.gang.members < battle.requirements.minGangMembers ? 'Not Ready' : 'Challenge Boss'}
-      </button>
-    </div>
-  `).join('') || '<p>No boss battles available</p>';
+  );
+  
+  if (available.length === 0) {
+    return `<div class="ops-section"><p style="color:#777;">No boss battles available yet. Keep building your empire.</p></div>`;
+  }
+
+  return `<div class="ops-section">
+    <div class="ops-section-title"><span class="title-icon">&#128128;</span> Boss Battles</div>
+    ${available.map(battle => {
+      const meetsReqs = player.power >= battle.requirements.minPower && player.gang.members >= battle.requirements.minGangMembers;
+      return `
+        <div class="ops-card card-boss">
+          <div class="card-header">
+            <h4 class="card-title">${battle.name}</h4>
+            <span class="card-badge badge-boss">${meetsReqs ? 'Ready' : 'Not Ready'}</span>
+          </div>
+          <div class="card-desc">${battle.description}</div>
+          <div class="card-stats">
+            <span class="stat">Boss: <span class="stat-val">${battle.boss.name}</span></span>
+            <span class="stat">Power: <span class="stat-val">${battle.boss.power}</span></span>
+            <span class="stat">Gang: <span class="stat-val">${battle.boss.gang_size} members</span></span>
+          </div>
+          <div class="card-stats">
+            <span class="stat">Abilities: <span class="stat-val">${battle.boss.special_abilities.join(', ')}</span></span>
+          </div>
+          <div class="card-reqs">
+            <span class="req-tag ${player.power >= battle.requirements.minPower ? 'req-met' : 'req-unmet'}">Power: ${player.power}/${battle.requirements.minPower}</span>
+            <span class="req-tag ${player.gang.members >= battle.requirements.minGangMembers ? 'req-met' : 'req-unmet'}">Gang: ${player.gang.members}/${battle.requirements.minGangMembers}</span>
+          </div>
+          <div class="ops-rewards-bar" style="margin-bottom:12px;">
+            <span class="reward-item">&#128176; <span class="reward-val">$${battle.rewards.money.toLocaleString()}</span></span>
+            <span class="reward-item">&#128081; <span class="reward-val">+${battle.rewards.reputation} Rep</span></span>
+            <span class="reward-item">&#127961; <span class="reward-val">+${battle.rewards.territory} Territory</span></span>
+          </div>
+          <button class="card-action act-boss" onclick="startBossBattle('${battle.id}')" ${meetsReqs ? '' : 'disabled'}>
+            ${meetsReqs ? 'Challenge Boss' : 'Requirements Not Met'}
+          </button>
+        </div>
+      `;
+    }).join('')}
+  </div>`;
 }
 
 // Mission execution functions
@@ -13838,8 +13936,23 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = "1.5.3";
+const CURRENT_VERSION = "1.5.4";
 const VERSION_UPDATES = {
+  "1.5.4": {
+    title: "February 2026 Update - Operations UI Redesign",
+    date: "February 2026",
+    changes: [
+      "Redesigned Operations/Missions screen with tabbed navigation (Story, Family Ops, Territory, Bosses)",
+      "Added faction intel strip showing all family reputations at a glance",
+      "Mission cards with color-coded status badges and inline requirement tags",
+      "Collapsible crime family accordion groups to reduce clutter",
+      "Locked missions hidden behind toggle to keep focus on available content",
+      "Story campaign now shows chapter progress bar with completion percentage",
+      "Removed random encounters system",
+      "Fixed bot jailbreak button not showing visible feedback",
+      "Fixed online players not appearing in jail roster for other players"
+    ]
+  },
   "1.5.3": {
     title: "February 2026 Update - Ghost UI & Update Checker Fix",
     date: "February 2026",
@@ -20081,6 +20194,9 @@ window.checkCampaignProgress = checkCampaignProgress;
 window.completeChapter = completeChapter;
 window.updateMissionAvailability = updateMissionAvailability;
 window.showMissions = showMissions;
+window.switchOpsTab = switchOpsTab;
+window.toggleFamilyGroup = toggleFamilyGroup;
+window.toggleLockedMissions = toggleLockedMissions;
 window.generateCampaignHTML = generateCampaignHTML;
 window.generateFactionMissionsHTML = generateFactionMissionsHTML;
 window.generateTerritoryMissionsHTML = generateTerritoryMissionsHTML;
