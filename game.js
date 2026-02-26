@@ -7369,8 +7369,12 @@ function applyStatBarPrefs() {
     const visible = localStorage.getItem('statBar_' + id) !== 'false'; // default visible
     if (!visible) {
       el.style.display = 'none';
+    } else {
+      // Restore visibility — reset inline hide so the element reappears
+      if (el.style.display === 'none') {
+        el.style.display = '';
+      }
     }
-    // If visible, don't force display here — let updateUI set the natural value
   });
 }
 window.applyStatBarPrefs = applyStatBarPrefs;
