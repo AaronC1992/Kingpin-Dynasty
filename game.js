@@ -88,7 +88,7 @@ window.createSaveDataForCloud = function () {
         reputation: Math.floor(player.reputation),
         empireRating: empireRating.totalScore,
         playtime: playtime,
-        gameVersion: "1.5.3",
+        gameVersion: CURRENT_VERSION,
         data: saveData
     };
 };
@@ -113,7 +113,7 @@ window.applyCloudSave = function (cloudEntry) {
         playtime: cloudEntry.playtime || '0:00',
         saveDate: cloudEntry.saveDate || new Date().toISOString(),
         isAutoSave: false,
-        gameVersion: cloudEntry.gameVersion || '1.5.3',
+        gameVersion: cloudEntry.gameVersion || CURRENT_VERSION,
         data: saveData
     };
     localStorage.setItem(`gameSlot_${SAVE_SYSTEM.currentSlot || 1}`, JSON.stringify(localEntry));
@@ -16788,8 +16788,13 @@ function showOptions() {
   // Show admin section if user is admin
   const adminSection = document.getElementById('admin-settings-section');
   if (adminSection) {
+    // Immediate check from cached flag
     const authState = getAuthState();
     adminSection.style.display = authState.isAdmin ? 'block' : 'none';
+    // Also refresh from server (async) in case the flag wasn't set yet
+    checkAdmin().then(isAdmin => {
+      adminSection.style.display = isAdmin ? 'block' : 'none';
+    });
   }
 
   // Sync UI toggle checkboxes with saved preferences

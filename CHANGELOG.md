@@ -5,6 +5,20 @@ All notable changes to From Dusk To Don (Mafia Born) will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.7] - 2026-02-26
+
+### Added
+- **Admin Panel** — server-verified admin controls in Settings with quick grants, stat editing, jail controls, and skill management (replaces old cheat system)
+- **UI Toggles** — checkboxes in Settings to show/hide Quick Actions Panel and Mobile Nav Bar; preferences saved in localStorage
+
+### Changed
+- **Mission economy rebalance** — all mission rewards reduced ~90% for a slower grind (story campaigns, faction ops, territory conquests, boss battles, and objective targets)
+- **Version sync** — gameVersion in cloud saves now uses the `CURRENT_VERSION` constant instead of hardcoded strings; updated package.json, server default, README, and CHANGELOG
+
+### Fixed
+- **Mobile nav on PC** — nav bar no longer appears on desktop after skipping tutorial (added mobile/tablet guard)
+- **Admin panel visibility** — admin flag now set immediately on login/register via client-side fallback; showOptions refreshes admin status asynchronously
+
 ## [1.5.5] - 2026-02-26
 
 ### Fixed

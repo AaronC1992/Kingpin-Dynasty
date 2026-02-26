@@ -1,6 +1,6 @@
 # Mafia Born
 
-**v1.5.3** | A deep criminal empire-building browser game where you rise from street thug to legendary kingpin. Build your crew, claim territory, run businesses, and outmanoeuvre rival crime families — all from your browser.
+**v1.5.7** | A deep criminal empire-building browser game where you rise from street thug to legendary kingpin. Build your crew, claim territory, run businesses, and outmanoeuvre rival crime families — all from your browser.
 
 ## **[PLAY NOW](https://mafiaborn.com/)**
 
@@ -112,15 +112,14 @@ Compatible with Chrome, Firefox, Safari, Edge, and their mobile counterparts.
 
 ---
 
-## Recent Changes (v1.5.3)
+## Recent Changes (v1.5.7)
 
-- **Ghost UI fix** — fixed page-header breadcrumbs persisting on screen after switching pages on mobile
-- **Update checker overhaul** — Check for Updates now clears service workers, Cache Storage, and redirects with a cache-buster query to bypass GitHub Pages CDN caching
-- **Mobile page-header** — header now spans full screen width on mobile instead of using desktop sidebar offsets
-- **Screen transition cleanup** — added `.screen-active` class system with MutationObserver for reliable show/hide of fixed-position elements
-- **Force Refresh** — dedicated button to bust all cached files when auto-update reports you're up to date
-- **Version sync** — unified version number across PC and mobile (v1.5.2)
-- **Mobile Settings fix** — nav bar customizer and quick action customizer buttons now work reliably
+- **Admin Panel** — server-verified admin tools for quick grants, stat editing, jail controls, and skill management
+- **UI Toggles** — show/hide Quick Actions Panel and Mobile Nav Bar from Settings
+- **Mission economy rebalance** — all mission rewards reduced ~90% for a slower, grindier progression
+- **Mobile nav fix** — nav bar no longer appears on PC after skipping tutorial
+- **Admin panel fix** — admin controls now show immediately after login without requiring a page refresh
+- **Version sync** — version number updated across game, package.json, server, README, and CHANGELOG
 
 ---
 

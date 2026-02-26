@@ -24,6 +24,14 @@ let authUsername = localStorage.getItem('mb_auth_user') || null;
 let isLoggedIn = !!authToken;
 let _isAdmin = false;
 
+// Client-side admin list (mirrors server ADMIN_USERNAMES) — used as
+// immediate/fallback check so the admin panel shows even if the API
+// call hasn't returned yet or the server is unreachable.
+const CLIENT_ADMIN_USERNAMES = new Set(['admin']);
+function isAdminUsername(name) {
+    return name && CLIENT_ADMIN_USERNAMES.has(name.toLowerCase());
+}
+
 // ── API helpers ────────────────────────────────────────────────
 async function apiFetch(endpoint, options = {}) {
     const url = `${AUTH_API_BASE}${endpoint}`;
@@ -55,6 +63,7 @@ export async function register(username, password) {
         body: { username, password }
     });
     setLocalAuth(data.token, data.username);
+    _isAdmin = isAdminUsername(data.username);
     return data;
 }
 
@@ -64,6 +73,7 @@ export async function login(username, password) {
         body: { username, password }
     });
     setLocalAuth(data.token, data.username);
+    _isAdmin = isAdminUsername(data.username);
     return data;
 }
 
@@ -140,15 +150,17 @@ export function getAuthState() {
 
 // ── Admin helpers ─────────────────────────────────────────────────
 export async function checkAdmin() {
+    // Immediate client-side check (works even if server is unreachable)
+    if (isAdminUsername(authUsername)) { _isAdmin = true; }
     if (!authToken) { _isAdmin = false; return false; }
     try {
         const data = await apiFetch('/api/admin/check', { method: 'GET' });
         _isAdmin = !!data.isAdmin;
-        return _isAdmin;
     } catch {
-        _isAdmin = false;
-        return false;
+        // Keep client-side result if server fails
+        console.warn('[auth] Admin check API failed, using client-side fallback');
     }
+    return _isAdmin;
 }
 
 export async function adminModify(modifications) {
@@ -166,11 +178,17 @@ export async function verifySession() {
         const info = await getProfile();
         authUsername = info.username;
         isLoggedIn = true;
-        _isAdmin = !!info.isAdmin;
+        _isAdmin = !!info.isAdmin || isAdminUsername(info.username);
         return true;
     } catch {
-        clearLocalAuth();
-        return false;
+        // Server unreachable — if we have a stored username, use client-side admin check
+        if (authUsername) {
+            isLoggedIn = true;
+            _isAdmin = isAdminUsername(authUsername);
+        } else {
+            clearLocalAuth();
+        }
+        return isLoggedIn;
     }
 }
 
