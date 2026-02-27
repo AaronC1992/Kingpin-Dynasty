@@ -1,4 +1,4 @@
-﻿import { initOnboarding, updateTracker } from './onboarding.js';
+import { initOnboarding, updateTracker } from './onboarding.js';
 import { applyDailyPassives, getDrugIncomeMultiplier, getViolenceHeatMultiplier, getWeaponPriceMultiplier } from './passiveManager.js';
 import { showEmpireOverview } from './empireOverview.js';
 import { player, gainExperience, checkLevelUp, regenerateEnergy, startEnergyRegenTimer, startEnergyRegeneration, skillTreeDefinitions, availablePerks, achievements } from './player.js';
@@ -418,6 +418,12 @@ async function showMissions() {
   Object.keys(crimeFamilies).forEach(k => { factionAvail += (factionMissions[k] || []).filter(m => m.unlocked).length; });
   const territoryAvail = turfMissions.filter(m => player.missions.unlockedTurfMissions.includes(m.id)).length;
   const bossAvail = bossBattles.filter(b => player.missions.unlockedBossBattles.includes(b.id)).length;
+  const racketsCount = (player.protectionRackets || []).length + (player.corruptedOfficials || []).length;
+  const ownedZones = (player.turf?.owned || []).length;
+
+  // Determine which tab to open (default story, or accept override)
+  const activeTab = window._opsActiveTab || 'story';
+  window._opsActiveTab = null;
 
   let missionsHTML = `
     <!-- Faction Intel Strip -->
@@ -443,42 +449,60 @@ async function showMissions() {
 
     <!-- Tab Navigation -->
     <div class="ops-tabs">
-      <button class="ops-tab active" onclick="switchOpsTab('story', this)">
+      <button class="ops-tab ${activeTab === 'story' ? 'active' : ''}" onclick="switchOpsTab('story', this)">
         <span class="tab-icon">&#128214;</span>
         Story${storyActive ? '<span class="tab-count">!</span>' : ''}
       </button>
-      <button class="ops-tab" onclick="switchOpsTab('factions', this)">
+      <button class="ops-tab ${activeTab === 'factions' ? 'active' : ''}" onclick="switchOpsTab('factions', this)">
         <span class="tab-icon">&#128081;</span>
         Family Ops${factionAvail ? '<span class="tab-count">' + factionAvail + '</span>' : ''}
       </button>
-      <button class="ops-tab" onclick="switchOpsTab('territory', this)">
+      <button class="ops-tab ${activeTab === 'territory' ? 'active' : ''}" onclick="switchOpsTab('territory', this)">
         <span class="tab-icon">&#127961;</span>
-        Turf${territoryAvail ? '<span class="tab-count">' + territoryAvail + '</span>' : ''}
+        Turf${ownedZones ? '<span class="tab-count">' + ownedZones + '</span>' : ''}
       </button>
-      <button class="ops-tab" onclick="switchOpsTab('bosses', this)">
+      <button class="ops-tab ${activeTab === 'bosses' ? 'active' : ''}" onclick="switchOpsTab('bosses', this)">
         <span class="tab-icon">&#128128;</span>
         Bosses${bossAvail ? '<span class="tab-count">' + bossAvail + '</span>' : ''}
+      </button>
+      <button class="ops-tab ${activeTab === 'rackets' ? 'active' : ''}" onclick="switchOpsTab('rackets', this)">
+        <span class="tab-icon">&#128176;</span>
+        Rackets${racketsCount ? '<span class="tab-count">' + racketsCount + '</span>' : ''}
+      </button>
+      <button class="ops-tab ${activeTab === 'relocate' ? 'active' : ''}" onclick="switchOpsTab('relocate', this)">
+        <span class="tab-icon">&#127963;</span>
+        Relocate
       </button>
     </div>
 
     <!-- Story Campaign Panel -->
-    <div id="ops-panel-story" class="ops-panel active">
+    <div id="ops-panel-story" class="ops-panel ${activeTab === 'story' ? 'active' : ''}">
       ${generateCampaignHTML()}
     </div>
 
     <!-- Faction Missions Panel -->
-    <div id="ops-panel-factions" class="ops-panel">
+    <div id="ops-panel-factions" class="ops-panel ${activeTab === 'factions' ? 'active' : ''}">
       ${generateFactionMissionsHTML()}
     </div>
 
-    <!-- Turf Missions Panel -->
-    <div id="ops-panel-territory" class="ops-panel">
-      ${generateTurfMissionsHTML()}
+    <!-- Turf Overview Panel (map + zones + missions) -->
+    <div id="ops-panel-territory" class="ops-panel ${activeTab === 'territory' ? 'active' : ''}">
+      ${generateTurfOverviewHTML()}
     </div>
 
     <!-- Boss Battles Panel -->
-    <div id="ops-panel-bosses" class="ops-panel">
+    <div id="ops-panel-bosses" class="ops-panel ${activeTab === 'bosses' ? 'active' : ''}">
       ${generateBossBattlesHTML()}
+    </div>
+
+    <!-- Rackets & Corruption Panel -->
+    <div id="ops-panel-rackets" class="ops-panel ${activeTab === 'rackets' ? 'active' : ''}">
+      ${generateRacketsHTML()}
+    </div>
+
+    <!-- Relocate Panel -->
+    <div id="ops-panel-relocate" class="ops-panel ${activeTab === 'relocate' ? 'active' : ''}">
+      ${generateRelocateHTML()}
     </div>
 
     <button class="ops-back-btn" onclick="goBackToMainMenu()">Back to SafeHouse</button>
@@ -5540,7 +5564,7 @@ function showTurfMap() {
   
   html += `</div>
     <div style="text-align:center; margin-top:25px;">
-      <button onclick="showTerritoryControl()" style="padding:12px 30px;background:linear-gradient(135deg,#95a5a6,#7f8c8d);border:none;border-radius:10px;color:white;font-weight:bold;cursor:pointer;">← Back to Turf Control</button>
+      <button onclick="window._opsActiveTab='territory'; showMissions();" style="padding:12px 30px;background:linear-gradient(135deg,#95a5a6,#7f8c8d);border:none;border-radius:10px;color:white;font-weight:bold;cursor:pointer;">← Back to Operations</button>
     </div>`;
   
   document.getElementById("territory-control-content").innerHTML = html;
@@ -5694,7 +5718,7 @@ function manageTurfDetails(zoneId) {
       <button onclick="collectTurfTribute('${zone.id}')" style="padding:10px 20px;background:linear-gradient(135deg,#27ae60,#229954);border:none;border-radius:8px;color:white;cursor:pointer;font-weight:bold;">💰 Collect Tribute</button>
     </div>
     <div style="text-align:center;">
-      <button onclick="showTerritoryControl()" style="padding:12px 30px;background:linear-gradient(135deg,#95a5a6,#7f8c8d);border:none;border-radius:10px;color:white;font-weight:bold;cursor:pointer;">← Back to Turf</button>
+      <button onclick="window._opsActiveTab='territory'; showMissions();" style="padding:12px 30px;background:linear-gradient(135deg,#95a5a6,#7f8c8d);border:none;border-radius:10px;color:white;font-weight:bold;cursor:pointer;">← Back to Operations</button>
     </div>`;
   
   document.getElementById("territory-control-content").innerHTML = html;
@@ -5836,7 +5860,7 @@ function showFamilyChoice() {
   
   html += `</div>
     <div style="text-align:center; margin-top:25px;">
-      <button onclick="showTerritoryControl()" style="padding:12px 30px;background:linear-gradient(135deg,#95a5a6,#7f8c8d);border:none;border-radius:10px;color:white;font-weight:bold;cursor:pointer;">← Back</button>
+      <button onclick="window._opsActiveTab='territory'; showMissions();" style="padding:12px 30px;background:linear-gradient(135deg,#95a5a6,#7f8c8d);border:none;border-radius:10px;color:white;font-weight:bold;cursor:pointer;">← Back to Operations</button>
     </div>`;
   
   document.getElementById("territory-control-content").innerHTML = html;
@@ -5866,7 +5890,8 @@ async function pledgeToFamily(familyId) {
     logAction(`Welcome to the family, Associate. The ${fam.name} expects great things from you.`);
     
     updateUI();
-    showTerritoryControl();
+    window._opsActiveTab = 'territory';
+    showMissions();
   }
 }
 window.pledgeToFamily = pledgeToFamily;
@@ -5987,10 +6012,10 @@ function showProtectionRackets() {
   
   html += `
     <div style="text-align: center; margin-top: 25px;">
-      <button onclick="showTerritoryControl()" 
+      <button onclick="window._opsActiveTab='rackets'; showMissions();" 
           style="padding: 12px 30px; background: linear-gradient(135deg, #95a5a6, #7f8c8d); 
               border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer;">
-        ← Back to Turf Control
+        ← Back to Operations
       </button>
     </div>`;
   
@@ -6156,10 +6181,10 @@ function showCorruption() {
   
   html += `
     <div style="text-align: center; margin-top: 25px;">
-      <button onclick="showTerritoryControl()" 
+      <button onclick="window._opsActiveTab='rackets'; showMissions();" 
           style="padding: 12px 30px; background: linear-gradient(135deg, #95a5a6, #7f8c8d); 
               border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer;">
-        ← Back to Turf Control
+        ← Back to Operations
       </button>
     </div>`;
   
@@ -6184,6 +6209,476 @@ function getRiskColor(riskLevel) {
     case 'extreme': return '#9b59b6';
     default: return '#bdc3c7';
   }
+}
+
+// ==================== UNIFIED OPERATIONS PANEL GENERATORS ====================
+
+// Generate Turf Overview HTML — combines family banner, stats, turf map, owned zones, and turf missions
+function generateTurfOverviewHTML() {
+  initTurfZones();
+  const zones = player.turf._zones || [];
+  const ownedZones = zones.filter(z => (player.turf.owned || []).includes(z.id));
+  const fam = player.chosenFamily ? RIVAL_FAMILIES[player.chosenFamily] : null;
+  const rankLabel = (player.familyRank || 'associate').charAt(0).toUpperCase() + (player.familyRank || 'associate').slice(1);
+  const alliedZones = fam ? (fam.turfZones || []) : [];
+
+  let html = '<div style="display:flex; flex-direction:column; gap:20px;">';
+
+  // ── 1. Family allegiance banner ──
+  if (fam) {
+    html += `
+    <div style="background:linear-gradient(135deg, ${fam.color}33, ${fam.color}11); padding:15px; border-radius:10px; border-left:4px solid ${fam.color};">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+        <div>
+          <span style="font-size:1.5em;">${fam.icon}</span>
+          <strong style="color:${fam.color}; font-size:1.1em;"> ${fam.name}</strong>
+          <span style="color:#bdc3c7; margin-left:10px;">Rank: <strong style="color:#f1c40f;">${rankLabel}</strong></span>
+        </div>
+        <div style="color:#bdc3c7; font-size:0.9em;">✨ ${fam.buff.name}: ${fam.buff.description}</div>
+      </div>
+    </div>`;
+  } else {
+    html += `
+    <div style="background:rgba(231,76,60,0.2); padding:20px; border-radius:10px; text-align:center;">
+      <div style="font-size:3em; margin-bottom:10px;">🤝</div>
+      <div style="color:#e74c3c; font-weight:bold; font-size:1.1em; margin-bottom:8px;">No Family Allegiance</div>
+      <p style="color:#bdc3c7; margin:0 0 15px 0;">Choose a family to pledge your loyalty. Each family offers a unique story and buff.</p>
+      <button onclick="showFamilyChoice()" style="padding:12px 30px; background:linear-gradient(135deg,#e74c3c,#c0392b); border:none; border-radius:10px; color:white; font-weight:bold; cursor:pointer; font-size:1.1em;">
+        Choose Your Family
+      </button>
+    </div>`;
+  }
+
+  // ── 2. Stats bar ──
+  html += `
+    <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:15px;">
+      <div style="flex:1; min-width:120px; background:rgba(52,152,219,0.2); padding:15px; border-radius:10px; text-align:center;">
+        <div style="font-size:1.6em; color:#3498db;">💪</div>
+        <div style="font-size:0.9em; color:#bdc3c7;">Turf Power</div>
+        <div style="font-size:1.3em; font-weight:bold; color:#ecf0f1;">${player.turf.power || 100}</div>
+      </div>
+      <div style="flex:1; min-width:120px; background:rgba(46,204,113,0.2); padding:15px; border-radius:10px; text-align:center;">
+        <div style="font-size:1.6em; color:#2ecc71;">💰</div>
+        <div style="font-size:0.9em; color:#bdc3c7;">Weekly Income</div>
+        <div style="font-size:1.3em; font-weight:bold; color:#ecf0f1;">$${(player.turf.income || 0).toLocaleString()}</div>
+      </div>
+      <div style="flex:1; min-width:120px; background:rgba(155,89,182,0.2); padding:15px; border-radius:10px; text-align:center;">
+        <div style="font-size:1.6em; color:#9b59b6;">🗺️</div>
+        <div style="font-size:0.9em; color:#bdc3c7;">Turf Zones</div>
+        <div style="font-size:1.3em; font-weight:bold; color:#ecf0f1;">${ownedZones.length} / ${zones.length}</div>
+      </div>
+    </div>`;
+
+  // ── 3. Turf Map — grid of all zones ──
+  html += `
+    <div style="background:rgba(0,0,0,0.3); padding:20px; border-radius:10px;">
+      <div style="color:#27ae60; font-weight:bold; font-size:1.1em; margin-bottom:10px;">🗺️ Turf Map</div>
+      <div style="display:flex; flex-wrap:wrap; gap:10px; font-size:0.85em; color:#bdc3c7; margin-bottom:15px;">
+        <span>🟢 Yours</span> <span>🔵 Allied</span> <span>🔴 Rival</span> <span>⚫ Contested</span> <span>🟡 Independent</span>
+      </div>
+      <div style="display:grid; gap:15px;">`;
+
+  zones.forEach(zone => {
+    const isOwned = (player.turf.owned || []).includes(zone.id);
+    const isAllied = !isOwned && alliedZones.includes(zone.id) && zone.controlledBy === player.chosenFamily;
+    const isContested = zone.controlledBy === 'contested';
+    const isIndependent = zone.controlledBy === 'independent';
+    const controllerFamily = (!isOwned && !isAllied && !isContested && !isIndependent) ? RIVAL_FAMILIES[zone.controlledBy] : null;
+
+    const borderColor = isOwned ? '#2ecc71' : isAllied ? '#3498db' : isContested ? '#7f8c8d' : isIndependent ? '#f1c40f' : '#e74c3c';
+    const statusLabel = isOwned ? '🟢 Your Turf' : isAllied ? `🔵 ${fam?.name || 'Allied'}` : isContested ? '⚫ Contested' : isIndependent ? '🟡 Independent' : `🔴 ${controllerFamily?.name || zone.controlledBy}`;
+    const zoneIncome = calculateTurfZoneIncome(zone);
+
+    html += `
+      <div style="background:rgba(52,73,94,0.8); padding:18px; border-radius:12px; border-left:4px solid ${borderColor};">
+        <div style="display:flex; justify-content:space-between; align-items:start; flex-wrap:wrap; gap:12px;">
+          <div style="flex:1; min-width:220px;">
+            <div style="color:#ecf0f1; font-weight:bold; font-size:1.05em; margin-bottom:6px;">${zone.icon} ${zone.name}</div>
+            <p style="color:#bdc3c7; margin:0 0 8px 0; font-size:0.9em;">${zone.description}</p>
+            <div style="font-size:0.85em; color:#bdc3c7;">
+              <span style="color:#2ecc71;">💰 $${zoneIncome.toLocaleString()}/wk</span> |
+              <span style="color:${getRiskColor(zone.riskLevel)};">⚠️ ${zone.riskLevel}</span>
+            </div>
+            <div style="margin-top:4px; font-size:0.85em; color:${borderColor};">${statusLabel}</div>`;
+
+    // Boss / Don info for unowned zones
+    if (zone.boss && !isOwned) {
+      const bossInfo = findBossById(zone.boss);
+      if (bossInfo && !(player.turf.bossesDefeated || []).includes(bossInfo.id)) {
+        html += `<div style="margin-top:4px; font-size:0.85em; color:#e74c3c;">👤 Boss: ${bossInfo.name} (Power: ${bossInfo.power})</div>`;
+      }
+    }
+    if (zone.don && !isOwned) {
+      const donInfo = findBossById(zone.don);
+      if (donInfo && !(player.turf.donsDefeated || []).includes(donInfo.id)) {
+        html += `<div style="margin-top:4px; font-size:0.85em; color:#9b59b6;">👑 Don: ${donInfo.name} (Power: ${donInfo.power})</div>`;
+      }
+    }
+
+    html += `</div><div style="text-align:right; min-width:140px;">`;
+
+    if (isOwned) {
+      html += `<button onclick="manageTurfDetails('${zone.id}')" style="width:100%;padding:10px;background:linear-gradient(135deg,#3498db,#2980b9);border:none;border-radius:8px;color:white;font-weight:bold;cursor:pointer;font-size:0.9em;">Manage</button>`;
+    } else if (isAllied) {
+      html += `<div style="color:#3498db; font-size:0.9em; padding:10px;">Allied territory</div>`;
+    } else {
+      const canAttack = (player.turf.power || 100) >= zone.defenseRequired;
+      html += `
+        <div style="margin-bottom:8px; font-size:0.8em; text-align:center;">
+          <div style="color:#9b59b6;">🛡️ Defense: ${zone.defenseRequired}</div>
+          <div style="font-size:0.75em; color:#bdc3c7;">(Your power: ${player.turf.power || 100})</div>
+        </div>
+        <button onclick="attackTurfZone('${zone.id}')" 
+          style="width:100%;padding:10px;background:linear-gradient(135deg,#e74c3c,#c0392b);border:none;border-radius:8px;color:white;font-weight:bold;cursor:pointer;font-size:0.9em;${!canAttack ? 'opacity:0.6;cursor:not-allowed;' : ''}">
+          ⚔️ Attack
+        </button>`;
+    }
+
+    html += `</div></div></div>`;
+  });
+
+  html += `</div></div>`;
+
+  // ── 4. Your Turf — owned zones with Manage/Fortify ──
+  if (ownedZones.length > 0) {
+    html += `
+    <div style="background:rgba(0,0,0,0.3); padding:20px; border-radius:10px;">
+      <div style="color:#e74c3c; font-weight:bold; font-size:1.1em; margin-bottom:15px;">🏴 Your Turf</div>
+      <div style="display:grid; gap:15px;">`;
+
+    ownedZones.forEach(zone => {
+      const income = calculateTurfZoneIncome(zone);
+      const heatLevel = (player.turf.heat || {})[zone.id] || 0;
+      const fortLevel = (player.turf.fortifications || {})[zone.id] || 0;
+
+      html += `
+        <div style="background:rgba(52,73,94,0.8); padding:15px; border-radius:10px; border-left:4px solid ${getHeatColor(heatLevel)};">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+            <div style="flex:1; min-width:200px;">
+              <div style="color:#ecf0f1; font-weight:bold;">${zone.icon} ${zone.name}</div>
+              <div style="font-size:0.8em; color:#95a5a6; margin-top:4px;">🛡️ Fort Lv ${fortLevel} | 🔥 Heat: ${heatLevel.toFixed(1)}</div>
+            </div>
+            <div style="text-align:right; min-width:120px;">
+              <div style="color:#2ecc71; font-weight:bold;">$${income.toLocaleString()}/week</div>
+            </div>
+          </div>
+          <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
+            <button onclick="manageTurfDetails('${zone.id}')" style="padding:5px 10px; background:#3498db; border:none; border-radius:5px; color:white; cursor:pointer; font-size:0.8em;">Manage</button>
+            <button onclick="fortifyTurf('${zone.id}')" style="padding:5px 10px; background:#e67e22; border:none; border-radius:5px; color:white; cursor:pointer; font-size:0.8em;">Fortify</button>
+          </div>
+        </div>`;
+    });
+    html += `</div></div>`;
+  } else {
+    html += `
+    <div style="background:rgba(231,76,60,0.2); padding:20px; border-radius:10px; text-align:center;">
+      <div style="font-size:3em; margin-bottom:10px;">🗺️</div>
+      <div style="color:#e74c3c; font-weight:bold; margin-bottom:8px;">No Turf Controlled</div>
+      <p style="color:#bdc3c7; margin:0;">Every zone is held by a rival family. Complete missions and fight for control!</p>
+    </div>`;
+  }
+
+  // ── 5. Turf Missions (reuse existing generator) ──
+  html += generateTurfMissionsHTML();
+
+  html += '</div>';
+  return html;
+}
+
+// Generate Rackets HTML — combines Protection Rackets + Corruption Network
+function generateRacketsHTML() {
+  let html = '<div style="display:flex; flex-direction:column; gap:20px;">';
+
+  // ══════════ Protection Rackets ══════════
+  html += `
+  <div style="background:rgba(0,0,0,0.3); padding:20px; border-radius:10px;">
+    <div style="color:#f39c12; font-weight:bold; font-size:1.1em; margin-bottom:15px;">🏪 Protection Rackets</div>`;
+
+  // Active rackets
+  if ((player.protectionRackets || []).length > 0) {
+    html += `
+    <div style="margin-bottom:15px;">
+      <div style="color:#f39c12; font-size:0.95em; margin-bottom:10px;">💰 Active Rackets</div>
+      <div style="display:grid; gap:12px;">`;
+
+    player.protectionRackets.forEach(racket => {
+      const business = protectionBusinesses.find(b => b.id === racket.businessId);
+      if (!business) return;
+      initTurfZones();
+      const turfZone = (player.turf._zones || []).find(z => z.id === racket.territoryId);
+      const zoneName = turfZone ? turfZone.name : 'Unknown Turf';
+
+      html += `
+        <div style="background:rgba(52,73,94,0.8); padding:15px; border-radius:10px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+            <div style="flex:1; min-width:200px;">
+              <div style="color:#ecf0f1; font-weight:bold;">${business.name}</div>
+              <p style="color:#bdc3c7; margin:4px 0; font-size:0.9em;">${business.description}</p>
+              <div style="font-size:0.8em; color:#95a5a6;">📍 ${zoneName}</div>
+            </div>
+            <div style="text-align:right; min-width:120px;">
+              <div style="color:#f39c12; font-weight:bold;">$${racket.weeklyPayment.toLocaleString()}/wk</div>
+              <div style="color:#bdc3c7; font-size:0.9em;">Fear: ${racket.fearLevel.toFixed(1)}</div>
+            </div>
+          </div>
+          <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
+            <button onclick="collectProtection('${racket.id}')" style="padding:5px 10px; background:#27ae60; border:none; border-radius:5px; color:white; cursor:pointer; font-size:0.8em;">💰 Collect</button>
+            <button onclick="pressureBusiness('${racket.id}')" style="padding:5px 10px; background:#e67e22; border:none; border-radius:5px; color:white; cursor:pointer; font-size:0.8em;">👊 Pressure</button>
+            <button onclick="dropProtection('${racket.id}')" style="padding:5px 10px; background:#e74c3c; border:none; border-radius:5px; color:white; cursor:pointer; font-size:0.8em;">❌ Drop</button>
+          </div>
+        </div>`;
+    });
+    html += `</div></div>`;
+  }
+
+  // Available businesses
+  const availableBusinesses = getAvailableBusinessesForProtection();
+  if (availableBusinesses.length > 0) {
+    html += `
+    <div>
+      <div style="color:#27ae60; font-size:0.95em; margin-bottom:10px;">🎯 Available Businesses</div>
+      <div style="display:grid; gap:12px;">`;
+
+    availableBusinesses.forEach(business => {
+      html += `
+        <div style="background:rgba(52,73,94,0.8); padding:15px; border-radius:10px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+            <div style="flex:1; min-width:200px;">
+              <div style="color:#ecf0f1; font-weight:bold;">${business.name}</div>
+              <p style="color:#bdc3c7; margin:4px 0; font-size:0.9em;">${business.description}</p>
+              <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <span style="background:rgba(231,76,60,0.3); padding:2px 6px; border-radius:4px; font-size:0.8em; color:#e74c3c;">Risk: ${business.riskLevel}</span>
+                <span style="background:rgba(52,152,219,0.3); padding:2px 6px; border-radius:4px; font-size:0.8em; color:#3498db;">Type: ${business.type}</span>
+              </div>
+            </div>
+            <div style="text-align:right; min-width:120px;">
+              <div style="color:#f39c12; font-weight:bold;">$${business.basePayment.toLocaleString()}/wk</div>
+              <div style="color:#bdc3c7; font-size:0.85em;">Base Rate</div>
+              <button onclick="approachBusiness('${business.id}', '${business.territoryId}')" 
+                style="margin-top:8px; padding:8px 15px; background:linear-gradient(135deg,#27ae60,#2ecc71); border:none; border-radius:8px; color:white; font-weight:bold; cursor:pointer;">
+                🤝 Approach
+              </button>
+            </div>
+          </div>
+        </div>`;
+    });
+    html += `</div></div>`;
+  } else if (!(player.protectionRackets || []).length) {
+    html += `
+    <div style="text-align:center; padding:15px; color:#bdc3c7;">
+      <div style="font-size:2.5em; margin-bottom:8px;">🏪</div>
+      <div style="color:#e74c3c; font-weight:bold; margin-bottom:4px;">No Businesses Available</div>
+      <p style="margin:0; font-size:0.9em;">Seize turf zones to find businesses that need "protection".</p>
+    </div>`;
+  }
+
+  html += `</div>`;
+
+  // ══════════ Corruption Network ══════════
+  html += `
+  <div style="background:rgba(0,0,0,0.3); padding:20px; border-radius:10px;">
+    <div style="color:#9b59b6; font-weight:bold; font-size:1.1em; margin-bottom:15px;">💼 Corruption Network</div>`;
+
+  // Active corruption
+  if ((player.corruptedOfficials || []).length > 0) {
+    html += `
+    <div style="margin-bottom:15px;">
+      <div style="color:#9b59b6; font-size:0.95em; margin-bottom:10px;">🤝 Active Corruption</div>
+      <div style="display:grid; gap:12px;">`;
+
+    player.corruptedOfficials.forEach(official => {
+      const target = corruptionTargets.find(t => t.id === official.targetId);
+      if (!target) return;
+      const timeLeft = Math.max(0, (official.expirationDate - Date.now()) / (24 * 60 * 60 * 1000));
+
+      html += `
+        <div style="background:rgba(52,73,94,0.8); padding:15px; border-radius:10px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+            <div style="flex:1; min-width:200px;">
+              <div style="color:#ecf0f1; font-weight:bold;">${target.name}</div>
+              <p style="color:#bdc3c7; margin:4px 0; font-size:0.9em;">${target.description}</p>
+              <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <span style="background:rgba(155,89,182,0.3); padding:2px 6px; border-radius:4px; font-size:0.8em; color:#9b59b6;">Influence: ${target.influence}</span>
+                <span style="background:rgba(231,76,60,0.3); padding:2px 6px; border-radius:4px; font-size:0.8em; color:#e74c3c;">Risk: ${target.riskLevel}</span>
+              </div>
+            </div>
+            <div style="text-align:right; min-width:120px;">
+              <div style="color:#9b59b6; font-weight:bold;">${timeLeft.toFixed(1)} days left</div>
+              <button onclick="renewCorruption('${official.id}')" 
+                style="margin-top:8px; padding:8px 15px; background:linear-gradient(135deg,#8e44ad,#9b59b6); border:none; border-radius:8px; color:white; font-weight:bold; cursor:pointer;">
+                🔄 Renew
+              </button>
+            </div>
+          </div>
+        </div>`;
+    });
+    html += `</div></div>`;
+  }
+
+  // Available corruption targets
+  const availableTargets = corruptionTargets.filter(target =>
+    !(player.corruptedOfficials || []).some(official => official.targetId === target.id)
+  );
+
+  if (availableTargets.length > 0) {
+    html += `
+    <div>
+      <div style="color:#27ae60; font-size:0.95em; margin-bottom:10px;">🎯 Available Targets</div>
+      <div style="display:grid; gap:12px;">`;
+
+    availableTargets.forEach(target => {
+      const canAfford = player.money >= target.baseCost;
+
+      html += `
+        <div style="background:rgba(52,73,94,0.8); padding:15px; border-radius:10px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+            <div style="flex:1; min-width:200px;">
+              <div style="color:#ecf0f1; font-weight:bold;">${target.name}</div>
+              <p style="color:#bdc3c7; margin:4px 0; font-size:0.9em;">${target.description}</p>
+              <div style="background:rgba(0,0,0,0.3); padding:8px; border-radius:6px; margin:8px 0;">
+                <div style="font-size:0.85em; color:#ecf0f1; font-weight:bold; margin-bottom:4px;">Benefits:</div>
+                <div style="display:flex; flex-wrap:wrap; gap:4px;">`;
+
+      Object.entries(target.benefits).forEach(([key, value]) => {
+        if (key !== 'duration') {
+          const bonus = typeof value === 'number' ? Math.round(value * 100) : value;
+          html += `<span style="background:rgba(46,204,113,0.3); padding:1px 4px; border-radius:3px; font-size:0.75em; color:#2ecc71;">${bonus}% ${key.replace(/([A-Z])/g, ' $1').toLowerCase()}</span>`;
+        }
+      });
+
+      html += `
+                </div>
+                <div style="margin-top:4px; font-size:0.8em; color:#f39c12;">Duration: ${target.benefits.duration} days</div>
+              </div>
+              <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <span style="background:rgba(155,89,182,0.3); padding:2px 6px; border-radius:4px; font-size:0.8em; color:#9b59b6;">Influence: ${target.influence}</span>
+                <span style="background:rgba(231,76,60,0.3); padding:2px 6px; border-radius:4px; font-size:0.8em; color:#e74c3c;">Risk: ${target.riskLevel}</span>
+              </div>
+            </div>
+            <div style="text-align:right; min-width:120px;">
+              <div style="color:#f39c12; font-weight:bold; font-size:1.1em;">$${target.baseCost.toLocaleString()}</div>
+              <div style="color:#bdc3c7; font-size:0.8em;">Bribe Cost</div>
+              <button onclick="corruptOfficial('${target.id}')" 
+                style="margin-top:8px; padding:8px 15px; background:linear-gradient(135deg,#8e44ad,#9b59b6); border:none; border-radius:8px; color:white; font-weight:bold; cursor:pointer;${!canAfford ? 'opacity:0.6;cursor:not-allowed;' : ''}">
+                💰 Bribe
+              </button>
+              ${!canAfford ? `<div style="margin-top:4px; font-size:0.8em; color:#e74c3c;">Need $${(target.baseCost - player.money).toLocaleString()} more</div>` : ''}
+            </div>
+          </div>
+        </div>`;
+    });
+    html += `</div></div>`;
+  }
+
+  html += `</div>`;
+
+  html += '</div>';
+  return html;
+}
+
+// Generate Relocate HTML — district picker with MP ownership info
+function generateRelocateHTML() {
+  const now = Date.now();
+  const cooldownEnd = (player.lastTerritoryMove || 0) + MOVE_COOLDOWN_MS;
+  const onCooldown = now < cooldownEnd;
+  const cooldownRemaining = onCooldown ? Math.ceil((cooldownEnd - now) / 60000) : 0;
+  const tState = (typeof onlineWorldState !== 'undefined' && onlineWorldState.territories) || {};
+  const gangSize = (player.gang && (player.gang.members || (player.gang.gangMembers && player.gang.gangMembers.length))) || 0;
+  const isOnline = typeof onlineWorldState !== 'undefined' && onlineWorldState.isConnected;
+  const myName = (typeof onlineWorldState !== 'undefined' && onlineWorldState.username) || '';
+
+  const currentDistrict = getDistrict(player.currentTerritory);
+  const headerNote = currentDistrict
+    ? `📍 Currently in <strong style="color:#2ecc71;">${currentDistrict.shortName}</strong> ${currentDistrict.icon}`
+    : 'You haven\'t chosen a home district yet.';
+
+  let html = `<div style="display:flex; flex-direction:column; gap:20px;">`;
+
+  // Header
+  html += `
+    <div style="background:rgba(44,62,80,0.85); padding:15px; border-radius:10px; text-align:center;">
+      <div style="color:#bdc3c7; font-size:1em;">${headerNote}</div>
+      ${onCooldown ? `<div style="color:#e67e22; font-size:0.9em; margin-top:6px;">⏳ Relocation cooldown: ${cooldownRemaining} min remaining</div>` : ''}
+    </div>`;
+
+  // District grid
+  html += `<div style="display:flex; flex-wrap:wrap; gap:15px; justify-content:center;">`;
+
+  DISTRICTS.forEach((d, idx) => {
+    const isCurrent = d.id === player.currentTerritory;
+    const canAfford = player.money >= d.moveCost;
+    const disabled = isCurrent || onCooldown || !canAfford;
+    const borderColor = isCurrent ? '#2ecc71' : disabled ? '#444' : '#555';
+    const opacity = disabled && !isCurrent ? '0.5' : '1';
+    const cursor = disabled ? 'default' : 'pointer';
+    const onclick = disabled ? '' : `onclick="confirmRelocation('${d.id}')"`;
+
+    // Ownership info
+    const terrData = tState[d.id] || {};
+    const ownerName = terrData.owner || null;
+    const resCount = terrData.residents ? terrData.residents.length : 0;
+    const defRating = terrData.defenseRating || 100;
+    const taxTotal = terrData.taxCollected || 0;
+    const claimCost = CLAIM_COSTS[idx] || 25000;
+
+    let badge = '';
+    if (isCurrent) badge = '<span style="color:#2ecc71; font-weight:bold;">📍 Current</span>';
+    else if (onCooldown) badge = `<span style="color:#e67e22;">⏳ ${cooldownRemaining} min</span>`;
+    else if (!canAfford) badge = '<span style="color:#e74c3c;">💸 Can\'t afford</span>';
+
+    // Owner line
+    let ownerLine = '';
+    if (ownerName) {
+      const isMe = ownerName === myName;
+      ownerLine = `<span style="color:${isMe ? '#ffd700' : '#e74c3c'};">👑 Owner: ${isMe ? 'YOU' : ownerName}</span><br>`;
+      ownerLine += `<span>🛡️ Def: ${defRating} | 💰 Tax: $${taxTotal.toLocaleString()}</span><br>`;
+    } else {
+      ownerLine = '<span style="color:#888;">👑 Unclaimed</span><br>';
+    }
+
+    // MP action buttons
+    let actionBtns = '';
+    if (isOnline && isCurrent) {
+      if (!ownerName) {
+        const canClaim = player.level >= MIN_CLAIM_LEVEL && player.money >= claimCost;
+        actionBtns = `<button onclick="event.stopPropagation(); claimTerritory('${d.id}')" 
+          style="background:${canClaim ? '#8b6914' : '#333'}; color:${canClaim ? '#fff' : '#666'}; border:1px solid ${canClaim ? '#ffd700' : '#444'}; padding:6px 14px; border-radius:6px; cursor:${canClaim ? 'pointer' : 'default'}; font-size:0.85em; margin-top:6px;"
+          ${canClaim ? '' : 'disabled'}>👑 Claim ($${claimCost.toLocaleString()})</button>`;
+      } else if (ownerName !== myName) {
+        const canWar = gangSize >= MIN_WAR_GANG_SIZE && player.energy >= WAR_ENERGY_COST;
+        actionBtns = `<button onclick="event.stopPropagation(); wageWar('${d.id}')" 
+          style="background:${canWar ? '#8b0000' : '#333'}; color:${canWar ? '#fff' : '#666'}; border:1px solid ${canWar ? '#ff0000' : '#444'}; padding:6px 14px; border-radius:6px; cursor:${canWar ? 'pointer' : 'default'}; font-size:0.85em; margin-top:6px;"
+          ${canWar ? '' : 'disabled'}>⚔️ Wage War</button>`;
+      }
+    }
+
+    html += `
+      <div ${onclick}
+           style="background:rgba(44,62,80,0.85); border:2px solid ${borderColor}; border-radius:12px;
+                  padding:16px; cursor:${cursor}; opacity:${opacity}; transition:all 0.3s ease;
+                  text-align:left; min-width:220px; max-width:280px; flex:1;"
+           ${!disabled ? `onmouseover="this.style.borderColor='#e74c3c'; this.style.transform='translateY(-4px)';"
+                         onmouseout="this.style.borderColor='${borderColor}'; this.style.transform='translateY(0)';"` : ''}>
+        <div style="font-size:1.8em; margin-bottom:4px;">${d.icon}</div>
+        <div style="color:#e74c3c; font-weight:bold; font-size:1.05em; margin-bottom:4px;">${d.shortName}</div>
+        <p style="color:#95a5a6; font-size:0.8em; margin:0 0 8px;">${d.description}</p>
+        <div style="font-size:0.8em; color:#bdc3c7; line-height:1.5;">
+          ${ownerLine}
+          <span>👥 Residents: ${resCount}</span><br>
+          <span>💰 Move: $${d.moveCost.toLocaleString()}</span><br>
+          <span>💰 Base Income: $${d.baseIncome}</span><br>
+          <span>🏢 Businesses: ${d.maxBusinesses}</span><br>
+          <span>⚠️ Risk: ${d.riskLevel} | 🚔 Police: ${d.policePresence}%</span>
+        </div>
+        <div style="margin-top:8px; text-align:center;">
+          ${badge}${actionBtns}
+        </div>
+      </div>`;
+  });
+
+  html += `</div>`;
+  html += '</div>';
+  return html;
 }
 
 // Territory Control Action Functions
@@ -11792,7 +12287,7 @@ const menuUnlockConfig = [
   { id: 'options',     fn: 'showOptions()',           label: 'Settings',       tip: 'Save, load & game options',        level: 0 },
 
   // === EARLY GAME (Level 2-3) ===
-  { id: 'relocate',   fn: 'showTerritoryRelocation()',label: 'Relocate',       tip: 'Move to a different district',     level: 0 },
+  // Relocate is now inside Operations
   { id: 'skills',      fn: 'showSkills()',            label: 'Expertise',      tip: 'Spend skill points & upgrade',     level: 2 },
   { id: 'playerstats', fn: 'showPlayerStats()',       label: 'Player Stats',   tip: 'View your current stats & bonuses', level: 2 },
   { id: 'cars',        fn: 'showStolenCars()',        label: 'Motor Pool',     tip: 'Manage your stolen vehicles',      level: 2 },
@@ -11811,8 +12306,7 @@ const menuUnlockConfig = [
 
   // === LATE GAME (Level 10-15) ===
   { id: 'businesses',  fn: 'showBusinesses()',        label: 'Fronts',         tip: 'Buy & manage businesses',          level: 10 },
-  { id: 'territory',   fn: 'showTerritoryControl()',  label: 'Turf Wars',      tip: 'Capture & control turf zones',     level: 10 },
-  { id: 'territorymap',fn: 'showTurfMap()',            label: 'Turf Map',       tip: 'View your turf on the map',       level: 10 },
+  // Turf Wars & Turf Map are now inside Operations
   { id: 'loanshark',   fn: 'showLoanShark()',         label: 'Shylock',        tip: 'Borrow money (high interest)',     level: 10 },
 
   { id: 'laundering',  fn: 'showMoneyLaundering()',   label: 'The Wash',       tip: 'Launder dirty money into clean cash', level: 12 },
@@ -14030,7 +14524,7 @@ function showTerritoryRelocation() {
           <h2 style="color: #e74c3c; margin: 0;">🏙️ Relocate</h2>
           <p style="color: #bdc3c7; margin: 4px 0 0;">${headerNote}</p>
         </div>
-        <button onclick="showTerritoryControl()" style="background: #555; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">← Back</button>
+        <button onclick="window._opsActiveTab='relocate'; showMissions();" style="background: #555; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">← Back</button>
       </div>
       <div style="display: flex; flex-wrap: wrap; gap: 14px; justify-content: center;">
         ${cards}
@@ -17878,7 +18372,7 @@ function initializeHotkeys() {
       'c': () => showStolenCars(),
       'k': () => showSkills(),
       'b': () => showBusinesses(),
-      't': () => showTerritoryControl(),
+      't': () => { window._opsActiveTab = 'territory'; showMissions(); },
       'l': () => showCalendar(),
       'm': () => showMap(),
       'z': () => showStatistics(),
@@ -17966,7 +18460,7 @@ function showMap() {
     </div>
     
     <div style="text-align: center; margin-top: 30px;">
-      <button onclick="showTerritoryControl()" style="background: #3498db; color: white; padding: 12px 25px; margin: 5px; border: none; border-radius: 8px; cursor: pointer;">
+      <button onclick="window._opsActiveTab='territory'; showMissions();" style="background: #3498db; color: white; padding: 12px 25px; margin: 5px; border: none; border-radius: 8px; cursor: pointer;">
         🏛️ Turf Management
       </button>
       <button onclick="goBackToMainMenu()" style="background: #95a5a6; color: white; padding: 12px 25px; margin: 5px; border: none; border-radius: 8px; cursor: pointer;">
