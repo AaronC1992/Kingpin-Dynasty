@@ -5,6 +5,16 @@ All notable changes to From Dusk To Don (Mafia Born) will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.2] - 2026-02-27
+
+### Fixed
+- Fixed SafeHouse header clipping when stats bar wraps to multiple rows
+- All screen headers, sidebars, and content padding now adapt to actual stats bar height
+
+### Changed
+- Replaced 31 hardcoded `44px` references with dynamic `--stats-bar-h` CSS variable
+- Added `ResizeObserver` on stats bar to keep layout in sync
+
 ## [1.6.1] - 2026-02-27
 
 ### Fixed

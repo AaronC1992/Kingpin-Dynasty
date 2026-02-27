@@ -4,7 +4,7 @@ import { showEmpireOverview } from './empireOverview.js';
 import { player, gainExperience, checkLevelUp, regenerateEnergy, startEnergyRegenTimer, startEnergyRegeneration, skillTreeDefinitions, availablePerks, achievements } from './player.js';
 import { jobs, stolenCarTypes } from './jobs.js';
 import { crimeFamilies, factionEffects, potentialMentors } from './factions.js';
-import { familyStories, storyCampaigns, factionMissions, turfMissions, bossBattles, missionProgress } from './missions.js?v=1.6.1';
+import { familyStories, storyCampaigns, factionMissions, turfMissions, bossBattles, missionProgress } from './missions.js?v=1.6.2';
 import { narrationVariations, getRandomNarration } from './narration.js';
 import { storeItems, realEstateProperties, businessTypes, loanOptions, launderingMethods } from './economy.js';
 import { prisonerNames, recruitNames, availableRecruits, jailPrisoners, jailbreakPrisoners, setJailPrisoners, setJailbreakPrisoners, generateJailPrisoners, generateJailbreakPrisoners, generateAvailableRecruits } from './generators.js';
@@ -14866,8 +14866,17 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = "1.6.1";
+const CURRENT_VERSION = "1.6.2";
 const VERSION_UPDATES = {
+  "1.6.2": {
+    title: "Dynamic Stats Bar & Layout Fix",
+    date: "February 2026",
+    changes: [
+      "Fixed SafeHouse header clipping when stats bar wraps to multiple rows",
+      "Stats bar height now dynamically tracked via CSS variable and ResizeObserver",
+      "All screen headers, sidebars, and content padding adapt automatically to stats bar size"
+    ]
+  },
   "1.6.1": {
     title: "UI Polish & Consistency Pass",
     date: "February 2026",
