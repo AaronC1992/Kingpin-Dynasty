@@ -380,11 +380,12 @@ function updateMissionAvailability() {
   });
   
   // Unlock territory missions based on gang size and reputation
+  const unlockedTurf = player.missions?.unlockedTurfMissions || (player.missions.unlockedTurfMissions = ["old_quarter_expansion"]);
   turfMissions.forEach(mission => {
     const missionId = mission.id;
-    if (!player.missions.unlockedTurfMissions.includes(missionId)) {
+    if (!unlockedTurf.includes(missionId)) {
       if (player.gang.members >= mission.requiredGangMembers && player.reputation >= (mission.difficulty === 'easy' ? 15 : mission.difficulty === 'medium' ? 30 : 50)) {
-        player.missions.unlockedTurfMissions.push(missionId);
+        unlockedTurf.push(missionId);
         logAction(`New territory mission available: "${mission.name}"`);
       }
     }
@@ -19084,6 +19085,30 @@ function initializeMissingData() {
   if (player.equippedVehicle && typeof player.equippedVehicle === 'string') {
     const found = player.inventory.find(i => i.name === player.equippedVehicle && i.type === 'vehicle');
     player.equippedVehicle = found || null;
+  }
+
+  // v1.6.0 — Turf system migration for older saves
+  if (!player.turf) {
+    player.turf = { owned: [], power: 100, income: 0, reputation: 0 };
+  }
+  if (!player.chosenFamily) player.chosenFamily = null;
+  if (!player.familyRank) player.familyRank = 'associate';
+  if (!player.missions) {
+    player.missions = {};
+  }
+  if (!player.missions.unlockedTurfMissions) {
+    // Migrate old unlockedTerritoryMissions if present
+    player.missions.unlockedTurfMissions = player.missions.unlockedTerritoryMissions || ["old_quarter_expansion"];
+    delete player.missions.unlockedTerritoryMissions;
+  }
+  if (!player.missions.unlockedBossBattles) {
+    player.missions.unlockedBossBattles = [];
+  }
+  if (!player.missions.missionStats) {
+    player.missions.missionStats = { jobsCompleted: 0, moneyEarned: 0, gangMembersRecruited: 0, turfControlled: 0, bossesDefeated: 0, donsDefeated: 0, factionMissionsCompleted: 0 };
+  }
+  if (!player.missions.factionReputation) {
+    player.missions.factionReputation = { torrino: 0, kozlov: 0, chen: 0, morales: 0 };
   }
 
   // Recalculate power from equipped items + real estate + gang (replaces old running counter)
