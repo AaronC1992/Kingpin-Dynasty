@@ -122,6 +122,23 @@
             </div>
         </div>
 
+        <!-- Keep --stats-bar-h in sync with real stats-bar height -->
+        <script>
+        (function() {
+            var bar = document.getElementById('stats-bar');
+            if (!bar) return;
+            function sync() {
+                document.documentElement.style.setProperty('--stats-bar-h', bar.offsetHeight + 'px');
+            }
+            if (window.ResizeObserver) {
+                new ResizeObserver(sync).observe(bar);
+            } else {
+                window.addEventListener('resize', sync);
+            }
+            sync();
+        })();
+        </script>
+
         <!-- Action Log -->
         <div id="action-log">
             <h3>The Ledger</h3>
