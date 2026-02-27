@@ -170,7 +170,7 @@ const server = http.createServer(async (req, res) => {
                     empireRating: body.empireRating || 0,
                     playtime: body.playtime || '0:00',
                     saveDate: new Date().toISOString(),
-                    gameVersion: body.gameVersion || '1.6.0',
+                    gameVersion: body.gameVersion || '1.6.1',
                     data: body.data
                 };
                 userDB.setUserSave(username, saveEntry);
@@ -232,7 +232,7 @@ const server = http.createServer(async (req, res) => {
     // Handle HTTP requests to serve game files
     let reqPath = decodeURIComponent(req.url); // Decode URL to handle spaces
     if (reqPath.includes('\0')) reqPath = reqPath.replace(/\0/g, '');
-    // Strip query strings so ?v=1.6.0 cache-busters don't break file lookup
+    // Strip query strings so ?v=1.6.1 cache-busters don't break file lookup
     reqPath = reqPath.split('?')[0];
     
     // Determine the static files root directory

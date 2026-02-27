@@ -4,7 +4,7 @@ import { showEmpireOverview } from './empireOverview.js';
 import { player, gainExperience, checkLevelUp, regenerateEnergy, startEnergyRegenTimer, startEnergyRegeneration, skillTreeDefinitions, availablePerks, achievements } from './player.js';
 import { jobs, stolenCarTypes } from './jobs.js';
 import { crimeFamilies, factionEffects, potentialMentors } from './factions.js';
-import { familyStories, storyCampaigns, factionMissions, turfMissions, bossBattles, missionProgress } from './missions.js?v=1.6.0';
+import { familyStories, storyCampaigns, factionMissions, turfMissions, bossBattles, missionProgress } from './missions.js?v=1.6.1';
 import { narrationVariations, getRandomNarration } from './narration.js';
 import { storeItems, realEstateProperties, businessTypes, loanOptions, launderingMethods } from './economy.js';
 import { prisonerNames, recruitNames, availableRecruits, jailPrisoners, jailbreakPrisoners, setJailPrisoners, setJailbreakPrisoners, generateJailPrisoners, generateJailbreakPrisoners, generateAvailableRecruits } from './generators.js';
@@ -14866,8 +14866,20 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = "1.6.0";
+const CURRENT_VERSION = "1.6.1";
 const VERSION_UPDATES = {
+  "1.6.1": {
+    title: "UI Polish & Consistency Pass",
+    date: "February 2026",
+    changes: [
+      "Removed duplicate back button from Stash screen",
+      "Unified all Pastimes play buttons to consistent gold style",
+      "Fixed Fence screen header clipping — added section header and page nav",
+      "Merged Crew Details into Family screen via 'Manage Crew' button",
+      "Standardized 25+ back buttons across all screens to unified nav-btn-back style",
+      "Added null safety to all multiplayer DOM lookups to prevent console errors"
+    ]
+  },
   "1.6.0": {
     title: "Turf System Overhaul & Bug Fixes",
     date: "February 2026",

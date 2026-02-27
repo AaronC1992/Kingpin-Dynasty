@@ -5,6 +5,18 @@ All notable changes to From Dusk To Don (Mafia Born) will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.1] - 2026-02-27
+
+### Fixed
+- Removed duplicate "Back to SafeHouse" button from Stash screen
+- Fixed Fence screen header clipping — added section header and page-nav
+- Added null safety to all multiplayer DOM lookups (prevents console errors when elements missing)
+
+### Changed
+- Unified all Pastimes play buttons to consistent gold style matching Number Hunter
+- Merged Crew Details into Family screen via "Manage Crew" button (removed redundant SafeHouse entry)
+- Standardized 25+ inline back buttons across all screens to unified `nav-btn-back` class
+
 ## [1.6.0] - 2026-02-27
 
 ### Added
