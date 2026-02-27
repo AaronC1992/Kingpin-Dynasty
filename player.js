@@ -96,9 +96,25 @@ export const player = {
     gamblingWins: 0,
     mentoringSessions: 0
   },
-  territory: 0, // Controlled turf
-  currentTerritory: null, // District ID where the player currently lives (e.g. 'residential_low')
+  territory: 0, // Legacy — kept for backward compat; see turf system below
+  currentTerritory: null, // District ID where the player currently lives (MP spawn/relocation)
   lastTerritoryMove: 0,   // Timestamp of last territory relocation (cooldown tracking)
+
+  // ── Singleplayer Turf System ──────────────────────────────────
+  chosenFamily: null,       // Family ID the player sided with ('torrino','kozlov','chen','morales')
+  familyRank: 'associate',  // associate → soldier → capo → underboss → don
+  turf: {                   // All SP turf data lives here
+    owned: [],              // Array of turf zone IDs the player controls
+    bossesDefeated: [],     // Boss IDs killed (each only once)
+    donsDefeated: [],       // Don IDs killed (each only once)
+    income: 0,              // Weekly turf tribute total
+    heat: {},               // Heat per zone ID
+    power: 100,             // Player's overall turf power
+    reputation: 0,          // Street rep from turf activity
+    events: [],             // Active turf war events
+    fortifications: {},     // { zoneId: level } for fortified turf
+    lastTributeCollection: 0 // Timestamp
+  },
   gang: {
     members: 0,
     loyalty: 100,
@@ -124,14 +140,15 @@ export const player = {
       chen: 0,
       morales: 0
     },
-    unlockedTerritoryMissions: ["suburbs_expansion"],
+    unlockedTurfMissions: ["old_quarter_expansion"],
     unlockedBossBattles: [],
     missionStats: {
       jobsCompleted: 0,
       moneyEarned: 0,
       gangMembersRecruited: 0,
-      territoriesControlled: 0,
+      turfControlled: 0,
       bossesDefeated: 0,
+      donsDefeated: 0,
       factionMissionsCompleted: 0
     }
   },
@@ -142,22 +159,22 @@ export const player = {
   launderingSetups: [], // Array to store active wash cycles
   businessLastCollected: {}, // Object to track last collection time for each front
   
-  // Territory Control System
-  territories: [], // Controlled neighborhoods
+  // Legacy Territory Control — kept for backward compat, see turf system above
+  territories: [],
   protectionRackets: [], // Active protection rackets
-  territoryIncome: 0, // Weekly tribute from turf
+  territoryIncome: 0, // Weekly tribute (legacy, use turf.income)
   corruptedOfficials: [], // Bribed officials with expiration
-  territoryEvents: [], // Active turf wars
-  territoryHeat: {}, // Heat level per neighborhood
-  territoryPower: 100, // Overall family power
-  territoryReputation: 0, // Reputation on the streets
+  territoryEvents: [], // Legacy, use turf.events
+  territoryHeat: {}, // Legacy, use turf.heat
+  territoryPower: 100, // Legacy, use turf.power
+  territoryReputation: 0, // Legacy, use turf.reputation
   
   // Long-term Goals System
   empireRating: {
     totalScore: 0,
     moneyPower: 0,
     gangPower: 0,
-    territoryPower: 0,
+    turfPower: 0,
     businessPower: 0,
     reputationPower: 0,
     skillPower: 0

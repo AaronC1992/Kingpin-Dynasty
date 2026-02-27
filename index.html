@@ -98,7 +98,7 @@
             <div class="stats-container">
                 <div class="stats-primary">
                     <p id="money-display">Cash: $0</p>
-                    <p id="health-display">Condition: 100</p>
+                    <p id="health-display">Health: 100</p>
                     <p id="energy-display">Energy: 100/100</p>
                     <p id="wanted-level-display">Heat: 0</p>
                     <p id="level-display">Rank: 1</p>
@@ -546,7 +546,7 @@
                     </label>
                     <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
                         <input type="checkbox" class="stat-toggle" data-stat="health-display" checked onchange="toggleStatDisplay(this)" style="width:16px; height:16px; accent-color:#c0a062;">
-                        <span style="color:#e74c3c;">Condition</span>
+                        <span style="color:#e74c3c;">Health</span>
                     </label>
                     <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
                         <input type="checkbox" class="stat-toggle" data-stat="energy-display" checked onchange="toggleStatDisplay(this)" style="width:16px; height:16px; accent-color:#c0a062;">
@@ -911,14 +911,14 @@
             </div>
         </div>
 
-        <!-- Territory Control Screen -->
+        <!-- Turf Control Screen -->
         <div id="territory-control-screen" class="game-screen" style="display:none;">
             <div class="page-header">
                 <h1><span class="icon"></span> Turf Wars</h1>
                 <div class="breadcrumb">
                     <a href="#" onclick="goBackToMainMenu(); return false;">SafeHouse</a>
                     <span class="separator">›</span>
-                    <span class="current">Territory</span>
+                    <span class="current">Turf</span>
                 </div>
             </div>
             <div id="territory-control-content">

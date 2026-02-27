@@ -35,7 +35,7 @@ export function showEmpireOverview() {
 
     // Calculate totals
     const totalRep = Object.values(player.missions.factionReputation).reduce((a, b) => a + b, 0);
-    const totalTerritory = player.territory; // Assuming this is a number
+    const totalTerritory = (player.turf?.owned || []).length; // Turf zones owned
     const dailyIncome = calculateDailyIncome();
 
     const content = `
@@ -53,8 +53,8 @@ export function showEmpireOverview() {
                 </div>
                 <div style="background: #2c2c2c; padding: 15px; border-radius: 5px; text-align: center;">
                     <div style="font-size: 2em;"></div>
-                    <div style="color: #aaa; font-size: 0.9em;">Territory Controlled</div>
-                    <div style="font-size: 1.5em; color: #2196f3;">${totalTerritory} Blocks</div>
+                    <div style="color: #aaa; font-size: 0.9em;">Turf Controlled</div>
+                    <div style="font-size: 1.5em; color: #2196f3;">${totalTerritory} Zones</div>
                 </div>
                 <div style="background: #2c2c2c; padding: 15px; border-radius: 5px; text-align: center;">
                     <div style="font-size: 2em;"></div>
@@ -87,8 +87,8 @@ export function showEmpireOverview() {
 function calculateDailyIncome() {
     let income = 0;
 
-    // Territory income: $100 per block controlled
-    income += (player.territory || 0) * 100;
+    // Turf income from owned zones
+    income += (player.turf?.income || 0);
 
     // Business income (legitimate + illegal)
     if (player.businesses && player.businesses.length > 0) {
@@ -108,9 +108,9 @@ function calculateDailyIncome() {
         });
     }
 
-    // Gang tribute income (territory-based passive income)
-    if (player.territoryIncome) {
-        income += Math.floor(player.territoryIncome / 7); // Weekly → daily
+    // Gang tribute income (turf-based passive income)
+    if (player.turf?.income) {
+        income += Math.floor(player.turf.income / 7); // Weekly → daily
     }
 
     // Torrino Family passive: 5% daily interest on cash holdings

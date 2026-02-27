@@ -1,4 +1,4 @@
-/**
+﻿/**
  * missions.js
  * 
  * Manages story campaigns, faction missions, territory expansion, and boss battles.
@@ -44,10 +44,10 @@ export const storyCampaigns = {
                 nextChapter: 2
             },
             {
-                title: "Territory Wars",
+                title: "Turf Wars",
                 description: "Expand your influence across the city",
                 objectives: [
-                    { type: "control_territory", target: 3, current: 0, text: "Control 3 territories" },
+                    { type: "control_turf", target: 3, current: 0, text: "Control 3 turf zones" },
                     { type: "win_boss_battle", target: 1, current: 0, text: "Defeat a rival boss" }
                 ],
                 rewards: { money: 10000, experience: 250, reputation: 10 },
@@ -130,7 +130,7 @@ export const storyCampaigns = {
                 objectives: [
                     { type: "reach_reputation", target: 100, current: 0, text: "Reach 100 reputation" },
                     { type: "complete_faction_mission", target: 5, current: 0, text: "Complete 5 faction missions" },
-                    { type: "control_territory", target: 5, current: 0, text: "Control 5 territories" }
+                    { type: "control_turf", target: 5, current: 0, text: "Control 5 turf zones" }
                 ],
                 rewards: { money: 25000, experience: 750, reputation: 20 },
                 dialogue: {
@@ -213,7 +213,7 @@ export const storyCampaigns = {
                 title: "The Coronation",
                 description: "The final power play. One will sit on the throne. The rest will kneel — or die.",
                 objectives: [
-                    { type: "control_territory", target: 10, current: 0, text: "Control 10 territories" },
+                    { type: "control_turf", target: 10, current: 0, text: "Control 10 turf zones" },
                     { type: "reach_reputation", target: 200, current: 0, text: "Reach 200 reputation" },
                     { type: "win_boss_battle", target: 3, current: 0, text: "Defeat 3 total bosses" }
                 ],
@@ -548,13 +548,13 @@ export const factionMissions = {
     ]
 };
 
-// Territory Missions - Specific missions to expand into new areas
-export const territoryMissions = [
+// Turf Missions - Specific missions to expand into new turf zones
+export const turfMissions = [
     {
-        id: "docks_expansion",
+        id: "harbor_row_expansion",
         name: "Secure the Docks",
         description: "Take control of the lucrative shipping district from rival gangs.",
-        territory: "Industrial Docks",
+        territory: "Harbor Row",
         difficulty: "medium",
         requiredGangMembers: 5,
         energyCost: 25,
@@ -572,10 +572,10 @@ export const territoryMissions = [
         story: "The docks control all smuggling operations. Whoever controls the ports controls the city's underground economy."
     },
     {
-        id: "downtown_expansion",
+        id: "midtown_expansion",
         name: "Downtown Takeover",
         description: "Establish dominance in the city's business district.",
-        territory: "Downtown Business District",
+        territory: "Midtown Heights",
         difficulty: "hard",
         requiredGangMembers: 8,
         energyCost: 35,
@@ -593,10 +593,10 @@ export const territoryMissions = [
         story: "The heart of the city's economy. Control here means influence over legitimate businesses and underground operations alike."
     },
     {
-        id: "suburbs_expansion",
+        id: "old_quarter_expansion",
         name: "Suburban Influence",
         description: "Expand operations into the wealthy suburban areas.",
-        territory: "Wealthy Suburbs",
+        territory: "Old Quarter",
         difficulty: "easy",
         requiredGangMembers: 3,
         energyCost: 15,
@@ -635,10 +635,10 @@ export const territoryMissions = [
         story: "Chinatown has been Chen territory for decades. To enter, you'll need an invitation — or an army."
     },
     {
-        id: "airport_expansion",
+        id: "the_sprawl_expansion",
         name: "Airport Corridor",
         description: "Control the smuggling routes through the international airport's cargo terminals.",
-        territory: "Airport Industrial Zone",
+        territory: "The Sprawl",
         difficulty: "extreme",
         requiredGangMembers: 12,
         energyCost: 45,
@@ -778,7 +778,7 @@ export const missionProgress = {
     completedCampaigns: [],
     completedMissions: [],
     availableFactionMissions: {},
-    unlockedTerritoryMissions: ["suburbs_expansion"],
+    unlockedTurfMissions: ["old_quarter_expansion"],
     unlockedBossBattles: [],
     factionReputation: {
         torrino: 0,
@@ -787,3 +787,4 @@ export const missionProgress = {
         morales: 0
     }
 };
+

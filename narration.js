@@ -1,4 +1,4 @@
-/**
+﻿/**
  * narration.js
  * 
  * Manages narrative variations and random narration selection for the game.
@@ -91,7 +91,7 @@ export const narrationVariations = {
         " Dragged back. The guards caught you. You're in deeper trouble now."
     ],
     
-    territoryExpansionSuccess: [
+    turfExpansionSuccess: [
         " Territory secured. The Family's shadow stretches further. This neighborhood now pays tribute to the Don. ",
         " Expansion complete! You claim another piece of the city as your own. The neighborhood knows who's in charge now.",
         " Turf war victory! Your gang plants its flag in new territory. Respect and revenue follow conquest.",
@@ -100,7 +100,7 @@ export const narrationVariations = {
         " Territory conquered! Another district falls under your control. Building an empire one block at a time."
     ],
     
-    territoryExpansionFailure: [
+    turfExpansionFailure: [
         " Expansion failed! The locals fought back harder than expected. You retreat with fewer soldiers than you started with.",
         " Hostile takeover denied! The enemy was ready for you. Your gang takes losses in the failed power grab.",
         " Turf war casualty! Your attempt to expand backfires spectacularly. Some of your crew won't be coming home.",
@@ -505,3 +505,4 @@ export function getRandomNarration(category) {
     if (!variations || variations.length === 0) return "";
     return variations[Math.floor(Math.random() * variations.length)];
 }
+

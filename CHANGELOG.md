@@ -5,6 +5,29 @@ All notable changes to From Dusk To Don (Mafia Born) will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-02-27
+
+### Added
+- **Turf System Overhaul** — complete replacement of SP territory system with 8 unique zones: Little Italy, Redlight District, Chinatown, Harbor Row, The Slums, Midtown Heights, Old Quarter, The Sprawl
+- **Rival Families** — 4 crime families (Torrino, Kozlov, Chen, Morales) each with unique gameplay buffs
+- **Family Allegiance** — choose which family to side with and rise through ranks from Associate to Don
+- **Turf Missions & Boss Fights** — new mission chains tied to each zone, with boss encounters for turf control
+- **Family Rank Progression** — earn promotions through reputation, missions completed, and zones controlled
+
+### Fixed
+- Critical missing comma in player.js that caused SyntaxError on game load
+- 13 broken `addLog()` calls replaced with correct `logAction()` function
+- Removed ~218 lines of duplicate function definitions (manageTurfDetails, fortifyTurf, etc.)
+- `getRiskColor` now handles 'extreme' and 'very high' risk levels correctly
+- Territory rewards properly route through turf system instead of being silently overwritten by updateUI()
+- `startTurfMission` now correctly adds conquered zones to player.turf.owned
+- Territory dispute event uses turf system checks instead of legacy counter
+
+### Changed
+- All SP "Territory" labels renamed to "Turf" across UI, missions, narration, and empire overview
+- Mission IDs updated to match new TURF_ZONES (harbor_row_expansion, midtown_expansion, etc.)
+- Cross-file references updated in missions.js, narration.js, empireOverview.js, index.html
+
 ## [1.5.9] - 2026-02-26
 
 ### Added
