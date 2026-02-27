@@ -232,6 +232,8 @@ const server = http.createServer(async (req, res) => {
     // Handle HTTP requests to serve game files
     let reqPath = decodeURIComponent(req.url); // Decode URL to handle spaces
     if (reqPath.includes('\0')) reqPath = reqPath.replace(/\0/g, '');
+    // Strip query strings so ?v=1.6.0 cache-busters don't break file lookup
+    reqPath = reqPath.split('?')[0];
     
     // Determine the static files root directory
     // In cPanel, game files may be in ../public_html while server runs from a separate dir
