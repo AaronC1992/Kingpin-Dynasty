@@ -4,7 +4,7 @@ import { showEmpireOverview } from './empireOverview.js';
 import { player, gainExperience, checkLevelUp, regenerateEnergy, startEnergyRegenTimer, startEnergyRegeneration, skillTreeDefinitions, availablePerks, achievements } from './player.js';
 import { jobs, stolenCarTypes } from './jobs.js';
 import { crimeFamilies, factionEffects, potentialMentors } from './factions.js';
-import { storyCampaigns, factionMissions, turfMissions, bossBattles, missionProgress } from './missions.js';
+import { familyStories, storyCampaigns, factionMissions, turfMissions, bossBattles, missionProgress } from './missions.js';
 import { narrationVariations, getRandomNarration } from './narration.js';
 import { storeItems, realEstateProperties, businessTypes, loanOptions, launderingMethods } from './economy.js';
 import { prisonerNames, recruitNames, availableRecruits, jailPrisoners, jailbreakPrisoners, setJailPrisoners, setJailbreakPrisoners, generateJailPrisoners, generateJailbreakPrisoners, generateAvailableRecruits } from './generators.js';
@@ -39,6 +39,7 @@ window.player = player;
 window.jobs = jobs;
 window.stolenCarTypes = stolenCarTypes;
 window.crimeFamilies = crimeFamilies;
+window.familyStories = familyStories;
 window.storyCampaigns = storyCampaigns;
 window.factionMissions = factionMissions;
 window.turfMissions = turfMissions;
@@ -405,99 +406,32 @@ function updateMissionAvailability() {
   });
 }
 
-// Function to show missions screen
+// Function to show missions/story screen
 async function showMissions() {
   if (player.inJail) {
     showBriefNotification("Can't access missions while in jail!", 'danger');
     return;
   }
 
-  // Count available missions per tab for badges
-  const storyActive = storyCampaigns[player.missions.activeCampaign] && storyCampaigns[player.missions.activeCampaign].chapters[player.missions.currentChapter] ? 1 : 0;
-  let factionAvail = 0;
-  Object.keys(crimeFamilies).forEach(k => { factionAvail += (factionMissions[k] || []).filter(m => m.unlocked).length; });
-  const territoryAvail = turfMissions.filter(m => player.missions.unlockedTurfMissions.includes(m.id)).length;
-  const bossAvail = bossBattles.filter(b => player.missions.unlockedBossBattles.includes(b.id)).length;
-  const racketsCount = (player.protectionRackets || []).length + (player.corruptedOfficials || []).length;
-  const ownedZones = (player.turf?.owned || []).length;
+  let missionsHTML;
 
-  // Determine which tab to open (default story, or accept override)
-  const activeTab = window._opsActiveTab || 'story';
-  window._opsActiveTab = null;
+  // Story-driven flow:
+  // 1. No family chosen → family story picker
+  // 2. Family chosen, story in progress → current chapter
+  // 3. Don achieved → empire dashboard (with turf/rackets access)
+  const sp = player.storyProgress;
+  const hasFamilyStory = player.chosenFamily && familyStories[player.chosenFamily];
 
-  let missionsHTML = `
-    <!-- Faction Intel Strip -->
-    <div class="ops-intel-strip">
-      ${Object.keys(crimeFamilies).map(familyKey => {
-        const family = crimeFamilies[familyKey];
-        const reputation = player.missions.factionReputation[familyKey];
-        const missions = factionMissions[familyKey] || [];
-        const unlockedCount = missions.filter(m => m.unlocked).length;
-        const totalCount = missions.length;
-        return `
-          <div class="ops-intel-chip" style="--family-color:${family.color}">
-            <div>
-              <span class="chip-name">${family.name}</span>
-              <span class="chip-meta"> &middot; ${family.boss}</span>
-            </div>
-            <span class="chip-rep">${reputation} Rep</span>
-            <span class="chip-meta">${unlockedCount}/${totalCount}</span>
-          </div>
-        `;
-      }).join('')}
-    </div>
-
-    <!-- Tab Navigation -->
-    <div class="ops-tabs">
-      <button class="ops-tab ${activeTab === 'story' ? 'active' : ''}" onclick="switchOpsTab('story', this)">
-        <span class="tab-icon">&#128214;</span>
-        Story${storyActive ? '<span class="tab-count">!</span>' : ''}
-      </button>
-      <button class="ops-tab ${activeTab === 'factions' ? 'active' : ''}" onclick="switchOpsTab('factions', this)">
-        <span class="tab-icon">&#128081;</span>
-        Family Ops${factionAvail ? '<span class="tab-count">' + factionAvail + '</span>' : ''}
-      </button>
-      <button class="ops-tab ${activeTab === 'territory' ? 'active' : ''}" onclick="switchOpsTab('territory', this)">
-        <span class="tab-icon">&#127961;</span>
-        Turf${ownedZones ? '<span class="tab-count">' + ownedZones + '</span>' : ''}
-      </button>
-      <button class="ops-tab ${activeTab === 'bosses' ? 'active' : ''}" onclick="switchOpsTab('bosses', this)">
-        <span class="tab-icon">&#128128;</span>
-        Bosses${bossAvail ? '<span class="tab-count">' + bossAvail + '</span>' : ''}
-      </button>
-      <button class="ops-tab ${activeTab === 'rackets' ? 'active' : ''}" onclick="switchOpsTab('rackets', this)">
-        <span class="tab-icon">&#128176;</span>
-        Rackets${racketsCount ? '<span class="tab-count">' + racketsCount + '</span>' : ''}
-      </button>
-    </div>
-
-    <!-- Story Campaign Panel -->
-    <div id="ops-panel-story" class="ops-panel ${activeTab === 'story' ? 'active' : ''}">
-      ${generateCampaignHTML()}
-    </div>
-
-    <!-- Faction Missions Panel -->
-    <div id="ops-panel-factions" class="ops-panel ${activeTab === 'factions' ? 'active' : ''}">
-      ${generateFactionMissionsHTML()}
-    </div>
-
-    <!-- Turf Overview Panel (map + zones + missions) -->
-    <div id="ops-panel-territory" class="ops-panel ${activeTab === 'territory' ? 'active' : ''}">
-      ${generateTurfOverviewHTML()}
-    </div>
-
-    <!-- Boss Battles Panel -->
-    <div id="ops-panel-bosses" class="ops-panel ${activeTab === 'bosses' ? 'active' : ''}">
-      ${generateBossBattlesHTML()}
-    </div>
-
-    <!-- Rackets & Corruption Panel -->
-    <div id="ops-panel-rackets" class="ops-panel ${activeTab === 'rackets' ? 'active' : ''}">
-      ${generateRacketsHTML()}
-    </div>
-
-    <button class="ops-back-btn" onclick="goBackToMainMenu()">Back to SafeHouse</button>
-  `;
+  if (!hasFamilyStory) {
+    // No family yet — show cinematic family picker
+    missionsHTML = renderStoryFamilyPicker();
+  } else if (sp && sp.isDon) {
+    // Don achieved — show empire epilogue
+    missionsHTML = renderStoryEpilogue(player.chosenFamily, familyStories[player.chosenFamily]);
+  } else {
+    // Story in progress — show current chapter
+    missionsHTML = renderStoryChapter();
+  }
 
   document.getElementById("missions-content").innerHTML = missionsHTML;
   hideAllScreens();
@@ -534,341 +468,485 @@ function toggleLockedMissions(familyKey) {
   }
 }
 
-// Function to generate campaign HTML
-function generateCampaignHTML() {
-  const campaign = storyCampaigns[player.missions.activeCampaign];
-  if (!campaign) return `<div class="ops-section"><p style="color:#777;">No active campaign.</p></div>`;
-  
-  const currentChapter = campaign.chapters[player.missions.currentChapter];
-  if (!currentChapter) return `<div class="ops-section"><p style="color:#2ecc71;">Campaign completed! You've risen to the top.</p></div>`;
-  
-  const totalChapters = campaign.chapters.length;
-  const chapterNum = player.missions.currentChapter + 1;
-  const completedObj = currentChapter.objectives.filter(o => o.current >= o.target).length;
-  const totalObj = currentChapter.objectives.length;
-  const progressPct = totalObj > 0 ? Math.round((completedObj / totalObj) * 100) : 0;
+// ==================== STORY MODE RENDERER ====================
+// Replaces old campaign/faction/turf/boss HTML generators with immersive story-driven UI
 
-  let objectivesHTML = currentChapter.objectives.map(obj => {
-    const isComplete = obj.current >= obj.target;
-    return `
-      <div class="ops-objective ${isComplete ? 'obj-done' : ''}">
-        <span class="obj-check">${isComplete ? '&#9745;' : '&#9744;'}</span>
-        <span class="obj-text">${obj.text}</span>
-        <span class="obj-progress">${obj.current}/${obj.target}</span>
-      </div>
-    `;
-  }).join('');
-  
-  return `
-    <div class="ops-section">
-      <div class="ops-section-title"><span class="title-icon">&#128214;</span> ${campaign.name}</div>
-      <div class="ops-campaign-box">
-        <div class="chapter-label">Chapter ${chapterNum} of ${totalChapters}</div>
-        <div class="chapter-title">${currentChapter.title}</div>
-        <div class="chapter-desc">${currentChapter.description}</div>
-        
-        <div style="margin-bottom:12px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-            <span style="color:#888;font-size:0.82em;font-weight:bold;text-transform:uppercase;letter-spacing:1px;">Objectives</span>
-            <span style="color:#d4af37;font-size:0.82em;font-weight:bold;">${completedObj}/${totalObj} &mdash; ${progressPct}%</span>
-          </div>
-          <div style="background:#1a1a1a;border-radius:3px;height:4px;overflow:hidden;">
-            <div style="width:${progressPct}%;height:100%;background:linear-gradient(90deg,#d4af37,#2ecc71);border-radius:3px;transition:width 0.3s;"></div>
-          </div>
-        </div>
-        
-        ${objectivesHTML}
-        
-        <div class="ops-rewards-bar">
-          ${currentChapter.rewards.money ? `<span class="reward-item">&#128176; <span class="reward-val">$${(currentChapter.rewards.money || 0).toLocaleString()}</span></span>` : ''}
-          ${currentChapter.rewards.experience ? `<span class="reward-item">&#11088; <span class="reward-val">${currentChapter.rewards.experience} XP</span></span>` : ''}
-          ${currentChapter.rewards.reputation ? `<span class="reward-item">&#128081; <span class="reward-val">+${currentChapter.rewards.reputation} Rep</span></span>` : ''}
-        </div>
-      </div>
-    </div>
-  `;
+// Get the current value for a story objective
+function getStoryObjectiveValue(objective) {
+  const stats = player.missions.missionStats;
+  switch (objective.type) {
+    case 'jobs':       return stats.jobsCompleted || 0;
+    case 'money':      return player.money || 0;
+    case 'level':      return player.level || 1;
+    case 'gang':       return player.gang.members || 0;
+    case 'properties': return (player.realEstate?.ownedProperties || []).length;
+    case 'reputation': return Math.floor(player.reputation || 0);
+    default:           return 0;
+  }
 }
 
-// Function to generate faction missions HTML
-function generateFactionMissionsHTML() {
-  let html = `<div class="ops-section">
-    <div class="ops-section-title"><span class="title-icon">&#128081;</span> Family Business</div>`;
-  
-  Object.keys(crimeFamilies).forEach(familyKey => {
-    const family = crimeFamilies[familyKey];
-    const missions = factionMissions[familyKey] || [];
-    const reputation = player.missions.factionReputation[familyKey];
-    
-    const unlockedMissions = missions.filter(m => m.unlocked);
-    const lockedMissions = missions.filter(m => !m.unlocked);
-    const totalCount = missions.length;
-    const unlockedCount = unlockedMissions.length;
-
-    // Check if first family should be expanded by default
-    const isFirst = Object.keys(crimeFamilies).indexOf(familyKey) === 0;
-    
-    html += `
-      <div class="ops-family-group">
-        <div class="ops-family-header ${isFirst ? 'expanded' : ''}" style="--family-color:${family.color}" data-family-header="${familyKey}" onclick="toggleFamilyGroup('${familyKey}')">
-          <div>
-            <span class="fam-name">${family.name}</span>
-            <span class="fam-meta"> &middot; ${family.boss} &middot; ${family.specialty}</span>
-          </div>
-          <div style="display:flex;align-items:center;gap:10px;">
-            <span class="chip-rep" style="color:#d4af37;font-size:0.85em;font-weight:bold;">${reputation} Rep</span>
-            <span class="fam-meta">${unlockedCount}/${totalCount}</span>
-            <span class="fam-toggle">&#9660;</span>
-          </div>
-        </div>
-        <div class="ops-family-body ${isFirst ? 'expanded' : ''}" data-family-body="${familyKey}">
-    `;
-
-    // Available missions
-    unlockedMissions.forEach(mission => {
-      html += `
-          <div class="ops-card card-available">
-            <div class="card-header">
-              <h4 class="card-title">${mission.name}</h4>
-              <span class="card-badge badge-available">Available</span>
-            </div>
-            <div class="card-desc">${mission.description}</div>
-            <div class="card-stats">
-              <span class="stat">&#128176; <span class="stat-val">$${mission.payout[0].toLocaleString()}-$${mission.payout[1].toLocaleString()}</span></span>
-              <span class="stat">Risk: <span class="stat-val">${mission.risk}</span></span>
-              <span class="stat">&#9889; <span class="stat-val">${mission.energyCost}</span></span>
-              <span class="stat">Rep: <span class="stat-val">${mission.reputation}</span></span>
-            </div>
-            ${mission.requiredItems && mission.requiredItems.length > 0 ? `
-            <div class="card-reqs">
-              ${mission.requiredItems.map(item => `<span class="req-tag ${hasRequiredItems([item]) ? 'req-met' : 'req-unmet'}">${item}</span>`).join('')}
-            </div>` : ''}
-            <button class="card-action act-go" onclick="startFactionMission('${familyKey}', '${mission.id}')" style="background:linear-gradient(135deg,${family.color},${family.color}dd);">
-              Accept Mission
-            </button>
-          </div>
-      `;
-    });
-
-    // Locked missions (collapsed)
-    if (lockedMissions.length > 0) {
-      html += `<button class="ops-locked-toggle" data-locked-toggle="fac-${familyKey}" onclick="toggleLockedMissions('fac-${familyKey}')">Show ${lockedMissions.length} locked...</button>`;
-      html += `<div data-locked-group="fac-${familyKey}" style="display:none;">`;
-      lockedMissions.forEach(mission => {
-        const hasItems = hasRequiredItems(mission.requiredItems);
-        const hasRep = reputation >= (mission.factionRep - 5);
-        const missingItems = mission.requiredItems.filter(item => !hasRequiredItems([item]));
-        const repNeeded = Math.max(0, (mission.factionRep - 5) - reputation);
-        html += `
-            <div class="ops-card card-locked">
-              <div class="card-header">
-                <h4 class="card-title">&#128274; ${mission.name}</h4>
-                <span class="card-badge badge-locked">Locked</span>
-              </div>
-              <div class="card-desc">${mission.description}</div>
-              <div class="card-stats">
-                <span class="stat">&#128176; <span class="stat-val">$${mission.payout[0].toLocaleString()}-$${mission.payout[1].toLocaleString()}</span></span>
-                <span class="stat">Risk: <span class="stat-val">${mission.risk}</span></span>
-              </div>
-              <div class="card-reqs">
-                ${!hasRep ? `<span class="req-tag req-unmet">Need ${repNeeded} more Rep</span>` : `<span class="req-tag req-met">Rep OK</span>`}
-                ${!hasItems && mission.requiredItems.length > 0 ? `<span class="req-tag req-unmet">Missing: ${missingItems.join(', ')}</span>` : ''}
-              </div>
-            </div>
-        `;
-      });
-      html += `</div>`;
-    }
-
-    // Signature Job
-    html += (() => {
-      const sigJob = family.signatureJob;
-      if (!sigJob) return '';
-      const cooldowns = player.missions.signatureJobCooldowns || {};
-      const lastRun = cooldowns[sigJob.id] || 0;
-      const cooldownMs = (sigJob.cooldown || 24) * 60 * 60 * 1000;
-      const now = Date.now();
-      const onCooldown = (now - lastRun) < cooldownMs;
-      const remaining = onCooldown ? Math.ceil((cooldownMs - (now - lastRun)) / 60000) : 0;
-      const hasRep = reputation >= 20;
-      
-      if (!hasRep) {
-        return `
-          <div class="ops-card card-locked" style="border-left-color:#9b59b6;">
-            <div class="card-header">
-              <h4 class="card-title">&#128274; Signature: ${sigJob.name}</h4>
-              <span class="card-badge badge-locked">Need 20 Rep</span>
-            </div>
-            <div class="card-desc">${sigJob.description}</div>
-            <div class="card-reqs">
-              <span class="req-tag req-unmet">Reputation: ${reputation}/20</span>
-            </div>
-          </div>
-        `;
-      }
-
-      return `
-        <div class="ops-card card-signature">
-          <div class="card-header">
-            <h4 class="card-title">&#11088; Signature: ${sigJob.name}</h4>
-            <span class="card-badge ${onCooldown ? 'badge-cooldown' : 'badge-signature'}">${onCooldown ? 'Cooldown' : 'Ready'}</span>
-          </div>
-          <div class="card-desc">${sigJob.description}</div>
-          <div class="card-stats">
-            <span class="stat">&#128176; <span class="stat-val">$${sigJob.baseReward.toLocaleString()}</span></span>
-            <span class="stat">&#11088; <span class="stat-val">${sigJob.xpReward} XP</span></span>
-            <span class="stat">Type: <span class="stat-val">${sigJob.type}</span></span>
-          </div>
-          ${onCooldown 
-            ? `<div class="card-reqs"><span class="req-tag req-unmet">&#9203; ${remaining >= 60 ? Math.floor(remaining/60) + 'h ' + (remaining%60) + 'm' : remaining + 'm'} remaining</span></div>`
-            : `<button class="card-action act-signature" onclick="startSignatureJob('${familyKey}')">Execute Signature Job</button>`
-          }
-        </div>
-      `;
-    })();
-
-    html += `
-        </div>
-      </div>
-    `;
-  });
-  
-  html += `</div>`;
-  return html;
+// Check if all objectives for a chapter are met
+function areStoryObjectivesMet(chapter) {
+  return chapter.objectives.every(o => getStoryObjectiveValue(o) >= o.target);
 }
 
-// Function to generate territory missions HTML
-function generateTurfMissionsHTML() {
-  const unlockedMissions = turfMissions.filter(mission => 
-    player.missions.unlockedTurfMissions.includes(mission.id)
-  );
-  const lockedMissions = turfMissions.filter(mission => 
-    !player.missions.unlockedTurfMissions.includes(mission.id)
-  );
-
+// Render the cinematic family selection (story prologue)
+function renderStoryFamilyPicker() {
   let html = `
-    <div class="ops-section">
-      <div class="ops-section-title"><span class="title-icon">&#127961;</span> Turf Expansion</div>
-      <div class="ops-territory-info">
-        <span class="info-item">&#128101; Gang: <span class="info-val">${player.gang.members} members</span></span>
-        <span class="info-item">&#128081; Reputation: <span class="info-val">${player.reputation}</span></span>
-        <span class="info-item">Difficulty Key: <span class="info-val" style="color:#2ecc71;">Easy 3+</span> &middot; <span class="info-val" style="color:#f39c12;">Med 5+</span> &middot; <span class="info-val" style="color:#e74c3c;">Hard 8+</span></span>
+    <div class="story-screen">
+      <div class="story-title-block">
+        <h1 class="story-main-title">Choose Your Destiny</h1>
+        <p class="story-subtitle">Every family has a story. Every story has a price. Choose wisely — this decision shapes your entire journey.</p>
       </div>
-  `;
+      <div class="story-family-grid">`;
 
-  // Unlocked missions
-  unlockedMissions.forEach(mission => {
-    const hasGang = player.gang.members >= mission.requiredGangMembers;
-    const hasEnergy = player.energy >= mission.energyCost;
-    const canStart = hasGang && hasEnergy;
-
+  Object.entries(familyStories).forEach(([famKey, fam]) => {
+    const rivalFam = typeof RIVAL_FAMILIES !== 'undefined' ? RIVAL_FAMILIES[famKey] : null;
+    const buff = rivalFam?.buff;
     html += `
-      <div class="ops-card card-available">
-        <div class="card-header">
-          <h4 class="card-title">${mission.name}</h4>
-          <span class="card-badge badge-available">Available</span>
-        </div>
-        <div class="card-desc">${mission.description}</div>
-        <div class="card-reqs">
-          <span class="req-tag ${hasGang ? 'req-met' : 'req-unmet'}">&#128101; Gang: ${player.gang.members}/${mission.requiredGangMembers}</span>
-          <span class="req-tag ${hasEnergy ? 'req-met' : 'req-unmet'}">&#9889; Energy: ${player.energy}/${mission.energyCost}</span>
-          <span class="req-tag req-met">&#127961; ${mission.territory}</span>
-        </div>
-        <div class="card-stats">
-          <span class="stat">&#128176; <span class="stat-val">$${mission.rewards.money.toLocaleString()}</span></span>
-          <span class="stat">&#127961; <span class="stat-val">+${mission.rewards.territory}</span></span>
-          <span class="stat">&#128081; <span class="stat-val">+${mission.rewards.reputation} Rep</span></span>
-          <span class="stat">&#128176; <span class="stat-val">+$${mission.rewards.passive_income}/tribute</span></span>
-        </div>
-        <div class="card-stats">
-          <span class="stat">Jail: <span class="stat-val val-danger">${mission.risks.jailChance}%</span></span>
-          <span class="stat">Gang Loss: <span class="stat-val val-danger">${mission.risks.gangMemberLoss}%</span></span>
-          <span class="stat">Health Loss: <span class="stat-val val-danger">${mission.risks.healthLoss}</span></span>
-        </div>
-        <button class="card-action act-go" onclick="startTurfMission('${mission.id}')" ${canStart ? '' : 'disabled'}>
-          ${canStart ? 'Launch Operation' : 'Requirements Not Met'}
+      <div class="story-family-card" style="--fam-color:${fam.color}">
+        <div class="story-family-icon">${fam.icon}</div>
+        <h2 class="story-family-name">${rivalFam?.name || famKey}</h2>
+        <h3 class="story-family-story-title">"${fam.storyTitle}"</h3>
+        <p class="story-family-tagline">${fam.tagline}</p>
+        ${buff ? `<div class="story-family-buff">✨ ${buff.name}: ${buff.description}</div>` : ''}
+        <div class="story-family-chapters">8 Chapters &middot; 4 Acts</div>
+        <button class="story-pledge-btn" style="background:linear-gradient(135deg,${fam.color},${fam.color}cc);" onclick="beginFamilyStory('${famKey}')">
+          Begin This Story
         </button>
-      </div>
-    `;
+      </div>`;
   });
 
-  // Locked missions (hidden by default)
-  if (lockedMissions.length > 0) {
-    html += `<button class="ops-locked-toggle" data-locked-toggle="territory" onclick="toggleLockedMissions('territory')">Show ${lockedMissions.length} locked mission${lockedMissions.length > 1 ? 's' : ''}...</button>`;
-    html += `<div data-locked-group="territory" style="display:none;">`;
-    lockedMissions.forEach(mission => {
-      const gangNeeded = Math.max(0, mission.requiredGangMembers - player.gang.members);
-      const repNeeded = Math.max(0, (mission.difficulty === 'easy' ? 15 : mission.difficulty === 'medium' ? 30 : 50) - player.reputation);
-      html += `
-        <div class="ops-card card-locked">
-          <div class="card-header">
-            <h4 class="card-title">&#128274; ${mission.name}</h4>
-            <span class="card-badge badge-locked">${mission.difficulty}</span>
-          </div>
-          <div class="card-desc">${mission.description}</div>
-          <div class="card-reqs">
-            ${gangNeeded > 0 ? `<span class="req-tag req-unmet">Need ${gangNeeded} more gang members</span>` : `<span class="req-tag req-met">Gang size OK</span>`}
-            ${repNeeded > 0 ? `<span class="req-tag req-unmet">Need ${repNeeded} more reputation</span>` : `<span class="req-tag req-met">Reputation OK</span>`}
-          </div>
-          <div class="card-stats">
-            <span class="stat">&#128176; <span class="stat-val">$${mission.rewards.money.toLocaleString()}</span></span>
-            <span class="stat">&#128176; <span class="stat-val">+$${mission.rewards.passive_income}/tribute</span></span>
-          </div>
-        </div>
-      `;
-    });
-    html += `</div>`;
-  }
-
-  html += `</div>`;
+  html += `</div>
+    <button class="story-back-btn" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
+  </div>`;
   return html;
 }
 
-// Function to generate boss battles HTML
-function generateBossBattlesHTML() {
-  const available = bossBattles.filter(battle => 
-    player.missions.unlockedBossBattles.includes(battle.id)
+// Begin a family's story - set up player state and show first chapter
+async function beginFamilyStory(familyKey) {
+  const fam = familyStories[familyKey];
+  if (!fam) return;
+  const rivalFam = typeof RIVAL_FAMILIES !== 'undefined' ? RIVAL_FAMILIES[familyKey] : null;
+
+  const confirmed = await ui.confirm(
+    `Begin "${fam.storyTitle}" with the ${rivalFam?.name || familyKey}?\n\n` +
+    `${fam.tagline}\n\n` +
+    `⚠️ This is permanent! You will play through this family's 8-chapter story.`
   );
-  
-  if (available.length === 0) {
-    return `<div class="ops-section"><p style="color:#777;">No boss battles available yet. Keep building your empire.</p></div>`;
+
+  if (!confirmed) return;
+
+  // Set family allegiance
+  player.chosenFamily = familyKey;
+  player.familyRank = 'associate';
+  if (!player.turf) player.turf = { owned: [], power: 100, income: 0, reputation: 0 };
+  player.turf.reputation = (player.turf.reputation || 0) + 10;
+
+  // Init story progress
+  player.storyProgress = {
+    currentChapter: 0,
+    chaptersCompleted: [],
+    respect: 0,
+    choices: {},
+    isDon: false,
+    bossesDefeated: []
+  };
+
+  showBriefNotification(`📖 "${fam.storyTitle}" begins...`, 'success');
+  logAction(`📖 You've begun <strong>"${fam.storyTitle}"</strong> with the ${rivalFam?.name || familyKey}.`);
+
+  updateUI();
+  showMissions();
+}
+window.beginFamilyStory = beginFamilyStory;
+
+// Render the current story chapter (the main story view)
+function renderStoryChapter() {
+  const famKey = player.chosenFamily;
+  const fam = familyStories[famKey];
+  if (!fam) return renderStoryFamilyPicker();
+
+  const sp = player.storyProgress || {};
+  const chapterIdx = sp.currentChapter || 0;
+  const chapter = fam.chapters[chapterIdx];
+
+  // If all chapters done (isDon), show the empire endgame screen
+  if (!chapter || sp.isDon) {
+    return renderStoryEpilogue(famKey, fam);
   }
 
-  return `<div class="ops-section">
-    <div class="ops-section-title"><span class="title-icon">&#128128;</span> Boss Battles</div>
-    ${available.map(battle => {
-      const meetsReqs = player.power >= battle.requirements.minPower && player.gang.members >= battle.requirements.minGangMembers;
-      return `
-        <div class="ops-card card-boss">
-          <div class="card-header">
-            <h4 class="card-title">${battle.name}</h4>
-            <span class="card-badge badge-boss">${meetsReqs ? 'Ready' : 'Not Ready'}</span>
-          </div>
-          <div class="card-desc">${battle.description}</div>
-          <div class="card-stats">
-            <span class="stat">Boss: <span class="stat-val">${battle.boss.name}</span></span>
-            <span class="stat">Power: <span class="stat-val">${battle.boss.power}</span></span>
-            <span class="stat">Gang: <span class="stat-val">${battle.boss.gang_size} members</span></span>
-          </div>
-          <div class="card-stats">
-            <span class="stat">Abilities: <span class="stat-val">${battle.boss.special_abilities.join(', ')}</span></span>
-          </div>
-          <div class="card-reqs">
-            <span class="req-tag ${player.power >= battle.requirements.minPower ? 'req-met' : 'req-unmet'}">Power: ${player.power}/${battle.requirements.minPower}</span>
-            <span class="req-tag ${player.gang.members >= battle.requirements.minGangMembers ? 'req-met' : 'req-unmet'}">Gang: ${player.gang.members}/${battle.requirements.minGangMembers}</span>
-          </div>
-          <div class="ops-rewards-bar" style="margin-bottom:12px;">
-            <span class="reward-item">&#128176; <span class="reward-val">$${battle.rewards.money.toLocaleString()}</span></span>
-            <span class="reward-item">&#128081; <span class="reward-val">+${battle.rewards.reputation} Rep</span></span>
-            <span class="reward-item">&#127961; <span class="reward-val">+${battle.rewards.territory} Turf</span></span>
-          </div>
-          <button class="card-action act-boss" onclick="startBossBattle('${battle.id}')" ${meetsReqs ? '' : 'disabled'}>
-            ${meetsReqs ? 'Challenge Boss' : 'Requirements Not Met'}
-          </button>
-        </div>
-      `;
-    }).join('')}
+  const rivalFam = typeof RIVAL_FAMILIES !== 'undefined' ? RIVAL_FAMILIES[famKey] : null;
+  const chapterNum = chapterIdx + 1;
+  const totalChapters = fam.chapters.length;
+  const rank = player.familyRank || 'associate';
+
+  // Check choice & boss state for this chapter
+  const choiceMade = sp.choices && sp.choices[chapter.id];
+  const bossDefeated = chapter.boss && sp.bossesDefeated && sp.bossesDefeated.includes(chapter.id);
+  const allObjectivesMet = areStoryObjectivesMet(chapter);
+
+  // Build narrative blocks
+  let narrativeHTML = chapter.narrative.map(block => {
+    if (block.type === 'scene') {
+      return `<div class="story-block story-scene"><em>${block.text}</em></div>`;
+    } else if (block.type === 'dialogue') {
+      return `<div class="story-block story-dialogue"><span class="story-speaker">${block.speaker}:</span> ${block.text}</div>`;
+    } else {
+      return `<div class="story-block story-narration">${block.text}</div>`;
+    }
+  }).join('');
+
+  // Build objectives list
+  let objectivesHTML = chapter.objectives.map(obj => {
+    const current = getStoryObjectiveValue(obj);
+    const met = current >= obj.target;
+    return `
+      <div class="story-objective ${met ? 'obj-met' : ''}">
+        <span class="obj-icon">${met ? '✅' : '⬜'}</span>
+        <span class="obj-label">${obj.text}</span>
+        <span class="obj-val">${current.toLocaleString()} / ${obj.target.toLocaleString()}</span>
+      </div>`;
+  }).join('');
+
+  // Rewards block
+  const rw = chapter.rewards;
+  let rewardsHTML = `<div class="story-rewards">
+    ${rw.money ? `<span class="story-reward-tag">💰 $${rw.money.toLocaleString()}</span>` : ''}
+    ${rw.experience ? `<span class="story-reward-tag">⭐ ${rw.experience} XP</span>` : ''}
+    ${rw.reputation ? `<span class="story-reward-tag">👑 +${rw.reputation} Rep</span>` : ''}
+    ${chapter.rankOnComplete ? `<span class="story-reward-tag rank-up">🎖️ → ${chapter.rankOnComplete.charAt(0).toUpperCase() + chapter.rankOnComplete.slice(1)}</span>` : ''}
   </div>`;
+
+  // Choice UI (if this chapter has a choice and player hasn't chosen yet)
+  let choiceHTML = '';
+  if (chapter.choice && !choiceMade) {
+    choiceHTML = `
+      <div class="story-choice-block">
+        <div class="story-choice-prompt">${chapter.choice.prompt}</div>
+        <div class="story-choice-options">
+          ${chapter.choice.options.map((opt, i) => `
+            <button class="story-choice-btn" onclick="makeStoryChoice('${chapter.id}', ${i})">
+              ${opt.text}
+            </button>
+          `).join('')}
+        </div>
+      </div>`;
+  } else if (chapter.choice && choiceMade) {
+    const chosenOpt = chapter.choice.options[choiceMade.optionIndex];
+    choiceHTML = `
+      <div class="story-choice-block chosen">
+        <div class="story-choice-prompt">${chapter.choice.prompt}</div>
+        <div class="story-choice-result">✓ ${chosenOpt ? chosenOpt.text : 'Choice made'}</div>
+      </div>`;
+  }
+
+  // Boss fight trigger (if this chapter has a boss)
+  let bossHTML = '';
+  if (chapter.boss && !bossDefeated) {
+    bossHTML = `
+      <div class="story-boss-block">
+        <div class="story-boss-header">
+          <span class="boss-icon">💀</span>
+          <span class="boss-name">${chapter.boss.name}</span>
+        </div>
+        <div class="story-boss-intro">${chapter.boss.dialogue.intro}</div>
+        <div class="story-boss-stats">
+          <span>Power: ${chapter.boss.power}</span>
+          <span>Health: ${chapter.boss.health}</span>
+          <span>Guards: ${chapter.boss.gangSize}</span>
+        </div>
+        <button class="story-boss-btn" onclick="startStoryBossFight('${chapter.id}')" ${allObjectivesMet ? '' : 'disabled'}>
+          ${allObjectivesMet ? '⚔️ Face the Boss' : '🔒 Complete objectives first'}
+        </button>
+      </div>`;
+  } else if (chapter.boss && bossDefeated) {
+    bossHTML = `
+      <div class="story-boss-block defeated">
+        <div class="story-boss-header">
+          <span class="boss-icon">☠️</span>
+          <span class="boss-name">${chapter.boss.name} — Defeated</span>
+        </div>
+        <div class="story-boss-victory">${chapter.boss.dialogue.victory}</div>
+      </div>`;
+  }
+
+  // Completion / advance button
+  let advanceHTML = '';
+  const canComplete = allObjectivesMet && (!chapter.choice || choiceMade) && (!chapter.boss || bossDefeated);
+  if (canComplete) {
+    // Show completion narrative if available
+    let completionNarrHTML = '';
+    if (chapter.completionNarrative && chapter.completionNarrative.length > 0) {
+      completionNarrHTML = `<div class="story-completion-narrative">` +
+        chapter.completionNarrative.map(block => {
+          if (block.type === 'scene') return `<div class="story-block story-scene"><em>${block.text}</em></div>`;
+          if (block.type === 'dialogue') return `<div class="story-block story-dialogue"><span class="story-speaker">${block.speaker}:</span> ${block.text}</div>`;
+          return `<div class="story-block story-narration">${block.text}</div>`;
+        }).join('') +
+        `</div>`;
+    }
+    advanceHTML = `
+      ${completionNarrHTML}
+      <button class="story-advance-btn" onclick="advanceStoryChapter()">
+        ${chapterNum < totalChapters ? '📖 Continue to Next Chapter →' : '👑 Claim Your Destiny'}
+      </button>`;
+  }
+
+  // Assemble the full chapter view
+  return `
+    <div class="story-screen">
+      <!-- Story Header -->
+      <div class="story-header" style="--fam-color:${fam.color}">
+        <div class="story-header-top">
+          <span class="story-fam-icon">${fam.icon}</span>
+          <div class="story-header-info">
+            <h1 class="story-header-title">${fam.storyTitle}</h1>
+            <div class="story-header-meta">${rivalFam?.name || famKey} &middot; ${rank.charAt(0).toUpperCase() + rank.slice(1)} &middot; Respect: ${sp.respect || 0}</div>
+          </div>
+        </div>
+        <div class="story-chapter-bar">
+          ${fam.chapters.map((ch, i) => {
+            const done = (sp.chaptersCompleted || []).includes(ch.id);
+            const current = i === chapterIdx;
+            return `<div class="story-ch-pip ${done ? 'done' : ''} ${current ? 'current' : ''}" title="Ch ${i+1}: ${ch.title}"></div>`;
+          }).join('')}
+        </div>
+      </div>
+
+      <!-- Act & Chapter Title -->
+      <div class="story-act-banner" style="border-color:${fam.color}">
+        <span class="story-act-label">Act ${chapter.act}: ${chapter.actTitle}</span>
+        <h2 class="story-chapter-title">Chapter ${chapterNum}: ${chapter.title}</h2>
+      </div>
+
+      <!-- Narrative -->
+      <div class="story-narrative">${narrativeHTML}</div>
+
+      <!-- Choice -->
+      ${choiceHTML}
+
+      <!-- Objectives -->
+      <div class="story-objectives-panel">
+        <h3 class="story-obj-header">📋 Objectives</h3>
+        ${objectivesHTML}
+      </div>
+
+      <!-- Rewards Preview -->
+      ${rewardsHTML}
+
+      <!-- Boss Fight -->
+      ${bossHTML}
+
+      <!-- Advance -->
+      ${advanceHTML}
+
+      <!-- Back Button -->
+      <button class="story-back-btn" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
+    </div>`;
 }
+
+// Render the post-Don epilogue / empire dashboard
+function renderStoryEpilogue(famKey, fam) {
+  const rivalFam = typeof RIVAL_FAMILIES !== 'undefined' ? RIVAL_FAMILIES[famKey] : null;
+  const ownedZones = (player.turf?.owned || []).length;
+  const totalZones = typeof TURF_ZONES !== 'undefined' ? TURF_ZONES.length : 0;
+
+  return `
+    <div class="story-screen">
+      <div class="story-header" style="--fam-color:${fam.color}">
+        <div class="story-header-top">
+          <span class="story-fam-icon">${fam.icon}</span>
+          <div class="story-header-info">
+            <h1 class="story-header-title">👑 ${rivalFam?.name || famKey} — Don</h1>
+            <div class="story-header-meta">Story Complete &middot; Empire Unlocked</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="story-epilogue-text">
+        <p>You've completed <strong>"${fam.storyTitle}"</strong> and claimed leadership of the ${rivalFam?.name || famKey}.</p>
+        <p>The streets are yours. Now defend them.</p>
+      </div>
+
+      <div class="story-empire-stats">
+        <div class="empire-stat"><span class="empire-stat-label">Turf Controlled</span><span class="empire-stat-val">${ownedZones} / ${totalZones}</span></div>
+        <div class="empire-stat"><span class="empire-stat-label">Gang Size</span><span class="empire-stat-val">${player.gang.members}</span></div>
+        <div class="empire-stat"><span class="empire-stat-label">Reputation</span><span class="empire-stat-val">${Math.floor(player.reputation)}</span></div>
+        <div class="empire-stat"><span class="empire-stat-label">Net Worth</span><span class="empire-stat-val">$${(player.money + (player.dirtyMoney || 0)).toLocaleString()}</span></div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:12px;margin:20px 0;">
+        <button class="story-action-btn" onclick="window._opsActiveTab='territory'; showMissions();">🗺️ Turf Wars &amp; Territory</button>
+        <button class="story-action-btn" onclick="showProtectionRackets();">🏪 Protection Rackets</button>
+        <button class="story-action-btn" onclick="showCorruption();">🏛️ Corruption Network</button>
+      </div>
+
+      <button class="story-back-btn" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
+    </div>`;
+}
+
+// ==================== STORY PROGRESSION LOGIC ====================
+
+// Make a story choice for the current chapter
+function makeStoryChoice(chapterId, optionIndex) {
+  const famKey = player.chosenFamily;
+  const fam = familyStories[famKey];
+  if (!fam) return;
+
+  const sp = player.storyProgress;
+  if (!sp) return;
+
+  const chapter = fam.chapters[sp.currentChapter];
+  if (!chapter || chapter.id !== chapterId || !chapter.choice) return;
+
+  // Don't allow re-choosing
+  if (sp.choices[chapterId]) return;
+
+  const option = chapter.choice.options[optionIndex];
+  if (!option) return;
+
+  // Record choice
+  sp.choices[chapterId] = { optionIndex, effect: option.effect, value: option.value };
+
+  // Apply effect
+  switch (option.effect) {
+    case 'money':
+      player.money += option.value;
+      if (option.value > 0) logAction(`💰 Choice reward: +$${option.value.toLocaleString()}`);
+      else logAction(`💰 Choice cost: -$${Math.abs(option.value).toLocaleString()}`);
+      break;
+    case 'reputation':
+      player.reputation += option.value;
+      logAction(`👑 Choice reward: +${option.value} reputation`);
+      break;
+    case 'respect':
+      sp.respect = (sp.respect || 0) + option.value;
+      logAction(`🤝 Choice reward: +${option.value} family respect`);
+      break;
+  }
+
+  showBriefNotification('Choice recorded', 'success');
+  updateUI();
+  showMissions();
+}
+window.makeStoryChoice = makeStoryChoice;
+
+// Start a boss fight embedded in a story chapter
+async function startStoryBossFight(chapterId) {
+  const famKey = player.chosenFamily;
+  const fam = familyStories[famKey];
+  if (!fam) return;
+
+  const sp = player.storyProgress;
+  const chapter = fam.chapters[sp.currentChapter];
+  if (!chapter || chapter.id !== chapterId || !chapter.boss) return;
+
+  // Already defeated?
+  if (sp.bossesDefeated.includes(chapterId)) return;
+
+  const boss = chapter.boss;
+
+  // Require enough energy (flat 25 for story bosses)
+  const energyCost = 25;
+  if (player.energy < energyCost) {
+    showBriefNotification(`Need ${energyCost} energy for this confrontation!`, 'danger');
+    return;
+  }
+  player.energy -= energyCost;
+
+  // Battle calculation
+  const playerStrength = player.power + (player.gang.members * 8) + (player.skills.violence * 10);
+  const bossStrength = boss.power + (boss.gangSize * 6);
+  const successChance = Math.min(85, 30 + ((playerStrength / bossStrength) * 40));
+
+  if (Math.random() * 100 < successChance) {
+    // Victory
+    player.money += boss.reward;
+    sp.bossesDefeated.push(chapterId);
+
+    logAction(`⚔️ VICTORY! ${boss.name} has been defeated!`);
+    logAction(boss.dialogue.victory);
+    await ui.alert(`${boss.name} defeated!\n\n${boss.dialogue.victory}`);
+    showBriefNotification(`${boss.name} defeated! +$${boss.reward.toLocaleString()}`, 'success');
+  } else {
+    // Defeat
+    const healthLoss = Math.floor(Math.random() * 30) + 15;
+    player.health -= healthLoss;
+
+    logAction(`💀 ${boss.name} overpowered you!`);
+    logAction(boss.dialogue.defeat);
+    showBriefNotification(`Defeated by ${boss.name}! Lost ${healthLoss} health.`, 'danger');
+
+    if (player.health <= 0) {
+      showDeathScreen(`Killed fighting ${boss.name}`);
+      return;
+    }
+  }
+
+  updateUI();
+  showMissions();
+}
+window.startStoryBossFight = startStoryBossFight;
+
+// Advance to the next story chapter (called when player clicks the advance button)
+function advanceStoryChapter() {
+  const famKey = player.chosenFamily;
+  const fam = familyStories[famKey];
+  if (!fam) return;
+
+  const sp = player.storyProgress;
+  const chapterIdx = sp.currentChapter;
+  const chapter = fam.chapters[chapterIdx];
+  if (!chapter) return;
+
+  // Verify completion
+  const choiceMade = !chapter.choice || sp.choices[chapter.id];
+  const bossDefeated = !chapter.boss || sp.bossesDefeated.includes(chapter.id);
+  if (!areStoryObjectivesMet(chapter) || !choiceMade || !bossDefeated) return;
+
+  // Mark completed
+  sp.chaptersCompleted.push(chapter.id);
+
+  // Give rewards
+  player.money += chapter.rewards.money || 0;
+  player.experience += chapter.rewards.experience || 0;
+  player.reputation += chapter.rewards.reputation || 0;
+  sp.respect = (sp.respect || 0) + (chapter.respectGain || 0);
+
+  logAction(`📖 Chapter Complete: "${chapter.title}" — +$${(chapter.rewards.money||0).toLocaleString()}, +${chapter.rewards.experience||0} XP, +${chapter.rewards.reputation||0} Rep`);
+
+  // Rank promotion
+  if (chapter.rankOnComplete) {
+    player.familyRank = chapter.rankOnComplete;
+    const rankName = chapter.rankOnComplete.charAt(0).toUpperCase() + chapter.rankOnComplete.slice(1);
+    logAction(`🎖️ Promoted to <strong>${rankName}</strong>!`);
+    showBriefNotification(`Promoted to ${rankName}!`, 'success');
+
+    if (chapter.rankOnComplete === 'don') {
+      sp.isDon = true;
+      logAction(`👑 You are now the <strong>Don</strong>. The city bows to your will.`);
+      showBriefNotification('👑 You are the Don! Turf Wars unlocked!', 'success');
+    }
+  }
+
+  // Advance chapter
+  if (chapterIdx + 1 < fam.chapters.length && !sp.isDon) {
+    sp.currentChapter = chapterIdx + 1;
+    const nextCh = fam.chapters[sp.currentChapter];
+    logAction(`📖 New Chapter: "${nextCh.title}" — Act ${nextCh.act}: ${nextCh.actTitle}`);
+  }
+
+  updateUI();
+  showMissions();
+}
+window.advanceStoryChapter = advanceStoryChapter;
+
+// Legacy stubs for backwards compatibility (old functions that may be called elsewhere)
+function generateCampaignHTML() { return renderStoryChapter(); }
+function generateFactionMissionsHTML() { return '<div class="ops-section"><p style="color:#777">Family missions have been replaced by Story Mode.</p></div>'; }
+function generateTurfMissionsHTML() { return generateTurfOverviewHTML(); }
+function generateBossBattlesHTML() { return '<div class="ops-section"><p style="color:#777">Boss battles are now part of Story Mode chapters.</p></div>'; }
 
 // Mission execution functions
 async function startFactionMission(familyKey, missionId) {
@@ -14025,7 +14103,15 @@ function resetPlayerForNewGame() {
     territoryHeat: {},
     territoryPower: 100,
     territoryReputation: 0,
-    quickActionPrefs: []
+    quickActionPrefs: [],
+    storyProgress: {
+      currentChapter: 0,
+      chaptersCompleted: [],
+      respect: 0,
+      choices: {},
+      isDon: false,
+      bossesDefeated: []
+    }
   });
 }
 
@@ -19594,6 +19680,11 @@ function initializeMissingData() {
   }
   if (!player.missions.factionReputation) {
     player.missions.factionReputation = { torrino: 0, kozlov: 0, chen: 0, morales: 0 };
+  }
+
+  // v1.6.0 — Story mode migration
+  if (!player.storyProgress) {
+    player.storyProgress = { currentChapter: 0, chaptersCompleted: [], respect: 0, choices: {}, isDon: false, bossesDefeated: [] };
   }
 
   // Recalculate power from equipped items + real estate + gang (replaces old running counter)
