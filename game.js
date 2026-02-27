@@ -1,4 +1,4 @@
-import { initOnboarding, updateTracker } from './onboarding.js';
+﻿import { initOnboarding, updateTracker } from './onboarding.js';
 import { applyDailyPassives, getDrugIncomeMultiplier, getViolenceHeatMultiplier, getWeaponPriceMultiplier } from './passiveManager.js';
 import { showEmpireOverview } from './empireOverview.js';
 import { player, gainExperience, checkLevelUp, regenerateEnergy, startEnergyRegenTimer, startEnergyRegeneration, skillTreeDefinitions, availablePerks, achievements } from './player.js';
@@ -469,10 +469,6 @@ async function showMissions() {
         <span class="tab-icon">&#128176;</span>
         Rackets${racketsCount ? '<span class="tab-count">' + racketsCount + '</span>' : ''}
       </button>
-      <button class="ops-tab ${activeTab === 'relocate' ? 'active' : ''}" onclick="switchOpsTab('relocate', this)">
-        <span class="tab-icon">&#127963;</span>
-        Relocate
-      </button>
     </div>
 
     <!-- Story Campaign Panel -->
@@ -498,11 +494,6 @@ async function showMissions() {
     <!-- Rackets & Corruption Panel -->
     <div id="ops-panel-rackets" class="ops-panel ${activeTab === 'rackets' ? 'active' : ''}">
       ${generateRacketsHTML()}
-    </div>
-
-    <!-- Relocate Panel -->
-    <div id="ops-panel-relocate" class="ops-panel ${activeTab === 'relocate' ? 'active' : ''}">
-      ${generateRelocateHTML()}
     </div>
 
     <button class="ops-back-btn" onclick="goBackToMainMenu()">Back to SafeHouse</button>
@@ -12287,7 +12278,7 @@ const menuUnlockConfig = [
   { id: 'options',     fn: 'showOptions()',           label: 'Settings',       tip: 'Save, load & game options',        level: 0 },
 
   // === EARLY GAME (Level 2-3) ===
-  // Relocate is now inside Operations
+  { id: 'relocate',   fn: 'showTerritoryRelocation()', label: 'Relocate',     tip: 'Move to a different district',     level: 2 },
   { id: 'skills',      fn: 'showSkills()',            label: 'Expertise',      tip: 'Spend skill points & upgrade',     level: 2 },
   { id: 'playerstats', fn: 'showPlayerStats()',       label: 'Player Stats',   tip: 'View your current stats & bonuses', level: 2 },
   { id: 'cars',        fn: 'showStolenCars()',        label: 'Motor Pool',     tip: 'Manage your stolen vehicles',      level: 2 },
@@ -14524,7 +14515,7 @@ function showTerritoryRelocation() {
           <h2 style="color: #e74c3c; margin: 0;">🏙️ Relocate</h2>
           <p style="color: #bdc3c7; margin: 4px 0 0;">${headerNote}</p>
         </div>
-        <button onclick="window._opsActiveTab='relocate'; showMissions();" style="background: #555; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">← Back</button>
+        <button onclick="goBackToMainMenu();" style="background: #555; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">← Back</button>
       </div>
       <div style="display: flex; flex-wrap: wrap; gap: 14px; justify-content: center;">
         ${cards}
