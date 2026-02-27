@@ -2726,9 +2726,15 @@ function showOnlineWorld() {
         </div>
     `;
     
-    document.getElementById("multiplayer-content").innerHTML = worldHTML;
+    const mpContent = document.getElementById("multiplayer-content");
+    if (!mpContent) {
+        console.warn("multiplayer-content element not found — skipping showOnlineWorld render");
+        return;
+    }
+    mpContent.innerHTML = worldHTML;
     hideAllScreens();
-    document.getElementById("multiplayer-screen").style.display = "block";
+    const mpScreen = document.getElementById("multiplayer-screen");
+    if (mpScreen) mpScreen.style.display = "block";
     
     // Update dynamic content
     updateConnectionStatus();
@@ -2931,7 +2937,8 @@ function exploreDistrict(districtName) {
         </div>
     `;
     
-    document.getElementById("multiplayer-content").innerHTML = districtHTML;
+    const mc1 = document.getElementById("multiplayer-content");
+    if (mc1) mc1.innerHTML = districtHTML;
     
     logAction(` Exploring ${districtName} district...`);
 }
@@ -3335,7 +3342,8 @@ function findPlayersInDistrict(districtName) {
         </div>
     `;
     
-    document.getElementById("multiplayer-content").innerHTML = playersHTML;
+    const mc2 = document.getElementById("multiplayer-content");
+    if (mc2) mc2.innerHTML = playersHTML;
 }
 
 // Show city events
@@ -3371,7 +3379,8 @@ function showCityEvents() {
         </div>
     `;
     
-    document.getElementById("multiplayer-content").innerHTML = eventsHTML;
+    const mc3 = document.getElementById("multiplayer-content");
+    if (mc3) mc3.innerHTML = eventsHTML;
 }
 
 // ==================== ASSASSINATION SYSTEM ====================
@@ -4342,7 +4351,8 @@ function showAlliancePanel() {
         </div>
     `;
     hideAllScreens();
-    document.getElementById('multiplayer-screen').style.display = 'block';
+    const ms1 = document.getElementById('multiplayer-screen');
+    if (ms1) ms1.style.display = 'block';
 }
 
 function handleAllianceInfoResult(message) {
@@ -4560,7 +4570,8 @@ function showBountyBoard() {
         </div>
     `;
     hideAllScreens();
-    document.getElementById('multiplayer-screen').style.display = 'block';
+    const ms2 = document.getElementById('multiplayer-screen');
+    if (ms2) ms2.style.display = 'block';
 }
 
 function postBounty() {
@@ -4649,7 +4660,8 @@ function showRankedSeason() {
         </div>
     `;
     hideAllScreens();
-    document.getElementById('multiplayer-screen').style.display = 'block';
+    const ms3 = document.getElementById('multiplayer-screen');
+    if (ms3) ms3.style.display = 'block';
 }
 
 function handleSeasonInfoResult(message) {
@@ -4783,7 +4795,8 @@ function showSiegePanel() {
         </div>
     `;
     hideAllScreens();
-    document.getElementById('multiplayer-screen').style.display = 'block';
+    const ms4 = document.getElementById('multiplayer-screen');
+    if (ms4) ms4.style.display = 'block';
 }
 
 function fortifyTerritory(districtId, points) {

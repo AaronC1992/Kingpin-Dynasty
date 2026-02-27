@@ -3816,12 +3816,8 @@ async function showBusinesses() {
       }).join('')}
     </div>
     
-    <div style="text-align: center; margin-top: 40px;">
-      <button onclick="goBackToMainMenu()" 
-          style="background: linear-gradient(45deg, #95a5a6, #7f8c8d); color: white; padding: 18px 35px; 
-              border: none; border-radius: 12px; font-size: 1.3em; font-weight: bold; cursor: pointer;">
-        🏠Back to SafeHouse
-      </button>
+    <div class="page-nav" style="justify-content: center;">
+      <button class="nav-btn-back" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
     </div>
   `;
   
@@ -4216,12 +4212,8 @@ async function showLoanShark() {
       <p style="color: #ecf0f1;">Failing to repay loans on time will result in serious consequences including reputation loss, health damage, and potentially losing gang members or property. Tony doesn't mess around.</p>
     </div>
     
-    <div style="text-align: center; margin-top: 40px;">
-      <button onclick="goBackToMainMenu()" 
-          style="background: linear-gradient(45deg, #95a5a6, #7f8c8d); color: white; padding: 18px 35px; 
-              border: none; border-radius: 12px; font-size: 1.3em; font-weight: bold; cursor: pointer;">
-        🏠Back to SafeHouse
-      </button>
+    <div class="page-nav" style="justify-content: center;">
+      <button class="nav-btn-back" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
     </div>
   `;
   
@@ -4402,12 +4394,8 @@ function showMoneyLaundering() {
       <p style="color: #ecf0f1;">• Dirty money jobs (Bank Job, Counterfeiting Money) increase your suspicion level — launder regularly!</p>
     </div>
     
-    <div style="text-align: center; margin-top: 40px;">
-      <button onclick="goBackToMainMenu()" 
-          style="background: linear-gradient(45deg, #95a5a6, #7f8c8d); color: white; padding: 18px 35px; 
-              border: none; border-radius: 12px; font-size: 1.3em; font-weight: bold; cursor: pointer;">
-        🏠Back to SafeHouse
-      </button>
+    <div class="page-nav" style="justify-content: center;">
+      <button class="nav-btn-back" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
     </div>
   `;
   
@@ -4557,7 +4545,10 @@ function showGang() {
     
     <!-- Gang Members List -->
     <div style="background: rgba(44, 62, 80, 0.8); padding: 20px; border-radius: 10px; border: 2px solid #9b59b6; margin: 20px 0;">
-      <h3 style="color: #9b59b6;">Gang Members</h3>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <h3 style="color: #9b59b6; margin: 0;">Gang Members</h3>
+        ${player.gang.gangMembers.length > 0 ? `<button onclick="showGangManagementScreen()" style="background: #1a1a1a; color: #c0a062; padding: 8px 16px; border: 1px solid #c0a062; border-radius: 3px; cursor: pointer; font-weight: bold;">Manage Crew</button>` : ''}
+      </div>
       ${generateGangMembersHTML()}
     </div>
     
@@ -4567,9 +4558,9 @@ function showGang() {
       ${generateTrainingProgramsHTML()}
     </div>
     
-    <button onclick="goBackToMainMenu()" style="background: #95a5a6; color: white; padding: 15px 30px; border: none; border-radius: 8px; cursor: pointer; margin-top: 20px;">
-      Back to SafeHouse
-    </button>
+    <div class="page-nav" style="justify-content: center;">
+      <button class="nav-btn-back" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
+    </div>
   `;
   
   document.getElementById("gang-content").innerHTML = gangHTML;
@@ -4683,12 +4674,12 @@ function showGangManagementScreen() {
   }
   
   crewHTML += `
-    <div style="margin-top: 20px; display: flex; gap: 10px;">
-      <button onclick="showGang()" style="background: #3498db; color: white; padding: 12px 25px; border: none; border-radius: 8px; cursor: pointer;">
-        ← Gang Operations
+    <div class="page-nav" style="gap: 10px;">
+      <button class="nav-btn-back" onclick="showGang()">
+        ← Back to The Family
       </button>
-      <button onclick="goBackToMainMenu()" style="background: #95a5a6; color: white; padding: 12px 25px; border: none; border-radius: 8px; cursor: pointer;">
-        Back to SafeHouse
+      <button class="nav-btn-back" onclick="goBackToMainMenu()">
+        ← Back to SafeHouse
       </button>
     </div>
   `;
@@ -5544,10 +5535,8 @@ function showTerritoryControl() {
   }
   
   html += `
-    <div style="text-align: center; margin-top: 20px;">
-      <button onclick="goBackToMainMenu()" style="padding: 12px 30px; background: linear-gradient(135deg, #95a5a6, #7f8c8d); border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer;">
-        ← Back to SafeHouse
-      </button>
+    <div class="page-nav" style="justify-content: center;">
+      <button class="nav-btn-back" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
     </div>`;
   
   document.getElementById("territory-control-content").innerHTML = html;
@@ -9467,13 +9456,8 @@ function showStolenCars() {
   }
 
   carsHTML += `
-    <div style="text-align: center; margin-top: 40px;">
-      <button onclick="goBackToMainMenu()" 
-          style="background: linear-gradient(45deg, #95a5a6, #7f8c8d); color: white; padding: 18px 35px; 
-              border: none; border-radius: 12px; font-size: 1.3em; font-weight: bold; cursor: pointer;
-              transition: all 0.3s ease;">
-        🏠Back to SafeHouse
-      </button>
+    <div class="page-nav" style="justify-content: center;">
+      <button class="nav-btn-back" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
     </div>
   `;
 
@@ -9750,10 +9734,7 @@ function showSkills() {
       </div>
       
       <div style="text-align: center; margin-top: 30px;">
-        <button onclick="goBackToMainMenu()" style="background: linear-gradient(135deg, #95a5a6, #7f8c8d); 
-              color: white; padding: 15px 30px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer;">
-          ←Back to SafeHouse
-        </button>
+        <button class="nav-btn-back" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
       </div>
     </div>
     
@@ -12313,16 +12294,11 @@ function showEventsStatus() {
   statusHTML += `
     </div>
     
-    <div style="text-align: center; margin-top: 30px;">
+    <div style="text-align: center; margin-top: 30px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
       <button onclick="triggerRandomWeatherChange()" style="background: #3498db; color: white; padding: 12px 25px; margin: 5px; border: none; border-radius: 8px; cursor: pointer;">
         🌦️ Check Weather Update
       </button>
-      <button onclick="goBackToMainMenu()" 
-          style="background: linear-gradient(45deg, #95a5a6, #7f8c8d); color: white; padding: 18px 35px; 
-              border: none; border-radius: 12px; font-size: 1.3em; font-weight: bold; cursor: pointer;
-              transition: all 0.3s ease;">
-        🏠Back to SafeHouse
-      </button>
+      <button class="nav-btn-back" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
     </div>
   `;
   
@@ -12370,7 +12346,7 @@ const menuUnlockConfig = [
   { id: 'minigames',   fn: 'showMiniGames()',         label: 'Pastimes',       tip: 'Arcade games & entertainment',     level: 6 },
   { id: 'casino',      fn: 'showCasino()',            label: 'Gambling',       tip: 'Slots, roulette & card games',     level: 0 },
   { id: 'fence',       fn: 'showFence()',             label: 'The Fence',      tip: 'Sell stolen goods at premium rates',level: 7 },
-  { id: 'gangmgmt',    fn: 'showGangManagementScreen()', label: 'Crew Details', tip: 'Train, equip & assign your gang', level: 8 },
+  // Crew Details merged into The Family — access via 'Manage Crew' button
   { id: 'jailbreak',   fn: 'showJailbreak()',         label: 'Breakout',       tip: 'Break allies out of prison',       level: 0 },
 
   // === LATE GAME (Level 10-15) ===
@@ -13203,19 +13179,14 @@ function showRecruitment() {
       }).join('')}
     </ul>
     
-    <div style="text-align: center; margin-top: 30px; padding: 20px; background: rgba(52, 73, 94, 0.4); border-radius: 8px;">
+    <div style="text-align: center; margin-top: 30px; padding: 20px; background: rgba(52, 73, 94, 0.4); border-radius: 8px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
       <button onclick="refreshRecruits()" 
           style="background: linear-gradient(45deg, #3498db, #2980b9); color: white; padding: 15px 25px; 
               border: none; border-radius: 8px; font-weight: bold; cursor: pointer; 
               font-size: 16px; margin: 0 10px; transition: all 0.3s ease;">
         🔍 Look for New Recruits ($500)
       </button>
-      <button onclick="goBackToMainMenu()" 
-          style="background: linear-gradient(45deg, #95a5a6, #7f8c8d); color: white; padding: 15px 25px; 
-              border: none; border-radius: 8px; font-weight: bold; cursor: pointer; 
-              font-size: 16px; margin: 0 10px; transition: all 0.3s ease;">
-        🏠Back to SafeHouse
-      </button>
+      <button class="nav-btn-back" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
     </div>
   `;
 
@@ -14601,7 +14572,7 @@ function showTerritoryRelocation() {
           <h2 style="color: #e74c3c; margin: 0;">🏙️ Relocate</h2>
           <p style="color: #bdc3c7; margin: 4px 0 0;">${headerNote}</p>
         </div>
-        <button onclick="goBackToMainMenu();" style="background: #555; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">← Back</button>
+        <button class="nav-btn-back" onclick="goBackToMainMenu();">← Back</button>
       </div>
       <div style="display: flex; flex-wrap: wrap; gap: 14px; justify-content: center;">
         ${cards}
@@ -16015,7 +15986,7 @@ function updateSkillsScreenDisplay() {
   skillsHTML += `
     </div>
     <p><strong>Available Skill Points:</strong> ${player.skillPoints}</p>
-    <button onclick="goBackToMainMenu()">Back to SafeHouse</button>
+    <button class="nav-btn-back" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
   `;
   
   document.getElementById("skills-content").innerHTML = skillsHTML;
@@ -16325,10 +16296,6 @@ function showInventory() {
     html += '</div></div>';
   }
   
-  html += `<div style="text-align:center;margin-top:20px;">
-    <button onclick="goBackToMainMenu()" style="background:#95a5a6;color:white;padding:12px 25px;border:none;border-radius:8px;cursor:pointer;">🏠 Back to Menu</button>
-  </div>`;
-  
   document.getElementById("stash-content").innerHTML = html;
 }
 
@@ -16588,10 +16555,6 @@ function showFence() {
   // Suspicion warning
   html += `<div style="padding: 12px; background: rgba(142, 68, 173, 0.15); border-radius: 10px; border: 1px solid #8e44ad40; margin-bottom: 15px; text-align: center;">
     <small style="color: #bdc3c7;">⚠️ Selling through the fence adds +1 suspicion per transaction. Move product carefully.</small>
-  </div>`;
-  
-  html += `<div style="text-align: center;">
-    <button onclick="goBackToMainMenu()" style="background: #95a5a6; color: white; padding: 12px 25px; border: none; border-radius: 8px; cursor: pointer;">🏠 Back to Menu</button>
   </div>`;
   
   container.innerHTML = html;
@@ -16991,8 +16954,8 @@ function showAchievements() {
   });
   
   achievementsHTML += `
-    <div style="text-align: center; margin-top: 20px;">
-      <button onclick="goBackToMainMenu()" style="background: linear-gradient(45deg, #95a5a6, #7f8c8d); color: white; padding: 12px 25px; border: none; border-radius: 8px; cursor: pointer;">🏠 SafeHouse</button>
+    <div class="page-nav" style="justify-content: center;">
+      <button class="nav-btn-back" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
     </div>
   `;
 
@@ -17661,9 +17624,9 @@ function showSaveSelectionInterface(saves) {
         `).join('')}
       </div>
       
-      <div style="text-align: center;">
-        <button onclick="exitLoadInterface('menu')" style="background: #95a5a6; color: white; padding: 15px 30px; border: none; border-radius: 10px; cursor: pointer; font-size: 1.1em;">
-          ←Back to SafeHouse
+      <div class="page-nav" style="justify-content: center;">
+        <button class="nav-btn-back" onclick="exitLoadInterface('menu')">
+          ← Back to SafeHouse
         </button>
       </div>
     </div>
@@ -18536,12 +18499,12 @@ function showMap() {
   mapHTML += `
     </div>
     
-    <div style="text-align: center; margin-top: 30px;">
+    <div style="text-align: center; margin-top: 30px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
       <button onclick="window._opsActiveTab='territory'; showMissions();" style="background: #3498db; color: white; padding: 12px 25px; margin: 5px; border: none; border-radius: 8px; cursor: pointer;">
         🏛️ Turf Management
       </button>
-      <button onclick="goBackToMainMenu()" style="background: #95a5a6; color: white; padding: 12px 25px; margin: 5px; border: none; border-radius: 8px; cursor: pointer;">
-        🏠Back to SafeHouse
+      <button class="nav-btn-back" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
+    </div>
       </button>
     </div>
   `;
@@ -18676,9 +18639,7 @@ function showCalendar() {
     </div>
     
     <div style="text-align: center; margin-top: 30px;">
-      <button onclick="goBackToMainMenu()" style="background: #95a5a6; color: white; padding: 12px 25px; border: none; border-radius: 8px; cursor: pointer;">
-        🏠Back to SafeHouse
-      </button>
+      <button class="nav-btn-back" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
     </div>
   `;
   
@@ -18938,9 +18899,7 @@ function showStatistics() {
       <button onclick="resetStatistics()" style="background: #e74c3c; color: white; padding: 12px 25px; margin: 5px; border: none; border-radius: 8px; cursor: pointer;">
         🔄 Reset Stats
       </button>
-      <button onclick="goBackToMainMenu()" style="background: #95a5a6; color: white; padding: 12px 25px; margin: 5px; border: none; border-radius: 8px; cursor: pointer;">
-        🏠Back to SafeHouse
-      </button>
+      <button class="nav-btn-back" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
     </div>
   `;
   
@@ -19178,9 +19137,7 @@ function showEmpireRating() {
         <button onclick="showAchievements()" style="background: linear-gradient(45deg, #f39c12, #e67e22); color: white; padding: 15px 30px; border: none; border-radius: 12px; font-size: 1.2em; font-weight: bold; cursor: pointer; margin-right: 15px;">
           🏆 Achievements
         </button>
-        <button onclick="goBackToMainMenu()" style="background: linear-gradient(45deg, #95a5a6, #7f8c8d); color: white; padding: 15px 30px; border: none; border-radius: 12px; font-size: 1.2em; font-weight: bold; cursor: pointer;">
-          🏠Back to SafeHouse
-        </button>
+        <button class="nav-btn-back" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
       </div>
     </div>
   `;
@@ -19857,9 +19814,7 @@ function showSaveSystem() {
       </div>
       
       <div style="text-align: center; margin-top: 30px;">
-        <button onclick="goBackToMainMenu()" style="background: linear-gradient(45deg, #95a5a6, #7f8c8d); color: white; padding: 15px 30px; border: none; border-radius: 12px; font-size: 1.2em; font-weight: bold; cursor: pointer;">
-          🏠Back to SafeHouse
-        </button>
+        <button class="nav-btn-back" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
       </div>
     </div>
   `;
@@ -20615,9 +20570,7 @@ function displayImportedShowcase(showcase) {
       </div>
       
       <div style="text-align: center; margin-top: 30px;">
-        <button onclick="goBackToMainMenu()" style="background: linear-gradient(45deg, #95a5a6, #7f8c8d); color: white; padding: 15px 30px; border: none; border-radius: 12px; font-size: 1.2em; font-weight: bold; cursor: pointer;">
-          🏠Back to SafeHouse
-        </button>
+        <button class="nav-btn-back" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
       </div>
     </div>
   `;
@@ -20670,9 +20623,7 @@ function showRivalsScreen() {
       </div>
       
       <div style="text-align: center; margin-top: 30px;">
-        <button onclick="goBackToMainMenu()" style="background: linear-gradient(45deg, #95a5a6, #7f8c8d); color: white; padding: 15px 30px; border: none; border-radius: 12px; font-size: 1.2em; font-weight: bold; cursor: pointer;">
-          🏠 Back to SafeHouse
-        </button>
+        <button class="nav-btn-back" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
       </div>
     </div>
   `;
@@ -20876,9 +20827,7 @@ function showLeaderboards() {
         <button onclick="showCompetition()" style="background: linear-gradient(45deg, #e74c3c, #c0392b); color: white; padding: 15px 30px; border: none; border-radius: 12px; font-size: 1.2em; font-weight: bold; cursor: pointer; margin-right: 15px;">
           🏆 Back to Competition
         </button>
-        <button onclick="goBackToMainMenu()" style="background: linear-gradient(45deg, #95a5a6, #7f8c8d); color: white; padding: 15px 30px; border: none; border-radius: 12px; font-size: 1.2em; font-weight: bold; cursor: pointer;">
-          🏠Back to SafeHouse
-        </button>
+        <button class="nav-btn-back" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
       </div>
     </div>
   `;
@@ -21069,9 +21018,7 @@ function showWeeklyChallenges() {
         <button onclick="showRivalsScreen()" style="background: linear-gradient(45deg, #e74c3c, #c0392b); color: white; padding: 15px 30px; border: none; border-radius: 12px; font-size: 1.2em; font-weight: bold; cursor: pointer; margin-right: 15px;">
           🏆 Back to Rivals
         </button>
-        <button onclick="goBackToMainMenu()" style="background: linear-gradient(45deg, #95a5a6, #7f8c8d); color: white; padding: 15px 30px; border: none; border-radius: 12px; font-size: 1.2em; font-weight: bold; cursor: pointer;">
-          🏠Back to SafeHouse
-        </button>
+        <button class="nav-btn-back" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
       </div>
     </div>
   `;
@@ -21196,9 +21143,7 @@ function showCharacterShowcase() {
         <button onclick="showRivalsScreen()" style="background: linear-gradient(45deg, #e74c3c, #c0392b); color: white; padding: 15px 30px; border: none; border-radius: 12px; font-size: 1.2em; font-weight: bold; cursor: pointer; margin-right: 15px;">
           🏆 Back to Rivals
         </button>
-        <button onclick="goBackToMainMenu()" style="background: linear-gradient(45deg, #95a5a6, #7f8c8d); color: white; padding: 15px 30px; border: none; border-radius: 12px; font-size: 1.2em; font-weight: bold; cursor: pointer;">
-          🏠Back to SafeHouse
-        </button>
+        <button class="nav-btn-back" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
       </div>
     </div>
   `;
