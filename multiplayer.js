@@ -874,15 +874,26 @@ function challengeForTerritory(district) {
         window.ui.toast('You must be connected to the online world to challenge for territory.', 'error');
         return;
     }
-    
+
+    const gangCount = (player.gang && player.gang.members) || 0;
+    if (gangCount < 5) {
+        window.ui.toast('You need at least 5 gang members to wage a territory war!', 'error');
+        return;
+    }
+    if ((player.energy || 0) < 40) {
+        window.ui.toast('Not enough energy! You need 40 energy to challenge.', 'error');
+        return;
+    }
+
     onlineWorldState.socket.send(JSON.stringify({
-        type: 'territory_claim',
+        type: 'territory_war',
         district: district,
-        playerName: player.name,
-        money: player.money
+        gangMembers: gangCount,
+        power: player.power || 0,
+        gangLoyalty: (player.gang && player.gang.loyalty) || 100
     }));
     
-    logAction(` Challenging for control of ${district}...`);
+    logAction(`\u2694\uFE0F Challenging for control of ${district}...`);
 }
 
 // Start a heist in a specific district — redirects to heist creation
@@ -2603,7 +2614,8 @@ function showOnlineWorld(activeTab) {
                     const tData = terrState[d.id] || { owner: null, residents: [], defenseRating: 100, taxCollected: 0 };
                     const isHome = playerTerritory === d.id;
                     const isOwned = tData.owner === player.name;
-                    const borderColor = isOwned ? '#27ae60' : isHome ? '#c0a062' : tData.owner ? '#e67e22' : '#555';
+                    const isNPC = (window.NPC_OWNER_NAMES || new Set()).has(tData.owner);
+                    const borderColor = isOwned ? '#27ae60' : isHome ? '#c0a062' : tData.owner ? (isNPC ? '#8b4513' : '#e67e22') : '#555';
                     const residentCount = (tData.residents || []).length;
                     const claimCost = (window.CLAIM_COSTS || [])[idx] || 0;
                     
@@ -2619,7 +2631,7 @@ function showOnlineWorld(activeTab) {
                                     </div>
                                     <p style="color: #999; margin: 0 0 8px 0; font-size: 0.85em;">${escapeHTML(d.description)}</p>
                                     <div style="font-size: 0.85em; color: #ccc; line-height: 1.8;">
-                                        <div>👤 Owner: <span style="color: ${tData.owner ? '#27ae60' : '#666'};">${escapeHTML(tData.owner || 'Unclaimed')}</span></div>
+                                        <div>👤 Owner: <span style="color: ${tData.owner ? (isNPC ? '#8b4513' : '#27ae60') : '#666'};">${isNPC ? '🤖 ' : ''}${escapeHTML(tData.owner || 'Unclaimed')}</span>${isNPC ? ' <span style="background: #8b4513; color: #fff; padding: 1px 6px; border-radius: 3px; font-size: 0.75em;">RIVAL BOSS</span>' : ''}</div>
                                         <div>👥 Residents: <span style="color: #3498db;">${residentCount}</span> | 🛡️ Defense: <span style="color: #e74c3c;">${tData.defenseRating}</span></div>
                                         <div>💰 Tax Collected: <span style="color: #27ae60;">$${(tData.taxCollected || 0).toLocaleString()}</span> | Move Cost: <span style="color: #f39c12;">$${d.moveCost.toLocaleString()}</span></div>
                                     </div>
@@ -2636,7 +2648,7 @@ function showOnlineWorld(activeTab) {
             </div>
             
             <div style="background: rgba(192, 160, 98, 0.1); padding: 12px; border-radius: 8px; margin-top: 15px; border: 1px solid #c0a062;">
-                <p style="color: #ccc; margin: 0; font-size: 0.85em; line-height: 1.6;">📋 <strong style="color: #c0a062;">How Territories Work:</strong> Choose a territory to live in. The owner collects 10% tax on all income earned by residents. Claim unclaimed territories, or challenge other owners for control. Relocating costs money and has a 1-hour cooldown.</p>
+                <p style="color: #ccc; margin: 0; font-size: 0.85em; line-height: 1.6;">📋 <strong style="color: #c0a062;">How Territories Work:</strong> Every territory is controlled by a rival NPC boss. Challenge them to seize control! Wars require 5+ gang members and 40 energy. The owner collects 10% tax on all resident income. Relocating costs money and has a 1-hour cooldown.</p>
             </div>
         `;
     }

@@ -162,6 +162,26 @@ export const DISTRICTS = [
 ];
 
 // ────────────────────────────────────────────────────────────────────────
+// NPC TERRITORY BOSSES — each district starts controlled by a rival NPC
+// ────────────────────────────────────────────────────────────────────────
+
+export const NPC_TERRITORY_BOSSES = {
+  residential_low:        { name: "Vinnie 'The Rat' Morello",    defenseRating: 80  },
+  residential_middle:     { name: "Fat Tony Deluca",             defenseRating: 120 },
+  residential_upscale:    { name: "Don Castellano",              defenseRating: 180 },
+  commercial_downtown:    { name: "Marco 'The Banker' Ricci",    defenseRating: 160 },
+  commercial_shopping:    { name: "Luca 'Fingers' Bianchi",      defenseRating: 100 },
+  industrial_warehouse:   { name: "Big Sal Ferrara",             defenseRating: 140 },
+  industrial_port:        { name: "Nikolai 'The Bear' Volkov",   defenseRating: 200 },
+  entertainment_nightlife: { name: "Johnny 'Neon' Cavallo",      defenseRating: 150 }
+};
+
+/** Set of all NPC boss names for quick lookup */
+export const NPC_OWNER_NAMES = new Set(
+  Object.values(NPC_TERRITORY_BOSSES).map(b => b.name)
+);
+
+// ────────────────────────────────────────────────────────────────────────
 // TERRITORY CONSTANTS
 // ────────────────────────────────────────────────────────────────────────
 
@@ -226,11 +246,12 @@ export function getDistrictIds() {
 export function buildInitialTerritoryState() {
   const state = {};
   for (const d of DISTRICTS) {
+    const boss = NPC_TERRITORY_BOSSES[d.id];
     state[d.id] = {
-      owner: null,          // username of owning player (null = unclaimed)
-      residents: [],        // array of usernames living here
-      defenseRating: 100,   // base defense rating
-      taxCollected: 0       // running total of tax collected by owner
+      owner: boss ? boss.name : null,   // NPC boss controls by default
+      residents: [],                     // array of usernames living here
+      defenseRating: boss ? boss.defenseRating : 100,
+      taxCollected: 0                    // running total of tax collected by owner
     };
   }
   return state;

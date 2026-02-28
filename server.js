@@ -474,10 +474,29 @@ const TERRITORY_IDS = [
 const TAX_RATE = 0.10;
 const MOVE_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
 
+// NPC bosses — every territory starts under rival NPC control
+const NPC_TERRITORY_BOSSES = {
+    residential_low:         { name: "Vinnie 'The Rat' Morello",   defenseRating: 80  },
+    residential_middle:      { name: "Fat Tony Deluca",            defenseRating: 120 },
+    residential_upscale:     { name: "Don Castellano",             defenseRating: 180 },
+    commercial_downtown:     { name: "Marco 'The Banker' Ricci",   defenseRating: 160 },
+    commercial_shopping:     { name: "Luca 'Fingers' Bianchi",     defenseRating: 100 },
+    industrial_warehouse:    { name: "Big Sal Ferrara",            defenseRating: 140 },
+    industrial_port:         { name: "Nikolai 'The Bear' Volkov",  defenseRating: 200 },
+    entertainment_nightlife: { name: "Johnny 'Neon' Cavallo",      defenseRating: 150 }
+};
+const NPC_OWNER_NAMES = new Set(Object.values(NPC_TERRITORY_BOSSES).map(b => b.name));
+
 function buildDefaultTerritories() {
     const t = {};
     for (const id of TERRITORY_IDS) {
-        t[id] = { owner: null, residents: [], defenseRating: 100, taxCollected: 0 };
+        const boss = NPC_TERRITORY_BOSSES[id];
+        t[id] = {
+            owner: boss ? boss.name : null,
+            residents: [],
+            defenseRating: boss ? boss.defenseRating : 100,
+            taxCollected: 0
+        };
     }
     return t;
 }
@@ -491,6 +510,20 @@ try {
     persistedLeaderboard = Array.isArray(persisted.leaderboard) ? persisted.leaderboard : [];
     // Load unified territories (fall back to fresh defaults)
     gameState.territories = persisted.territories || buildDefaultTerritories();
+
+    // Migration: assign NPC bosses to any territory still unclaimed (owner: null)
+    for (const id of TERRITORY_IDS) {
+        const terr = gameState.territories[id];
+        if (terr && !terr.owner) {
+            const boss = NPC_TERRITORY_BOSSES[id];
+            if (boss) {
+                terr.owner = boss.name;
+                terr.defenseRating = Math.max(terr.defenseRating || 0, boss.defenseRating);
+                console.log(`🤖 Migrated ${id} → NPC boss ${boss.name}`);
+            }
+        }
+    }
+
     console.log('💾 World state loaded from world-state.json');
 } catch (e) {
     console.log('⚠️ Failed to load world state; using defaults');
@@ -1150,7 +1183,8 @@ function handleTerritoryClaimOwnership(clientId, message) {
 
     const terr = gameState.territories[districtId];
     if (!terr) return fail('Territory data missing.');
-    if (terr.owner) return fail(`This district is already owned by ${terr.owner}. Challenge them for control.`);
+    // If owned by NPC or another player, redirect to war path
+    if (terr.owner) return fail(`This district is controlled by ${terr.owner}. Challenge them for control!`);
 
     // Must live in the district
     if (player.currentTerritory !== districtId) return fail('You must live in this district to claim it.');
@@ -1267,8 +1301,11 @@ function handleTerritoryWar(clientId, message) {
     if (defenderPlayer) {
         defenseScore += (defenderPlayer.level || 1) * 15;
         defenseScore += Math.floor((defenderPlayer.reputation || 0) * 0.5);
+    } else if (NPC_OWNER_NAMES.has(terr.owner)) {
+        // NPC boss — defense scales with territory difficulty
+        defenseScore += Math.floor((terr.defenseRating || 100) * 1.5);
     } else {
-        // Offline defender — moderate NPC resistance
+        // Offline real player — moderate resistance
         defenseScore += 150;
     }
 

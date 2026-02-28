@@ -5,6 +5,23 @@ All notable changes to From Dusk To Don (Mafia Born) will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.9] - 2026-02-28
+
+### Added
+- NPC rival bosses control all 8 territories by default — players must fight to take over
+- 8 themed NPC boss names (Vinnie 'The Rat' Morello, Don Castellano, Nikolai 'The Bear' Volkov, etc.)
+- RIVAL BOSS badge on NPC-owned territories with distinct brown styling
+- Scaled NPC defense per district difficulty (80–200 base defense rating)
+- Persistence migration — existing unclaimed territories automatically get NPC bosses on server start
+
+### Fixed
+- Challenge button now sends correct `territory_war` message (was sending old `territory_claim` to wrong handler)
+- Client-side gang member & energy pre-validation before sending war challenge
+
+### Changed
+- Territories help text updated to reflect NPC-first design
+- No territories start unclaimed — Claim button never appears, only Challenge
+
 ## [1.6.8] - 2026-02-28
 
 ### Added

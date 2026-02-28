@@ -33,7 +33,7 @@ import {
   startSnakeGame, restartSnake,
   startQuickDraw, startReactionTest, handleReactionClick
 } from './miniGames.js';
-import { DISTRICTS, getDistrict, MOVE_COOLDOWN_MS, MIN_CLAIM_LEVEL, CLAIM_COSTS, MIN_WAR_GANG_SIZE, WAR_ENERGY_COST, BUSINESS_TAX_RATE, getBusinessMultiplier } from './territories.js';
+import { DISTRICTS, getDistrict, MOVE_COOLDOWN_MS, MIN_CLAIM_LEVEL, CLAIM_COSTS, MIN_WAR_GANG_SIZE, WAR_ENERGY_COST, BUSINESS_TAX_RATE, getBusinessMultiplier, NPC_OWNER_NAMES } from './territories.js';
 
 // Expose to window for legacy compatibility
 window.player = player;
@@ -41,6 +41,7 @@ window.DISTRICTS = DISTRICTS;
 window.getDistrict = getDistrict;
 window.MIN_CLAIM_LEVEL = MIN_CLAIM_LEVEL;
 window.CLAIM_COSTS = CLAIM_COSTS;
+window.NPC_OWNER_NAMES = NPC_OWNER_NAMES;
 window.jobs = jobs;
 window.stolenCarTypes = stolenCarTypes;
 window.crimeFamilies = crimeFamilies;
