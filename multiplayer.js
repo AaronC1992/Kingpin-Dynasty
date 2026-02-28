@@ -2482,7 +2482,7 @@ function showOnlineWorld(activeTab) {
         <div style="display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 0; border-bottom: 2px solid #c0a062; padding-bottom: 0;">
             <button onclick="showOnlineWorld('overview')" style="${tabStyle('overview')}">👥 Overview</button>
             <button onclick="showOnlineWorld('pvp')" style="${tabStyle('pvp')}">⚔️ PVP</button>
-            <button onclick="showOnlineWorld('turf')" style="${tabStyle('turf')}">🗺️ Turf</button>
+            <button onclick="showOnlineWorld('territories')" style="${tabStyle('territories')}">🗺️ Territories</button>
             <button onclick="showOnlineWorld('activities')" style="${tabStyle('activities')}">📋 Activities</button>
             <button onclick="showOnlineWorld('chat')" style="${tabStyle('chat')}">💬 Chat</button>
         </div>
@@ -2553,7 +2553,7 @@ function showOnlineWorld(activeTab) {
                 </div>
                 
                 <!-- Territory Conquest -->
-                <div style="background: linear-gradient(180deg, rgba(243, 156, 18, 0.2) 0%, rgba(0, 0, 0, 0.8) 100%); padding: 25px; border-radius: 15px; border: 2px solid #f39c12; cursor: pointer; transition: transform 0.2s;" onclick="showOnlineWorld('turf')" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                <div style="background: linear-gradient(180deg, rgba(243, 156, 18, 0.2) 0%, rgba(0, 0, 0, 0.8) 100%); padding: 25px; border-radius: 15px; border: 2px solid #f39c12; cursor: pointer; transition: transform 0.2s;" onclick="showOnlineWorld('territories')" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
                     <div style="text-align: center;">
                         <div style="font-size: 3.5em; margin-bottom: 10px;">🗺️</div>
                         <h3 style="color: #f39c12; margin: 0 0 8px 0; font-family: 'Georgia', serif; font-size: 1.3em;">Territory Conquest</h3>
@@ -2610,50 +2610,63 @@ function showOnlineWorld(activeTab) {
         `;
     }
     
-    // ── TURF TAB ──
-    if (tab === 'turf') {
+    // ── TERRITORIES TAB ──
+    if (tab === 'territories') {
+        // Use DISTRICTS from territories.js (exposed on window by game.js)
+        const districts = window.DISTRICTS || [];
+        const terrState = onlineWorldState.territories || {};
+        const playerTerritory = player.currentTerritory;
+        
         worldHTML += `
             <!-- Territory Income Timer -->
             <div id="territory-income-timer" style="background: rgba(39, 174, 96, 0.1); padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 2px solid #27ae60; text-align: center;">
                 <div style="color: #27ae60; font-weight: bold; font-size: 1.1em;">💰 Next Territory Income</div>
                 <div id="income-countdown" style="color: #ccc; margin-top: 5px; font-family: monospace; font-size: 1.3em;">Calculating...</div>
-                <div style="color: #888; font-size: 0.85em; margin-top: 5px;">Controlled Territories: <span id="controlled-count" style="color: #27ae60; font-weight: bold;">0</span> | Weekly Income: <span id="weekly-income-total" style="color: #27ae60; font-weight: bold;">$0</span></div>
+                <div style="color: #888; font-size: 0.85em; margin-top: 5px;">Your Territory: <span style="color: #c0a062; font-weight: bold;">${playerTerritory ? (districts.find(d => d.id === playerTerritory)?.shortName || playerTerritory) : 'None'}</span> | Tax Rate: <span style="color: #e74c3c; font-weight: bold;">10%</span></div>
             </div>
             
-            <!-- City Districts -->
-            <h3 style="color: #f39c12; text-align: center; margin-bottom: 15px; font-family: 'Georgia', serif;">🗺️ City Districts</h3>
-            <div id="city-districts">
-                ${Object.keys(onlineWorldState.cityDistricts).map(district => {
-                    const districtData = onlineWorldState.cityDistricts[district];
-                    const isPlayerControlled = districtData.controllerType === 'player';
-                    const controllerName = isPlayerControlled ? districtData.controlledBy : districtData.npcGang;
-                    const borderColor = isPlayerControlled ? '#c0a062' : '#666';
+            <h3 style="color: #f39c12; text-align: center; margin-bottom: 5px; font-family: 'Georgia', serif;">🗺️ Territories</h3>
+            <p style="color: #aaa; text-align: center; margin: 0 0 15px 0; font-size: 0.85em;">Multiplayer territories — where players live, pay tax, and fight for ownership.</p>
+            
+            <div style="display: grid; gap: 12px;">
+                ${districts.map((d, idx) => {
+                    const tData = terrState[d.id] || { owner: null, residents: [], defenseRating: 100, taxCollected: 0 };
+                    const isHome = playerTerritory === d.id;
+                    const isOwned = tData.owner === player.name;
+                    const borderColor = isOwned ? '#27ae60' : isHome ? '#c0a062' : tData.owner ? '#e67e22' : '#555';
+                    const residentCount = (tData.residents || []).length;
+                    const claimCost = (window.CLAIM_COSTS || [])[idx] || 0;
                     
                     return `
-                        <div style="background: rgba(20, 20, 20, 0.8); padding: 12px; margin: 8px 0; border-radius: 8px; border: 2px solid ${borderColor};">
-                            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                                <div style="flex: 1;">
-                                    <strong style="color: #c0a062; font-size: 1.1em;">${escapeHTML(district.charAt(0).toUpperCase() + district.slice(1))}</strong>
-                                    <div style="margin: 5px 0; font-size: 0.85em;">
-                                        <div style="color: #ccc;">Controlled by: <span style="color: ${isPlayerControlled ? '#27ae60' : '#95a5a6'};">${escapeHTML(controllerName || 'Unknown')}</span></div>
-                                        <div style="color: #ccc;">Defense: <span style="color: #e74c3c;">${districtData.defenseRating}</span></div>
-                                        <div style="color: #ccc;">Income: <span style="color: #27ae60;">$${districtData.weeklyIncome.toLocaleString()}/week</span></div>
+                        <div style="background: rgba(20, 20, 20, 0.8); padding: 15px; border-radius: 10px; border: 2px solid ${borderColor};">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 15px; flex-wrap: wrap;">
+                                <div style="flex: 1; min-width: 200px;">
+                                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                                        <span style="font-size: 1.5em;">${d.icon}</span>
+                                        <strong style="color: #c0a062; font-size: 1.15em; font-family: 'Georgia', serif;">${escapeHTML(d.shortName)}</strong>
+                                        ${isHome ? '<span style="background: #c0a062; color: #000; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; font-weight: bold;">HOME</span>' : ''}
+                                        ${isOwned ? '<span style="background: #27ae60; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; font-weight: bold;">YOURS</span>' : ''}
+                                    </div>
+                                    <p style="color: #999; margin: 0 0 8px 0; font-size: 0.85em;">${escapeHTML(d.description)}</p>
+                                    <div style="font-size: 0.85em; color: #ccc; line-height: 1.8;">
+                                        <div>👤 Owner: <span style="color: ${tData.owner ? '#27ae60' : '#666'};">${escapeHTML(tData.owner || 'Unclaimed')}</span></div>
+                                        <div>👥 Residents: <span style="color: #3498db;">${residentCount}</span> | 🛡️ Defense: <span style="color: #e74c3c;">${tData.defenseRating}</span></div>
+                                        <div>💰 Tax Collected: <span style="color: #27ae60;">$${(tData.taxCollected || 0).toLocaleString()}</span> | Move Cost: <span style="color: #f39c12;">$${d.moveCost.toLocaleString()}</span></div>
                                     </div>
                                 </div>
-                                <div style="text-align: right;">
-                                    <button onclick="viewTerritoryDetails('${escapeHTML(district)}')" 
-                                            style="background: #f39c12; color: #000; padding: 8px 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-bottom: 5px; width: 100%;">
-                                        📋 Details
-                                    </button>
-                                    <button onclick="challengeForTerritory('${escapeHTML(district)}')" 
-                                            style="background: linear-gradient(180deg, #8b0000 0%, #5a0000 100%); color: #fff; padding: 8px 12px; border: 1px solid #ff0000; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%;">
-                                        ⚔️ Attack
-                                    </button>
+                                <div style="display: flex; flex-direction: column; gap: 6px; min-width: 120px;">
+                                    ${!isHome ? `<button onclick="showTerritoryRelocation()" style="background: #f39c12; color: #000; padding: 8px 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 0.85em;">🚚 Relocate</button>` : ''}
+                                    ${!isOwned && !tData.owner ? `<button onclick="claimTerritory('${d.id}')" style="background: linear-gradient(180deg, #27ae60, #1e8449); color: #fff; padding: 8px 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 0.85em;" ${(player.level || 1) < (window.MIN_CLAIM_LEVEL || 10) ? 'disabled title="Level ' + (window.MIN_CLAIM_LEVEL || 10) + ' required"' : ''}>🏴 Claim ($${claimCost.toLocaleString()})</button>` : ''}
+                                    ${!isOwned && tData.owner ? `<button onclick="challengeForTerritory('${d.id}')" style="background: linear-gradient(180deg, #8b0000, #5a0000); color: #fff; padding: 8px 12px; border: 1px solid #ff0000; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 0.85em;">⚔️ Challenge</button>` : ''}
                                 </div>
                             </div>
                         </div>
                     `;
                 }).join('')}
+            </div>
+            
+            <div style="background: rgba(192, 160, 98, 0.1); padding: 12px; border-radius: 8px; margin-top: 15px; border: 1px solid #c0a062;">
+                <p style="color: #ccc; margin: 0; font-size: 0.85em; line-height: 1.6;">📋 <strong style="color: #c0a062;">How Territories Work:</strong> Choose a territory to live in. The owner collects 10% tax on all income earned by residents. Claim unclaimed territories, or challenge other owners for control. Relocating costs money and has a 1-hour cooldown.</p>
             </div>
         `;
     }
@@ -2760,7 +2773,7 @@ function showOnlineWorld(activeTab) {
         updateJailVisibility();
         updateOnlinePlayerList();
     }
-    if (tab === 'turf' || tab === 'overview') {
+    if (tab === 'territories' || tab === 'overview') {
         // Start territory income countdown
         updatePVPCountdown();
         if (!window.pvpCountdownInterval) {

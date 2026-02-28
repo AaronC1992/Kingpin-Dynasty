@@ -36,6 +36,10 @@ import { DISTRICTS, getDistrict, MOVE_COOLDOWN_MS, MIN_CLAIM_LEVEL, CLAIM_COSTS,
 
 // Expose to window for legacy compatibility
 window.player = player;
+window.DISTRICTS = DISTRICTS;
+window.getDistrict = getDistrict;
+window.MIN_CLAIM_LEVEL = MIN_CLAIM_LEVEL;
+window.CLAIM_COSTS = CLAIM_COSTS;
 window.jobs = jobs;
 window.stolenCarTypes = stolenCarTypes;
 window.crimeFamilies = crimeFamilies;
