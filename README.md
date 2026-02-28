@@ -1,6 +1,6 @@
 # Mafia Born
 
-**v1.6.7** | A deep criminal empire-building browser game where you rise from street thug to legendary kingpin. Build your crew, claim territory, run businesses, and outmanoeuvre rival crime families — all from your browser.
+**v1.6.8** | A deep criminal empire-building browser game where you rise from street thug to legendary kingpin. Build your crew, claim territory, run businesses, and outmanoeuvre rival crime families — all from your browser.
 
 ## **[PLAY NOW](https://mafiaborn.com/)**
 
@@ -112,14 +112,14 @@ Compatible with Chrome, Firefox, Safari, Edge, and their mobile counterparts.
 
 ---
 
-## Recent Changes (v1.6.7)
+## Recent Changes (v1.6.8)
 
-- **Black Market category tabs** — store now has 8 category tabs (All, Consumables, Weapons, Armor, Tools, Vehicles, Luxury, Special) for easier browsing
-- **Black Market scroll fix** — purchasing items no longer resets your scroll position
-- **Jail timer sync** — jail countdown now syncs from server authority, preventing early releases in multiplayer
-- **Energy item rebalancing** — Coffee $1,000/15 energy, Energy Drink $2,500/30 energy, Steroids $4,000/60 energy (best value, highest risk)
-- **Tutorial system cleanup** — removed redundant walkthrough tutorial; onboarding flow for new players preserved
-- **Dead code removal** — removed ~200 lines of stale respect/relationships UI code, unused config flags, and obsolete tutorial references
+- **Horse Racing** — new casino game with 6 horses, varied odds (2x–12x), animated racetrack, and adjustable bets
+- **Turf Wars removed** — dead feature (never triggered) replaced by Horse Racing in the Gambling Den
+- **Street News removed** — cleaned out unused city events system from Activities
+- **Objective tracker removed** — orphaned tutorial sidebar UI fully stripped
+- **Onboarding disabled** — tutorial system no longer initialises; HTML + JS refs removed
+- **Territory labels fixed** — leaderboard tab and district explorer now say "Territories" instead of "Turf"
 - **Server wake-up on load** — game pings the server during startup and holds the loading screen while the Render server wakes from sleep
 - **Delete save fix** — deleting a save from Settings now correctly returns to the title screen
 - **Operations unlocked early** — Operations (story missions) available from level 0 instead of level 3

@@ -1,10 +1,10 @@
-﻿import { initOnboarding, updateTracker } from './onboarding.js';
+﻿// onboarding removed — tutorial system fully stripped
 import { applyDailyPassives, getDrugIncomeMultiplier, getViolenceHeatMultiplier, getWeaponPriceMultiplier } from './passiveManager.js';
 import { showEmpireOverview } from './empireOverview.js';
 import { player, gainExperience, checkLevelUp, regenerateEnergy, startEnergyRegenTimer, startEnergyRegeneration, skillTreeDefinitions, availablePerks, achievements } from './player.js';
 import { jobs, stolenCarTypes } from './jobs.js';
 import { crimeFamilies, factionEffects, potentialMentors } from './factions.js';
-import { familyStories, storyCampaigns, factionMissions, turfMissions, bossBattles, missionProgress } from './missions.js?v=1.6.7';
+import { familyStories, storyCampaigns, factionMissions, turfMissions, bossBattles, missionProgress } from './missions.js?v=1.6.8';
 import { narrationVariations, getRandomNarration } from './narration.js';
 import { storeItems, realEstateProperties, businessTypes, loanOptions, launderingMethods } from './economy.js';
 import { prisonerNames, recruitNames, availableRecruits, jailPrisoners, jailbreakPrisoners, setJailPrisoners, setJailbreakPrisoners, generateJailPrisoners, generateJailbreakPrisoners, generateAvailableRecruits } from './generators.js';
@@ -19,7 +19,8 @@ import {
   showCasino, startBlackjack, bjDeal, bjHit, bjStand, bjDouble,
   startSlots, slotSpin,
   startRoulette, rouletteAddBet, rouletteClear, rouletteSpin,
-  startDiceGame, diceRoll
+  startDiceGame, diceRoll,
+  startHorseRacing, selectHorse, horseAdjustBet, horseStartRace
 } from './casino.js';
 import {
   initMiniGames,
@@ -7034,8 +7035,7 @@ function updateUI() {
     checkWeeklyChallenges();
   }
 
-  // Refresh onboarding tracker text if tutorial still active
-  updateTracker();
+
 }
 
 // ==================== ADMIN PANEL ====================
@@ -14749,8 +14749,20 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = "1.6.7";
+const CURRENT_VERSION = "1.6.8";
 const VERSION_UPDATES = {
+  "1.6.8": {
+    title: "Horse Racing, Cleanup & Territory Polish",
+    date: "February 2026",
+    changes: [
+      "New casino game: Horse Racing — 6 horses with varied odds, animated racetrack, bets from $10 to $50k",
+      "Removed Turf Wars (dead feature) and Street News from Commission Activities",
+      "Removed objective tracker sidebar (orphaned tutorial UI)",
+      "Disabled onboarding.js tutorial system entirely",
+      "Fixed leaderboard tab label from 'Turf' to 'Territories'",
+      "Fixed district explorer button from 'Claim Turf' to 'Claim Territory'"
+    ]
+  },
   "1.6.7": {
     title: "Black Market Overhaul & Cleanup",
     date: "February 2026",
@@ -17487,8 +17499,7 @@ function activateGameplaySystems() {
     initUIEvents();
   }
 
-  // Initialize Onboarding (Act 0 Guide)
-  initOnboarding();
+
 
   // Initialize multiplayer / online world
   if (typeof initializeOnlineWorld === 'function') {
@@ -20595,6 +20606,10 @@ window.rouletteClear = rouletteClear;
 window.rouletteSpin = rouletteSpin;
 window.startDiceGame = startDiceGame;
 window.diceRoll = diceRoll;
+window.startHorseRacing = startHorseRacing;
+window.selectHorse = selectHorse;
+window.horseAdjustBet = horseAdjustBet;
+window.horseStartRace = horseStartRace;
 
 // UI & Helpers
 window.stripEmoji = stripEmoji;

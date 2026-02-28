@@ -5,6 +5,24 @@ All notable changes to From Dusk To Don (Mafia Born) will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.8] - 2026-02-28
+
+### Added
+- Horse Racing casino game — 6 horses with different odds (2x–12x), animated racetrack, adjustable bets ($10–$50k)
+
+### Changed
+- Leaderboard tab label from "Turf" to "Territories"
+- District explorer button from "Claim Turf" to "Claim Territory"
+- Chat tab placeholder from "Loading street news..." to "Loading activity..."
+
+### Removed
+- Turf Wars (dead feature — gang wars array was always empty, never triggered)
+- Street News / City Events system from Activities tab
+- Objective tracker sidebar ("Current Objective" section in bottom-right)
+- Onboarding tutorial system disabled (initOnboarding / updateTracker calls removed from game.js)
+- spectateWar() animated battle/betting modal (~230 lines)
+- showGangWars() and showCityEvents() functions from multiplayer.js
+
 ## [1.6.7] - 2026-02-28
 
 ### Added

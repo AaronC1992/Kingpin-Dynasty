@@ -464,6 +464,7 @@
                     <button id="btn-slots" onclick="startSlots()" style="padding: 15px; border-radius: 10px; border: 2px solid #e67e22; background: rgba(230,126,34,0.2); color: #ecf0f1; cursor: pointer; font-size: 1.1em;">🎰 Slots</button>
                     <button id="btn-roulette" onclick="startRoulette()" style="padding: 15px; border-radius: 10px; border: 2px solid #e74c3c; background: rgba(231,76,60,0.2); color: #ecf0f1; cursor: pointer; font-size: 1.1em;">🎡 Roulette</button>
                     <button id="btn-dice" onclick="startDiceGame()" style="padding: 15px; border-radius: 10px; border: 2px solid #3498db; background: rgba(52,152,219,0.2); color: #ecf0f1; cursor: pointer; font-size: 1.1em;">🎲 Dice</button>
+                    <button id="btn-horses" onclick="startHorseRacing()" style="padding: 15px; border-radius: 10px; border: 2px solid #c0a062; background: rgba(192,160,98,0.2); color: #ecf0f1; cursor: pointer; font-size: 1.1em;">🏇 Horse Racing</button>
                 </div>
             </div>
             <div id="casino-game-area" style="margin-top: 15px;"></div>
@@ -994,12 +995,7 @@
                 </button>
             </div>
             
-            <div id="objective-tracker-section">
-                <h3>Current Objective</h3>
-                <div id="tutorial-tracker-text" style="font-size: 0.9em; line-height: 1.4; color: #ffd700; padding: 8px; background: rgba(0,0,0,0.3); border-radius: 4px; min-height: 60px;">
-                    Loading...
-                </div>
-            </div>
+
         </div>
 
         <!-- Hurt Flash -->
@@ -1011,6 +1007,6 @@
     <!-- Multiplayer client (global script, must load before game.js module) -->
     <script src="multiplayer.js"></script>
     <!-- Main game logic (Module) -->
-    <script type="module" src="game.js?v=1.6.7"></script>
+    <script type="module" src="game.js?v=1.6.8"></script>
 </body>
 </html>

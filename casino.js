@@ -755,3 +755,234 @@ function diceResolve(pDice, dDice, bet) {
     _logAction("🎲 The dice betray you. Dealer's roll wins.");
   }
 }
+
+// ═══════════════════════════════════════════════════════════════════════
+// HORSE RACING
+// ═══════════════════════════════════════════════════════════════════════
+
+const HORSES = [
+  { name: 'Midnight Runner',  emoji: '🐴', color: '#e74c3c', odds: 2.0 },
+  { name: 'Golden Thunder',   emoji: '🐴', color: '#f1c40f', odds: 3.0 },
+  { name: 'Shadow Dancer',    emoji: '🐴', color: '#9b59b6', odds: 4.5 },
+  { name: 'Iron Hoof',        emoji: '🐴', color: '#3498db', odds: 5.0 },
+  { name: 'Crimson Fury',     emoji: '🐴', color: '#e67e22', odds: 7.0 },
+  { name: 'Lucky Longshot',   emoji: '🐴', color: '#2ecc71', odds: 12.0 }
+];
+
+let _horseRaceState = null;
+
+export function startHorseRacing() {
+  const gameSelect = document.getElementById('casino-game-select');
+  if (gameSelect) gameSelect.style.display = 'none';
+  const gameArea = document.getElementById('casino-game-area');
+  if (!gameArea) return;
+
+  _horseRaceState = { selectedHorse: null, bet: 100, racing: false };
+
+  const horseRows = HORSES.map((h, i) => `
+    <div id="horse-row-${i}" onclick="selectHorse(${i})" 
+         style="display:flex; align-items:center; gap:10px; padding:10px 12px; margin:4px 0; border-radius:8px; cursor:pointer;
+                background:rgba(${i === 0 ? '231,76,60' : '50,50,50'},0.15); border:2px solid ${h.color}40; transition:all 0.2s;"
+         onmouseover="this.style.background='rgba(192,160,98,0.15)'" onmouseout="this.style.background='rgba(50,50,50,0.15)'">
+      <div style="font-size:1.5em;">${h.emoji}</div>
+      <div style="flex:1;">
+        <div style="color:${h.color}; font-weight:bold; font-family:Georgia,serif;">${h.name}</div>
+        <div style="color:#999; font-size:0.8em;">Odds: ${h.odds}x payout</div>
+      </div>
+      <div style="color:#c0a062; font-weight:bold; font-size:1.1em;">${h.odds}:1</div>
+    </div>
+  `).join('');
+
+  gameArea.innerHTML = `
+    <div style="background:rgba(0,0,0,0.6); padding:20px; border-radius:12px; border:2px solid #c0a062;">
+      <h2 style="text-align:center; color:#c0a062; font-family:Georgia,serif; margin-bottom:5px;">🏇 Horse Racing</h2>
+      <p style="text-align:center; color:#999; margin-bottom:15px; font-size:0.9em;">Pick your horse and place a bet</p>
+      
+      <div style="margin-bottom:15px;">
+        ${horseRows}
+      </div>
+
+      <div id="horse-bet-controls" style="text-align:center; padding:12px; background:rgba(20,20,20,0.7); border-radius:8px; border:1px solid #555;">
+        <div style="color:#ccc; margin-bottom:8px;">Selected: <span id="horse-selected-name" style="color:#c0a062; font-weight:bold;">None</span></div>
+        <div style="display:flex; justify-content:center; align-items:center; gap:8px; margin-bottom:10px;">
+          <button onclick="horseAdjustBet(-100)" style="background:#333; color:#e74c3c; border:1px solid #e74c3c; padding:5px 12px; border-radius:4px; cursor:pointer;">-100</button>
+          <button onclick="horseAdjustBet(-10)" style="background:#333; color:#e74c3c; border:1px solid #e74c3c; padding:5px 10px; border-radius:4px; cursor:pointer;">-10</button>
+          <span style="color:#f1c40f; font-size:1.2em; font-weight:bold; min-width:80px;">$<span id="horse-bet-amount">100</span></span>
+          <button onclick="horseAdjustBet(10)" style="background:#333; color:#2ecc71; border:1px solid #2ecc71; padding:5px 10px; border-radius:4px; cursor:pointer;">+10</button>
+          <button onclick="horseAdjustBet(100)" style="background:#333; color:#2ecc71; border:1px solid #2ecc71; padding:5px 12px; border-radius:4px; cursor:pointer;">+100</button>
+        </div>
+        <button id="horse-race-btn" onclick="horseStartRace()" disabled
+                style="background:linear-gradient(180deg,#8b6914,#5a4400); color:#ffd700; padding:12px 30px; border:2px solid #c0a062; border-radius:8px; font-size:1.1em; font-weight:bold; cursor:pointer; font-family:Georgia,serif; opacity:0.5;">
+          🏁 Start Race
+        </button>
+      </div>
+
+      <div id="horse-track" style="display:none; margin-top:15px; padding:15px; background:rgba(20,20,20,0.8); border-radius:8px; border:1px solid #555;">
+      </div>
+
+      <div id="horse-result" style="display:none; margin-top:10px; text-align:center; padding:12px; border-radius:8px;"></div>
+
+      <div style="text-align:center; margin-top:12px;">
+        <button onclick="showCasino()" style="background:#333; color:#c0a062; padding:10px 20px; border:1px solid #c0a062; border-radius:6px; cursor:pointer; font-family:Georgia,serif;">Back to Games</button>
+      </div>
+    </div>
+  `;
+}
+
+export function selectHorse(index) {
+  if (!_horseRaceState || _horseRaceState.racing) return;
+  _horseRaceState.selectedHorse = index;
+
+  // Highlight selected
+  HORSES.forEach((_, i) => {
+    const row = document.getElementById(`horse-row-${i}`);
+    if (row) {
+      row.style.border = i === index ? `2px solid ${HORSES[i].color}` : `2px solid ${HORSES[i].color}40`;
+      row.style.background = i === index ? `rgba(192,160,98,0.2)` : `rgba(50,50,50,0.15)`;
+    }
+  });
+
+  const nameEl = document.getElementById('horse-selected-name');
+  if (nameEl) {
+    nameEl.textContent = HORSES[index].name;
+    nameEl.style.color = HORSES[index].color;
+  }
+
+  const btn = document.getElementById('horse-race-btn');
+  if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+}
+
+export function horseAdjustBet(amount) {
+  if (!_horseRaceState || _horseRaceState.racing) return;
+  _horseRaceState.bet = Math.max(10, Math.min(50000, _horseRaceState.bet + amount));
+  const el = document.getElementById('horse-bet-amount');
+  if (el) el.textContent = _horseRaceState.bet.toLocaleString();
+}
+
+export function horseStartRace() {
+  if (!_horseRaceState || _horseRaceState.selectedHorse === null || _horseRaceState.racing) return;
+
+  const bet = _horseRaceState.bet;
+  if (player.money < bet) {
+    _showBriefNotification("Not enough cash!", "error");
+    return;
+  }
+
+  player.money -= bet;
+  _updateUI();
+  updateCasinoWallet();
+  _horseRaceState.racing = true;
+
+  const btn = document.getElementById('horse-race-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '🏇 Racing...'; }
+
+  // Build track
+  const track = document.getElementById('horse-track');
+  if (!track) return;
+  track.style.display = 'block';
+
+  const resultEl = document.getElementById('horse-result');
+  if (resultEl) resultEl.style.display = 'none';
+
+  // Generate horse speeds (weighted by inverse odds — lower odds = more likely faster)
+  const positions = HORSES.map((h, i) => ({
+    index: i,
+    name: h.name,
+    color: h.color,
+    emoji: h.emoji,
+    progress: 0,
+    speed: (1 / h.odds) * 2 + Math.random() * 1.5  // base speed from odds + randomness
+  }));
+
+  // Render initial track
+  function renderTrack() {
+    const trackWidth = 100; // percentage
+    track.innerHTML = positions.map(p => {
+      const pct = Math.min(100, (p.progress / 100) * trackWidth);
+      return `
+        <div style="display:flex; align-items:center; margin:3px 0; gap:6px;">
+          <div style="width:100px; color:${p.color}; font-size:0.75em; font-family:Georgia,serif; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${p.name}</div>
+          <div style="flex:1; background:#222; height:22px; border-radius:4px; position:relative; overflow:hidden; border:1px solid #444;">
+            <div style="position:absolute; left:0; top:0; height:100%; width:${pct}%; background:linear-gradient(90deg, ${p.color}88, ${p.color}); transition:width 0.15s; border-radius:3px;"></div>
+            <div style="position:absolute; left:${Math.max(0, pct - 4)}%; top:0; font-size:14px; line-height:22px;">${p.emoji}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  renderTrack();
+
+  let finished = false;
+  const raceInterval = setInterval(() => {
+    positions.forEach(p => {
+      if (p.progress < 100) {
+        // Random burst factor for excitement
+        const burst = Math.random() < 0.1 ? (Math.random() * 3) : 0;
+        p.progress += p.speed * (0.6 + Math.random() * 0.8) + burst;
+        if (p.progress >= 100) p.progress = 100;
+      }
+    });
+
+    renderTrack();
+
+    // Check for winner
+    const finishers = positions.filter(p => p.progress >= 100);
+    if (finishers.length > 0 && !finished) {
+      finished = true;
+      clearInterval(raceInterval);
+
+      // Sort by who crossed first (highest progress = finished)
+      // Since multiple could finish same tick, use speed as tiebreaker
+      const winner = finishers.sort((a, b) => b.speed - a.speed)[0];
+
+      // Continue animating remaining horses to finish
+      const finishUp = setInterval(() => {
+        let allDone = true;
+        positions.forEach(p => {
+          if (p.progress < 100) {
+            allDone = false;
+            p.progress += p.speed * 1.5;
+            if (p.progress >= 100) p.progress = 100;
+          }
+        });
+        renderTrack();
+        if (allDone) clearInterval(finishUp);
+      }, 80);
+
+      // Show result
+      const playerPick = _horseRaceState.selectedHorse;
+      const luckBonus = getGamblingLuckBonus();
+      
+      if (resultEl) {
+        resultEl.style.display = 'block';
+        if (winner.index === playerPick) {
+          let winnings = Math.floor(bet * HORSES[playerPick].odds);
+          winnings += Math.floor(winnings * luckBonus);
+          casinoWin(winnings);
+          resultEl.style.border = '2px solid #2ecc71';
+          resultEl.style.background = 'rgba(46,204,113,0.15)';
+          resultEl.innerHTML = `<span style="color:#2ecc71; font-size:1.3em; font-weight:bold;">🏆 ${winner.name} wins! +$${winnings.toLocaleString()}</span><br><span style="color:#ccc; font-size:0.9em;">${HORSES[playerPick].odds}x payout on your $${bet.toLocaleString()} bet!</span>`;
+          _logAction(`🏇 ${winner.name} won the race! Payout $${winnings.toLocaleString()} (${HORSES[playerPick].odds}x).`);
+        } else {
+          resultEl.style.border = '2px solid #e74c3c';
+          resultEl.style.background = 'rgba(231,76,60,0.15)';
+          resultEl.innerHTML = `<span style="color:#e74c3c; font-size:1.3em; font-weight:bold;">💨 ${winner.name} wins!</span><br><span style="color:#999; font-size:0.9em;">Your pick ${HORSES[playerPick].name} didn't make it. Lost $${bet.toLocaleString()}</span>`;
+          _logAction(`🏇 Lost $${bet.toLocaleString()} — ${winner.name} beat ${HORSES[playerPick].name}.`);
+        }
+      }
+
+      // Allow betting again
+      _horseRaceState.racing = false;
+      _horseRaceState.selectedHorse = null;
+      if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; btn.textContent = '🏁 Start Race'; }
+      const nameEl = document.getElementById('horse-selected-name');
+      if (nameEl) { nameEl.textContent = 'None'; nameEl.style.color = '#c0a062'; }
+      HORSES.forEach((_, i) => {
+        const row = document.getElementById(`horse-row-${i}`);
+        if (row) { row.style.border = `2px solid ${HORSES[i].color}40`; row.style.background = 'rgba(50,50,50,0.15)'; }
+      });
+      updateCasinoWallet();
+    }
+  }, 150);
+}

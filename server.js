@@ -172,7 +172,7 @@ const server = http.createServer(async (req, res) => {
                     empireRating: body.empireRating || 0,
                     playtime: body.playtime || '0:00',
                     saveDate: new Date().toISOString(),
-                    gameVersion: body.gameVersion || '1.6.7',
+                    gameVersion: body.gameVersion || '1.6.8',
                     data: body.data
                 };
                 userDB.setUserSave(username, saveEntry);

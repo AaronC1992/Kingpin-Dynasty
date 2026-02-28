@@ -807,37 +807,7 @@ function showHeistResult(result) {
     }
 }
 
-// Show gang wars / turf war battles
-function showGangWars() {
-    const content = document.getElementById('multiplayer-content');
-    if (!content) return;
-    
-    if (typeof hideAllScreens === 'function') hideAllScreens();
-    const mpScreen = document.getElementById("multiplayer-screen");
-    if (mpScreen) mpScreen.style.display = 'block';
-    
-    const wars = onlineWorldState.gangWars || [];
-    let warsHTML = wars.length > 0
-        ? wars.map(w => `
-            <div style="background: rgba(139,0,0,0.2); padding: 15px; border-radius: 8px; margin: 10px 0; border: 1px solid #8b0000;">
-                <div style="color: #ff4444; font-weight: bold;">${escapeHTML(w.attacker || '???')} vs ${escapeHTML(w.defender || '???')}</div>
-                <div style="color: #ccc; font-size: 0.9em;">District: ${escapeHTML(w.district || 'Unknown')}</div>
-                <button onclick="spectateWar('${escapeHTML(w.district)}')" style="margin-top: 8px; background: #444; color: #c0a062; padding: 8px 15px; border: 1px solid #c0a062; border-radius: 5px; cursor: pointer;">Spectate</button>
-            </div>
-        `).join('')
-        : '<p style="color: #888; text-align: center; font-style: italic;">No active turf wars. The streets are quiet... for now.</p>';
-    
-    content.innerHTML = `
-        <div style="background: rgba(0,0,0,0.95); padding: 30px; border-radius: 15px; border: 3px solid #8b0000;">
-            <h2 style="color: #8b0000; text-align: center; font-family: 'Georgia', serif;"> Turf Wars</h2>
-            <p style="color: #ccc; text-align: center;">Watch or join territorial battles between crews.</p>
-            ${warsHTML}
-            <div style="text-align: center; margin-top: 20px;">
-                <button onclick="goBackToMainMenu()" style="background: #333; color: #c0a062; padding: 12px 25px; border: 1px solid #c0a062; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">Back</button>
-            </div>
-        </div>
-    `;
-}
+// showGangWars removed — replaced by Horse Betting in casino
 
 // Show nearby players list
 function showNearbyPlayers() {
@@ -2688,14 +2658,8 @@ function showOnlineWorld(activeTab) {
                 <button onclick="showActiveHeists()" style="background: #222; color: #8b0000; padding: 15px; border: 1px solid #8b0000; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">
                     💰 Big Scores<br><small style="color: #ccc;">Join ongoing jobs</small>
                 </button>
-                <button onclick="showGangWars()" style="background: #222; color: #8b0000; padding: 15px; border: 1px solid #8b0000; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">
-                    ⚔️ Turf Wars<br><small style="color: #ccc;">Fight for territory</small>
-                </button>
                 <button onclick="showNearbyPlayers()" style="background: #222; color: #f39c12; padding: 15px; border: 1px solid #f39c12; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">
                     👥 Local Crew<br><small style="color: #ccc;">Players in your area</small>
-                </button>
-                <button onclick="showCityEvents()" style="background: #222; color: #9b59b6; padding: 15px; border: 1px solid #9b59b6; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">
-                    📡 Street News<br><small style="color: #ccc;">Special opportunities</small>
                 </button>
                 <button onclick="showAlliancePanel()" style="background: #222; color: #c0a062; padding: 15px; border: 2px solid #c0a062; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">
                     🤝 Alliances<br><small style="color: #ccc;">Form a crew</small>
@@ -2739,7 +2703,7 @@ function showOnlineWorld(activeTab) {
             <!-- Street Activity -->
             <h3 style="color: #ccc; font-family: 'Georgia', serif;">📰 Street Activity</h3>
             <div id="world-activity-feed" style="height: 250px; overflow-y: auto; background: rgba(20, 20, 20, 0.8); padding: 12px; border-radius: 5px; border: 1px solid #555;">
-                <div style="color: #95a5a6; font-style: italic;">Loading street news...</div>
+                <div style="color: #95a5a6; font-style: italic;">Loading activity...</div>
             </div>
         `;
     }
@@ -2960,7 +2924,7 @@ function exploreDistrict(districtName) {
                      Find Work
                 </button>
                 <button onclick="claimTerritory('${escapeHTML(districtName)}')" style="background: #333; color: #8b0000; padding: 10px; border: 1px solid #8b0000; border-radius: 5px; cursor: pointer; font-family: 'Georgia', serif;">
-                     Claim Turf
+                     Claim Territory
                 </button>
                 <button onclick="findPlayersInDistrict('${escapeHTML(districtName)}')" style="background: #333; color: #f39c12; padding: 10px; border: 1px solid #f39c12; border-radius: 5px; cursor: pointer; font-family: 'Georgia', serif;">
                      Find Crew
@@ -3009,7 +2973,7 @@ function loadGlobalLeaderboard() {
         { key: 'reputation', label: '⭐ Rep', color: '#f39c12' },
         { key: 'wealth', label: '💰 Wealth', color: '#2ecc71' },
         { key: 'combat', label: '⚔️ Combat', color: '#e74c3c' },
-        { key: 'territories', label: '🏛️ Turf', color: '#3498db' },
+        { key: 'territories', label: '�️ Territories', color: '#3498db' },
         { key: 'ranked', label: '🏆 ELO', color: '#ffd700' }
     ];
     const tabHTML = `<div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">${tabs.map(t =>
@@ -3387,42 +3351,7 @@ function findPlayersInDistrict(districtName) {
     if (mc2) mc2.innerHTML = playersHTML;
 }
 
-// Show city events
-function showCityEvents() {
-    let eventsHTML = `
-        <div style="background: rgba(0, 0, 0, 0.9); padding: 20px; border-radius: 15px; border: 2px solid #c0a062;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h3 style="color: #9b59b6; font-family: 'Georgia', serif;"> Street News</h3>
-                <button onclick="showOnlineWorld()" style="background: #333; color: #c0a062; padding: 8px 15px; border: 1px solid #c0a062; border-radius: 5px; cursor: pointer; font-family: 'Georgia', serif;">
-                    ← Back
-                </button>
-            </div>
-            
-            <div style="margin: 20px 0;">
-                ${onlineWorldState.serverInfo.cityEvents.map(event => `
-                    <div style="background: rgba(20, 20, 20, 0.8); padding: 15px; margin: 10px 0; border-radius: 8px; border: 1px solid #555;">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <div>
-                                <h4 style="color: #c0a062; margin: 0; font-family: 'Georgia', serif;">${escapeHTML(event.type.replace('_', ' ').toUpperCase())}</h4>
-                                <p style="margin: 5px 0; color: #ccc;">${escapeHTML(event.description)}</p>
-                                <small style="color: #999;">District: ${escapeHTML(event.district.charAt(0).toUpperCase() + event.district.slice(1))}</small>
-                            </div>
-                            <div style="text-align: right;">
-                                <div style="color: #f39c12; font-weight: bold;"> ${escapeHTML(event.timeLeft)}</div>
-                                <button onclick="participateInEvent('${escapeHTML(event.type)}', '${escapeHTML(event.district)}')" style="background: #9b59b6; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; margin-top: 5px; font-family: 'Georgia', serif;">
-                                     Get Involved
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `).join('')}
-            </div>
-        </div>
-    `;
-    
-    const mc3 = document.getElementById("multiplayer-content");
-    if (mc3) mc3.innerHTML = eventsHTML;
-}
+// showCityEvents (Street News) removed
 
 // ==================== ASSASSINATION SYSTEM ====================
 
@@ -3970,240 +3899,7 @@ function saveOnlineWorldData() {
     }
 }
 
-function spectateWar(district) {
-    if (!district) return;
-
-    // Try to pull real war data from server state
-    const wars = onlineWorldState.gangWars || [];
-    const warData = wars.find(w => w.district === district);
-    const attackerName = warData ? (warData.attacker || 'Unknown Crew') : 'Attacking Crew';
-    const defenderName = warData ? (warData.defender || 'District Defenders') : 'Local Defenders';
-
-    // Create or reuse modal container
-    let modal = document.getElementById('turf-war-spectator');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'turf-war-spectator';
-        modal.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;width:600px;max-width:95%;background:rgba(0,0,0,0.95);border:2px solid #8b0000;border-radius:12px;font-family:Georgia,serif;color:#ecf0f1;box-shadow:0 0 25px rgba(139,0,0,0.7);padding:20px;';
-        document.body.appendChild(modal);
-    }
-    modal.innerHTML = '';
-
-    // Initial strengths influenced by war data if available
-    const attackerStrengthStart = (warData ? 70 : 60) + Math.floor(Math.random()*30);
-    const defenderStrengthStart = (warData ? 65 : 55) + Math.floor(Math.random()*35);
-    let attackerStrength = attackerStrengthStart;
-    let defenderStrength = defenderStrengthStart;
-    let tick = 0;
-    const maxTicks = 12 + Math.floor(Math.random()*5);
-    let playerBet = null; // track if the player placed a bet
-
-    // Header with real names
-    const header = document.createElement('div');
-    header.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;';
-    header.innerHTML = `
-        <div>
-            <h3 style="margin:0;color:#ff4444;text-shadow:2px 2px 6px #8b0000;">⚔️ Turf War: ${escapeHTML(district)}</h3>
-            <div style="font-size:0.85em;color:#ccc;margin-top:4px;"><span style="color:#ff4444;">${escapeHTML(attackerName)}</span> vs <span style="color:#00a884;">${escapeHTML(defenderName)}</span></div>
-        </div>
-        <button style="background:#333;color:#c0a062;padding:6px 12px;border:1px solid #c0a062;border-radius:6px;cursor:pointer;" onclick="clearInterval(window._warSpectateInterval);document.getElementById('turf-war-spectator').remove();">✕ Close</button>
-    `;
-    modal.appendChild(header);
-
-    // Betting section
-    const betSection = document.createElement('div');
-    betSection.id = 'war-bet-section';
-    betSection.style.cssText = 'margin:10px 0;padding:12px;background:rgba(192,160,98,0.1);border:1px solid #c0a062;border-radius:8px;text-align:center;';
-    const betAmount = Math.min(5000, Math.max(500, Math.floor(player.money * 0.05)));
-    betSection.innerHTML = `
-        <div style="color:#c0a062;font-weight:bold;margin-bottom:8px;">💰 Place a Bet ($${betAmount.toLocaleString()})</div>
-        <div style="display:flex;gap:10px;justify-content:center;">
-            <button id="bet-attacker-btn" onclick="window._placeWarBet('attacker')" style="background:#8b0000;color:#fff;padding:8px 18px;border:none;border-radius:5px;cursor:pointer;">${escapeHTML(attackerName)}</button>
-            <button id="bet-defender-btn" onclick="window._placeWarBet('defender')" style="background:#004d40;color:#fff;padding:8px 18px;border:none;border-radius:5px;cursor:pointer;">${escapeHTML(defenderName)}</button>
-            <button onclick="document.getElementById('war-bet-section').style.display='none';" style="background:#333;color:#888;padding:8px 12px;border:1px solid #555;border-radius:5px;cursor:pointer;">Skip</button>
-        </div>
-    `;
-    modal.appendChild(betSection);
-
-    // Place bet handler — sends intent to server, server handles money
-    window._placeWarBet = function(side) {
-        if (playerBet) return;
-        if (player.money < betAmount) {
-            showSystemMessage('Not enough cash to place a bet!', '#e74c3c');
-            return;
-        }
-
-        // Send bet to server for authoritative money handling
-        if (onlineWorldState.socket && onlineWorldState.socket.readyState === WebSocket.OPEN) {
-            playerBet = side; // Mark locally so we can't double-bet
-            onlineWorldState.socket.send(JSON.stringify({
-                type: 'war_bet',
-                district: district,
-                side: side,
-                amount: betAmount
-            }));
-            betSection.innerHTML = `<div style="color:#c0a062;">💰 Bet placed: <strong>$${betAmount.toLocaleString()}</strong> on <strong>${side === 'attacker' ? escapeHTML(attackerName) : escapeHTML(defenderName)}</strong> — awaiting outcome...</div>`;
-        } else {
-            showSystemMessage('Not connected to server. Can\'t place bet.', '#e74c3c');
-        }
-    };
-
-    const barsContainer = document.createElement('div');
-    barsContainer.style.margin = '12px 0 10px 0';
-    barsContainer.innerHTML = `
-        <div style="margin-bottom:10px;">
-            <div style="display:flex;justify-content:space-between;font-size:0.85em;margin-bottom:3px;">
-                <span style="color:#ff4444;">⚔️ ${escapeHTML(attackerName)}</span>
-                <span id="attacker-strength-val">${attackerStrength}</span>
-            </div>
-            <div style="background:#222;height:16px;border:1px solid #444;border-radius:8px;overflow:hidden;">
-                <div id="attacker-bar" style="height:100%;width:${(attackerStrength/attackerStrengthStart)*100}%;background:linear-gradient(90deg,#8b0000,#ff4444);transition:width 0.4s;"></div>
-            </div>
-        </div>
-        <div>
-            <div style="display:flex;justify-content:space-between;font-size:0.85em;margin-bottom:3px;">
-                <span style="color:#00a884;">🛡️ ${escapeHTML(defenderName)}</span>
-                <span id="defender-strength-val">${defenderStrength}</span>
-            </div>
-            <div style="background:#222;height:16px;border:1px solid #444;border-radius:8px;overflow:hidden;">
-                <div id="defender-bar" style="height:100%;width:${(defenderStrength/defenderStrengthStart)*100}%;background:linear-gradient(90deg,#004d40,#00a884);transition:width 0.4s;"></div>
-            </div>
-        </div>
-    `;
-    modal.appendChild(barsContainer);
-
-    const logArea = document.createElement('div');
-    logArea.style.cssText = 'height:180px;overflow-y:auto;background:rgba(255,255,255,0.06);padding:10px;border:1px solid #444;border-radius:6px;font-size:0.85em;';
-    logArea.id = 'war-event-log';
-    modal.appendChild(logArea);
-
-    const footer = document.createElement('div');
-    footer.style.cssText = 'margin-top:12px;font-size:0.8em;color:#95a5a6;text-align:center;';
-    footer.innerHTML = 'Live engagement feed — watch the battle unfold...';
-    modal.appendChild(footer);
-
-    // Combat event flavor text pools
-    const attackerEvents = [
-        `${attackerName}'s crew surges forward`,
-        `${attackerName} sends in a second wave`,
-        `A Molotov from ${attackerName}'s side ignites the barricade`,
-        `${attackerName}'s enforcer takes out a key defender`,
-        `${attackerName} flanks from the alley`
-    ];
-    const defenderEvents = [
-        `${defenderName} dig in behind cover`,
-        `${defenderName} call for backup`,
-        `A sniper from ${defenderName} pins down the assault`,
-        `${defenderName} launch a counter-charge`,
-        `${defenderName} set up a chokepoint`
-    ];
-    const swingEvents = [
-        'A car explodes, sending both sides scrambling!',
-        'Sirens in the distance — both sides regroup.',
-        'A civilian runs through the crossfire causing chaos.',
-        'Reinforcements arrive from an unexpected ally!',
-        'Someone shoots out the streetlights — darkness falls.'
-    ];
-
-    function log(msg) {
-        const line = document.createElement('div');
-        line.style.cssText = 'margin:3px 0;padding:2px 0;border-bottom:1px solid rgba(255,255,255,0.05);';
-        line.textContent = msg;
-        logArea.appendChild(line);
-        logArea.scrollTop = logArea.scrollHeight;
-    }
-
-    log(`You take position on a rooftop overlooking ${district}...`);
-    log(`${attackerName} moves in on ${defenderName}'s turf.`);
-
-    const attackerBar = () => document.getElementById('attacker-bar');
-    const defenderBar = () => document.getElementById('defender-bar');
-    const attackerVal = () => document.getElementById('attacker-strength-val');
-    const defenderVal = () => document.getElementById('defender-strength-val');
-
-    const interval = setInterval(() => {
-        tick++;
-
-        const attackerHit = Math.random() < 0.55;
-        const defenderHit = Math.random() < 0.5;
-
-        if (attackerHit) {
-            const dmg = 3 + Math.floor(Math.random()*6);
-            defenderStrength = Math.max(0, defenderStrength - dmg);
-            log(`${attackerEvents[Math.floor(Math.random()*attackerEvents.length)]} (-${dmg})`);
-        }
-        if (defenderHit) {
-            const dmg = 2 + Math.floor(Math.random()*6);
-            attackerStrength = Math.max(0, attackerStrength - dmg);
-            log(`${defenderEvents[Math.floor(Math.random()*defenderEvents.length)]} (-${dmg})`);
-        }
-
-        if (Math.random() < 0.15) {
-            const swingTarget = Math.random() < 0.5 ? 'attacker' : 'defender';
-            const swing = 4 + Math.floor(Math.random()*5);
-            log(swingEvents[Math.floor(Math.random()*swingEvents.length)]);
-            if (swingTarget === 'attacker') {
-                attackerStrength += swing;
-            } else {
-                defenderStrength += swing;
-            }
-        }
-
-        const ab = attackerBar();
-        const db = defenderBar();
-        const av = attackerVal();
-        const dv = defenderVal();
-        if (!ab || !db) { clearInterval(interval); return; }
-        ab.style.width = `${Math.max(0,(attackerStrength/attackerStrengthStart)*100)}%`;
-        db.style.width = `${Math.max(0,(defenderStrength/defenderStrengthStart)*100)}%`;
-        if (av) av.textContent = Math.max(0, attackerStrength);
-        if (dv) dv.textContent = Math.max(0, defenderStrength);
-
-        if (attackerStrength <= 0 || defenderStrength <= 0 || tick >= maxTicks) {
-            clearInterval(interval);
-            let outcome;
-            let winningSide;
-            if (attackerStrength === defenderStrength) {
-                outcome = 'Stalemate — both sides withdraw, licking their wounds.';
-                winningSide = null;
-            } else if (attackerStrength > defenderStrength) {
-                outcome = `${escapeHTML(attackerName)} overwhelms the defense — the district is theirs!`;
-                winningSide = 'attacker';
-                addWorldEvent?.(`⚔️ ${escapeHTML(attackerName)} seized ${escapeHTML(district)} from ${escapeHTML(defenderName)}!`);
-            } else {
-                outcome = `${escapeHTML(defenderName)} holds firm — ${escapeHTML(attackerName)} retreats into the night.`;
-                winningSide = 'defender';
-                addWorldEvent?.(`🛡️ ${escapeHTML(defenderName)} repelled ${escapeHTML(attackerName)}'s assault on ${escapeHTML(district)}.`);
-            }
-            log(`--- Battle concludes ---`);
-            log(outcome);
-
-            // Resolve bet — outcome was already decided server-side via war_bet_result
-            // We just show the animation outcome. Actual money was handled by the server.
-            let betResult = '';
-            if (playerBet && window._lastWarBetResult) {
-                const res = window._lastWarBetResult;
-                if (res.won) {
-                    betResult = `<div style="margin-top:10px;padding:10px;background:rgba(46,204,113,0.2);border:1px solid #2ecc71;border-radius:6px;color:#2ecc71;text-align:center;">💰 You won the bet! +$${(res.payout || 0).toLocaleString()}</div>`;
-                    logAction(`💰 Won $${(res.payout || 0).toLocaleString()} betting on the turf war in ${escapeHTML(district)}!`);
-                } else {
-                    betResult = `<div style="margin-top:10px;padding:10px;background:rgba(231,76,60,0.2);border:1px solid #e74c3c;border-radius:6px;color:#e74c3c;text-align:center;">💸 You lost the bet. -$${(res.betAmount || 0).toLocaleString()}</div>`;
-                    logAction(`💸 Lost $${(res.betAmount || 0).toLocaleString()} betting on the turf war in ${escapeHTML(district)}.`);
-                }
-                // Sync money from server
-                if (res.newMoney !== undefined) player.money = res.newMoney;
-                window._lastWarBetResult = null;
-                if (typeof updateUI === 'function') updateUI();
-            }
-
-            footer.innerHTML = `<div style="color:#c0a062;font-weight:bold;">${outcome}</div>${betResult}`;
-            logAction?.(`⚔️ Spectated turf war in ${escapeHTML(district)}: ${outcome}`);
-        }
-    }, 1000);
-    window._warSpectateInterval = interval;
-}
-
-// Removed placeholder challengeForTerritory(district); full implementation defined later.
+// spectateWar removed — Turf Wars replaced by Horse Betting in casino
 
 function participateInEvent(eventType, district) {
     if (!onlineWorldState.isConnected) {
@@ -4245,15 +3941,6 @@ function participateInEvent(eventType, district) {
                 { text: 'You impressed the bosses and received a cut of their operation.', moneyMin: 600, moneyMax: 2500, xp: 30, repGain: 6, successChance: 0.5, riskText: 'A rival at the meeting took offense and jumped you after.', healthLoss: 20, wantedGain: 0 },
                 { text: 'You brokered a deal between two factions and took a commission.', moneyMin: 1000, moneyMax: 3500, xp: 35, repGain: 8, successChance: 0.45, riskText: 'One side felt you favored the other — they want payback.', healthLoss: 10, wantedGain: 0 },
                 { text: 'You gathered intel on upcoming operations while making connections.', moneyMin: 200, moneyMax: 800, xp: 45, repGain: 4, successChance: 0.7, riskText: 'Someone noticed you eavesdropping a bit too much.', healthLoss: 5, wantedGain: 0 }
-            ]
-        },
-        turf_war: {
-            title: 'Turf War',
-            icon: '⚔️',
-            scenarios: [
-                { text: 'You fought alongside the winning side and claimed spoils.', moneyMin: 1200, moneyMax: 4000, xp: 40, repGain: 5, successChance: 0.45, riskText: 'You caught a bullet in the crossfire.', healthLoss: 25, wantedGain: 1 },
-                { text: 'You looted abandoned stash houses during the fighting.', moneyMin: 800, moneyMax: 3000, xp: 20, repGain: 2, successChance: 0.6, riskText: 'A straggler caught you raiding their stash.', healthLoss: 15, wantedGain: 0 },
-                { text: 'You supplied weapons to both sides and took profit from the carnage.', moneyMin: 2000, moneyMax: 5000, xp: 30, repGain: 3, successChance: 0.5, riskText: 'Both sides realized you were playing them.', healthLoss: 30, wantedGain: 1 }
             ]
         }
     };
