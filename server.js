@@ -49,8 +49,10 @@ const server = http.createServer(async (req, res) => {
     try {
         const urlPath = req.url.split('?')[0];
         if (urlPath === '/health' || urlPath === '/status') {
+            const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, 'package.json'), 'utf8'));
             const status = {
                 status: 'ok',
+                version: pkg.version,
                 serverTime: Date.now(),
                 playersConnected: clients ? clients.size : 0,
                 serverName: 'Mafia Born - Multiplayer Server'

@@ -78,7 +78,7 @@ body.season-winter {
     width: 100%;
     background: linear-gradient(to bottom, #1a1a1a, #000000);
     color: #d4af37;
-    padding: 6px 10px;
+    padding: calc(6px + env(safe-area-inset-top, 0px)) 10px 6px 10px;
     z-index: 20;
     display: flex;
     align-items: center;
@@ -1415,7 +1415,7 @@ p, ul {
         flex-wrap: wrap;
         gap: 4px;
         font-size: 9px;
-        padding: 5px 6px;
+        padding: calc(5px + env(safe-area-inset-top, 0px)) 6px 5px 6px;
         min-height: 40px;
     }
     
@@ -2468,7 +2468,7 @@ p, ul {
     /* Keep stats bar as flex (DO NOT use grid-template-columns) */
     #stats-bar {
         font-size: 8px;
-        padding: 3px 4px;
+        padding: calc(3px + env(safe-area-inset-top, 0px)) 4px 3px 4px;
         gap: 4px;
     }
     

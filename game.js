@@ -4,7 +4,7 @@ import { showEmpireOverview } from './empireOverview.js';
 import { player, gainExperience, checkLevelUp, regenerateEnergy, startEnergyRegenTimer, startEnergyRegeneration, skillTreeDefinitions, availablePerks, achievements } from './player.js';
 import { jobs, stolenCarTypes } from './jobs.js';
 import { crimeFamilies, factionEffects, potentialMentors } from './factions.js';
-import { familyStories, storyCampaigns, factionMissions, turfMissions, bossBattles, missionProgress } from './missions.js?v=1.6.4';
+import { familyStories, storyCampaigns, factionMissions, turfMissions, bossBattles, missionProgress } from './missions.js?v=1.6.6';
 import { narrationVariations, getRandomNarration } from './narration.js';
 import { storeItems, realEstateProperties, businessTypes, loanOptions, launderingMethods } from './economy.js';
 import { prisonerNames, recruitNames, availableRecruits, jailPrisoners, jailbreakPrisoners, setJailPrisoners, setJailbreakPrisoners, generateJailPrisoners, generateJailbreakPrisoners, generateAvailableRecruits } from './generators.js';
@@ -14753,8 +14753,17 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = "1.6.5";
+const CURRENT_VERSION = "1.6.6";
 const VERSION_UPDATES = {
+  "1.6.6": {
+    title: "Auto-Update & Safe-Area Fix",
+    date: "February 2026",
+    changes: [
+      "Game now checks server version during loading — auto-clears cache & reloads on mismatch",
+      "Fixed stats bar clipping behind device notch / status bar on Pixel 10 Pro and similar phones",
+      "Added viewport-fit=cover and safe-area-inset-top padding for modern mobile browsers"
+    ]
+  },
   "1.6.5": {
     title: "Server Wake-Up & Settings Fixes",
     date: "February 2026",
@@ -20990,13 +20999,24 @@ function startLoadingSequence() {
   function pingServer() {
     fetch(SERVER_HEALTH_URL, { cache: 'no-store' })
       .then(res => {
-        if (res.ok) {
-          serverReady = true;
-          console.log('[loading] Server is ready');
-          if (stepsComplete) finishLoading();
-        } else {
-          throw new Error('Server returned ' + res.status);
+        if (res.ok) return res.json();
+        throw new Error('Server returned ' + res.status);
+      })
+      .then(data => {
+        // ── Version mismatch check ──────────────────────
+        if (data.version && data.version !== CURRENT_VERSION) {
+          console.warn(`[loading] Version mismatch! Local: ${CURRENT_VERSION}  Server: ${data.version} — auto-updating...`);
+          loadingText.textContent = `Update found (v${CURRENT_VERSION} → v${data.version}) — refreshing...`;
+          loadingProgress.style.width = '100%';
+          loadingPercentage.textContent = '100%';
+          // Give the player a moment to read the message, then force-reload
+          setTimeout(() => forceHardReload(), 1500);
+          return; // stop normal loading flow
         }
+
+        serverReady = true;
+        console.log('[loading] Server is ready (v' + (data.version || '?') + ')');
+        if (stepsComplete) finishLoading();
       })
       .catch(err => {
         console.log('[loading] Server not ready, retrying in 3s...', err.message);
