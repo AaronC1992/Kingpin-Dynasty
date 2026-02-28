@@ -4,7 +4,7 @@ import { showEmpireOverview } from './empireOverview.js';
 import { player, gainExperience, checkLevelUp, regenerateEnergy, startEnergyRegenTimer, startEnergyRegeneration, skillTreeDefinitions, availablePerks, achievements } from './player.js';
 import { jobs, stolenCarTypes } from './jobs.js';
 import { crimeFamilies, factionEffects, potentialMentors } from './factions.js';
-import { familyStories, storyCampaigns, factionMissions, turfMissions, bossBattles, missionProgress } from './missions.js?v=1.6.3';
+import { familyStories, storyCampaigns, factionMissions, turfMissions, bossBattles, missionProgress } from './missions.js?v=1.6.4';
 import { narrationVariations, getRandomNarration } from './narration.js';
 import { storeItems, realEstateProperties, businessTypes, loanOptions, launderingMethods } from './economy.js';
 import { prisonerNames, recruitNames, availableRecruits, jailPrisoners, jailbreakPrisoners, setJailPrisoners, setJailbreakPrisoners, generateJailPrisoners, generateJailbreakPrisoners, generateAvailableRecruits } from './generators.js';
@@ -14753,8 +14753,16 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = "1.6.3";
+const CURRENT_VERSION = "1.6.4";
 const VERSION_UPDATES = {
+  "1.6.4": {
+    title: "PVP Screen Fix",
+    date: "February 2026",
+    changes: [
+      "Fixed World Chat destroying the multiplayer-content element, which broke PVP and Online World screens",
+      "World Chat now renders inside multiplayer-content instead of replacing the entire multiplayer-screen"
+    ]
+  },
   "1.6.3": {
     title: "Dead Code Cleanup & UI Consolidation",
     date: "February 2026",

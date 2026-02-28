@@ -2286,6 +2286,14 @@ function showGlobalChat() {
         document.getElementById('game').appendChild(multiplayerScreen);
     }
     
+    // Ensure multiplayer-content exists inside the screen
+    let mpContent = document.getElementById('multiplayer-content');
+    if (!mpContent) {
+        mpContent = document.createElement('div');
+        mpContent.id = 'multiplayer-content';
+        multiplayerScreen.appendChild(mpContent);
+    }
+    
     let chatHTML = `
         <div class="game-screen" style="display: block;">
             <h2 style="color: #c0a062; font-family: 'Georgia', serif; text-shadow: 2px 2px 4px #000;">💬 World Chat</h2>
@@ -2341,7 +2349,7 @@ function showGlobalChat() {
         </div>
     `;
     
-    multiplayerScreen.innerHTML = chatHTML;
+    mpContent.innerHTML = chatHTML;
     multiplayerScreen.style.display = 'block';
     
     // Show mobile UI elements if on mobile
