@@ -4,7 +4,7 @@ import { showEmpireOverview } from './empireOverview.js';
 import { player, gainExperience, checkLevelUp, regenerateEnergy, startEnergyRegenTimer, startEnergyRegeneration, skillTreeDefinitions, availablePerks, achievements } from './player.js';
 import { jobs, stolenCarTypes } from './jobs.js';
 import { crimeFamilies, factionEffects, potentialMentors } from './factions.js';
-import { familyStories, storyCampaigns, factionMissions, turfMissions, bossBattles, missionProgress } from './missions.js?v=1.6.2';
+import { familyStories, storyCampaigns, factionMissions, turfMissions, bossBattles, missionProgress } from './missions.js?v=1.6.3';
 import { narrationVariations, getRandomNarration } from './narration.js';
 import { storeItems, realEstateProperties, businessTypes, loanOptions, launderingMethods } from './economy.js';
 import { prisonerNames, recruitNames, availableRecruits, jailPrisoners, jailbreakPrisoners, setJailPrisoners, setJailbreakPrisoners, generateJailPrisoners, generateJailbreakPrisoners, generateAvailableRecruits } from './generators.js';
@@ -942,11 +942,8 @@ function advanceStoryChapter() {
 }
 window.advanceStoryChapter = advanceStoryChapter;
 
-// Legacy stubs for backwards compatibility (old functions that may be called elsewhere)
-function generateCampaignHTML() { return renderStoryChapter(); }
-function generateFactionMissionsHTML() { return '<div class="ops-section"><p style="color:#777">Family missions have been replaced by Story Mode.</p></div>'; }
+// Legacy stub kept — still called by showMissions()
 function generateTurfMissionsHTML() { return generateTurfOverviewHTML(); }
-function generateBossBattlesHTML() { return '<div class="ops-section"><p style="color:#777">Boss battles are now part of Story Mode chapters.</p></div>'; }
 
 // Mission execution functions
 async function startFactionMission(familyKey, missionId) {
@@ -2358,114 +2355,7 @@ const RIVAL_KINGPINS = Object.values(RIVAL_FAMILIES).flatMap(f => {
 
 // processRivalTurn removed — dead code (never called)
 
-// ==================== 5. RESPECT-BASED RELATIONSHIP SYSTEM ====================
-
-// Initialize respect for all factions/rivals
-function initializeRespectSystem(player) {
-    if (!player.relationships) {
-        player.relationships = {
-            // Factions
-            torrino: 0,
-            kozlov: 0,
-            chen: 0,
-            morales: 0,
-            police: -20, // Starts slightly negative
-            
-            // Rival kingpins
-            torrino_boss: 0,
-            kozlov_boss: 0,
-            chen_boss: 0,
-            morales_boss: 0,
-            independent_boss: 0,
-            
-            // Special groups
-            civilians: 0,
-            underground: 0
-        };
-    }
-}
-
-// Modify respect with a faction/rival
-function modifyRespect(player, targetId, change, reason = "") {
-    if (!player.relationships) initializeRespectSystem(player);
-    
-    const oldValue = player.relationships[targetId] || 0;
-    const newValue = Math.max(-100, Math.min(100, oldValue + change));
-    
-    player.relationships[targetId] = newValue;
-    
-    // Respect affects related outcomes
-    const effects = calculateRespectEffects(targetId, newValue);
-    
-    return {
-        target: targetId,
-        oldValue: oldValue,
-        newValue: newValue,
-        change: change,
-        reason: reason,
-        effects: effects
-    };
-}
-
-// Calculate benefits/penalties from respect level
-function calculateRespectEffects(targetId, respectValue) {
-    const effects = {
-        priceModifier: 1.0,
-        jobAccessModifier: 1.0,
-        attackChance: 0,
-        supportChance: 0,
-        specialMissionsAvailable: false
-    };
-    
-    // High respect (60-100)
-    if (respectValue >= 60) {
-        effects.priceModifier = 0.8; // 20% discount
-        effects.jobAccessModifier = 1.3; // 30% better jobs
-        effects.supportChance = 0.25; // 25% chance they'll help in crisis
-        effects.specialMissionsAvailable = true;
-    }
-    // Moderate respect (20-59)
-    else if (respectValue >= 20) {
-        effects.priceModifier = 0.9; // 10% discount
-        effects.jobAccessModifier = 1.1; // 10% better jobs
-        effects.supportChance = 0.1;
-    }
-    // Neutral (-19 to 19)
-    else if (respectValue >= -19) {
-        // No modifiers
-    }
-    // Low respect (-20 to -59)
-    else if (respectValue >= -60) {
-        effects.priceModifier = 1.2; // 20% markup
-        effects.attackChance = 0.15; // 15% chance of sabotage
-    }
-    // Very low respect (-60 to -100)
-    else {
-        effects.priceModifier = 1.5; // 50% markup
-        effects.attackChance = 0.35; // 35% chance of attacks
-        effects.jobAccessModifier = 0.7; // Limited access
-    }
-    
-    return effects;
-}
-
-// Natural respect decay toward neutral over time
-function processRespectDecay(player) {
-    if (!player.relationships) return;
-    
-    Object.keys(player.relationships).forEach(targetId => {
-        const current = player.relationships[targetId];
-        
-        // Decay toward 0 (neutral)
-        if (current > 0) {
-            player.relationships[targetId] = Math.floor(current * EXPANDED_SYSTEMS_CONFIG.respectDecayRate);
-        } else if (current < 0) {
-            player.relationships[targetId] = Math.ceil(current * EXPANDED_SYSTEMS_CONFIG.respectDecayRate);
-        }
-    });
-}
-
-// ==================== INTEGRATION & INITIALIZATION ====================
+// ==================== INTEGRATION & INITIALIZATION ==
 
 // Initialize all expanded systems for a new game
 function initializeExpandedSystems(player) {
@@ -2522,11 +2412,6 @@ export default {
     
     // Rival functions removed (processRivalTurn was dead code)
     
-    // Respect functions
-    initializeRespectSystem,
-    modifyRespect,
-    processRespectDecay,
-    
     // Initialization
     initializeExpandedSystems
 };
@@ -2574,21 +2459,6 @@ window.dismissMember = async function(memberId) {
   showGangManagementScreen();
   updateUI();
 };
-
-// ==================== TURF MAP (Legacy Redirect) ==
-// Old showTerritoryMapScreen / renderTerritory / manageDefenders / addDefender /
-// removeDefender / fortifyExpandedTerritory / claimExpandedTerritory have been
-// replaced by the new turf system. These stubs redirect to the new functions.
-
-function showTerritoryMapScreen() { showTurfMap(); }
-
-function renderTerritory() { return ""; }
-
-window.manageDefenders = function() { showTurfMap(); };
-window.addDefender = function() { showTurfMap(); };
-window.removeDefender = function() { showTurfMap(); };
-window.fortifyExpandedTerritory = function(zoneId) { fortifyTurf(zoneId); };
-window.claimExpandedTerritory = function() { showTurfMap(); };
 
 // ==================== INTERACTIVE EVENT UI ====================
 
@@ -2867,7 +2737,6 @@ window.closeScreen = function() {
 // Export all UI functions (exposed via window below)
 
 // Expose merged expanded UI functions to window (for onclick handlers in dynamic HTML)
-window.showTerritoryMapScreen = showTerritoryMapScreen;
 window.showRelationshipsScreen = showRelationshipsScreen;
 window.showRivalActivityScreen = function() {
   if (typeof showRivalsScreen === 'function') showRivalsScreen();
@@ -7244,6 +7113,9 @@ function updateUI() {
 }
 
 // ==================== ADMIN PANEL ====================
+// Store original options-screen HTML so we can restore it when leaving admin panel
+let _originalOptionsHTML = null;
+
 function showAdminPanel() {
   const authState = getAuthState();
   if (!authState.isAdmin) {
@@ -7255,6 +7127,12 @@ function showAdminPanel() {
 
   hideAllScreens();
   const container = document.getElementById('options-screen');
+
+  // Save original settings HTML before overwriting (only once)
+  if (!_originalOptionsHTML) {
+    _originalOptionsHTML = container.innerHTML;
+  }
+
   container.style.display = 'block';
 
   container.innerHTML = `
@@ -8070,6 +7948,9 @@ function hasRequiredItems(requiredItems) {
 function hideAllScreens() {
   // Always scroll to top on screen transitions
   window.scrollTo(0, 0);
+
+  // Reset scroll position of all game screen containers (they have overflow-y: auto on mobile)
+  document.querySelectorAll('.game-screen, #menu, #gameplay').forEach(s => { s.scrollTop = 0; });
   
   // Remove .screen-active from all game screens so their fixed page-headers hide properly
   document.querySelectorAll('.game-screen.screen-active').forEach(s => s.classList.remove('screen-active'));
@@ -8874,8 +8755,8 @@ function handleCarTheft(job, actualEnergyCost) {
     return;
   }
 
-  // Check if player actually finds a car to steal (30% base chance)
-  let findCarChance = 30 + (player.skills.luck * 3); // Luck skill helps find cars
+  // Check if player actually finds a car to steal (15% base chance — very hard)
+  let findCarChance = 15 + (player.skills.luck * 2); // Luck skill helps find cars
   if (Math.random() * 100 > findCarChance) {
     alert(`${getRandomNarration('carTheftFailure')} Lost ${actualEnergyCost} energy.`);
     logAction(`🔍 ${getRandomNarration('carTheftFailure')} The streets can be unforgiving to those seeking easy rides.`);
@@ -8904,21 +8785,37 @@ function handleCarTheft(job, actualEnergyCost) {
   }
 
   // Calculate initial damage percentage based on vehicle type
+  // Most stolen vehicles are in terrible shape — finding one in decent condition is very rare
   let damagePercentage = 0;
   
   // Broken vehicles: 95-100% damage (0-5% health left)
   if (selectedCar.name.toLowerCase().includes('broken')) {
     damagePercentage = Math.floor(Math.random() * 6) + 95; // 95-100% damage
   }
-  // Rusted/Rusty vehicles: 50-94% damage (6-50% health left)  
+  // Rusted/Rusty vehicles: 65-96% damage (4-35% health left)  
   else if (selectedCar.name.toLowerCase().includes('rust')) {
-    damagePercentage = Math.floor(Math.random() * 45) + 50; // 50-94% damage
+    damagePercentage = Math.floor(Math.random() * 32) + 65; // 65-96% damage
   }
-  // All other vehicles: random damage based on damageChance
-  else if (Math.random() * 100 < selectedCar.damageChance) {
-    damagePercentage = Math.floor(Math.random() * 40) + 10; // 10-50% initial damage
-  } else {
-    damagePercentage = Math.floor(Math.random() * 15); // 0-15% minimal damage for "pristine" cars
+  // All other vehicles: heavily weighted toward high damage
+  else {
+    // Roll a weighted chance — most vehicles come badly damaged
+    let conditionRoll = Math.random() * 100;
+    if (conditionRoll < 45) {
+      // 45% chance: severe damage 70-95%
+      damagePercentage = Math.floor(Math.random() * 26) + 70;
+    } else if (conditionRoll < 75) {
+      // 30% chance: heavy damage 50-69%
+      damagePercentage = Math.floor(Math.random() * 20) + 50;
+    } else if (conditionRoll < 92) {
+      // 17% chance: moderate damage 30-49%
+      damagePercentage = Math.floor(Math.random() * 20) + 30;
+    } else if (conditionRoll < 99) {
+      // 7% chance: light damage 15-29%
+      damagePercentage = Math.floor(Math.random() * 15) + 15;
+    } else {
+      // 1% chance: decent condition 5-14%
+      damagePercentage = Math.floor(Math.random() * 10) + 5;
+    }
   }
 
   let currentValue = Math.floor(selectedCar.baseValue * (1 - damagePercentage / 100));
@@ -13192,18 +13089,8 @@ function showRecruitment() {
 
   document.getElementById("recruitment-content").innerHTML = recruitsHTML;
   
-  // Hide all other screens
-  document.getElementById("menu").style.display = "none";
-  document.getElementById("gang-screen").style.display = "none";
-  document.getElementById("jobs-screen").style.display = "none";
-  document.getElementById("store-screen").style.display = "none";
-  document.getElementById("skills-screen").style.display = "none";
-  document.getElementById("achievements-screen").style.display = "none";
-  document.getElementById("stolen-cars-screen").style.display = "none";
-  document.getElementById("jailbreak-screen").style.display = "none";
-  document.getElementById("real-estate-screen").style.display = "none";
-  
-  // Show recruitment screen with prominence
+  // Hide all screens, then show recruitment
+  hideAllScreens();
   document.getElementById("recruitment-screen").style.display = "block";
   
   // Scroll to top to ensure user sees the screen
@@ -14866,8 +14753,19 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = "1.6.2";
+const CURRENT_VERSION = "1.6.3";
 const VERSION_UPDATES = {
+  "1.6.3": {
+    title: "Dead Code Cleanup & UI Consolidation",
+    date: "February 2026",
+    changes: [
+      "Removed unused respect-based relationship system (4 dead functions)",
+      "Removed legacy redirect stubs for old territory & mission generators",
+      "Consolidated duplicate Character Showcase — showCharacterShowcase() now reuses buildCharacterShowcaseHTML()",
+      "Consolidated duplicate Save/Load slot card HTML into shared renderLoadSlotCards() helper",
+      "Fixed showRecruitment() to use hideAllScreens() instead of 9 manual element hides"
+    ]
+  },
   "1.6.2": {
     title: "Dynamic Stats Bar & Layout Fix",
     date: "February 2026",
@@ -17538,7 +17436,15 @@ function updateJailbreakPrisonerTimers() {
 // Function to show the Options screen
 function showOptions() {
   hideAllScreens();
-  document.getElementById("options-screen").style.display = "block";
+
+  // Restore original settings HTML if it was overwritten by admin panel
+  const container = document.getElementById("options-screen");
+  if (_originalOptionsHTML) {
+    container.innerHTML = _originalOptionsHTML;
+    _originalOptionsHTML = null; // Clear so we don't keep restoring stale copies
+  }
+
+  container.style.display = "block";
   
   // Display version on settings screen
   const settingsVersion = document.getElementById('settings-version');
@@ -17593,6 +17499,41 @@ function loadGame() {
   showSaveSelectionInterface(availableSaves);
 }
 
+// Shared helper — renders load-only slot cards for both in-game and intro load screens.
+// `onClickFn` receives a save object and returns the onclick JS string for that card.
+function renderLoadSlotCards(saves, onClickFn) {
+  return saves.map(save => `
+    <div style="background: rgba(52, 73, 94, 0.8); border: 2px solid #3498db; border-radius: 15px; padding: 20px; cursor: pointer; transition: all 0.3s ease;"
+       onclick="${onClickFn(save)}"
+       onmouseover="this.style.background='rgba(52, 152, 219, 0.3)'; this.style.borderColor='#2ecc71';"
+       onmouseout="this.style.background='rgba(52, 73, 94, 0.8)'; this.style.borderColor='#3498db';">
+      <div style="display: grid; grid-template-columns: 1fr 2fr 1fr 1fr 1fr; gap: 20px; align-items: center;">
+        <div>
+          <h3 style="color: #3498db; margin: 0; font-size: 1.1em;">
+            ${save.slotNumber === 0 ? '🔄 Auto-Save' : `💾 Slot ${save.slotNumber}`}
+          </h3>
+        </div>
+        <div>
+          <h4 style="color: #2ecc71; margin: 0 0 5px 0; font-size: 1.2em;">${save.saveName}</h4>
+          <p style="color: #bdc3c7; margin: 0; font-size: 0.9em;">${save.playerName} - Level ${save.level}</p>
+        </div>
+        <div style="text-align: center;">
+          <p style="color: #f39c12; margin: 0; font-weight: bold;">$${save.money.toLocaleString()}</p>
+          <p style="color: #95a5a6; margin: 0; font-size: 0.8em;">Money</p>
+        </div>
+        <div style="text-align: center;">
+          <p style="color: #e74c3c; margin: 0; font-weight: bold;">${Math.floor(save.reputation)}</p>
+          <p style="color: #95a5a6; margin: 0; font-size: 0.8em;">Reputation</p>
+        </div>
+        <div style="text-align: center;">
+          <p style="color: #3498db; margin: 0; font-size: 0.9em;">${save.playtime}</p>
+          <p style="color: #95a5a6; margin: 0; font-size: 0.8em;">${formatTimestamp(save.saveDate)}</p>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
 function showSaveSelectionInterface(saves) {
   hideAllScreens();
   document.getElementById('statistics-screen').style.display = 'block';
@@ -17608,41 +17549,7 @@ function showSaveSelectionInterface(saves) {
       </p>
       
       <div style="display: grid; gap: 15px; margin-bottom: 30px;">
-        ${saves.map(save => `
-          <div style="background: rgba(52, 73, 94, 0.8); border: 2px solid #3498db; border-radius: 15px; padding: 20px; cursor: pointer; transition: all 0.3s ease;" 
-             onclick="if(loadGameFromSlot(${save.slotNumber})) { hideAllScreens(); showCommandCenter(); }"
-             onmouseover="this.style.background='rgba(52, 152, 219, 0.3)'; this.style.borderColor='#2ecc71';"
-             onmouseout="this.style.background='rgba(52, 73, 94, 0.8)'; this.style.borderColor='#3498db';">
-            
-            <div style="display: grid; grid-template-columns: 1fr 2fr 1fr 1fr 1fr; gap: 20px; align-items: center;">
-              <div>
-                <h3 style="color: #3498db; margin: 0; font-size: 1.1em;">
-                  ${save.slotNumber === 0 ? '🔄 Auto-Save' : `💾 Slot ${save.slotNumber}`}
-                </h3>
-              </div>
-              
-              <div>
-                <h4 style="color: #2ecc71; margin: 0 0 5px 0; font-size: 1.2em;">${save.saveName}</h4>
-                <p style="color: #bdc3c7; margin: 0; font-size: 0.9em;">${save.playerName} - Level ${save.level}</p>
-              </div>
-              
-              <div style="text-align: center;">
-                <p style="color: #f39c12; margin: 0; font-weight: bold;">$${save.money.toLocaleString()}</p>
-                <p style="color: #95a5a6; margin: 0; font-size: 0.8em;">Money</p>
-              </div>
-              
-              <div style="text-align: center;">
-                <p style="color: #e74c3c; margin: 0; font-weight: bold;">${Math.floor(save.reputation)}</p>
-                <p style="color: #95a5a6; margin: 0; font-size: 0.8em;">Reputation</p>
-              </div>
-              
-              <div style="text-align: center;">
-                <p style="color: #3498db; margin: 0; font-size: 0.9em;">${save.playtime}</p>
-                <p style="color: #95a5a6; margin: 0; font-size: 0.8em;">${formatTimestamp(save.saveDate)}</p>
-              </div>
-            </div>
-          </div>
-        `).join('')}
+        ${renderLoadSlotCards(saves, save => `if(loadGameFromSlot(${save.slotNumber})) { hideAllScreens(); showCommandCenter(); }`)}
       </div>
       
       <div class="page-nav" style="justify-content: center;">
@@ -17710,41 +17617,7 @@ function showSaveSelectionFromIntro(saves) {
       </p>
       
       <div style="display: grid; gap: 15px; margin-bottom: 30px;">
-        ${saves.map(save => `
-          <div style="background: rgba(52, 73, 94, 0.8); border: 2px solid #3498db; border-radius: 15px; padding: 20px; cursor: pointer; transition: all 0.3s ease;" 
-             onclick="loadGameFromIntroSlot(${save.slotNumber})"
-             onmouseover="this.style.background='rgba(52, 152, 219, 0.3)'; this.style.borderColor='#2ecc71';"
-             onmouseout="this.style.background='rgba(52, 73, 94, 0.8)'; this.style.borderColor='#3498db';">
-            
-            <div style="display: grid; grid-template-columns: 1fr 2fr 1fr 1fr 1fr; gap: 20px; align-items: center;">
-              <div>
-                <h3 style="color: #3498db; margin: 0; font-size: 1.1em;">
-                  ${save.slotNumber === 0 ? '🔄 Auto-Save' : `💾 Slot ${save.slotNumber}`}
-                </h3>
-              </div>
-              
-              <div>
-                <h4 style="color: #2ecc71; margin: 0 0 5px 0; font-size: 1.2em;">${save.saveName}</h4>
-                <p style="color: #bdc3c7; margin: 0; font-size: 0.9em;">${save.playerName} - Level ${save.level}</p>
-              </div>
-              
-              <div style="text-align: center;">
-                <p style="color: #f39c12; margin: 0; font-weight: bold;">$${save.money.toLocaleString()}</p>
-                <p style="color: #95a5a6; margin: 0; font-size: 0.8em;">Money</p>
-              </div>
-              
-              <div style="text-align: center;">
-                <p style="color: #e74c3c; margin: 0; font-weight: bold;">${Math.floor(save.reputation)}</p>
-                <p style="color: #95a5a6; margin: 0; font-size: 0.8em;">Reputation</p>
-              </div>
-              
-              <div style="text-align: center;">
-                <p style="color: #3498db; margin: 0; font-size: 0.9em;">${save.playtime}</p>
-                <p style="color: #95a5a6; margin: 0; font-size: 0.8em;">${formatTimestamp(save.saveDate)}</p>
-              </div>
-            </div>
-          </div>
-        `).join('')}
+        ${renderLoadSlotCards(saves, save => `loadGameFromIntroSlot(${save.slotNumber})`)}
       </div>
       
       <div style="text-align: center;">
@@ -21051,123 +20924,19 @@ function showCharacterShowcase() {
   hideAllScreens();
   document.getElementById('statistics-screen').style.display = 'block';
   
-  const showcase = createCharacterShowcase();
-  const gradeColor = getEmpireRatingGrade(showcase.empireRating).color;
-  
-  const content = `
-    <div style="max-width: 1000px; margin: 0 auto;">
-      <h2 style="text-align: center; color: #9b59b6; font-size: 2.5em; margin-bottom: 20px;">
-        📋 Character Showcase
-      </h2>
-      
-      <!-- Export/Import Controls -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px;">
-        <div style="background: rgba(46, 204, 113, 0.2); padding: 15px; border-radius: 10px; border: 2px solid #2ecc71;">
-          <h3 style="color: #2ecc71; margin: 0 0 10px 0;">📤 Export</h3>
-          <button onclick="exportCharacterShowcase()" style="background: #2ecc71; color: white; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; width: 100%;">
-            Export My Story
-          </button>
-        </div>
-        
-        <div style="background: rgba(52, 152, 219, 0.2); padding: 15px; border-radius: 10px; border: 2px solid #3498db;">
-          <h3 style="color: #3498db; margin: 0 0 10px 0;">📥 Import</h3>
-          <button onclick="importCharacterShowcase()" style="background: #3498db; color: white; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; width: 100%;">
-            View Others' Stories
-          </button>
-        </div>
-      </div>
-      
-      <!-- Character Showcase Display -->
-      <div style="text-align: center; margin-bottom: 30px; padding: 20px; background: linear-gradient(135deg, rgba(44, 62, 80, 0.8) 0%, rgba(52, 73, 94, 0.8) 100%); border-radius: 15px; border: 3px solid ${gradeColor};">
-        <h1 style="color: ${gradeColor}; font-size: 3em; margin: 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.8);">
-          ${showcase.characterName}
-        </h1>
-        <h3 style="color: #ecf0f1; margin: 10px 0;">Level ${showcase.level} ${showcase.empireDescription}</h3>
-        <div style="display: flex; justify-content: center; align-items: center; gap: 20px; margin-top: 15px;">
-          <span style="color: ${gradeColor}; font-size: 2em; font-weight: bold;">Grade ${showcase.empireGrade}</span>
-          <span style="color: #bdc3c7;">Empire Rating: ${showcase.empireRating.toLocaleString()}</span>
-        </div>
-      </div>
-      
-      <!-- Stats Grid (same as displayImportedShowcase) -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px;">
-        <div style="background: rgba(46, 204, 113, 0.2); padding: 20px; border-radius: 15px; border: 2px solid #2ecc71;">
-          <h3 style="color: #2ecc71; margin: 0 0 15px 0;">💰 Financial Empire</h3>
-          <div style="display: grid; gap: 8px;">
-            <div style="display: flex; justify-content: space-between;">
-              <span>Current Wealth:</span>
-              <span style="color: #2ecc71; font-weight: bold;">$${showcase.money.toLocaleString()}</span>
-            </div>
-            <div style="display: flex; justify-content: space-between;">
-              <span>Total Earned:</span>
-              <span style="color: #2ecc71;">$${showcase.totalEarnings.toLocaleString()}</span>
-            </div>
-            <div style="display: flex; justify-content: space-between;">
-              <span>Businesses:</span>
-              <span style="color: #2ecc71;">${showcase.businessCount}</span>
-            </div>
-          </div>
-        </div>
-        
-        <div style="background: rgba(231, 76, 60, 0.2); padding: 20px; border-radius: 15px; border: 2px solid #e74c3c;">
-          <h3 style="color: #e74c3c; margin: 0 0 15px 0;">👥 Criminal Organization</h3>
-          <div style="display: grid; gap: 8px;">
-            <div style="display: flex; justify-content: space-between;">
-              <span>Gang Members:</span>
-              <span style="color: #e74c3c; font-weight: bold;">${showcase.gangSize}</span>
-            </div>
-            <div style="display: flex; justify-content: space-between;">
-              <span>Turf Control:</span>
-              <span style="color: #e74c3c;">${showcase.territory}</span>
-            </div>
-            <div style="display: flex; justify-content: space-between;">
-              <span>Reputation:</span>
-              <span style="color: #e74c3c;">${showcase.reputation}</span>
-            </div>
-          </div>
-        </div>
-        
-        <div style="background: rgba(52, 152, 219, 0.2); padding: 20px; border-radius: 15px; border: 2px solid #3498db;">
-          <h3 style="color: #3498db; margin: 0 0 15px 0;">🎯 Criminal Record</h3>
-          <div style="display: grid; gap: 8px;">
-            <div style="display: flex; justify-content: space-between;">
-              <span>Jobs Completed:</span>
-              <span style="color: #3498db; font-weight: bold;">${showcase.totalJobs}</span>
-            </div>
-            <div style="display: flex; justify-content: space-between;">
-              <span>Escape Rate:</span>
-              <span style="color: #3498db;">${showcase.escapeRate}%</span>
-            </div>
-            <div style="display: flex; justify-content: space-between;">
-              <span>Power Level:</span>
-              <span style="color: #3498db;">${showcase.power}</span>
-            </div>
-          </div>
-        </div>
-        
-        <div style="background: rgba(155, 89, 182, 0.2); padding: 20px; border-radius: 15px; border: 2px solid #9b59b6;">
-          <h3 style="color: #9b59b6; margin: 0 0 15px 0;">⏰ Career Timeline</h3>
-          <div style="display: grid; gap: 8px;">
-            <div style="display: flex; justify-content: space-between;">
-              <span>Play Time:</span>
-              <span style="color: #9b59b6; font-weight: bold;">${formatPlaytime(showcase.playTime)}</span>
-            </div>
-            <div style="display: flex; justify-content: space-between;">
-              <span>Challenges:</span>
-              <span style="color: #9b59b6;">${showcase.challengesCompleted}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      
+  // Reuse the shared showcase builder and append nav buttons
+  const showcaseHTML = buildCharacterShowcaseHTML();
+  const navButtons = `
       <div style="text-align: center; margin-top: 30px;">
         <button onclick="showRivalsScreen()" style="background: linear-gradient(45deg, #e74c3c, #c0392b); color: white; padding: 15px 30px; border: none; border-radius: 12px; font-size: 1.2em; font-weight: bold; cursor: pointer; margin-right: 15px;">
           🏆 Back to Rivals
         </button>
         <button class="nav-btn-back" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
       </div>
-    </div>
   `;
+  
+  // Insert nav buttons before the closing </div> of the showcase wrapper
+  const content = showcaseHTML.replace(/<\/div>\s*$/, navButtons + '\n    </div>');
   
   document.getElementById('statistics-content').innerHTML = content;
 }
@@ -21315,10 +21084,7 @@ window.showMissions = showMissions;
 window.switchOpsTab = switchOpsTab;
 window.toggleFamilyGroup = toggleFamilyGroup;
 window.toggleLockedMissions = toggleLockedMissions;
-window.generateCampaignHTML = generateCampaignHTML;
-window.generateFactionMissionsHTML = generateFactionMissionsHTML;
 window.generateTurfMissionsHTML = generateTurfMissionsHTML;
-window.generateBossBattlesHTML = generateBossBattlesHTML;
 window.startFactionMission = startFactionMission;
 window.startSignatureJob = startSignatureJob;
 window.startTurfMission = startTurfMission;

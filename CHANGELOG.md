@@ -5,6 +5,18 @@ All notable changes to From Dusk To Don (Mafia Born) will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.3] - 2026-02-27
+
+### Removed
+- Removed unused respect-based relationship system (initializeRespectSystem, modifyRespect, calculateRespectEffects, processRespectDecay)
+- Removed legacy redirect stubs (generateCampaignHTML, generateFactionMissionsHTML, generateBossBattlesHTML, territory redirect functions)
+- Removed corresponding window.* assignments for deleted functions
+
+### Changed
+- Consolidated duplicate Character Showcase — showCharacterShowcase() now reuses buildCharacterShowcaseHTML()
+- Consolidated duplicate Save/Load slot card templates into shared renderLoadSlotCards() helper
+- showRecruitment() now uses hideAllScreens() instead of 9 manual getElementById calls
+
 ## [1.6.2] - 2026-02-27
 
 ### Fixed

@@ -2057,7 +2057,7 @@ p, ul {
 .mobile-device #stolen-cars-screen,
 .mobile-device #pharmacy-screen,
 .mobile-device #player-stats-screen {
-    padding: 100px 15px 80px 15px !important; /* Top padding for stats bar, bottom for quick actions */
+    padding: calc(var(--stats-bar-h, 44px) + 86px) 15px 80px 15px !important; /* Top padding dynamically clears stats bar + page header, bottom for quick actions */
     overflow-y: auto !important;
     max-height: 100vh !important;
 }
@@ -2111,7 +2111,7 @@ p, ul {
     padding: 5px !important;
     min-height: auto !important;
     font-size: 10px !important;
-    overflow: hidden !important;
+    overflow: visible !important;
 }
 
 .mobile-device .player-info {
@@ -2127,7 +2127,7 @@ p, ul {
     justify-content: center !important;
     align-items: center !important;
     max-width: 100% !important;
-    overflow: hidden !important;
+    overflow: visible !important;
 }
 
 .mobile-device #stats-bar p {

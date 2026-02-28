@@ -51,47 +51,47 @@ export const jobs = [
 
 // Stolen car types with base values and damage probabilities
 export const stolenCarTypes = [
-    // Broken vehicles (most common, lowest value)
-    { name: "Broken Family Wagon", baseValue: 800, damageChance: 80, rarity: 50, image: "vehicles/Broken Family Wagon.png" },
-    { name: "Broken Delivery Van", baseValue: 1200, damageChance: 75, rarity: 48, image: "vehicles/Broken Delivery Van.png" },
-    { name: "Broken Street Racer Coupe", baseValue: 2000, damageChance: 70, rarity: 45, image: "vehicles/Broken Street Racer Coupe.png" },
-    { name: "Broken Luxury Town Car", baseValue: 3500, damageChance: 65, rarity: 42, image: "vehicles/Broken Luxury Town Car.png" },
-    { name: "Broken High-End Roadster", baseValue: 4000, damageChance: 68, rarity: 40, image: "vehicles/broken version of the High-End Roadster.png" },
-    { name: "Broken Armored Truck", baseValue: 5000, damageChance: 70, rarity: 38, image: "vehicles/broken version of the armored truck.png" },
+    // Broken vehicles (very common — bulk of stolen cars)
+    { name: "Broken Family Wagon", baseValue: 800, damageChance: 80, rarity: 70, image: "vehicles/Broken Family Wagon.png" },
+    { name: "Broken Delivery Van", baseValue: 1200, damageChance: 75, rarity: 65, image: "vehicles/Broken Delivery Van.png" },
+    { name: "Broken Street Racer Coupe", baseValue: 2000, damageChance: 70, rarity: 60, image: "vehicles/Broken Street Racer Coupe.png" },
+    { name: "Broken Luxury Town Car", baseValue: 3500, damageChance: 65, rarity: 55, image: "vehicles/Broken Luxury Town Car.png" },
+    { name: "Broken High-End Roadster", baseValue: 4000, damageChance: 68, rarity: 50, image: "vehicles/broken version of the High-End Roadster.png" },
+    { name: "Broken Armored Truck", baseValue: 5000, damageChance: 70, rarity: 48, image: "vehicles/broken version of the armored truck.png" },
     
-    // Rusty vehicles (less common, moderate value)
-    { name: "Rusty Jalopy", baseValue: 5000, damageChance: 60, rarity: 35, image: "vehicles/Rusty Jalopy.png" },
-    { name: "Rusty Delivery Van", baseValue: 8000, damageChance: 55, rarity: 32, image: "vehicles/rusty version of the Delivery Van.png" },
-    { name: "Rusted Family Wagon", baseValue: 12000, damageChance: 50, rarity: 30, image: "vehicles/Rusted Family Wagon.png" },
-    { name: "Rusty Street Racer Coupe", baseValue: 18000, damageChance: 48, rarity: 28, image: "vehicles/Rusty Street Racer Coupe.png" },
-    { name: "Rusty Luxury Town Car", baseValue: 25000, damageChance: 45, rarity: 25, image: "vehicles/Rusty Luxury Town Car.png" },
-    { name: "Rusty High-End Roadster", baseValue: 30000, damageChance: 42, rarity: 22, image: "vehicles/rusted High-End Roadster.png" },
-    { name: "Rusty Armored Truck", baseValue: 35000, damageChance: 40, rarity: 20, image: "vehicles/Rusty Armored Truck.png" },
+    // Rusty vehicles (uncommon, moderate value)
+    { name: "Rusty Jalopy", baseValue: 5000, damageChance: 60, rarity: 28, image: "vehicles/Rusty Jalopy.png" },
+    { name: "Rusty Delivery Van", baseValue: 8000, damageChance: 55, rarity: 24, image: "vehicles/rusty version of the Delivery Van.png" },
+    { name: "Rusted Family Wagon", baseValue: 12000, damageChance: 50, rarity: 22, image: "vehicles/Rusted Family Wagon.png" },
+    { name: "Rusty Street Racer Coupe", baseValue: 18000, damageChance: 48, rarity: 20, image: "vehicles/Rusty Street Racer Coupe.png" },
+    { name: "Rusty Luxury Town Car", baseValue: 25000, damageChance: 45, rarity: 18, image: "vehicles/Rusty Luxury Town Car.png" },
+    { name: "Rusty High-End Roadster", baseValue: 30000, damageChance: 42, rarity: 15, image: "vehicles/rusted High-End Roadster.png" },
+    { name: "Rusty Armored Truck", baseValue: 35000, damageChance: 40, rarity: 12, image: "vehicles/Rusty Armored Truck.png" },
     
-    // Normal vehicles (less common, good value)
-    { name: "Old Sedan", baseValue: 15000, damageChance: 45, rarity: 18, image: "vehicles/Old Sedan.png" },
-    { name: "Old Ford", baseValue: 25000, damageChance: 40, rarity: 16, image: "vehicles/Old Ford.png" },
-    { name: "Taxi", baseValue: 28000, damageChance: 38, rarity: 15, image: "vehicles/Taxi.png" },
-    { name: "Delivery Van", baseValue: 32000, damageChance: 35, rarity: 14, image: "vehicles/Delivery Van.png" },
-    { name: "Family Wagon", baseValue: 30000, damageChance: 35, rarity: 13, image: "vehicles/Family Wagon.png" },
-    { name: "Hearse", baseValue: 35000, damageChance: 33, rarity: 12, image: "vehicles/Hearse.png" },
-    { name: "Motorcycle", baseValue: 45000, damageChance: 50, rarity: 11, image: "vehicles/Motorcycle.png" },
-    { name: "Pickup Truck", baseValue: 50000, damageChance: 30, rarity: 10, image: "vehicles/Pickup Truck.png" },
-    { name: "Sports Coupe", baseValue: 60000, damageChance: 25, rarity: 9, image: "vehicles/Sports Coupe.png" },
-    { name: "Street Racer Coupe", baseValue: 70000, damageChance: 28, rarity: 8, image: "vehicles/Street Racer Coupe.png" },
+    // Normal vehicles (rare — hard to find anything decent on the street)
+    { name: "Old Sedan", baseValue: 15000, damageChance: 45, rarity: 8, image: "vehicles/Old Sedan.png" },
+    { name: "Old Ford", baseValue: 25000, damageChance: 40, rarity: 6, image: "vehicles/Old Ford.png" },
+    { name: "Taxi", baseValue: 28000, damageChance: 38, rarity: 5, image: "vehicles/Taxi.png" },
+    { name: "Delivery Van", baseValue: 32000, damageChance: 35, rarity: 5, image: "vehicles/Delivery Van.png" },
+    { name: "Family Wagon", baseValue: 30000, damageChance: 35, rarity: 4, image: "vehicles/Family Wagon.png" },
+    { name: "Hearse", baseValue: 35000, damageChance: 33, rarity: 4, image: "vehicles/Hearse.png" },
+    { name: "Motorcycle", baseValue: 45000, damageChance: 50, rarity: 3, image: "vehicles/Motorcycle.png" },
+    { name: "Pickup Truck", baseValue: 50000, damageChance: 30, rarity: 3, image: "vehicles/Pickup Truck.png" },
+    { name: "Sports Coupe", baseValue: 60000, damageChance: 25, rarity: 2, image: "vehicles/Sports Coupe.png" },
+    { name: "Street Racer Coupe", baseValue: 70000, damageChance: 28, rarity: 2, image: "vehicles/Street Racer Coupe.png" },
     
-    // Rare vehicles
-    { name: "Delivery Truck", baseValue: 75000, damageChance: 28, rarity: 7, image: "vehicles/Delivery Truck.png" },
-    { name: "Freight Truck", baseValue: 85000, damageChance: 32, rarity: 6, image: "vehicles/Freight Truck.png" },
-    { name: "Luxury Sedan", baseValue: 100000, damageChance: 20, rarity: 5, image: "vehicles/luxury sedan.png" },
-    { name: "Luxury Town Car", baseValue: 120000, damageChance: 18, rarity: 4, image: "vehicles/Luxury Town Car.png" },
+    // Rare vehicles (very hard to score)
+    { name: "Delivery Truck", baseValue: 75000, damageChance: 28, rarity: 1.5, image: "vehicles/Delivery Truck.png" },
+    { name: "Freight Truck", baseValue: 85000, damageChance: 32, rarity: 1.2, image: "vehicles/Freight Truck.png" },
+    { name: "Luxury Sedan", baseValue: 100000, damageChance: 20, rarity: 1, image: "vehicles/luxury sedan.png" },
+    { name: "Luxury Town Car", baseValue: 120000, damageChance: 18, rarity: 0.8, image: "vehicles/Luxury Town Car.png" },
     
-    // Very rare vehicles
-    { name: "Speedboat", baseValue: 140000, damageChance: 22, rarity: 3, image: "vehicles/Speedboat.png" },
-    { name: "High-End Roadster", baseValue: 150000, damageChance: 15, rarity: 3, image: "vehicles/High-End Roadster.png" },
-    { name: "Limousine", baseValue: 180000, damageChance: 16, rarity: 2, image: "vehicles/Limousine.png" },
-    { name: "Party Bus", baseValue: 200000, damageChance: 25, rarity: 2, image: "vehicles/Party Bus.png" },
+    // Very rare vehicles (jackpot tier)
+    { name: "Speedboat", baseValue: 140000, damageChance: 22, rarity: 0.5, image: "vehicles/Speedboat.png" },
+    { name: "High-End Roadster", baseValue: 150000, damageChance: 15, rarity: 0.4, image: "vehicles/High-End Roadster.png" },
+    { name: "Limousine", baseValue: 180000, damageChance: 16, rarity: 0.3, image: "vehicles/Limousine.png" },
+    { name: "Party Bus", baseValue: 200000, damageChance: 25, rarity: 0.2, image: "vehicles/Party Bus.png" },
     
     // Super rare vehicles
-    { name: "Police Cruiser", baseValue: 250000, damageChance: 10, rarity: 0.5, image: "vehicles/Police Cruiser.png" }
+    { name: "Police Cruiser", baseValue: 250000, damageChance: 10, rarity: 0.1, image: "vehicles/Police Cruiser.png" }
 ];

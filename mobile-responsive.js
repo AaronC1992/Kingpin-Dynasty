@@ -23,6 +23,7 @@ export const MobileSystem = {
         this.setupResponsiveHandling();
         this.setupOrientationHandling();
         this.optimizeTouch(); // Touch-specific enhancements
+        this.syncStatsBarHeight(); // Keep --stats-bar-h in sync with actual bar height
     },
     
     // Detect if device is mobile or tablet
@@ -801,6 +802,29 @@ export const MobileSystem = {
             newViewport.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
             document.head.appendChild(newViewport);
         }
+    },
+    
+    // Dynamically sync --stats-bar-h CSS variable with the actual stats bar height
+    // so page content padding always clears the bar, even when stats wrap on small screens
+    syncStatsBarHeight() {
+        const statsBar = document.getElementById('stats-bar');
+        if (!statsBar) return;
+
+        const update = () => {
+            const h = statsBar.getBoundingClientRect().height;
+            document.documentElement.style.setProperty('--stats-bar-h', h + 'px');
+        };
+
+        // Use ResizeObserver for efficient, automatic updates
+        if (typeof ResizeObserver !== 'undefined') {
+            new ResizeObserver(update).observe(statsBar);
+        } else {
+            // Fallback: poll every 500ms
+            setInterval(update, 500);
+        }
+
+        // Initial sync
+        update();
     },
     
     // Get current device info
