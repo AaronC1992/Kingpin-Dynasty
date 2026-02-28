@@ -12184,7 +12184,6 @@ const menuUnlockConfig = [
 
   // === MULTIPLAYER (Level 5+) ===
   { id: 'onlineworld', fn: 'showOnlineWorld()',         label: 'The Commission', tip: 'Enter the online underworld',     level: 5 },
-  { id: 'pvparena',    fn: 'showPVP()',                 label: 'PVP Arena',      tip: 'Fight other players for turf',    level: 10 },
 ];
 
 function isMenuItemUnlocked(item) {

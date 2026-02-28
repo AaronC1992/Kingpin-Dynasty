@@ -248,14 +248,31 @@ function showWhackRivalDon() {
     if (!content) return;
     
     content.innerHTML = `
-        <div style="background: rgba(0,0,0,0.95); padding: 30px; border-radius: 15px; border: 3px solid #8b0000;">
-            <h2 style="color: #ff4444; text-align: center; font-family: 'Georgia', serif;"> Whack Rival Don</h2>
-            <p style="color: #ff6666; text-align: center; font-style: italic;">Challenge another player's Don to a life-or-death showdown.<br>The loser's character is permanently eliminated.</p>
+        <div style="background: rgba(0,0,0,0.95); padding: 30px; border-radius: 15px; border: 3px solid #c0a062;">
+            <h2 style="color: #c0a062; text-align: center; font-family: 'Georgia', serif;">👊 Whack Rival Don</h2>
+            <p style="color: #ccc; text-align: center; font-style: italic;">A casual PvP brawl between Dons. No permadeath — just bragging rights.</p>
+            <div style="background: rgba(192, 160, 98, 0.1); padding: 15px; border-radius: 8px; margin: 15px 0; border: 1px solid #c0a062;">
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; text-align: center;">
+                    <div>
+                        <div style="color: #c0a062; font-weight: bold;">⚡ 5 Energy</div>
+                        <div style="color: #888; font-size: 0.8em;">Cost per fight</div>
+                    </div>
+                    <div>
+                        <div style="color: #f1c40f; font-weight: bold;">👑 Don Rep</div>
+                        <div style="color: #888; font-size: 0.8em;">Win = +Rep / Lose = -Rep</div>
+                    </div>
+                    <div>
+                        <div style="color: #e67e22; font-weight: bold;">❤️ Health</div>
+                        <div style="color: #888; font-size: 0.8em;">Both fighters take damage</div>
+                    </div>
+                </div>
+            </div>
+            <p style="color: #888; text-align: center; font-size: 0.85em; margin: 5px 0 15px 0;">Don Reputation is for fun & ranking only — pick a fight and see who's tougher!</p>
             <div id="online-player-list" style="margin: 20px 0;">
                 <p style="color: #888; text-align: center;">Loading online players...</p>
             </div>
             <div style="text-align: center; margin-top: 20px;">
-                <button onclick="goBackToMainMenu()" style="background: #333; color: #c0a062; padding: 12px 25px; border: 1px solid #c0a062; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">Back</button>
+                <button onclick="showOnlineWorld()" style="background: #333; color: #c0a062; padding: 12px 25px; border: 1px solid #c0a062; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">← Back to Commission</button>
             </div>
         </div>
     `;
@@ -1948,15 +1965,15 @@ function showPvpResultModal(message, isWinner) {
                 <div style="display:flex;justify-content:space-around;text-align:center;">
                     <div>
                         <div style="color:#2ecc71;font-size:1.5em;font-weight:bold;">+${repChange}</div>
-                        <div style="color:#888;font-size:0.85em;">Reputation</div>
+                        <div style="color:#888;font-size:0.85em;">Don Rep</div>
                     </div>
                     ${myDmg ? `<div>
                         <div style="color:#e67e22;font-size:1.5em;font-weight:bold;">-${myDmg}</div>
                         <div style="color:#888;font-size:0.85em;">Health</div>
                     </div>` : ''}
                     <div>
-                        <div style="color:#f1c40f;font-size:1.5em;font-weight:bold;">⭐</div>
-                        <div style="color:#888;font-size:0.85em;">Street Cred</div>
+                        <div style="color:#f1c40f;font-size:1.5em;font-weight:bold;">👑</div>
+                        <div style="color:#888;font-size:0.85em;">Bragging Rights</div>
                     </div>
                 </div>
             </div>
@@ -1968,7 +1985,7 @@ function showPvpResultModal(message, isWinner) {
             </div>
         `;
 
-        logAction(`🏆 Victory! Defeated ${opponent} and gained ${repChange} reputation!${myDmg ? ` (HP -${myDmg})` : ''}`);
+        logAction(`👑 Victory! Defeated ${opponent} and gained ${repChange} Don Rep!${myDmg ? ` (HP -${myDmg})` : ''}`);
     } else {
         modal.style.border = '2px solid #e74c3c';
         modal.style.boxShadow = '0 0 30px rgba(231,76,60,0.5)';
@@ -1985,15 +2002,15 @@ function showPvpResultModal(message, isWinner) {
                 <div style="display:flex;justify-content:space-around;text-align:center;">
                     <div>
                         <div style="color:#e74c3c;font-size:1.5em;font-weight:bold;">-${repLoss}</div>
-                        <div style="color:#888;font-size:0.85em;">Reputation</div>
+                        <div style="color:#888;font-size:0.85em;">Don Rep</div>
                     </div>
                     ${myDmg ? `<div>
                         <div style="color:#e67e22;font-size:1.5em;font-weight:bold;">-${myDmg}</div>
                         <div style="color:#888;font-size:0.85em;">Health</div>
                     </div>` : ''}
                     <div>
-                        <div style="color:#e74c3c;font-size:1.5em;font-weight:bold;">💔</div>
-                        <div style="color:#888;font-size:0.85em;">Pride</div>
+                        <div style="color:#e74c3c;font-size:1.5em;font-weight:bold;">😤</div>
+                        <div style="color:#888;font-size:0.85em;">Bruised Ego</div>
                     </div>
                 </div>
             </div>
@@ -2005,7 +2022,7 @@ function showPvpResultModal(message, isWinner) {
             </div>
         `;
 
-        logAction(`💀 Defeated by ${opponent}. Lost ${repLoss} reputation.${myDmg ? ` (HP -${myDmg})` : ''}`);
+        logAction(`� Defeated by ${opponent}. Lost ${repLoss} Don Rep.${myDmg ? ` (HP -${myDmg})` : ''}`);
     }
 
     if (typeof updateUI === 'function') updateUI();
@@ -2075,146 +2092,6 @@ function syncJailStatus(inJail, jailTime) {
 }
 
 // ==================== GLOBAL CHAT SYSTEM ====================
-// ==================== PVP ARENA SCREEN ====================
-
-function showPVP() {
-    // Sync territories before displaying
-    syncMultiplayerTerritoriesToPlayer();
-    
-    const pvpHTML = `
-        <div style="background: rgba(0, 0, 0, 0.95); padding: 40px; border-radius: 15px; border: 3px solid #8b0000;">
-            <div style="text-align: center; margin-bottom: 30px;">
-                <h1 style="color: #8b0000; font-family: 'Georgia', serif; font-size: 2.5em; text-shadow: 2px 2px 8px #000; margin: 0;"> PVP ARENA</h1>
-                <p style="color: #ff6666; margin: 10px 0 0 0; font-size: 1.1em; font-style: italic;">Prove your worth. Crush your rivals. Take what's theirs.</p>
-            </div>
-            
-            <!-- Territory Income Timer -->
-            <div id="territory-income-timer-pvp" style="background: rgba(39, 174, 96, 0.1); padding: 12px; border-radius: 8px; margin-bottom: 20px; border: 2px solid #27ae60; text-align: center;">
-                <div style="color: #27ae60; font-weight: bold; font-size: 1.1em;"> Next Territory Income</div>
-                <div id="income-countdown-pvp" style="color: #ccc; margin-top: 5px; font-family: monospace; font-size: 1.3em;">Calculating...</div>
-                <div style="color: #888; font-size: 0.85em; margin-top: 5px;">Controlled Territories: <span id="controlled-count-pvp" style="color: #27ae60; font-weight: bold;">0</span> | Weekly Income: <span id="weekly-income-total-pvp" style="color: #27ae60; font-weight: bold;">$0</span></div>
-            </div>
-            
-            <!-- PVP Actions Grid -->
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; margin: 30px 0;">
-                
-                <!-- Whack Rival Don -->
-                <div style="background: linear-gradient(180deg, rgba(139, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.8) 100%); padding: 25px; border-radius: 15px; border: 2px solid #8b0000; cursor: pointer; transition: transform 0.2s;" onclick="showWhackRivalDon()" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-                    <div style="text-align: center;">
-                        <div style="font-size: 4em; margin-bottom: 15px;"></div>
-                        <h3 style="color: #ff4444; margin: 0 0 10px 0; font-family: 'Georgia', serif; font-size: 1.5em;">Whack Rival Don</h3>
-                        <p style="color: #ffaaaa; margin: 0 0 15px 0; font-size: 0.95em;">High-risk assassination with permadeath</p>
-                        <div style="background: rgba(0, 0, 0, 0.6); padding: 12px; border-radius: 8px; margin-top: 15px;">
-                            <div style="color: #ccc; font-size: 0.85em; line-height: 1.6;">
-                                 Steal 10-50% money + cars<br>
-                                 Target permanently removed<br>
-                                 Risk: 20-60% health damage
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Territory Conquest -->
-                <div style="background: linear-gradient(180deg, rgba(243, 156, 18, 0.3) 0%, rgba(0, 0, 0, 0.8) 100%); padding: 25px; border-radius: 15px; border: 2px solid #f39c12; cursor: pointer; transition: transform 0.2s;" onclick="showOnlineWorld()" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-                    <div style="text-align: center;">
-                        <div style="font-size: 4em; margin-bottom: 15px;"></div>
-                        <h3 style="color: #f39c12; margin: 0 0 10px 0; font-family: 'Georgia', serif; font-size: 1.5em;">Territory Conquest</h3>
-                        <p style="color: #f9ca7e; margin: 0 0 15px 0; font-size: 0.95em;">Conquer districts for weekly income</p>
-                        <div style="background: rgba(0, 0, 0, 0.6); padding: 12px; border-radius: 8px; margin-top: 15px;">
-                            <div style="color: #ccc; font-size: 0.85em; line-height: 1.6;">
-                                 Assign gang/cars/weapons<br>
-                                 Weekly dirty money income<br>
-                                 Battle NPC or player gangs<br>
-                                 Risk: Lose assigned resources
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Assassination Contract -->
-                <div style="background: linear-gradient(180deg, rgba(75, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0.9) 100%); padding: 25px; border-radius: 15px; border: 2px solid #ff4444; cursor: pointer; transition: transform 0.2s;" onclick="showAssassination()" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-                    <div style="text-align: center;">
-                        <div style="font-size: 4em; margin-bottom: 15px;">🎯</div>
-                        <h3 style="color: #ff4444; margin: 0 0 10px 0; font-family: 'Georgia', serif; font-size: 1.5em;">Assassination</h3>
-                        <p style="color: #ff8888; margin: 0 0 15px 0; font-size: 0.95em;">Hunt rivals for a cut of their wealth</p>
-                        <div style="background: rgba(0, 0, 0, 0.6); padding: 12px; border-radius: 8px; margin-top: 15px;">
-                            <div style="color: #ccc; font-size: 0.85em; line-height: 1.6;">
-                                🔫 Requires guns, bullets & vehicle<br>
-                                💰 Steal 8-20% of target's cash<br>
-                                🎲 Low odds — stack the deck<br>
-                                🚔 Risk: Arrest on failure
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-            </div>
-            
-            <!-- PVP Stats Overview -->
-            <div style="background: rgba(0, 0, 0, 0.7); padding: 20px; border-radius: 10px; margin: 25px 0; border: 1px solid #555;">
-                <h3 style="color: #c0a062; margin: 0 0 15px 0; font-family: 'Georgia', serif; text-align: center;"> Your PVP Stats</h3>
-                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; text-align: center;">
-                    <div>
-                        <div style="color: #888; font-size: 0.85em;">Attack Power</div>
-                        <div style="color: #fff; font-weight: bold; font-size: 1.3em;">${calculateAttackPower()}</div>
-                    </div>
-                    <div>
-                        <div style="color: #888; font-size: 0.85em;">Defense Power</div>
-                        <div style="color: #fff; font-weight: bold; font-size: 1.3em;">${calculateDefensePower()}</div>
-                    </div>
-                    <div>
-                        <div style="color: #888; font-size: 0.85em;">Territories</div>
-                        <div style="color: #27ae60; font-weight: bold; font-size: 1.3em;">${countControlledTerritories()}</div>
-                    </div>
-                    <div>
-                        <div style="color: #888; font-size: 0.85em;">Gang Members</div>
-                        <div style="color: #3498db; font-weight: bold; font-size: 1.3em;">${(player.gang && player.gang.members) || 0}</div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Warning Notice -->
-            <div style="background: rgba(139, 0, 0, 0.2); padding: 20px; border-radius: 8px; border-left: 4px solid #8b0000; margin: 25px 0;">
-                <h4 style="color: #ff6666; margin: 0 0 10px 0;"> PVP WARNING</h4>
-                <p style="color: #ccc; margin: 0; font-size: 0.95em; line-height: 1.6;">
-                    PVP actions carry real consequences. Assassination attempts can result in permanent character death (permadeath). 
-                    Territory battles may result in the loss of gang members, vehicles, and weapons. Only engage if you're prepared to lose what you stake.
-                </p>
-            </div>
-            
-            <!-- Navigation -->
-            <div style="text-align: center; margin-top: 30px;">
-                <button onclick="showOnlineWorld()" 
-                        style="background: #333; color: #c0a062; padding: 15px 35px; border: 1px solid #c0a062; border-radius: 10px; cursor: pointer; font-family: 'Georgia', serif; font-weight: bold; margin-right: 10px;">
-                     The Commission
-                </button>
-                <button onclick="goBackToMainMenu()" 
-                        style="background: #333; color: #c0a062; padding: 15px 35px; border: 1px solid #c0a062; border-radius: 10px; cursor: pointer; font-family: 'Georgia', serif; font-weight: bold;">
-                     Main Menu
-                </button>
-            </div>
-        </div>
-    `;
-    
-    const mpContent = document.getElementById("multiplayer-content");
-    if (!mpContent) {
-        console.error("Error: multiplayer-content element not found in DOM");
-        return;
-    }
-    mpContent.innerHTML = pvpHTML;
-    
-    // Start countdown display
-    updatePVPCountdown();
-    if (!window.pvpCountdownInterval) {
-        window.pvpCountdownInterval = setInterval(updatePVPCountdown, 1000);
-    }
-    
-    // Show multiplayer screen container
-    if (typeof hideAllScreens === 'function') hideAllScreens();
-    const mpScreen = document.getElementById("multiplayer-screen");
-    if (mpScreen) mpScreen.style.display = 'block';
-}
-
 // Helper to calculate attack power for display
 function calculateAttackPower() {
     return (player.level * 10) + 
@@ -2235,9 +2112,9 @@ function calculateDefensePower() {
 
 // Update PVP screen countdown
 function updatePVPCountdown() {
-    const countdownEl = document.getElementById('income-countdown-pvp');
-    const controlledCountEl = document.getElementById('controlled-count-pvp');
-    const weeklyIncomeEl = document.getElementById('weekly-income-total-pvp');
+    const countdownEl = document.getElementById('income-countdown-pvp') || document.getElementById('income-countdown');
+    const controlledCountEl = document.getElementById('controlled-count-pvp') || document.getElementById('controlled-count');
+    const weeklyIncomeEl = document.getElementById('weekly-income-total-pvp') || document.getElementById('weekly-income-total');
     
     if (countdownEl) {
         const remaining = territoryIncomeNextCollection - Date.now();
@@ -2579,124 +2456,235 @@ function generateOnlinePlayersHTML() {
 }
 
 // Show online world hub (replaces old multiplayer menu)
-function showOnlineWorld() {
+function showOnlineWorld(activeTab) {
     // Sync multiplayer territories to player object
     syncMultiplayerTerritoriesToPlayer();
     
+    const tab = activeTab || 'overview';
+    
+    const tabStyle = (id) => `
+        background: ${tab === id ? '#c0a062' : '#222'};
+        color: ${tab === id ? '#000' : '#c0a062'};
+        padding: 10px 18px; border: 1px solid #c0a062; border-bottom: ${tab === id ? 'none' : '1px solid #c0a062'};
+        border-radius: 8px 8px 0 0; cursor: pointer; font-family: 'Georgia', serif;
+        font-weight: ${tab === id ? 'bold' : 'normal'}; font-size: 0.95em;
+    `;
+    
+    // ── Tab bar ──
     let worldHTML = `
-        <h2 style="color: #c0a062; font-family: 'Georgia', serif; text-shadow: 2px 2px 4px #000;"> The Commission</h2>
-        <p style="color: #ccc;">Welcome to the family. Compete and cooperate with other Dons worldwide.</p>
-        
-        <!-- Territory Income Timer -->
-        <div id="territory-income-timer" style="background: rgba(39, 174, 96, 0.1); padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 2px solid #27ae60; text-align: center;">
-            <div style="color: #27ae60; font-weight: bold; font-size: 1.1em;"> Next Territory Income</div>
-            <div id="income-countdown" style="color: #ccc; margin-top: 5px; font-family: monospace; font-size: 1.3em;">Calculating...</div>
-            <div style="color: #888; font-size: 0.85em; margin-top: 5px;">Controlled Territories: <span id="controlled-count" style="color: #27ae60; font-weight: bold;">0</span> | Weekly Income: <span id="weekly-income-total" style="color: #27ae60; font-weight: bold;">$0</span></div>
-        </div>
+        <h2 style="color: #c0a062; font-family: 'Georgia', serif; text-shadow: 2px 2px 4px #000; margin-bottom: 5px;">🏛️ The Commission</h2>
+        <p style="color: #ccc; margin: 0 0 15px 0;">The family's HQ — all multiplayer activities under one roof.</p>
         
         <!-- Connection Status -->
-        <div id="world-connection-status" style="background: rgba(0, 0, 0, 0.8); padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #c0a062;">
-            <!-- Status content will be updated by updateConnectionStatus() -->
+        <div id="world-connection-status" style="background: rgba(0, 0, 0, 0.8); padding: 10px 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #c0a062;"></div>
+        
+        <!-- Tab Navigation -->
+        <div style="display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 0; border-bottom: 2px solid #c0a062; padding-bottom: 0;">
+            <button onclick="showOnlineWorld('overview')" style="${tabStyle('overview')}">👥 Overview</button>
+            <button onclick="showOnlineWorld('pvp')" style="${tabStyle('pvp')}">⚔️ PVP</button>
+            <button onclick="showOnlineWorld('turf')" style="${tabStyle('turf')}">🗺️ Turf</button>
+            <button onclick="showOnlineWorld('activities')" style="${tabStyle('activities')}">📋 Activities</button>
+            <button onclick="showOnlineWorld('chat')" style="${tabStyle('chat')}">💬 Chat</button>
         </div>
         
-        <!-- Online Players & Jail Status -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0;">
-            
-            <!-- Online Players List -->
-            <div style="background: rgba(0, 0, 0, 0.8); padding: 20px; border-radius: 15px; border: 2px solid #c0a062;">
-                <div id="online-player-list">
-                    <h4 style="color: #c0a062; margin: 0 0 15px 0; font-family: 'Georgia', serif;"> Made Men Online</h4>
-                    <div style="color: #95a5a6; font-style: italic; text-align: center;">Loading associates...</div>
-                </div>
+        <!-- Tab Content -->
+        <div style="background: rgba(0,0,0,0.8); border: 1px solid #c0a062; border-top: none; border-radius: 0 0 10px 10px; padding: 20px; min-height: 300px;">
+    `;
+    
+    // ── OVERVIEW TAB ──
+    if (tab === 'overview') {
+        worldHTML += `
+            <!-- Territory Income Timer -->
+            <div id="territory-income-timer" style="background: rgba(39, 174, 96, 0.1); padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 2px solid #27ae60; text-align: center;">
+                <div style="color: #27ae60; font-weight: bold; font-size: 1.1em;">💰 Next Territory Income</div>
+                <div id="income-countdown" style="color: #ccc; margin-top: 5px; font-family: monospace; font-size: 1.3em;">Calculating...</div>
+                <div style="color: #888; font-size: 0.85em; margin-top: 5px;">Controlled Territories: <span id="controlled-count" style="color: #27ae60; font-weight: bold;">0</span> | Weekly Income: <span id="weekly-income-total" style="color: #27ae60; font-weight: bold;">$0</span></div>
             </div>
             
-            <!-- Players in Jail -->
-            <div style="background: rgba(0, 0, 0, 0.8); padding: 20px; border-radius: 15px; border: 2px solid #8b0000;">
-                <div id="online-jail-status">
-                    <h4 style="color: #8b0000; margin: 0 0 15px 0; font-family: 'Georgia', serif;"> In The Can</h4>
-                    <div style="color: #95a5a6; font-style: italic; text-align: center;">Checking prison records...</div>
+            <!-- Online Players & Jail Status -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 15px 0;">
+                <div style="background: rgba(0, 0, 0, 0.6); padding: 20px; border-radius: 15px; border: 2px solid #c0a062;">
+                    <div id="online-player-list">
+                        <h4 style="color: #c0a062; margin: 0 0 15px 0; font-family: 'Georgia', serif;">👥 Made Men Online</h4>
+                        <div style="color: #95a5a6; font-style: italic; text-align: center;">Loading associates...</div>
+                    </div>
                 </div>
-            </div>
-        </div>
-        
-        <!-- World Overview -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0;">
-            
-            <!-- City Districts -->
-            <div style="background: rgba(0, 0, 0, 0.8); padding: 20px; border-radius: 15px; border: 2px solid #f39c12;">
-                <h3 style="color: #f39c12; text-align: center; margin-bottom: 15px; font-family: 'Georgia', serif;"> Turf</h3>
-                <div id="city-districts">
-                    ${Object.keys(onlineWorldState.cityDistricts).map(district => {
-                        const districtData = onlineWorldState.cityDistricts[district];
-                        const isPlayerControlled = districtData.controllerType === 'player';
-                        const controllerName = isPlayerControlled ? districtData.controlledBy : districtData.npcGang;
-                        const borderColor = isPlayerControlled ? '#c0a062' : '#666';
-                        
-                        return `
-                            <div style="background: rgba(20, 20, 20, 0.8); padding: 12px; margin: 8px 0; border-radius: 8px; border: 2px solid ${borderColor};">
-                                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                                    <div style="flex: 1;">
-                                        <strong style="color: #c0a062; font-size: 1.1em;">${escapeHTML(district.charAt(0).toUpperCase() + district.slice(1))}</strong>
-                                        <div style="margin: 5px 0; font-size: 0.85em;">
-                                            <div style="color: #ccc;">Controlled by: <span style="color: ${isPlayerControlled ? '#27ae60' : '#95a5a6'};">${escapeHTML(controllerName || 'Unknown')}</span></div>
-                                            <div style="color: #ccc;">Defense: <span style="color: #e74c3c;">${districtData.defenseRating}</span></div>
-                                            <div style="color: #ccc;">Income: <span style="color: #27ae60;">$${districtData.weeklyIncome.toLocaleString()}/week</span></div>
-                                        </div>
-                                    </div>
-                                    <div style="text-align: right;">
-                                        <button onclick="viewTerritoryDetails('${escapeHTML(district)}')" 
-                                                style="background: #f39c12; color: #000; padding: 8px 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-bottom: 5px; width: 100%;">
-                                             Details
-                                        </button>
-                                        <button onclick="challengeForTerritory('${escapeHTML(district)}')" 
-                                                style="background: linear-gradient(180deg, #8b0000 0%, #5a0000 100%); color: #fff; padding: 8px 12px; border: 1px solid #ff0000; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%;">
-                                             Attack
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                    }).join('')}
+                <div style="background: rgba(0, 0, 0, 0.6); padding: 20px; border-radius: 15px; border: 2px solid #8b0000;">
+                    <div id="online-jail-status">
+                        <h4 style="color: #8b0000; margin: 0 0 15px 0; font-family: 'Georgia', serif;">🔒 In The Can</h4>
+                        <div style="color: #95a5a6; font-style: italic; text-align: center;">Checking prison records...</div>
+                    </div>
                 </div>
             </div>
             
             <!-- Global Leaderboard -->
-            <div style="background: rgba(0, 0, 0, 0.8); padding: 20px; border-radius: 15px; border: 2px solid #c0a062;">
-                <h3 style="color: #c0a062; text-align: center; margin-bottom: 15px; font-family: 'Georgia', serif;"> The Bosses</h3>
+            <div style="background: rgba(0, 0, 0, 0.6); padding: 20px; border-radius: 15px; border: 2px solid #c0a062; margin-top: 15px;">
+                <h3 style="color: #c0a062; text-align: center; margin-bottom: 15px; font-family: 'Georgia', serif;">🏆 The Bosses</h3>
                 <div id="global-leaderboard">
-                    <div style="color: #95a5a6; text-align: center; font-style: italic;">
-                        Loading rankings...
+                    <div style="color: #95a5a6; text-align: center; font-style: italic;">Loading rankings...</div>
+                </div>
+            </div>
+        `;
+    }
+    
+    // ── PVP TAB ──
+    if (tab === 'pvp') {
+        worldHTML += `
+            <h3 style="color: #8b0000; text-align: center; font-family: 'Georgia', serif; margin-top: 0;">⚔️ Player vs Player</h3>
+            <p style="color: #ccc; text-align: center; margin: 0 0 20px 0;">Prove your worth. Crush your rivals. Take what's theirs.</p>
+            
+            <!-- PVP Actions Grid -->
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin: 20px 0;">
+                
+                <!-- Whack Rival Don -->
+                <div style="background: linear-gradient(180deg, rgba(192, 160, 98, 0.2) 0%, rgba(0, 0, 0, 0.8) 100%); padding: 25px; border-radius: 15px; border: 2px solid #c0a062; cursor: pointer; transition: transform 0.2s;" onclick="showWhackRivalDon()" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <div style="text-align: center;">
+                        <div style="font-size: 3.5em; margin-bottom: 10px;">👊</div>
+                        <h3 style="color: #c0a062; margin: 0 0 8px 0; font-family: 'Georgia', serif; font-size: 1.3em;">Whack Rival Don</h3>
+                        <p style="color: #ccc; margin: 0 0 12px 0; font-size: 0.9em;">Casual PvP brawl for bragging rights</p>
+                        <div style="background: rgba(0, 0, 0, 0.6); padding: 10px; border-radius: 8px;">
+                            <div style="color: #ccc; font-size: 0.8em; line-height: 1.6;">
+                                ⚡ 5 energy cost<br>
+                                👑 Win/lose Don Rep<br>
+                                ❤️ Both take health damage
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Territory Conquest -->
+                <div style="background: linear-gradient(180deg, rgba(243, 156, 18, 0.2) 0%, rgba(0, 0, 0, 0.8) 100%); padding: 25px; border-radius: 15px; border: 2px solid #f39c12; cursor: pointer; transition: transform 0.2s;" onclick="showOnlineWorld('turf')" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <div style="text-align: center;">
+                        <div style="font-size: 3.5em; margin-bottom: 10px;">🗺️</div>
+                        <h3 style="color: #f39c12; margin: 0 0 8px 0; font-family: 'Georgia', serif; font-size: 1.3em;">Territory Conquest</h3>
+                        <p style="color: #f9ca7e; margin: 0 0 12px 0; font-size: 0.9em;">Conquer districts for weekly income</p>
+                        <div style="background: rgba(0, 0, 0, 0.6); padding: 10px; border-radius: 8px;">
+                            <div style="color: #ccc; font-size: 0.8em; line-height: 1.6;">
+                                🏴 Assign gang/cars/weapons<br>
+                                💰 Weekly dirty money income<br>
+                                ⚠️ Risk: Lose assigned resources
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Assassination Contract -->
+                <div style="background: linear-gradient(180deg, rgba(75, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.9) 100%); padding: 25px; border-radius: 15px; border: 2px solid #ff4444; cursor: pointer; transition: transform 0.2s;" onclick="showAssassination()" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <div style="text-align: center;">
+                        <div style="font-size: 3.5em; margin-bottom: 10px;">🎯</div>
+                        <h3 style="color: #ff4444; margin: 0 0 8px 0; font-family: 'Georgia', serif; font-size: 1.3em;">Assassination</h3>
+                        <p style="color: #ff8888; margin: 0 0 12px 0; font-size: 0.9em;">High-risk hit — steal their cash</p>
+                        <div style="background: rgba(0, 0, 0, 0.6); padding: 10px; border-radius: 8px;">
+                            <div style="color: #ccc; font-size: 0.8em; line-height: 1.6;">
+                                🔫 Requires guns, bullets & vehicle<br>
+                                💰 Steal 8-20% of target's cash<br>
+                                🚔 Risk: Arrest on failure
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-        
-        <!-- Online Activities -->
-        <div style="background: rgba(0, 0, 0, 0.8); padding: 20px; border-radius: 15px; border: 2px solid #c0a062; margin: 20px 0;">
-            <h3 style="color: #c0a062; text-align: center; margin-bottom: 15px; font-family: 'Georgia', serif;"> Family Business</h3>
+            
+            <!-- PVP Stats -->
+            <div style="background: rgba(0, 0, 0, 0.6); padding: 20px; border-radius: 10px; margin: 20px 0; border: 1px solid #555;">
+                <h3 style="color: #c0a062; margin: 0 0 15px 0; font-family: 'Georgia', serif; text-align: center;">📊 Your PVP Stats</h3>
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; text-align: center;">
+                    <div>
+                        <div style="color: #888; font-size: 0.85em;">Attack Power</div>
+                        <div style="color: #fff; font-weight: bold; font-size: 1.3em;">${calculateAttackPower()}</div>
+                    </div>
+                    <div>
+                        <div style="color: #888; font-size: 0.85em;">Defense Power</div>
+                        <div style="color: #fff; font-weight: bold; font-size: 1.3em;">${calculateDefensePower()}</div>
+                    </div>
+                    <div>
+                        <div style="color: #888; font-size: 0.85em;">Territories</div>
+                        <div style="color: #27ae60; font-weight: bold; font-size: 1.3em;">${countControlledTerritories()}</div>
+                    </div>
+                    <div>
+                        <div style="color: #888; font-size: 0.85em;">Gang Members</div>
+                        <div style="color: #3498db; font-weight: bold; font-size: 1.3em;">${(player.gang && player.gang.members) || 0}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    // ── TURF TAB ──
+    if (tab === 'turf') {
+        worldHTML += `
+            <!-- Territory Income Timer -->
+            <div id="territory-income-timer" style="background: rgba(39, 174, 96, 0.1); padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 2px solid #27ae60; text-align: center;">
+                <div style="color: #27ae60; font-weight: bold; font-size: 1.1em;">💰 Next Territory Income</div>
+                <div id="income-countdown" style="color: #ccc; margin-top: 5px; font-family: monospace; font-size: 1.3em;">Calculating...</div>
+                <div style="color: #888; font-size: 0.85em; margin-top: 5px;">Controlled Territories: <span id="controlled-count" style="color: #27ae60; font-weight: bold;">0</span> | Weekly Income: <span id="weekly-income-total" style="color: #27ae60; font-weight: bold;">$0</span></div>
+            </div>
+            
+            <!-- City Districts -->
+            <h3 style="color: #f39c12; text-align: center; margin-bottom: 15px; font-family: 'Georgia', serif;">🗺️ City Districts</h3>
+            <div id="city-districts">
+                ${Object.keys(onlineWorldState.cityDistricts).map(district => {
+                    const districtData = onlineWorldState.cityDistricts[district];
+                    const isPlayerControlled = districtData.controllerType === 'player';
+                    const controllerName = isPlayerControlled ? districtData.controlledBy : districtData.npcGang;
+                    const borderColor = isPlayerControlled ? '#c0a062' : '#666';
+                    
+                    return `
+                        <div style="background: rgba(20, 20, 20, 0.8); padding: 12px; margin: 8px 0; border-radius: 8px; border: 2px solid ${borderColor};">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                <div style="flex: 1;">
+                                    <strong style="color: #c0a062; font-size: 1.1em;">${escapeHTML(district.charAt(0).toUpperCase() + district.slice(1))}</strong>
+                                    <div style="margin: 5px 0; font-size: 0.85em;">
+                                        <div style="color: #ccc;">Controlled by: <span style="color: ${isPlayerControlled ? '#27ae60' : '#95a5a6'};">${escapeHTML(controllerName || 'Unknown')}</span></div>
+                                        <div style="color: #ccc;">Defense: <span style="color: #e74c3c;">${districtData.defenseRating}</span></div>
+                                        <div style="color: #ccc;">Income: <span style="color: #27ae60;">$${districtData.weeklyIncome.toLocaleString()}/week</span></div>
+                                    </div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <button onclick="viewTerritoryDetails('${escapeHTML(district)}')" 
+                                            style="background: #f39c12; color: #000; padding: 8px 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-bottom: 5px; width: 100%;">
+                                        📋 Details
+                                    </button>
+                                    <button onclick="challengeForTerritory('${escapeHTML(district)}')" 
+                                            style="background: linear-gradient(180deg, #8b0000 0%, #5a0000 100%); color: #fff; padding: 8px 12px; border: 1px solid #ff0000; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%;">
+                                        ⚔️ Attack
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
+    }
+    
+    // ── ACTIVITIES TAB ──
+    if (tab === 'activities') {
+        worldHTML += `
+            <h3 style="color: #c0a062; text-align: center; margin: 0 0 15px 0; font-family: 'Georgia', serif;">📋 Family Business</h3>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-                <button onclick="showGlobalChat()" style="background: #333; color: #c0a062; padding: 15px; border: 1px solid #c0a062; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">
-                     The Wire<br><small style="color: #ccc;">Talk with the family</small>
+                <button onclick="showGlobalChat()" style="background: #222; color: #c0a062; padding: 15px; border: 1px solid #c0a062; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">
+                    💬 The Wire<br><small style="color: #ccc;">Talk with the family</small>
                 </button>
-                <button onclick="showWhackRivalDon()" style="background: linear-gradient(180deg, #8b0000 0%, #5a0000 100%); color: #ff4444; padding: 15px; border: 1px solid #ff0000; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif; font-weight: bold;">
-                     Whack Rival Don<br><small style="color: #ffaaaa;">HIGH RISK - PERMADEATH</small>
+                <button onclick="showWhackRivalDon()" style="background: linear-gradient(180deg, rgba(192,160,98,0.2) 0%, #1a1a1a 100%); color: #c0a062; padding: 15px; border: 1px solid #c0a062; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif; font-weight: bold;">
+                    👊 Whack Rival Don<br><small style="color: #ccc;">Casual PvP for Don Rep</small>
                 </button>
                 <button onclick="showAssassination()" style="background: linear-gradient(180deg, #4b0000 0%, #1a0000 100%); color: #ff4444; padding: 15px; border: 1px solid #ff4444; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif; font-weight: bold;">
                     🎯 Assassination<br><small style="color: #ff8888;">Hunt rivals for their cash</small>
                 </button>
-                <button onclick="showActiveHeists()" style="background: #333; color: #8b0000; padding: 15px; border: 1px solid #8b0000; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">
-                     Big Scores<br><small style="color: #ccc;">Join ongoing jobs</small>
+                <button onclick="showActiveHeists()" style="background: #222; color: #8b0000; padding: 15px; border: 1px solid #8b0000; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">
+                    💰 Big Scores<br><small style="color: #ccc;">Join ongoing jobs</small>
                 </button>
-                <button onclick="showGangWars()" style="background: #333; color: #8b0000; padding: 15px; border: 1px solid #8b0000; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">
-                     Turf Wars<br><small style="color: #ccc;">Fight for territory</small>
+                <button onclick="showGangWars()" style="background: #222; color: #8b0000; padding: 15px; border: 1px solid #8b0000; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">
+                    ⚔️ Turf Wars<br><small style="color: #ccc;">Fight for territory</small>
                 </button>
-                <button onclick="showNearbyPlayers()" style="background: #333; color: #f39c12; padding: 15px; border: 1px solid #f39c12; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">
-                     Local Crew<br><small style="color: #ccc;">Players in your area</small>
+                <button onclick="showNearbyPlayers()" style="background: #222; color: #f39c12; padding: 15px; border: 1px solid #f39c12; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">
+                    👥 Local Crew<br><small style="color: #ccc;">Players in your area</small>
                 </button>
-                <button onclick="showCityEvents()" style="background: #333; color: #9b59b6; padding: 15px; border: 1px solid #9b59b6; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">
-                     Street News<br><small style="color: #ccc;">Special opportunities</small>
+                <button onclick="showCityEvents()" style="background: #222; color: #9b59b6; padding: 15px; border: 1px solid #9b59b6; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">
+                    📡 Street News<br><small style="color: #ccc;">Special opportunities</small>
                 </button>
-                <button onclick="showAlliancePanel()" style="background: #333; color: #c0a062; padding: 15px; border: 2px solid #c0a062; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">
+                <button onclick="showAlliancePanel()" style="background: #222; color: #c0a062; padding: 15px; border: 2px solid #c0a062; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">
                     🤝 Alliances<br><small style="color: #ccc;">Form a crew</small>
                 </button>
                 <button onclick="showBountyBoard()" style="background: linear-gradient(180deg, #4a2600 0%, #1a0a00 100%); color: #ff6600; padding: 15px; border: 1px solid #ff6600; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">
@@ -2709,43 +2697,48 @@ function showOnlineWorld() {
                     🏰 Territory Siege<br><small style="color: #f0a050;">Fortify & conquer</small>
                 </button>
             </div>
-        </div>
-        
-        <!-- Quick Chat Access -->
-        <div style="background: rgba(0, 0, 0, 0.8); padding: 15px; border-radius: 10px; margin: 20px 0; border: 2px solid #c0a062;">
-            <h4 style="color: #c0a062; margin: 0 0 10px 0; font-family: 'Georgia', serif;"> Quick Wire</h4>
-            <div style="display: flex; gap: 10px; align-items: center;">
+        `;
+    }
+    
+    // ── CHAT TAB ──
+    if (tab === 'chat') {
+        worldHTML += `
+            <!-- Quick Wire -->
+            <h3 style="color: #c0a062; margin: 0 0 15px 0; font-family: 'Georgia', serif;">💬 The Wire</h3>
+            <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
                 <input type="text" id="quick-chat-input" placeholder="Send a message to the family..." 
-                       style="flex: 1; padding: 8px; border-radius: 5px; border: 1px solid #c0a062; background: #222; color: #c0a062;"
+                       style="flex: 1; padding: 10px; border-radius: 5px; border: 1px solid #c0a062; background: #222; color: #c0a062; font-size: 1em;"
                        onkeypress="if(event.key==='Enter') sendQuickChatMessage()" maxlength="200">
-                <button onclick="sendQuickChatMessage()" style="background: #c0a062; color: #000; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
+                <button onclick="sendQuickChatMessage()" style="background: #c0a062; color: #000; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
                     Send
                 </button>
             </div>
-            <div style="margin-top: 10px; max-height: 120px; overflow-y: auto; background: rgba(20, 20, 20, 0.8); padding: 8px; border-radius: 5px; border: 1px solid #555;">
+            <div style="max-height: 200px; overflow-y: auto; background: rgba(20, 20, 20, 0.8); padding: 12px; border-radius: 5px; border: 1px solid #555; margin-bottom: 20px;">
                 <div id="quick-chat-messages">
-                    ${onlineWorldState.globalChat.slice(-3).map(msg => `
+                    ${onlineWorldState.globalChat.slice(-10).map(msg => `
                         <div style="margin: 4px 0; font-size: 0.9em;">
                             <strong style="color: ${msg.color || '#c0a062'};">${escapeHTML(msg.player)}:</strong> ${escapeHTML(msg.message)}
                         </div>
                     `).join('')}
                 </div>
             </div>
-        </div>
-        
-        <!-- Recent World Activity -->
-        <div style="background: rgba(0, 0, 0, 0.8); padding: 20px; border-radius: 10px; margin-top: 20px; border: 1px solid #555;">
-            <h3 style="color: #ccc; font-family: 'Georgia', serif;"> Street Activity</h3>
-            <div id="world-activity-feed" style="height: 200px; overflow-y: auto; background: rgba(20, 20, 20, 0.8); padding: 10px; border-radius: 5px;">
+            
+            <!-- Street Activity -->
+            <h3 style="color: #ccc; font-family: 'Georgia', serif;">📰 Street Activity</h3>
+            <div id="world-activity-feed" style="height: 250px; overflow-y: auto; background: rgba(20, 20, 20, 0.8); padding: 12px; border-radius: 5px; border: 1px solid #555;">
                 <div style="color: #95a5a6; font-style: italic;">Loading street news...</div>
             </div>
+        `;
+    }
+    
+    // ── Close tab content + back button ──
+    worldHTML += `
         </div>
-        
-        <div style="text-align: center; margin-top: 40px;">
+        <div style="text-align: center; margin-top: 25px;">
             <button onclick="goBackToMainMenu()" 
-                    style="background: linear-gradient(180deg, #333 0%, #000 100%); color: #c0a062; padding: 18px 35px; 
-                           border: 1px solid #c0a062; border-radius: 12px; font-size: 1.3em; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif; text-transform: uppercase;">
-                 Back to Safehouse
+                    style="background: linear-gradient(180deg, #333 0%, #000 100%); color: #c0a062; padding: 15px 30px; 
+                           border: 1px solid #c0a062; border-radius: 10px; font-size: 1.1em; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
+                🏠 Back to Safehouse
             </button>
         </div>
     `;
@@ -2762,10 +2755,21 @@ function showOnlineWorld() {
     
     // Update dynamic content
     updateConnectionStatus();
-    loadGlobalLeaderboard();
-    loadWorldActivityFeed();
-    updateJailVisibility();
-    updateOnlinePlayerList();
+    if (tab === 'overview') {
+        loadGlobalLeaderboard();
+        updateJailVisibility();
+        updateOnlinePlayerList();
+    }
+    if (tab === 'turf' || tab === 'overview') {
+        // Start territory income countdown
+        updatePVPCountdown();
+        if (!window.pvpCountdownInterval) {
+            window.pvpCountdownInterval = setInterval(updatePVPCountdown, 1000);
+        }
+    }
+    if (tab === 'chat') {
+        loadWorldActivityFeed();
+    }
     
     // Request updated world state from server
     if (onlineWorldState.socket && onlineWorldState.socket.readyState === WebSocket.OPEN) {
@@ -3870,7 +3874,7 @@ function challengePlayer(playerName) {
                 <div style="color:#888;font-size:0.85em;">Rep: ${targetRep}</div>
             </div>
         </div>
-        <div style="text-align:center;color:#888;font-size:0.85em;margin-bottom:15px;">Cost: ${energyCost} energy | Winner gains reputation</div>
+        <div style="text-align:center;color:#888;font-size:0.85em;margin-bottom:15px;">Cost: ${energyCost} energy | Winner gains Don Rep</div>
         <div style="display:flex;gap:10px;justify-content:center;">
             <button onclick="executePvpChallenge('${escapeHTML(playerName)}', ${energyCost})" style="background:#8b0000;color:#fff;padding:12px 30px;border:none;border-radius:6px;cursor:pointer;font-family:Georgia,serif;font-size:1em;">⚔️ Fight</button>
             <button onclick="document.getElementById('pvp-challenge-modal').remove();" style="background:#333;color:#c0a062;padding:12px 30px;border:1px solid #c0a062;border-radius:6px;cursor:pointer;font-family:Georgia,serif;font-size:1em;">Walk Away</button>
