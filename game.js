@@ -12234,7 +12234,7 @@ const menuUnlockConfig = [
   { id: 'playerstats', fn: 'showPlayerStats()',       label: 'Player Stats',   tip: 'View your current stats & bonuses', level: 2 },
   { id: 'cars',        fn: 'showStolenCars()',        label: 'Motor Pool',     tip: 'Manage your stolen vehicles',      level: 2 },
   { id: 'realestate',  fn: 'showRealEstate()',        label: 'Properties',     tip: 'Buy hideouts & safe houses',       level: 3 },
-  { id: 'missions',    fn: 'showMissions()',          label: 'Operations',     tip: 'Story missions & special ops',     level: 3 },
+  { id: 'missions',    fn: 'showMissions()',          label: 'Operations',     tip: 'Story missions & special ops',     level: 0 },
 
   // === MID GAME (Level 5-8) ===
   { id: 'gang',        fn: 'showGang()',              label: 'The Family',     tip: 'Recruit & manage your crew',       level: 5 },
