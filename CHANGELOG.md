@@ -5,6 +5,22 @@ All notable changes to From Dusk To Don (Mafia Born) will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.5] - 2026-02-27
+
+### Fixed
+- Delete save from Settings now correctly returns to the title screen
+- `returnToIntroScreen()` rewritten to use `hideAllScreens()` for comprehensive cleanup
+- `confirmDeleteSave()` wrapped in try-catch so errors can't silently prevent redirect
+
+### Added
+- Server health ping during loading — game stays on loading screen while Render server wakes from sleep
+- "Waking up the server..." status message shown during cold start, with 30-second timeout fallback
+
+### Changed
+- Operations unlocked from level 0 (was level 3)
+- Updated tutorial "Progressive Unlocks" step to match actual unlock levels
+- Updated README version and recent changes section
+
 ## [1.6.4] - 2026-02-27
 
 ### Fixed

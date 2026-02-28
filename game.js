@@ -14753,8 +14753,18 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = "1.6.4";
+const CURRENT_VERSION = "1.6.5";
 const VERSION_UPDATES = {
+  "1.6.5": {
+    title: "Server Wake-Up & Settings Fixes",
+    date: "February 2026",
+    changes: [
+      "Delete save from Settings now correctly returns to the title screen",
+      "Game startup pings the server — loading screen stays up while the server wakes from sleep",
+      "Operations and Breakout now unlocked from level 0 (were level 3)",
+      "Updated tutorial unlock levels to match current progression"
+    ]
+  },
   "1.6.4": {
     title: "PVP Screen Fix",
     date: "February 2026",
@@ -15426,11 +15436,11 @@ const tutorialSteps = [
       <h3>Growing Your Empire Step by Step</h3>
       <p><strong>Progressive Unlock System:</strong> Not everything is available from the start. Game features unlock as you level up:</p>
       <ul>
-        <li><strong>Level 0 (Start):</strong> Jobs, Black Market, Stash, The Doctor, Settings, Gambling</li>
-        <li><strong>Level 2-3:</strong> Expertise (Skills), Motor Pool (Cars), Properties, Operations (Missions)</li>
-        <li><strong>Level 5-8:</strong> The Family (Gang), Legal Aid, Events, Pastimes, The Fence, Crew Details, Breakout</li>
-        <li><strong>Level 10-12:</strong> Fronts (Businesses), Turf Wars, Turf Map, Shylock (Loans), Empire Overview, The Wash (Laundering)</li>
-        <li><strong>Level 15+:</strong> Empire Rating, Achievements</li>
+        <li><strong>Level 0 (Start):</strong> Jobs, Black Market, Stash, The Doctor, Settings, Gambling, Operations, Breakout</li>
+        <li><strong>Level 2-3:</strong> Relocate, Expertise (Skills), Player Stats, Motor Pool (Cars), Properties</li>
+        <li><strong>Level 5-8:</strong> The Family (Gang), Legal Aid, Events, Pastimes, The Fence</li>
+        <li><strong>Level 10-12:</strong> Fronts (Businesses), Shylock (Loans), Empire Overview, The Wash (Laundering)</li>
+        <li><strong>Level 15:</strong> Empire Rating</li>
       </ul>
       <p>You'll see a notification when new features unlock. Locked features are hidden from menus until you reach the required level.</p>
       <p><strong>Customisable Quick Actions:</strong> The right side panel shows shortcut buttons for your most-used actions. Head to <strong>Settings > Personalization</strong> to choose which buttons appear. Only unlocked features can be added.</p>

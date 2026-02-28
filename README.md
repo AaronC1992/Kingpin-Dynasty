@@ -1,6 +1,6 @@
 # Mafia Born
 
-**v1.5.7** | A deep criminal empire-building browser game where you rise from street thug to legendary kingpin. Build your crew, claim territory, run businesses, and outmanoeuvre rival crime families — all from your browser.
+**v1.6.5** | A deep criminal empire-building browser game where you rise from street thug to legendary kingpin. Build your crew, claim territory, run businesses, and outmanoeuvre rival crime families — all from your browser.
 
 ## **[PLAY NOW](https://mafiaborn.com/)**
 
@@ -112,14 +112,16 @@ Compatible with Chrome, Firefox, Safari, Edge, and their mobile counterparts.
 
 ---
 
-## Recent Changes (v1.5.7)
+## Recent Changes (v1.6.5)
 
-- **Admin Panel** — server-verified admin tools for quick grants, stat editing, jail controls, and skill management
-- **UI Toggles** — show/hide Quick Actions Panel and Mobile Nav Bar from Settings
-- **Mission economy rebalance** — all mission rewards reduced ~90% for a slower, grindier progression
-- **Mobile nav fix** — nav bar no longer appears on PC after skipping tutorial
-- **Admin panel fix** — admin controls now show immediately after login without requiring a page refresh
-- **Version sync** — version number updated across game, package.json, server, README, and CHANGELOG
+- **Server wake-up on load** — game pings the server during startup and holds the loading screen while the Render server wakes from sleep
+- **Delete save fix** — deleting a save from Settings now correctly returns to the title screen
+- **Operations unlocked early** — Operations (story missions) available from level 0 instead of level 3
+- **Turf System Overhaul (v1.6.0)** — 8 unique zones, 4 rival crime families, family allegiance, turf missions, boss fights
+- **Dead code cleanup (v1.6.3)** — removed ~200 lines of unused functions and consolidated duplicate UI code
+- **PVP screen fix (v1.6.4)** — World Chat no longer destroys multiplayer screens
+- **Dynamic stats bar (v1.6.2)** — stats bar height adapts automatically, fixing header clipping on mobile
+- **Status bar customisation (v1.5.9)** — toggle visibility of individual HUD stats from Settings
 
 ---
 
