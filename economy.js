@@ -34,9 +34,9 @@ export const storeItems = [
     { name: "Bullets", price: 2500, power: 0, type: "ammo", description: "Standard ammunition. Required to use firearms in combat. Stock up before a fight." },
     { name: "Gasoline", price: 4000, power: 0, type: "gas", description: "Fuel for your vehicles. Required to operate cars and planes. Consumed per use." },
     // === Energy Items ===
-    { name: "Strong Coffee", price: 800, power: 0, type: "energy", energyRestore: 15, description: "Cheap caffeine boost. Restores 15 energy instantly." },
-    { name: "Energy Drink", price: 1500, power: 0, type: "energy", energyRestore: 30, description: "Chemical energy, slight health risk. Restores 30 energy instantly." },
-    { name: "Steroids", price: 5000, power: 0, type: "energy", energyRestore: 60, description: "Serious boost, serious risk. Restores 60 energy instantly." },
+    { name: "Strong Coffee", price: 1000, power: 0, type: "energy", energyRestore: 15, description: "Cheap caffeine boost. Restores 15 energy instantly. No side effects." },
+    { name: "Energy Drink", price: 2500, power: 0, type: "energy", energyRestore: 30, description: "Chemical energy, slight health risk. Restores 30 energy instantly. (-1 health)" },
+    { name: "Steroids", price: 4000, power: 0, type: "energy", energyRestore: 60, description: "Maximum energy, maximum risk. Restores 60 energy instantly. (-5 health, +5 suspicion)" },
     // === Utility Items ===
     { name: "Lockpick Set", price: 10000, power: 0, type: "utility", description: "Passively grants +10% success chance on all jobs while owned." },
     { name: "Police Scanner", price: 35000, power: 0, type: "utility", description: "Passively reduces wanted level gain by 20% on every job and combat action while owned." },

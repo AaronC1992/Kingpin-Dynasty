@@ -1099,9 +1099,25 @@ async function handleServerMessage(message) {
                 // overwritten by the multiplayer world-update snapshot.
                 const selfPs = onlineWorldState.playerStates[onlineWorldState.playerId];
                 if (selfPs) {
-                    // Only sync jail state from server if NOT locally counting down
-                    // This prevents the server from killing the local timer
-                    if (!window._jailTimerActive) {
+                    if (window._jailTimerActive) {
+                        // Local timer is running — sync to server's authoritative
+                        // jail time to prevent drift / early release.
+                        // Use the server value so both timers stay aligned.
+                        if (typeof selfPs.jailTime === 'number') {
+                            player.jailTime = selfPs.jailTime;
+                        }
+                        // If server says we're no longer in jail, honour that
+                        if (!selfPs.inJail) {
+                            player.inJail = false;
+                            player.jailTime = 0;
+                            if (typeof stopJailTimer === 'function') stopJailTimer();
+                            window._jailTimerActive = false;
+                            if (window.EventBus) {
+                                try { EventBus.emit('jailStatusChanged', { inJail: false, jailTime: 0 }); } catch(e) {}
+                            }
+                        }
+                    } else {
+                        // No local timer — accept server state wholesale
                         player.inJail = !!selfPs.inJail;
                         player.jailTime = selfPs.jailTime || 0;
                     }

@@ -155,7 +155,6 @@
             <h1>Welcome to the Family</h1>
             <button onclick="startGame()">Join the Family</button>
             <button onclick="loadGameFromIntro()" style="background: linear-gradient(to bottom, #1a1a1a, #000); margin-left: 10px; border-color: #c0a062; color: #c0a062;">Resume Business</button>
-            <button onclick="startTutorial()" style="background: linear-gradient(to bottom, #1a1a1a, #000); margin-left: 10px; border-color: #c0a062; color: #c0a062;">Learn the Ropes</button>
             <button onclick="forceNewGame()" style="background: linear-gradient(to bottom, #8b0000, #500000); margin-left: 10px; font-size: 12px; border-color: #ff0000; color: #fff;">Burn Records</button>
             <div style="margin-top: 20px;">
                 <button id="intro-login-btn" onclick="showAuthModal()" style="background: linear-gradient(to bottom, #1a3a5c, #0d1f33); border-color: #4a9eff; color: #4a9eff; font-size: 14px; position: relative;" title="Checking server status...">Sign In</button>
@@ -204,23 +203,6 @@
                             ← Back
                         </button>
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Tutorial Screen -->
-        <div id="tutorial-screen" style="display:none;">
-            <div id="tutorial-content">
-                <h2 id="tutorial-title">The Rules</h2>
-                <div id="tutorial-text"></div>
-                <div id="tutorial-buttons" style="margin-top: 20px;">
-                    <button onclick="previousTutorialStep()" id="prev-btn" style="display:none;">Previous</button>
-                    <button onclick="nextTutorialStep()" id="next-btn">Next</button>
-                    <button onclick="skipTutorial()" id="skip-btn" style="background: linear-gradient(to bottom, #8b0000, #500000); margin-left: 20px; border-color: #ff0000; color: #fff;">I Know the Drill</button>
-                </div>
-                <div id="tutorial-progress" style="margin-top: 15px; font-size: 14px; color: #7f8c8d;">
-                    Step <span id="tutorial-step">1</span> of <span id="tutorial-total">7</span>
-                    <br><span style="font-size: 12px; color: #555;">💡 Use arrow keys or Enter to navigate, Esc to skip</span>
                 </div>
             </div>
         </div>
@@ -296,34 +278,8 @@
             </div>
         </div>
 
-        <!-- Store Screen -->
-        <div id="store-screen" class="game-screen" style="display:none;">
-            <div class="page-header">
-                <h1><span class="icon"></span> Black Market</h1>
-                <div class="breadcrumb">
-                    <a href="#" onclick="goBackToMainMenu(); return false;">SafeHouse</a>
-                    <span class="separator">›</span>
-                    <span class="current">Black Market</span>
-                </div>
-            </div>
-            <p>Tools of the trade. Don't ask where they came from.</p>
-            
-            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-top: 20px;">
-                <div class="content-card">
-                    <h3>Available Goods</h3>
-                    <ul id="item-list" style="list-style: none; padding: 0;"></ul>
-                </div>
-                
-                <div class="content-card">
-                    <h3>Your Stash</h3>
-                    <ul id="inventory-list" style="list-style: none; padding: 0;"></ul>
-                </div>
-            </div>
-            
-            <div class="page-nav">
-                <button class="nav-btn-back" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
-            </div>
-        </div>
+        <!-- Store Screen (populated dynamically by showStore()) -->
+        <div id="store-screen" class="game-screen" style="display:none;"></div>
 
         <!-- Real Estate Screen -->
         <div id="real-estate-screen" class="game-screen" style="display:none;">
@@ -530,7 +486,6 @@
             <div class="content-card">
                 <button onclick="saveGame()">💾 Save Game</button>
                 <button onclick="showSaveSystem()">Records</button>
-                <button onclick="showTutorialFromMenu()">The Rules</button>
                 <button onclick="loadGame()">Resume</button>
                 <button onclick="deleteSavedGame()">Burn Records</button>
                 <button onclick="confirmResetGame()">Reset</button>
@@ -1056,6 +1011,6 @@
     <!-- Multiplayer client (global script, must load before game.js module) -->
     <script src="multiplayer.js"></script>
     <!-- Main game logic (Module) -->
-    <script type="module" src="game.js?v=1.6.6"></script>
+    <script type="module" src="game.js?v=1.6.7"></script>
 </body>
 </html>

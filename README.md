@@ -1,6 +1,6 @@
 # Mafia Born
 
-**v1.6.5** | A deep criminal empire-building browser game where you rise from street thug to legendary kingpin. Build your crew, claim territory, run businesses, and outmanoeuvre rival crime families — all from your browser.
+**v1.6.7** | A deep criminal empire-building browser game where you rise from street thug to legendary kingpin. Build your crew, claim territory, run businesses, and outmanoeuvre rival crime families — all from your browser.
 
 ## **[PLAY NOW](https://mafiaborn.com/)**
 
@@ -62,7 +62,7 @@ The game features persistent progression via local storage and cloud saves, a fu
 
 ### Customisation
 - **Customisable quick actions panel** — choose which shortcut buttons appear on your screen via Settings > Personalization
-- **Title screen** with options to start fresh, resume, access the tutorial, or reset all data
+- **Title screen** with options to start fresh, resume, or reset all data
 
 ### Account & Cloud Saves
 - **Secure account system** with login and registration
@@ -112,13 +112,18 @@ Compatible with Chrome, Firefox, Safari, Edge, and their mobile counterparts.
 
 ---
 
-## Recent Changes (v1.6.5)
+## Recent Changes (v1.6.7)
 
+- **Black Market category tabs** — store now has 8 category tabs (All, Consumables, Weapons, Armor, Tools, Vehicles, Luxury, Special) for easier browsing
+- **Black Market scroll fix** — purchasing items no longer resets your scroll position
+- **Jail timer sync** — jail countdown now syncs from server authority, preventing early releases in multiplayer
+- **Energy item rebalancing** — Coffee $1,000/15 energy, Energy Drink $2,500/30 energy, Steroids $4,000/60 energy (best value, highest risk)
+- **Tutorial system cleanup** — removed redundant walkthrough tutorial; onboarding flow for new players preserved
+- **Dead code removal** — removed ~200 lines of stale respect/relationships UI code, unused config flags, and obsolete tutorial references
 - **Server wake-up on load** — game pings the server during startup and holds the loading screen while the Render server wakes from sleep
 - **Delete save fix** — deleting a save from Settings now correctly returns to the title screen
 - **Operations unlocked early** — Operations (story missions) available from level 0 instead of level 3
 - **Turf System Overhaul (v1.6.0)** — 8 unique zones, 4 rival crime families, family allegiance, turf missions, boss fights
-- **Dead code cleanup (v1.6.3)** — removed ~200 lines of unused functions and consolidated duplicate UI code
 - **PVP screen fix (v1.6.4)** — World Chat no longer destroys multiplayer screens
 - **Dynamic stats bar (v1.6.2)** — stats bar height adapts automatically, fixing header clipping on mobile
 - **Status bar customisation (v1.5.9)** — toggle visibility of individual HUD stats from Settings

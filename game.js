@@ -4,7 +4,7 @@ import { showEmpireOverview } from './empireOverview.js';
 import { player, gainExperience, checkLevelUp, regenerateEnergy, startEnergyRegenTimer, startEnergyRegeneration, skillTreeDefinitions, availablePerks, achievements } from './player.js';
 import { jobs, stolenCarTypes } from './jobs.js';
 import { crimeFamilies, factionEffects, potentialMentors } from './factions.js';
-import { familyStories, storyCampaigns, factionMissions, turfMissions, bossBattles, missionProgress } from './missions.js?v=1.6.6';
+import { familyStories, storyCampaigns, factionMissions, turfMissions, bossBattles, missionProgress } from './missions.js?v=1.6.7';
 import { narrationVariations, getRandomNarration } from './narration.js';
 import { storeItems, realEstateProperties, businessTypes, loanOptions, launderingMethods } from './economy.js';
 import { prisonerNames, recruitNames, availableRecruits, jailPrisoners, jailbreakPrisoners, setJailPrisoners, setJailbreakPrisoners, generateJailPrisoners, generateJailbreakPrisoners, generateAvailableRecruits } from './generators.js';
@@ -1300,12 +1300,9 @@ const EXPANDED_SYSTEMS_CONFIG = {
     territoryWarsEnabled: true,
     interactiveEventsEnabled: false, // Disabled — interactive random encounters removed
     rivalKingpinsEnabled: true,
-    respectSystemEnabled: true,
-    
     // Balance settings
     rivalGrowthInterval: 120000, // 2 minutes between rival actions
     territoryAttackChance: 0.15, // 15% chance of attack per check
-    respectDecayRate: 0.95, // Respect naturally decays to neutral over time
 };
 
 // ==================== 1. GANG MEMBER ROLES & STATS ====================
@@ -2640,80 +2637,6 @@ function renderRival(rival) {
 }
 
 // formatSpecialAbility — already defined in main game.js code
-// ==================== RESPECT/RELATIONSHIPS UI ====================
-
-function showRelationshipsScreen() {
-  const relationships = player.relationships || {};
-  
-  let html = `
-    <div class="expanded-screen relationships-screen">
-      <h2>⭐ Relationships & Respect</h2>
-      <p class="subtitle">Your standing with factions and rivals</p>
-      
-      <div class="relationships-grid">
-        ${Object.entries(relationships).map(([targetId, respect]) => {
-          return renderRelationship(targetId, respect);
-        }).join('')}
-      </div>
-      
-      <div class="respect-legend">
-        <h3>Respect Levels:</h3>
-        <div class="legend-item"><span class="respect-bar very-high"></span> 60-100: Allied</div>
-        <div class="legend-item"><span class="respect-bar high"></span> 20-59: Friendly</div>
-        <div class="legend-item"><span class="respect-bar neutral"></span> -19 to 19: Neutral</div>
-        <div class="legend-item"><span class="respect-bar low"></span> -20 to -59: Hostile</div>
-        <div class="legend-item"><span class="respect-bar very-low"></span> -60 to -100: Enemy</div>
-      </div>
-      
-      <button onclick="closeScreen()">← Back</button>
-    </div>
-  `;
-  
-  showCustomScreen(html);
-}
-
-function renderRelationship(targetId, respect) {
-  const respectLevel = 
-    respect >= 60 ? 'very-high' :
-    respect >= 20 ? 'high' :
-    respect >= -19 ? 'neutral' :
-    respect >= -60 ? 'low' : 'very-low';
-  
-  const respectLabel =
-    respect >= 60 ? ' Allied' :
-    respect >= 20 ? ' Friendly' :
-    respect >= -19 ? ' Neutral' :
-    respect >= -60 ? ' Hostile' : ' Enemy';
-  
-  return `
-    <div class="relationship-card ${respectLevel}">
-      <h3>${formatTargetName(targetId)}</h3>
-      <div class="respect-value">${respectLabel} (${respect > 0 ? '+' : ''}${respect})</div>
-      <div class="respect-bar-container">
-        <div class="respect-bar-fill ${respectLevel}" style="width: ${Math.abs(respect)}%; ${respect < 0 ? 'transform: scaleX(-1);' : ''}"></div>
-      </div>
-    </div>
-  `;
-}
-
-function formatTargetName(targetId) {
-  const names = {
-    "torrino": "Torrino Family",
-    "kozlov": "Kozlov Bratva",
-    "chen": "Chen Triad",
-    "morales": "Morales Cartel",
-    "police": "Police Department",
-    "torrino_boss": "Don Vittorio Torrino",
-    "kozlov_boss": "Yuri Kozlov",
-    "chen_boss": "Chen Wei",
-    "morales_boss": "Isabella Morales",
-    "independent_boss": "Marcus 'The Jackal' Kane",
-    "civilians": "Civilians",
-    "underground": "Criminal Underground"
-  };
-  
-  return names[targetId] || targetId;
-}
 
 // ==================== UTILITY FUNCTIONS ====================
 
@@ -2737,7 +2660,6 @@ window.closeScreen = function() {
 // Export all UI functions (exposed via window below)
 
 // Expose merged expanded UI functions to window (for onclick handlers in dynamic HTML)
-window.showRelationshipsScreen = showRelationshipsScreen;
 window.showRivalActivityScreen = function() {
   if (typeof showRivalsScreen === 'function') showRivalsScreen();
 };
@@ -7627,7 +7549,7 @@ function showMobileNavCustomizer() {
         <span style="color:#e74c3c;">Safehouse is locked and always shown.</span>
       </p>
       <p style="color:#95a5a6;text-align:center;margin-bottom:20px;font-size:0.85em;">
-        During the tutorial, the last slot is automatically replaced with Objective.
+        During onboarding, the last slot is automatically replaced with Objective.
       </p>
 
       <div id="mnav-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:25px;">
@@ -7646,7 +7568,7 @@ function showMobileNavCustomizer() {
             <div>
               <span style="color:${locked ? '#ff6b6b' : '#ecf0f1'};font-weight:bold;">${def.label}</span>
               ${locked ? '<br><small style="color:#ff6b6b;">Always shown</small>' : ''}
-              ${isObjective ? '<br><small style="color:#95a5a6;">Auto during tutorial</small>' : ''}
+              ${isObjective ? '<br><small style="color:#95a5a6;">Auto during onboarding</small>' : ''}
             </div>
           </label>`;
         }).join('')}
@@ -13197,19 +13119,147 @@ function refreshRecruits() {
 
 
 // Function to show the store
+// Track which store tab is currently active
+let _currentStoreTab = 'all';
+
+// Store item category definitions
+const storeCategories = [
+  { id: 'all',       label: 'All',          icon: '🏪', types: null },
+  { id: 'weapons',   label: 'Weapons',       icon: '🔫', types: ['weapon'] },
+  { id: 'armor',     label: 'Armor',         icon: '🛡️', types: ['armor'] },
+  { id: 'vehicles',  label: 'Vehicles',      icon: '🚗', types: ['vehicle'] },
+  { id: 'supplies',  label: 'Supplies',      icon: '📦', types: ['ammo', 'gas'] },
+  { id: 'energy',    label: 'Energy',        icon: '⚡', types: ['energy'] },
+  { id: 'utility',   label: 'Utility',       icon: '🔧', types: ['utility'] },
+  { id: 'trade',     label: 'Trade Goods',   icon: '💊', types: ['highLevelDrug'] }
+];
+
 function showStore() {
   if (player.inJail) {
     alert("You can't shop while you're in jail!");
     return;
   }
 
-  let storeListHTML = storeItems.map((item, index) => {
+  // Build category tabs
+  const tabsHTML = storeCategories.map(cat => {
+    const isActive = cat.id === _currentStoreTab;
+    return `<button onclick="switchStoreTab('${cat.id}')" 
+        style="padding: 10px 16px; border: 2px solid ${isActive ? '#c0a062' : '#555'}; 
+        background: ${isActive ? 'rgba(192, 160, 98, 0.25)' : 'rgba(52, 73, 94, 0.4)'}; 
+        color: ${isActive ? '#c0a062' : '#bdc3c7'}; border-radius: 8px; cursor: pointer; 
+        font-weight: ${isActive ? 'bold' : 'normal'}; font-size: 0.9em; transition: all 0.2s ease;"
+        onmouseover="if(!${isActive}) { this.style.borderColor='#c0a062'; this.style.color='#c0a062'; }" 
+        onmouseout="if(!${isActive}) { this.style.borderColor='#555'; this.style.color='#bdc3c7'; }">
+      ${cat.icon} ${cat.label}
+    </button>`;
+  }).join('');
+
+  // Build inventory sidebar
+  let inventoryListHTML = player.inventory.map(item => {
+    const imageSrc = getItemImage(item.name);
+    return `
+      <li style="display: flex; align-items: center; gap: 10px; padding: 10px; margin: 5px 0; 
+            background: rgba(39, 174, 96, 0.3); border-radius: 6px; border-left: 3px solid #2ecc71;">
+        <div style="flex-shrink: 0;">
+          <img src="${imageSrc}" alt="${item.name}" 
+             style="width: 50px; height: 50px; border-radius: 6px; object-fit: cover; 
+                border: 2px solid #2ecc71; box-shadow: 0 2px 6px rgba(0,0,0,0.2);" 
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+          <div style="display: none; width: 50px; height: 50px; border-radius: 6px; 
+                background: #27ae60; align-items: center; justify-content: center; 
+                font-size: 10px; color: white; border: 2px solid #2ecc71; text-align: center;">
+            ${item.name.substring(0, 6)}
+          </div>
+        </div>
+        <div style="flex: 1; color: #ecf0f1;">
+          <strong>${item.name}</strong><br>
+          <small style="color: #bdc3c7;">Power: ${item.power}</small>
+        </div>
+      </li>
+    `;
+  }).join('');
+
+  // Inject tabs bar into the store screen above the grid
+  const storeScreen = document.getElementById('store-screen');
+  // Preserve the page-header and description, rebuild the rest
+  storeScreen.innerHTML = `
+    <div class="page-header">
+      <h1><span class="icon"></span> Black Market</h1>
+      <div class="breadcrumb">
+        <a href="#" onclick="goBackToMainMenu(); return false;">SafeHouse</a>
+        <span class="separator">›</span>
+        <span class="current">Black Market</span>
+      </div>
+    </div>
+    <p>Tools of the trade. Don't ask where they came from.</p>
+    
+    <div id="store-tabs" style="display: flex; flex-wrap: wrap; gap: 8px; margin: 15px 0; padding: 10px 0; border-bottom: 2px solid #333;">
+      ${tabsHTML}
+    </div>
+    
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-top: 10px;">
+      <div class="content-card">
+        <h3 id="store-section-title">Available Goods</h3>
+        <ul id="item-list" style="list-style: none; padding: 0;"></ul>
+      </div>
+      
+      <div class="content-card">
+        <h3>Your Stash</h3>
+        <ul id="inventory-list" style="list-style: none; padding: 0;">${inventoryListHTML}</ul>
+      </div>
+    </div>
+    
+    <div class="page-nav">
+      <button class="nav-btn-back" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
+    </div>
+  `;
+
+  // Render items for the active tab
+  renderStoreTab(_currentStoreTab);
+
+  hideAllScreens();
+  document.getElementById("store-screen").style.display = "block";
+}
+
+// Switch between store category tabs
+function switchStoreTab(tabId) {
+  _currentStoreTab = tabId;
+  renderStoreTab(tabId);
+
+  // Update tab button styles
+  const tabContainer = document.getElementById('store-tabs');
+  if (tabContainer) {
+    tabContainer.querySelectorAll('button').forEach(btn => {
+      const btnTabId = btn.getAttribute('onclick').match(/switchStoreTab\('(.*?)'\)/)?.[1];
+      const isActive = btnTabId === tabId;
+      btn.style.borderColor = isActive ? '#c0a062' : '#555';
+      btn.style.background = isActive ? 'rgba(192, 160, 98, 0.25)' : 'rgba(52, 73, 94, 0.4)';
+      btn.style.color = isActive ? '#c0a062' : '#bdc3c7';
+      btn.style.fontWeight = isActive ? 'bold' : 'normal';
+    });
+  }
+
+  // Update section title
+  const cat = storeCategories.find(c => c.id === tabId);
+  const titleEl = document.getElementById('store-section-title');
+  if (titleEl && cat) {
+    titleEl.textContent = tabId === 'all' ? 'Available Goods' : `${cat.icon} ${cat.label}`;
+  }
+}
+
+// Render store items filtered by tab category
+function renderStoreTab(tabId) {
+  const cat = storeCategories.find(c => c.id === tabId) || storeCategories[0];
+  const filteredItems = cat.types ? storeItems.filter(item => cat.types.includes(item.type)) : storeItems;
+
+  const storeListHTML = filteredItems.map(item => {
+    const index = storeItems.indexOf(item);
     let finalPrice = Math.floor(item.price * (1 - player.skills.charisma * 0.02));
     let discountText = player.skills.charisma > 0 ? ` (${((1 - finalPrice/item.price) * 100).toFixed(0)}% off!)` : '';
     
     let itemDescription = "";
     if (item.type === "energy") {
-      itemDescription = `(Restores ${item.energyRestore} energy, -1 health)`;
+      itemDescription = `(Restores ${item.energyRestore} energy)`;
     } else {
       itemDescription = `(Power: ${item.power})`;
     }
@@ -13253,8 +13303,12 @@ function showStore() {
     const canBuy = player.money >= finalPrice && requirementMet && !(isEquipType && alreadyOwned);
     const btnText = isEquipType && alreadyOwned ? 'Already Owned' : (player.money >= finalPrice ? 'Purchase' : 'Too Expensive');
     
+    // Category-specific border color
+    const borderColorMap = { weapon: '#e74c3c', armor: '#3498db', vehicle: '#f39c12', ammo: '#95a5a6', gas: '#95a5a6', energy: '#2ecc71', utility: '#9b59b6', highLevelDrug: '#e67e22' };
+    const borderColor = borderColorMap[item.type] || '#3498db';
+    
     return `
-      <li style="display: flex; align-items: center; gap: 15px; padding: 15px; margin: 10px 0; background: rgba(52, 73, 94, 0.6); border-radius: 8px; border-left: 4px solid #3498db;">
+      <li style="display: flex; align-items: center; gap: 15px; padding: 15px; margin: 10px 0; background: rgba(52, 73, 94, 0.6); border-radius: 8px; border-left: 4px solid ${borderColor};">
         <div style="flex-shrink: 0;">
           <img src="${imageSrc}" alt="${item.name}" 
              style="width: 80px; height: 80px; border-radius: 8px; object-fit: cover; 
@@ -13297,34 +13351,8 @@ function showStore() {
     `;
   }).join('');
 
-  let inventoryListHTML = player.inventory.map(item => {
-    const imageSrc = getItemImage(item.name);
-    return `
-      <li style="display: flex; align-items: center; gap: 10px; padding: 10px; margin: 5px 0; 
-            background: rgba(39, 174, 96, 0.3); border-radius: 6px; border-left: 3px solid #2ecc71;">
-        <div style="flex-shrink: 0;">
-          <img src="${imageSrc}" alt="${item.name}" 
-             style="width: 50px; height: 50px; border-radius: 6px; object-fit: cover; 
-                border: 2px solid #2ecc71; box-shadow: 0 2px 6px rgba(0,0,0,0.2);" 
-             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
-          <div style="display: none; width: 50px; height: 50px; border-radius: 6px; 
-                background: #27ae60; align-items: center; justify-content: center; 
-                font-size: 10px; color: white; border: 2px solid #2ecc71; text-align: center;">
-            ${item.name.substring(0, 6)}
-          </div>
-        </div>
-        <div style="flex: 1; color: #ecf0f1;">
-          <strong>${item.name}</strong><br>
-          <small style="color: #bdc3c7;">Power: ${item.power}</small>
-        </div>
-      </li>
-    `;
-  }).join('');
-
-  document.getElementById("item-list").innerHTML = storeListHTML;
-  document.getElementById("inventory-list").innerHTML = inventoryListHTML;
-  hideAllScreens();
-  document.getElementById("store-screen").style.display = "block";
+  const itemList = document.getElementById('item-list');
+  if (itemList) itemList.innerHTML = storeListHTML;
 }
 
 // Refresh only dynamic elements on the store (prices, button states)
@@ -13444,10 +13472,56 @@ async function buyItem(index) {
     
     updateUI();
     updateMissionAvailability(); // Check if any missions can now be unlocked
-    showStore();
+    refreshStoreAfterPurchase(); // Targeted refresh — preserves scroll position
   } else {
     alert("You don't have enough money to buy this item.");
   }
+}
+
+// Refresh store content after a purchase without resetting scroll position
+function refreshStoreAfterPurchase() {
+  const storeScreen = document.getElementById('store-screen');
+  if (!storeScreen || storeScreen.style.display === 'none') return;
+
+  // Save scroll position of the item list container
+  const itemListParent = document.getElementById('item-list');
+  const scrollParent = itemListParent ? itemListParent.closest('.content-card') || itemListParent.parentElement : null;
+  const savedScroll = scrollParent ? scrollParent.scrollTop : 0;
+  const pageScroll = window.scrollY || document.documentElement.scrollTop;
+
+  // Rebuild items for the currently active tab
+  renderStoreTab(_currentStoreTab || 'all');
+
+  // Update inventory sidebar
+  let inventoryListHTML = player.inventory.map(item => {
+    const imageSrc = getItemImage(item.name);
+    return `
+      <li style="display: flex; align-items: center; gap: 10px; padding: 10px; margin: 5px 0; 
+            background: rgba(39, 174, 96, 0.3); border-radius: 6px; border-left: 3px solid #2ecc71;">
+        <div style="flex-shrink: 0;">
+          <img src="${imageSrc}" alt="${item.name}" 
+             style="width: 50px; height: 50px; border-radius: 6px; object-fit: cover; 
+                border: 2px solid #2ecc71; box-shadow: 0 2px 6px rgba(0,0,0,0.2);" 
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+          <div style="display: none; width: 50px; height: 50px; border-radius: 6px; 
+                background: #27ae60; align-items: center; justify-content: center; 
+                font-size: 10px; color: white; border: 2px solid #2ecc71; text-align: center;">
+            ${item.name.substring(0, 6)}
+          </div>
+        </div>
+        <div style="flex: 1; color: #ecf0f1;">
+          <strong>${item.name}</strong><br>
+          <small style="color: #bdc3c7;">Power: ${item.power}</small>
+        </div>
+      </li>
+    `;
+  }).join('');
+  const invList = document.getElementById('inventory-list');
+  if (invList) invList.innerHTML = inventoryListHTML;
+
+  // Restore scroll positions
+  if (scrollParent) scrollParent.scrollTop = savedScroll;
+  window.scrollTo(0, pageScroll);
 }
 
 // Function to show vehicle purchase result with photo
@@ -14623,7 +14697,6 @@ function showIntroNarrative() {
   `;
   
   document.getElementById("intro-screen").style.display = "none";
-  document.getElementById("tutorial-screen").style.display = "none";
   document.getElementById("intro-narrative").innerHTML = introText;
   document.getElementById("intro-narrative").style.display = "block";
 }
@@ -14632,79 +14705,7 @@ function showIntroNarrative() {
 function finishIntro() {
   document.getElementById("intro-narrative").style.display = "none";
   
-  // Ask player if they want to do the tutorial
-  showTutorialPrompt();
-}
-
-// Function to show tutorial option prompt
-function showTutorialPrompt() {
-  const tutorialPromptHTML = `
-    <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); 
-          display: flex; align-items: center; justify-content: center; z-index: 1000;">
-      <div style="max-width: 600px; width: 90%; background: linear-gradient(135deg, rgba(44, 62, 80, 0.98) 0%, rgba(52, 73, 94, 0.98) 100%); 
-            padding: 40px; border-radius: 20px; border: 2px solid #e74c3c; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8); 
-            text-align: center; color: white;">
-        <h2 style="color: #e74c3c; font-size: 2.5em; margin-bottom: 20px; text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);">
-          🎓 Tutorial
-        </h2>
-        <p style="font-size: 1.3em; margin-bottom: 30px; line-height: 1.6;">
-          Welcome to the criminal underworld, <strong style="color: #f39c12;">${player.name}</strong>!
-        </p>
-        <p style="font-size: 1.1em; margin-bottom: 30px; color: #ecf0f1;">
-          Would you like to learn the ropes through an interactive tutorial, or are you ready to dive straight into the action?
-        </p>
-        <div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
-          <button onclick="startTutorialFromIntro()" 
-              style="background: #2ecc71; color: white; padding: 15px 30px; border: none; 
-                  border-radius: 10px; font-size: 1.2em; font-weight: bold; cursor: pointer; 
-                  transition: all 0.3s ease; min-width: 180px;">
-            📚 Start Tutorial
-          </button>
-          <button onclick="skipTutorialAndStartGame()" 
-              style="background: #e74c3c; color: white; padding: 15px 30px; border: none; 
-                  border-radius: 10px; font-size: 1.2em; font-weight: bold; cursor: pointer; 
-                  transition: all 0.3s ease; min-width: 180px;">
-            🚀 Skip Tutorial
-          </button>
-        </div>
-        <p style="font-size: 0.9em; margin-top: 20px; color: #95a5a6; font-style: italic;">
-          Don't worry - you can always access the tutorial later from the SafeHouse!
-        </p>
-      </div>
-    </div>
-  `;
-  
-  // Add to document
-  const tutorialPromptScreen = document.createElement('div');
-  tutorialPromptScreen.id = 'tutorial-prompt-screen';
-  tutorialPromptScreen.innerHTML = tutorialPromptHTML;
-  document.body.appendChild(tutorialPromptScreen);
-}
-
-// Function to start tutorial from intro
-function startTutorialFromIntro() {
-  // Remove tutorial prompt screen
-  const tutorialPromptScreen = document.getElementById('tutorial-prompt-screen');
-  if (tutorialPromptScreen) {
-    tutorialPromptScreen.remove();
-  }
-  
-  // Set flag that tutorial is not from menu (new game tutorial)
-  tutorialFromMenu = false;
-  
-  // Start the tutorial
-  startTutorial();
-}
-
-// Function to skip tutorial and start game
-function skipTutorialAndStartGame() {
-  // Remove tutorial prompt screen
-  const tutorialPromptScreen = document.getElementById('tutorial-prompt-screen');
-  if (tutorialPromptScreen) {
-    tutorialPromptScreen.remove();
-  }
-  
-  // Start the game directly
+  // Start the game directly (onboarding objectives will guide the player)
   startGameAfterIntro();
 }
 
@@ -14718,14 +14719,6 @@ function startGameAfterIntro() {
   if (portraitScreen) {
     portraitScreen.remove();
   }
-  
-  const tutorialPromptScreen = document.getElementById('tutorial-prompt-screen');
-  if (tutorialPromptScreen) {
-    tutorialPromptScreen.remove();
-  }
-  
-  // Clear any tutorial highlights that might affect positioning
-  clearTutorialHighlights();
   
   // Use the same screen cleanup as goBackToMainMenu for consistency
   hideAllScreens();
@@ -14753,8 +14746,20 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = "1.6.6";
+const CURRENT_VERSION = "1.6.7";
 const VERSION_UPDATES = {
+  "1.6.7": {
+    title: "Black Market Overhaul & Cleanup",
+    date: "February 2026",
+    changes: [
+      "Black Market now has 8 category tabs (All, Consumables, Weapons, Armor, Tools, Vehicles, Luxury, Special)",
+      "Fixed Black Market scroll position resetting after purchases",
+      "Jail timer now syncs from server authority — no more early releases in multiplayer",
+      "Rebalanced energy items: Coffee $1k/15E, Energy Drink $2.5k/30E, Steroids $4k/60E",
+      "Removed redundant walkthrough tutorial system (onboarding preserved)",
+      "Cleaned up ~200 lines of dead respect/relationships UI code and stale config flags"
+    ]
+  },
   "1.6.6": {
     title: "Auto-Update & Safe-Area Fix",
     date: "February 2026",
@@ -15126,403 +15131,6 @@ function closeVersionUpdate() {
   }
 }
 
-// Tutorial system
-let currentTutorialStep = 0;
-let tutorialFromMenu = false; // Flag to track if tutorial was opened from main menu
-const tutorialSteps = [
-  {
-    title: "Welcome to the Criminal Underworld",
-    showUI: "none",
-    content: `
-      <div style="text-align: center; margin-bottom: 20px;">
-        <img src="gamelogo.png" alt="Mafia Born Logo" 
-           style="max-width: 300px; width: 80%; height: auto; border-radius: 10px; 
-              box-shadow: 0 5px 15px rgba(0,0,0,0.5); border: 2px solid #e74c3c;" />
-      </div>
-      <p>You're about to embark on a journey from street-level thug to criminal mastermind. This world is unforgiving, but with cunning, courage, and the right strategy, you can rise to the top.</p>
-      <p><strong>Your Goal:</strong> Build your criminal empire, gain reputation, manage your gang, acquire territory, run businesses, and become the most powerful name in the underworld.</p>
-      <p><strong>Your Account:</strong> You've signed in with a secure account. Your progress is <strong>cloud-saved</strong> automatically — you can pick up right where you left off from any device. Your character name is unique across all players.</p>
-      <p><strong>Warning:</strong> Every choice has consequences. Poor planning could land you in jail, bankrupt, or worse. Death is permanent — there are no second chances. Make every move count!</p>
-      <p style="margin-top: 20px; padding: 15px; background: rgba(52, 152, 219, 0.2); border-radius: 8px; border: 1px solid #3498db;">
-        <strong>This tutorial covers all the major game systems. Pay attention — mastering these mechanics is the difference between surviving and thriving!</strong>
-      </p>
-    `
-  },
-  {
-    title: "Understanding Your Stats",
-    showUI: "stats",
-    content: `
-      <h3>Your Criminal Profile</h3>
-      <p><strong>Look at the top of your screen!</strong> The stats bar shows your current status:</p>
-      <ul>
-        <li><strong>Money:</strong> Your cash on hand — needed for equipment, properties, and bribes</li>
-        <li><strong>Energy:</strong> Required for every job — regenerates 1 point every 20 seconds (improved by Recovery skill)</li>
-        <li><strong>Health:</strong> Starts at 100. Risky jobs and combat drain it. Visit the hospital to heal</li>
-        <li><strong>Wanted Level:</strong> Rises from criminal activity. Higher wanted = longer jail time and police crackdowns</li>
-        <li><strong>Reputation:</strong> Unlocks higher-tier jobs and faction missions as it grows</li>
-        <li><strong>Level & XP:</strong> Earn XP from jobs. Each level-up grants 3 skill points</li>
-        <li><strong>Power:</strong> Increased by weapons, armor, vehicles, and properties. Needed for boss battles</li>
-        <li><strong>Suspicion:</strong> 0-100 scale — affects how closely law enforcement watches your operations</li>
-      </ul>
-      <p style="background: rgba(231, 76, 60, 0.2); padding: 10px; border-radius: 5px; margin-top: 15px;">
-        <strong>Pro Tip:</strong> Watch the objective tracker on the right side to see your current goals. Use letter hotkeys (J, S, G, K, etc.) for fast navigation!</p>
-    `
-  },
-  {
-    title: "The Action Log",
-    showUI: "log",
-    content: `
-      <h3>Your Criminal Chronicle</h3>
-      <p><strong>Look to the left side of your screen!</strong> The Action Log is your criminal story being written in real-time:</p>
-      <ul>
-        <li>Every job you pull gets recorded with immersive narration</li>
-        <li>Success and failure stories show the consequences of your choices</li>
-        <li>Random events — police raids, lucky finds, gang recruitment offers — all appear here</li>
-        <li>Weather changes, seasonal events, and news headlines scroll through as the world evolves</li>
-        <li>Gang operations, business deals, territory expansions, and boss battle results are all documented</li>
-      </ul>
-      <p style="background: rgba(46, 204, 113, 0.2); padding: 10px; border-radius: 5px; margin-top: 15px;">
-        <strong>Tip:</strong> The action log tracks your entire criminal career, including milestones, achievements, and faction standing changes!
-      </p>
-    `
-  },
-  {
-    title: "Jobs & Energy Management",
-    showUI: "jobs",
-    content: `
-      <h3>Your Criminal Career — 18 Jobs</h3>
-      <p><strong>This is the Jobs screen!</strong> Your primary source of income and XP. Jobs scale from entry-level to legendary:</p>
-      <ul>
-        <li><strong>Street Soldier (1 Energy):</strong> Low risk, low reward — $1K-$5K payouts to get started</li>
-        <li><strong>Boost a Ride (5 Energy):</strong> Steal cars to sell or keep. Risky but no cash needed upfront</li>
-        <li><strong>Store Heist (10 Energy):</strong> $20K-$40K payouts — requires 10 reputation</li>
-        <li><strong>Drug Jobs:</strong> Bootleg Run, Speakeasy Supply, White Powder Distribution — buy the product from the store, sell it on the street for big profit</li>
-        <li><strong>Weapon Jobs:</strong> Protection Collection, Bank Job, Hit on a Rival — require weapons and ammo</li>
-        <li><strong>Dirty Money Jobs:</strong> <span style="color:#e74c3c;">Bank Job</span> and <span style="color:#e74c3c;">Counterfeiting Money</span> pay only dirty money that must be laundered! These also raise your suspicion level</li>
-        <li><strong>Money Laundering Job:</strong> Converts dirty money to clean money (80-95% rate). Owning a Counterfeiting Operation business boosts the rate!</li>
-        <li><strong>Elite Jobs:</strong> International Arms Trade ($500K-$1M) and Take Over the City ($2M-$5M) — legendary risk, legendary reward</li>
-      </ul>
-      <p><strong>Energy System:</strong> Energy regenerates 1 point every 20 seconds (base). The <strong>Recovery</strong> skill tree reduces this timer, and the <strong>Endurance</strong> skill reduces energy costs per job!</p>
-      <p style="background: rgba(52, 152, 219, 0.2); padding: 10px; border-radius: 5px; margin-top: 15px;">
-        <strong>Strategy:</strong> Every job shows its jail chance, wanted level gain, and health loss. Check the requirements — some need specific items, weapons, or reputation!
-      </p>
-    `
-  },
-  {
-    title: "The Store & Equipment",
-    showUI: "store",
-    content: `
-      <h3>The Underground Marketplace</h3>
-      <p><strong>This is the Store!</strong> Everything you need to build your criminal empire:</p>
-      <ul>
-        <li><strong>Weapons:</strong> Brass Knuckles ($7.5K) > Switchblade > Baseball Bat > Pistol ($30K) > Revolver > Sawed-Off > Tommy Gun ($150K) > Sniper Rifle ($250K)</li>
-        <li><strong>Armor:</strong> Leather Jacket ($15K) > Stab Vest > Bulletproof Vest ($100K) > Reinforced Body Armor ($200K)</li>
-        <li><strong>Vehicles:</strong> Armored Car ($120K), Luxury Automobile ($400K), Private Airplane ($1.5M)</li>
-        <li><strong>Energy:</strong> Strong Coffee (+15, $800), Energy Drink (+30, $1.5K), Steroids (+60, $5K)</li>
-        <li><strong>Utility:</strong> Lockpick Set, Police Scanner, Burner Phone, Fake ID Kit — each provides unique passive bonuses</li>
-        <li><strong>Drugs (Trade Goods):</strong> Buy Moonshine/Mary Jane/Cocaine to use in distribution jobs for profit. Require a Freight Truck to transport!</li>
-      </ul>
-      <p><strong>Charisma skill</strong> gives you better prices (2% discount per level). Plan your purchases around your job goals!</p>
-      <p style="background: rgba(230, 126, 34, 0.2); padding: 10px; border-radius: 5px; margin-top: 15px;">
-        <strong>Investment Tip:</strong> Weapons and armor increase your Power stat permanently. Utility items provide passive bonuses that compound over time!
-      </p>
-    `
-  },
-  {
-    title: "Skills & Skill Trees",
-    showUI: "skills",
-    content: `
-      <h3>Building Your Criminal Expertise</h3>
-      <p><strong>Welcome to the Skills screen!</strong> You earn 3 skill points per level-up. Invest them in 6 base skills:</p>
-      <ul>
-        <li><strong>Stealth:</strong> Reduces jail chance and improves breakout success</li>
-        <li><strong>Violence:</strong> Boosts combat job success rates</li>
-        <li><strong>Charisma:</strong> Better store prices (2%/level), reduced suspicion from laundering</li>
-        <li><strong>Intelligence:</strong> Better overall job success and faster learning</li>
-        <li><strong>Luck:</strong> Better random events, payouts, and gambling odds</li>
-        <li><strong>Endurance:</strong> Reduces energy cost for all jobs (-1 per level!)</li>
-      </ul>
-      <h4>18 Skill Tree Branches</h4>
-      <p>Each base skill unlocks <strong>3 specialized branches</strong> (max level 10 each, 2 skill points per upgrade):</p>
-      <ul>
-        <li><strong>Stealth:</strong> Infiltration, Escape Artist, Surveillance</li>
-        <li><strong>Combat:</strong> Firearms, Melee Combat, Intimidation</li>
-        <li><strong>Social:</strong> Negotiation, Leadership, Manipulation</li>
-        <li><strong>Mental:</strong> Hacking, Strategic Planning, Forensics (decays wanted level passively!)</li>
-        <li><strong>Fortune:</strong> Gambling, Fortune, Serendipity</li>
-        <li><strong>Physical:</strong> Stamina (+3 max energy/level), Recovery (faster energy regen), Resistance</li>
-      </ul>
-      <p style="background: rgba(155, 89, 182, 0.2); padding: 10px; border-radius: 5px; margin-top: 15px;">
-        <strong>Strategy:</strong> Focus on Endurance early to reduce energy costs, then branch into skills that match your playstyle!
-      </p>
-    `
-  },
-  {
-    title: "Gang, Properties & Territory",
-    showUI: "menu",
-    content: `
-      <h3>Building Your Criminal Organization</h3>
-      <p><strong>Gang System:</strong></p>
-      <ul>
-        <li><strong>Recruit members</strong> with random specializations: muscle, thief, dealer, driver, enforcer, technician</li>
-        <li><strong>Loyalty (0-100)</strong> — low loyalty triggers betrayal events: police informants, territory sellouts, coups</li>
-        <li><strong>Tribute:</strong> Collect income from your gang members (5-minute cooldown, boosted by territory)</li>
-        <li><strong>Operations:</strong> Send specialists on timed missions — Protection Rackets, Car Theft Rings, Drug Labs, Tech Heists</li>
-        <li><strong>Training:</strong> 5 programs from Basic Combat ($300) to Advanced Tactical ($1,000) to improve your crew</li>
-      </ul>
-      <p><strong>Real Estate (7 Properties):</strong> From Abandoned Warehouse ($2.5K, +3 gang capacity) up to Private Island ($200K, +50 capacity). You need properties to house more gang members!</p>
-      <p><strong>Territory (12 Districts):</strong> Capture districts, set up protection rackets ($200-$2,000/week), and corrupt officials from Patrol Officers ($500) to the Mayor ($25K). Beware of territory heat and rival gang encroachment!</p>
-      <p style="background: rgba(231, 76, 60, 0.2); padding: 10px; border-radius: 5px; margin-top: 15px;">
-        <strong>Empire Tip:</strong> Buy a Warehouse first > recruit gang > capture territory > set up rackets. This is your income engine!
-      </p>
-    `
-  },
-  {
-    title: "Factions, Mentors & Boss Battles",
-    showUI: "menu",
-    content: `
-      <h3>The Criminal Underworld Powers</h3>
-      <p><strong>4 Crime Families</strong> control the city. Your standing with each affects what you can access:</p>
-      <ul>
-        <li><strong>Torrino Family</strong> (Don Salvatore) — Protection rackets & loan sharking</li>
-        <li><strong>Kozlov Bratva</strong> (Dimitri Kozlov) — Weapons trafficking & smuggling</li>
-        <li><strong>Chen Triad</strong> (Master Chen Wei) — Tech crimes & drug manufacturing</li>
-        <li><strong>Morales Cartel</strong> (El Jefe Morales) — Drug manufacturing & distribution</li>
-      </ul>
-      <p><strong>Reputation tiers</strong> at 25/50/75/100 unlock bonuses (exclusive shops, backup, smuggling routes). Drop below -25/-50/-75/-100 and face bounties, asset freezes, and assassination orders.</p>
-      <p><strong>Mentors:</strong> Train under 4 faction-aligned mentors for stat boosts (10 sessions max, 24hr cooldown).</p>
-      <p><strong>Boss Battles:</strong> Challenge powerful rivals when your power and gang are strong enough:</p>
-      <ul>
-        <li><strong>Carlos "El Martillo" Santos</strong> — Requires 100 power, 8 gang, 40 rep. Reward: $8K + Santos' Golden Pistol</li>
-        <li><strong>Chief Margaret Morrison</strong> — Requires 80 power, 6 gang, 30 rep. Reward: $6K + wanted level reduction</li>
-      </ul>
-      <p style="background: rgba(52, 152, 219, 0.2); padding: 10px; border-radius: 5px; margin-top: 15px;">
-        <strong>Tip:</strong> Complete faction missions to build reputation. High standing with one family may lower it with rivals!
-      </p>
-    `
-  },
-  {
-    title: "Businesses & Money Laundering",
-    showUI: "menu",
-    content: `
-      <h3>Building Legitimate Fronts & Illegal Operations</h3>
-      <p><strong>9 Business Types</strong> — 6 legitimate fronts and 3 illegal operations:</p>
-      <h4>Legitimate Businesses (pay clean money):</h4>
-      <ul>
-        <li><strong>24/7 Laundromat</strong> — $1.5M, $30K/day (95% legit, best laundering capacity)</li>
-        <li><strong>Discount Pawn Shop</strong> — $2M, $40K/day (70% legit)</li>
-        <li><strong>Family Restaurant</strong> — $2.5M, $50K/day (85% legit)</li>
-        <li><strong>Premium Car Wash</strong> — $3M, $60K/day (90% legit)</li>
-        <li><strong>Underground Nightclub</strong> — $5M, $120K/day (60% legit)</li>
-        <li><strong>Private Casino</strong> — $10M, $250K/day (40% legit)</li>
-      </ul>
-      <h4 style="color: #e74c3c;">Illegal Businesses (pay DIRTY money):</h4>
-      <ul>
-        <li><strong>Chop Shop</strong> — $3.5M, $140K/day (pairs with Boost a Ride jobs)</li>
-        <li><strong>Counterfeiting Operation</strong> — $4M, $180K/day (boosts Money Laundering job rate +3%)</li>
-        <li><strong>Drug Lab</strong> — $6M, $220K/day (highest illegal income)</li>
-      </ul>
-      <p><strong>Money Laundering:</strong> Two ways to clean dirty money:</p>
-      <ul>
-        <li><strong>Laundering Menu:</strong> 5 methods from Casino Chips (85% clean, 2hr) to Offshore Banking (95% clean, 48hr)</li>
-        <li><strong>Money Laundering Job:</strong> Converts dirty to clean at 80-95% rate. Faster but burns energy</li>
-      </ul>
-      <p><strong>Loan Shark:</strong> Borrow $200K-$10M at 15-30% weekly interest. Miss payments and face consequences.</p>
-      <p style="background: rgba(46, 204, 113, 0.2); padding: 10px; border-radius: 5px; margin-top: 15px;">
-        <strong>Tip:</strong> Illegal businesses earn more but pay dirty money you must launder. Balance risk and reward!
-      </p>
-    `
-  },
-  {
-    title: "Advanced Activities",
-    showUI: "menu",
-    content: `
-      <h3>Beyond the Basics</h3>
-      <p><strong>As your reputation grows, you'll unlock:</strong></p>
-      <ul>
-        <li><strong>Stolen Cars:</strong> Over 30 vehicle types from Broken Family Wagons ($800) to Police Cruisers ($250K). Sell or keep your collection</li>
-        <li><strong>Jailbreak Operations:</strong> Free NPCs from prison for cash, XP, and reputation</li>
-        <li><strong>Casino (4 games):</strong> Slot Machine, Roulette, Blackjack (hit, stand, double down), and Dice. The Gambling skill tree boosts your odds across all games</li>
-        <li><strong>6 Mini-Games:</strong> Tic-Tac-Toe, Number Guessing, Rock Paper Scissors, Memory Match, Snake, Quick Draw — earn $50-$500 per win</li>
-        <li><strong>Story Campaign:</strong> "Rising Through the Ranks" — 4 chapters from street hustler to empire builder</li>
-        <li><strong>Money Laundering:</strong> Clean your dirty money through 5 methods at varying speeds and rates</li>
-      </ul>
-      <p style="background: rgba(52, 152, 219, 0.2); padding: 10px; border-radius: 5px; margin-top: 15px;">
-        <strong>Pro Tip:</strong> Mini-games reset your personal bests for bonus payouts. The casino is risky but the Gambling skill tree makes it much more profitable!
-      </p>
-    `
-  },
-  {
-    title: "Law Enforcement & Survival",
-    showUI: "none",
-    content: `
-      <h3>Staying Out of Trouble</h3>
-      <p><strong>The law is always watching.</strong> Here's how the system works:</p>
-      <ul>
-        <li><strong>Jail Time:</strong> Sentence = max(15, 10 + wanted level) seconds. Higher wanted = longer lockup</li>
-        <li><strong>Breakout:</strong> 3 attempts per sentence. 45% base chance + Stealth bonuses. Failed attempts add 10 seconds</li>
-        <li><strong>Bribe the Guard:</strong> Pay to walk free immediately — amount scales with your wanted level</li>
-        <li><strong>Courthouse:</strong> Pay wanted level x $500 to clear your record (must serve jail time first)</li>
-        <li><strong>Police Crackdowns:</strong> Drug enforcement, gang sweeps, auto theft ops, corruption investigations — triggered randomly</li>
-        <li><strong>Suspicion System:</strong> Dirty money jobs and illegal businesses raise your suspicion (0-100). High suspicion triggers FBI surveillance and investigation chains</li>
-        <li><strong>Bribery:</strong> Corrupt 6 tiers of officials. A corrupted Mayor ($25K) provides maximum protection</li>
-        <li><strong>Forensics Skill:</strong> Passively decays your wanted level over time (3% chance per level per energy tick)</li>
-      </ul>
-      <p style="background: rgba(231, 76, 60, 0.2); padding: 10px; border-radius: 5px; margin-top: 15px;">
-        <strong>Survival Tip:</strong> Keep your wanted level manageable! Use the courthouse when it gets high, and invest in Stealth for better breakout odds.
-      </p>
-    `
-  },
-  {
-    title: "Dynamic World & Events",
-    showUI: "none",
-    content: `
-      <h3>A Living, Breathing City</h3>
-      <p><strong>The world changes around you:</strong></p>
-      <ul>
-        <li><strong>Weather System (5 types):</strong> Changes every 15-45 minutes. Rain (+15% stealth), Snow (+30% evidence reduction), Fog (+25% stealth), Storm (-30% police response)</li>
-        <li><strong>Seasons:</strong> Based on real-world date. Spring Festival, Tourist Season, Harvest Festival, Holiday Shopping Chaos, and more</li>
-        <li><strong>News Events:</strong> Police Budget Cuts, New Police Chief, Economic Boom, Gang Violence Surge, New Surveillance Technology — each changes gameplay</li>
-        <li><strong>Random Events:</strong> Police Raids, Lucky Finds ($100-$500+), Random Sales (30% off for 2 min), Gang Recruitment offers, Territory Disputes</li>
-      </ul>
-      <p style="background: rgba(52, 152, 219, 0.2); padding: 10px; border-radius: 5px; margin-top: 15px;">
-        <strong>Tip:</strong> Pay attention to weather — Rain and Fog are great for stealth-based jobs. Storms keep the police occupied!
-      </p>
-    `
-  },
-  {
-    title: "Empire Rating & Endgame",
-    showUI: "menu",
-    content: `
-      <h3>The Endgame</h3>
-      <p><strong>Empire Rating</strong> (max 10,000 points) measures your overall criminal success across 6 categories: Money, Gang, Territory, Business, Reputation, and Skills.</p>
-      <p><strong>Grades:</strong> D > C > B > A > A+ > S > S+ > <span style="color: #f1c40f;">LEGENDARY</span> (9,000+)</p>
-      <p><strong>☠️ Permadeath:</strong> Death is final. When you die, your empire dies with you. There are no heirs, no second chances — just the cold truth of the streets. Make every decision count.</p>
-      <p><strong>Weekly Challenges:</strong> 3 random challenges per week with tiered rewards — Bronze ($50K) to Platinum ($500K).</p>
-      <p style="background: rgba(212, 175, 55, 0.2); padding: 10px; border-radius: 5px; margin-top: 15px;">
-        <strong>Long-term Goal:</strong> Build an empire worthy of Legendary status — rise from street thug to criminal legend!
-      </p>
-    `
-  },
-  {
-    title: "Saves, Cloud Sync & Hotkeys",
-    showUI: "none",
-    content: `
-      <h3>Protecting Your Empire & Fast Navigation</h3>
-      <p><strong>Cloud Save System:</strong></p>
-      <ul>
-        <li><strong>Automatic cloud saves</strong> — your progress is synced to the server whenever you complete key actions</li>
-        <li><strong>Play anywhere</strong> — sign in on any device and your empire is waiting for you</li>
-        <li><strong>Unique character names</strong> — no two players can share the same name</li>
-        <li><strong>Account management</strong> — change your password or delete your account from the title screen</li>
-      </ul>
-      <p><strong>Local Save System:</strong></p>
-      <ul>
-        <li><strong>10 manual save slots</strong> + auto-save slot + emergency save on browser close</li>
-        <li><strong>Auto-save</strong> runs every 60 seconds</li>
-        <li><strong>Export/Import</strong> saves as JSON files for backup</li>
-        <li>Access via Options menu or press <strong>F5</strong></li>
-      </ul>
-      <p><strong>Quick Actions Panel:</strong> The right side of your screen shows shortcut buttons for common actions. You can customise which buttons appear in Settings > Personalization.</p>
-      <p><strong>Hotkeys for Desktop:</strong></p>
-      <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
-        <tr><td style="padding: 4px 8px; color: #3498db;"><strong>J</strong> — Jobs</td><td style="padding: 4px 8px; color: #3498db;"><strong>S</strong> — Store</td><td style="padding: 4px 8px; color: #3498db;"><strong>G</strong> — Gang</td></tr>
-        <tr><td style="padding: 4px 8px; color: #3498db;"><strong>K</strong> — Skills</td><td style="padding: 4px 8px; color: #3498db;"><strong>C</strong> — Cars</td><td style="padding: 4px 8px; color: #3498db;"><strong>B</strong> — Businesses</td></tr>
-        <tr><td style="padding: 4px 8px; color: #3498db;"><strong>T</strong> — Territory</td><td style="padding: 4px 8px; color: #3498db;"><strong>M</strong> — Map</td><td style="padding: 4px 8px; color: #3498db;"><strong>L</strong> — Calendar</td></tr>
-        <tr><td style="padding: 4px 8px; color: #3498db;"><strong>Z</strong> — Statistics</td><td style="padding: 4px 8px; color: #3498db;"><strong>R</strong> — Empire Rating</td><td style="padding: 4px 8px; color: #3498db;"><strong>O</strong> — Empire Overview</td></tr>
-        <tr><td style="padding: 4px 8px; color: #3498db;"><strong>E</strong> — Buy Energy Drink</td><td style="padding: 4px 8px; color: #3498db;"><strong>ESC</strong> — SafeHouse</td><td></td></tr>
-        <tr><td style="padding: 4px 8px; color: #3498db;"><strong>F5</strong> — Save System</td><td style="padding: 4px 8px; color: #3498db;"><strong>F7</strong> — Competition</td><td></td></tr>
-      </table>
-      <p style="background: rgba(46, 204, 113, 0.2); padding: 10px; border-radius: 5px; margin-top: 15px;">
-        <strong>Tip:</strong> Cloud saves keep you safe, but local save slots and JSON exports give you extra backup options!
-      </p>
-    `
-  },
-  {
-    title: "Progressive Unlocks & Quick Actions",
-    showUI: "none",
-    content: `
-      <h3>Growing Your Empire Step by Step</h3>
-      <p><strong>Progressive Unlock System:</strong> Not everything is available from the start. Game features unlock as you level up:</p>
-      <ul>
-        <li><strong>Level 0 (Start):</strong> Jobs, Black Market, Stash, The Doctor, Settings, Gambling, Operations, Breakout</li>
-        <li><strong>Level 2-3:</strong> Relocate, Expertise (Skills), Player Stats, Motor Pool (Cars), Properties</li>
-        <li><strong>Level 5-8:</strong> The Family (Gang), Legal Aid, Events, Pastimes, The Fence</li>
-        <li><strong>Level 10-12:</strong> Fronts (Businesses), Shylock (Loans), Empire Overview, The Wash (Laundering)</li>
-        <li><strong>Level 15:</strong> Empire Rating</li>
-      </ul>
-      <p>You'll see a notification when new features unlock. Locked features are hidden from menus until you reach the required level.</p>
-      <p><strong>Customisable Quick Actions:</strong> The right side panel shows shortcut buttons for your most-used actions. Head to <strong>Settings > Personalization</strong> to choose which buttons appear. Only unlocked features can be added.</p>
-      <p style="background: rgba(52, 152, 219, 0.2); padding: 10px; border-radius: 5px; margin-top: 15px;">
-        <strong>Tip:</strong> Focus on levelling up early to unlock more game systems. Customise your quick actions to match your current playstyle!
-      </p>
-    `
-  },
-  {
-    title: "Your Criminal Empire Awaits",
-    showUI: "none",
-    content: `
-      <h3>Ready to Rule the Underworld</h3>
-      <p>You now understand all the major systems that will define your criminal career:</p>
-      <ul>
-        <li><strong>Account & Cloud Saves:</strong> Your progress is synced automatically — play on any device</li>
-        <li><strong>Build Power:</strong> Jobs > Money > Equipment > Gang > Territory > Businesses</li>
-        <li><strong>Develop Skills:</strong> Invest 3 skill points per level into base skills and 18 specialized branches</li>
-        <li><strong>Expand Empire:</strong> Buy properties, recruit gang, capture territory, set up rackets</li>
-        <li><strong>Navigate Factions:</strong> Build standing with 4 crime families for exclusive rewards</li>
-        <li><strong>Challenge Bosses:</strong> Take down rival leaders for unique weapons and territory</li>
-        <li><strong>Run Businesses:</strong> Generate passive income and launder your dirty money</li>
-        <li><strong>Complete Challenges:</strong> Weekly competitions, story campaign, and achievements</li>
-        <li><strong>Survive:</strong> Death is permanent — play smart, manage risk, and build the most powerful empire you can</li>
-      </ul>
-      <p style="background: rgba(231, 76, 60, 0.2); padding: 15px; border-radius: 8px; margin-top: 20px;">
-        <strong>Remember:</strong> Every choice matters. Manage risk vs reward, watch your wanted level, keep your gang loyal, and always have an escape plan!
-      </p>
-      <p style="text-align: center; margin-top: 30px; padding: 20px; background: rgba(46, 204, 113, 0.2); border-radius: 10px; border: 2px solid #2ecc71;">
-        <strong style="font-size: 1.3em; color: #2ecc71;">From street thug to criminal legend...</strong><br>
-        <span style="font-size: 1.1em; color: #ecf0f1;">Your empire begins now. Make every decision count.</span>
-      </p>
-    `
-  }
-];
-
-function startTutorial() {
-  currentTutorialStep = 0;
-  document.getElementById("intro-screen").style.display = "none";
-  document.getElementById("tutorial-screen").style.display = "block";
-  updateTutorialDisplay();
-}
-
-function updateTutorialDisplay() {
-  const step = tutorialSteps[currentTutorialStep];
-  document.getElementById("tutorial-title").innerText = step.title;
-  document.getElementById("tutorial-text").innerHTML = step.content;
-  document.getElementById("tutorial-step").innerText = currentTutorialStep + 1;
-  document.getElementById("tutorial-total").innerText = tutorialSteps.length;
-  
-  // Show appropriate UI elements for educational purposes
-  showTutorialUI(step.showUI);
-  
-  // Update button visibility
-  const prevBtn = document.getElementById("prev-btn");
-  const nextBtn = document.getElementById("next-btn");
-  
-  prevBtn.style.display = currentTutorialStep > 0 ? "inline-block" : "none";
-  
-  if (currentTutorialStep === tutorialSteps.length - 1) {
-    if (tutorialFromMenu) {
-      nextBtn.innerText = "Back to Menu";
-      nextBtn.onclick = () => completeTutorialFromMenu();
-    } else {
-      nextBtn.innerText = "Start Playing!";
-      nextBtn.onclick = () => completeTutorial();
-    }
-  } else {
-    nextBtn.innerText = "Next";
-    nextBtn.onclick = () => nextTutorialStep();
-  }
-}
-
 // Real Estate Functions
 function showRealEstate() {
   if (player.inJail) {
@@ -15657,378 +15265,6 @@ function buyProperty(index) {
   
   // Check achievements
   checkAchievements();
-}
-
-// Function to show appropriate UI elements during tutorial
-function showTutorialUI(uiType) {
-  // First hide all tutorial-related UI highlights
-  clearTutorialHighlights();
-  
-  // Hide all game screens
-  const screens = ['menu', 'jobs-screen', 'store-screen', 'skills-screen', 'gang-screen', 
-          'achievements-screen', 'stolen-cars-screen', 'jailbreak-screen'];
-  screens.forEach(screenId => {
-    const screen = document.getElementById(screenId);
-    if (screen) screen.style.display = "none";
-  });
-  
-  // Get tutorial content box for positioning
-  const tutorialContent = document.getElementById("tutorial-content");
-  
-  switch(uiType) {
-    case "stats":
-      // Highlight the stats bar
-      const statsBar = document.getElementById("stats-bar");
-      statsBar.style.border = "3px solid #3498db";
-      statsBar.style.boxShadow = "0 0 20px rgba(52, 152, 219, 0.8)";
-      statsBar.style.zIndex = "800";
-      statsBar.style.position = "relative";
-      // Position tutorial on right side, below stats bar
-      if (tutorialContent) {
-        tutorialContent.style.marginTop = "120px";
-        tutorialContent.style.marginRight = "20px";
-      }
-      break;
-      
-    case "log":
-      // Highlight the action log
-      const actionLog = document.getElementById("action-log");
-      actionLog.style.border = "3px solid #2ecc71";
-      actionLog.style.boxShadow = "0 0 20px rgba(46, 204, 113, 0.8)";
-      actionLog.style.zIndex = "800";
-      actionLog.style.position = "relative";
-      // Position tutorial on right side to avoid blocking action log
-      if (tutorialContent) {
-        tutorialContent.style.marginTop = "80px";
-        tutorialContent.style.marginRight = "20px";
-      }
-      break;
-      
-    case "jobs":
-      // Show jobs screen in background
-      updateJobsList(); // Make sure jobs are populated
-      const jobsScreen = document.getElementById("jobs-screen");
-      jobsScreen.style.display = "block";
-      jobsScreen.style.opacity = "1";
-      jobsScreen.style.pointerEvents = "none";
-      jobsScreen.style.border = "3px solid #e74c3c";
-      jobsScreen.style.boxShadow = "0 0 20px rgba(231, 76, 60, 0.8)";
-      jobsScreen.style.zIndex = "800";
-      jobsScreen.style.position = "relative";
-      // Position tutorial on right side
-      if (tutorialContent) {
-        tutorialContent.style.marginTop = "80px";
-        tutorialContent.style.marginRight = "20px";
-      }
-      break;
-      
-    case "store":
-      // Show store screen in background
-      updateStoreDisplay(); // Make sure store is populated
-      const storeScreen = document.getElementById("store-screen");
-      storeScreen.style.display = "block";
-      storeScreen.style.opacity = "1";
-      storeScreen.style.pointerEvents = "none";
-      storeScreen.style.border = "3px solid #f39c12";
-      storeScreen.style.boxShadow = "0 0 20px rgba(243, 156, 18, 0.8)";
-      storeScreen.style.zIndex = "800";
-      storeScreen.style.position = "relative";
-      // Position tutorial on right side
-      if (tutorialContent) {
-        tutorialContent.style.marginTop = "80px";
-        tutorialContent.style.marginRight = "20px";
-      }
-      break;
-      
-    case "skills":
-      // Show skills screen in background
-      updateSkillsScreenDisplay(); // Make sure skills are populated
-      const skillsScreen = document.getElementById("skills-screen");
-      skillsScreen.style.display = "block";
-      skillsScreen.style.opacity = "1";
-      skillsScreen.style.pointerEvents = "none";
-      skillsScreen.style.border = "3px solid #9b59b6";
-      skillsScreen.style.boxShadow = "0 0 20px rgba(155, 89, 182, 0.8)";
-      skillsScreen.style.zIndex = "800";
-      skillsScreen.style.position = "relative";
-      // Position tutorial on right side
-      if (tutorialContent) {
-        tutorialContent.style.marginTop = "80px";
-        tutorialContent.style.marginRight = "20px";
-      }
-      break;
-      
-    case "menu":
-      // Show command center in background (replaces old main menu)
-      showCommandCenter();
-      const cmdCenterScreen = document.getElementById("safehouse");
-      if (cmdCenterScreen) {
-        cmdCenterScreen.style.opacity = "1";
-        cmdCenterScreen.style.pointerEvents = "none";
-        cmdCenterScreen.style.border = "3px solid #e74c3c";
-        cmdCenterScreen.style.boxShadow = "0 0 20px rgba(231, 76, 60, 0.8)";
-        cmdCenterScreen.style.zIndex = "800";
-        cmdCenterScreen.style.position = "relative";
-      }
-      // Position tutorial on right side
-      if (tutorialContent) {
-        tutorialContent.style.marginTop = "80px";
-        tutorialContent.style.marginRight = "20px";
-      }
-      break;
-      
-    case "none":
-    default:
-      // No special UI to show, keep default right position
-      if (tutorialContent) {
-        tutorialContent.style.marginTop = "80px";
-        tutorialContent.style.marginRight = "20px";
-      }
-      break;
-  }
-}
-
-// Function to clear all tutorial highlights
-function clearTutorialHighlights() {
-  // Clear stats bar highlighting — restore CSS-defined values
-  const statsBar = document.getElementById("stats-bar");
-  if (statsBar) {
-    statsBar.style.border = "";            // Let CSS rule (border-bottom: 2px solid #d4af37) take over
-    statsBar.style.boxShadow = "";
-    statsBar.style.zIndex = "";            // Let CSS rule (z-index: 20) take over
-    statsBar.style.position = "";          // Let CSS rule (position: fixed) take over
-  }
-  
-  // Clear action log highlighting — restore CSS-defined values
-  const actionLog = document.getElementById("action-log");
-  if (actionLog) {
-    actionLog.style.border = "";           // Let CSS rule (border-right: 1px solid #d4af37) take over
-    actionLog.style.boxShadow = "";
-    actionLog.style.zIndex = "";           // Let CSS rule (z-index: 15) take over
-    actionLog.style.position = "";         // Let CSS rule (position: fixed) take over
-  }
-  
-  // Clear all game screen highlighting and reset styles
-  const screens = ['menu', 'jobs-screen', 'store-screen', 'skills-screen', 'gang-screen', 
-          'achievements-screen', 'stolen-cars-screen', 'jailbreak-screen'];
-  screens.forEach(screenId => {
-    const screen = document.getElementById(screenId);
-    if (screen) {
-      screen.style.border = "";
-      screen.style.boxShadow = "";
-      screen.style.opacity = "";
-      screen.style.pointerEvents = "";
-      screen.style.zIndex = "";
-    }
-  });
-}
-
-// Helper functions to populate content for tutorial
-function updateJobsList() {
-  let jobListHTML = `
-    <h3>Available Jobs</h3>
-    <ul>
-      ${jobs.map((job, index) => {
-        const hasRequirements = hasRequiredItems(job.requiredItems) && player.reputation >= job.reputation;
-        const requirementsText = job.requiredItems.length > 0 ? `Required Items: ${job.requiredItems.join(", ")}` : "No required items";
-        
-        // Calculate actual energy cost with endurance skill
-        const actualEnergyCost = Math.max(1, job.energyCost - player.skills.endurance);
-        
-        let payoutText = "";
-        if (job.special === "car_theft") {
-          payoutText = "Steal random car to sell";
-        } else {
-          payoutText = `$${job.payout[0]} to $${job.payout[1]}`;
-        }
-        
-        return `
-          <li style="margin: 10px 0; padding: 10px; background: rgba(52, 73, 94, 0.6); border-radius: 5px;">
-            <strong>${job.name}</strong><br>
-            💰 Payout: ${payoutText}<br>
-            ⚡ Energy Cost: ${actualEnergyCost}<br>
-            🚨 Risk: ${job.risk} (${job.jailChance}% jail chance)<br>
-            ⭐ Required Reputation: ${job.reputation}<br>
-            ${requirementsText}
-          </li>
-        `;
-      }).join('')}
-    </ul>
-  `;
-  document.getElementById("job-list").innerHTML = jobListHTML;
-}
-
-function updateStoreDisplay() {
-  let storeListHTML = `
-    <h3>Available Items</h3>
-    <ul>
-      ${storeItems.slice(0, 8).map((item, index) => { // Show first 8 items for tutorial
-        let description = "";
-        if (item.type === "energy") {
-          description = `Restores ${item.energyRestore} energy (⚠️ -1 health)`;
-        } else if (item.power > 0) {
-          description = `+${item.power} power`;
-        } else if (item.type === "ammo") {
-          description = "Ammunition for guns";
-        } else if (item.type === "gas") {
-          description = "Fuel for vehicles";
-        }
-        
-        return `
-          <li style="margin: 10px 0; padding: 10px; background: rgba(52, 73, 94, 0.6); border-radius: 5px;">
-            <strong>${item.name}</strong> - $${item.price}<br>
-            ${description}
-            ${item.description ? `<br><span style="color: #a0b0c0; font-size: 0.88em; font-style: italic;">${item.description}</span>` : ''}
-          </li>
-        `;
-      }).join('')}
-    </ul>
-  `;
-  document.getElementById("item-list").innerHTML = storeListHTML;
-}
-
-function updateSkillsScreenDisplay() {
-  let skillsHTML = `
-    <h2>Skills</h2>
-    <div class="skills-container">
-  `;
-  
-  for (const skill in player.skills) {
-    const level = player.skills[skill];
-    const cost = level + 1;
-    let description = "";
-    
-    switch (skill) {
-      case "stealth":
-        description = "Reduces jail chances and improves breakouts";
-        break;
-      case "violence":
-        description = "Increases success rates for combat jobs";
-        break;
-      case "charisma":
-        description = "Better store prices and reduced suspicion";
-        break;
-      case "intelligence":
-        description = "Better success rates overall";
-        break;
-      case "luck":
-        description = "Better random events and payouts";
-        break;
-      case "endurance":
-        description = "Reduces energy costs for all jobs";
-        break;
-    }
-    
-    skillsHTML += `
-      <div class="skill">
-        <h3>${skill.charAt(0).toUpperCase() + skill.slice(1)}</h3>
-        <p><strong>Level:</strong> ${level}</p>
-        <p><strong>Effect:</strong> ${description}</p>
-        <p><strong>Upgrade Cost:</strong> ${cost} skill points</p>
-      </div>
-    `;
-  }
-  
-  skillsHTML += `
-    </div>
-    <p><strong>Available Skill Points:</strong> ${player.skillPoints}</p>
-    <button class="nav-btn-back" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
-  `;
-  
-  document.getElementById("skills-content").innerHTML = skillsHTML;
-}
-
-function nextTutorialStep() {
-  if (currentTutorialStep < tutorialSteps.length - 1) {
-    currentTutorialStep++;
-    updateTutorialDisplay();
-  }
-}
-
-function previousTutorialStep() {
-  if (currentTutorialStep > 0) {
-    currentTutorialStep--;
-    updateTutorialDisplay();
-  }
-}
-
-async function skipTutorial() {
-  if (await ui.confirm("Are you sure you want to skip the tutorial? You can always refer to the action log for guidance during gameplay.")) {
-    clearTutorialHighlights();
-    // If onboarding.js tutorial tracker is active, clean it up
-    if (typeof window._onboardingSkipTutorial === 'function') {
-      window._onboardingSkipTutorial();
-    }
-    if (tutorialFromMenu) {
-      completeTutorialFromMenu();
-    } else {
-      // If we're already in the game (not on the intro/tutorial screen),
-      // just mark tutorial done and clean up — don't restart the game
-      const tutScreen = document.getElementById('tutorial-screen');
-      if (tutScreen && tutScreen.style.display !== 'none') {
-        completeTutorial();
-      } else {
-        // Already playing — just clean up tutorial UI elements
-        localStorage.setItem('tutorialStep', 'skipped');
-        logAction("Tutorial skipped. You're on your own, wiseguy.");
-        const tracker = document.getElementById('tutorial-tracker');
-        if (tracker) tracker.remove();
-        const overlay = document.getElementById('tutorial-tracker-overlay');
-        if (overlay) overlay.remove();
-        const objSection = document.getElementById('objective-tracker-section');
-        if (objSection) objSection.style.display = 'none';
-        const progressBar = document.getElementById('tutorial-progress-bar-desktop');
-        if (progressBar) progressBar.remove();
-        const stepCounter = document.getElementById('tutorial-step-counter-desktop');
-        if (stepCounter) stepCounter.remove();
-      }
-    }
-  }
-}
-
-function completeTutorial() {
-  document.getElementById("tutorial-screen").style.display = "none";
-  clearTutorialHighlights(); // Clear any tutorial highlighting
-  // Hide the objective tracker section
-  const objSection = document.getElementById('objective-tracker-section');
-  if (objSection) objSection.style.display = 'none';
-  logAction("🎓 Tutorial completed. You're ready to make your mark on the criminal underworld. Stay sharp out there.");
-  // Rebuild mobile nav bar to swap out Objective tab (only on mobile/tablet)
-  if (typeof MobileSystem !== 'undefined' && MobileSystem.createMobileQuickActions && (MobileSystem.isMobile || MobileSystem.isTablet)) {
-    MobileSystem.createMobileQuickActions();
-  }
-  
-  // If tutorial was started from intro (new game), start the game proper
-  // If tutorial was from menu, we should return to main menu
-  if (tutorialFromMenu) {
-    completeTutorialFromMenu();
-  } else {
-    startGameAfterIntro();
-  }
-}
-
-// Function to show tutorial from main menu
-function showTutorialFromMenu() {
-  // Hide main menu
-  goBackToMainMenu();
-  document.getElementById("menu").style.display = "none";
-  
-  // Set flag to indicate tutorial opened from menu
-  tutorialFromMenu = true;
-  
-  // Start tutorial
-  currentTutorialStep = 0;
-  document.getElementById("tutorial-screen").style.display = "block";
-  updateTutorialDisplay();
-}
-
-// Function to complete tutorial and return to main menu (for menu-initiated tutorials)
-function completeTutorialFromMenu() {
-  document.getElementById("tutorial-screen").style.display = "none";
-  clearTutorialHighlights(); // Clear any tutorial highlighting
-  tutorialFromMenu = false; // Reset the flag
-  logAction("🎓 Tutorial reviewed. Time to get back to business.");
-  goBackToMainMenu();
 }
 
 // Emergency jail release function (for debugging stuck jail issues)
@@ -18045,7 +17281,7 @@ function cancelDeleteSave() {
 
 function getCurrentScreen() {
   // Find the currently visible screen
-  const screens = document.querySelectorAll('.game-screen, #intro-screen, #character-creation-screen, #tutorial-screen');
+  const screens = document.querySelectorAll('.game-screen, #intro-screen, #character-creation-screen');
   for (let screen of screens) {
     if (screen.style.display !== 'none') {
       return screen;
@@ -18069,7 +17305,7 @@ function returnToIntroScreen() {
   hideAllScreens();
 
   // Also hide non-game screens that hideAllScreens() doesn't cover
-  ['character-creation-screen', 'tutorial-screen', 'intro-narrative'].forEach(id => {
+  ['character-creation-screen', 'intro-narrative'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -18100,7 +17336,7 @@ function deleteAllLocalSavesAndReset() {
   // Hide everything and show the title screen
   const allScreens = document.querySelectorAll('.game-screen');
   allScreens.forEach(s => (s.style.display = 'none'));
-  ['character-creation-screen', 'tutorial-screen', 'intro-narrative', 'menu', 'options-screen'].forEach(id => {
+  ['character-creation-screen', 'intro-narrative', 'menu', 'options-screen'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -18143,25 +17379,6 @@ function resetGame() {
 
 // Add some quality of life improvements
 document.addEventListener('keydown', function(event) {
-  // Tutorial navigation
-  if (document.getElementById("tutorial-screen").style.display !== "none") {
-    if (event.key === "ArrowRight" || event.key === "Enter") {
-      event.preventDefault();
-      if (currentTutorialStep === tutorialSteps.length - 1) {
-        completeTutorial();
-      } else {
-        nextTutorialStep();
-      }
-    } else if (event.key === "ArrowLeft") {
-      event.preventDefault();
-      previousTutorialStep();
-    } else if (event.key === "Escape") {
-      event.preventDefault();
-      skipTutorial();
-    }
-    return; // Don't process other keys during tutorial
-  }
-  
   // Quick navigation
   if (event.key === 'j' || event.key === 'J') {
     const cmdCenter = document.getElementById("safehouse");
@@ -21184,6 +20401,9 @@ window.showMoneyLaundering = showMoneyLaundering;
 window.checkLaunderingEligibility = checkLaunderingEligibility;
 window.startLaundering = startLaundering;
 window.showStore = showStore;
+window.switchStoreTab = switchStoreTab;
+window.renderStoreTab = renderStoreTab;
+window.refreshStoreAfterPurchase = refreshStoreAfterPurchase;
 window.buyItem = buyItem;
 window.refreshStoreDynamicElements = refreshStoreDynamicElements;
 window.buyEnergyDrink = buyEnergyDrink;
@@ -21413,21 +20633,12 @@ window.showPortraitSelection = showPortraitSelection;
 window.selectPortrait = selectPortrait;
 window.showIntroNarrative = showIntroNarrative;
 window.finishIntro = finishIntro;
-window.showTutorialPrompt = showTutorialPrompt;
-window.startTutorialFromIntro = startTutorialFromIntro;
-window.skipTutorialAndStartGame = skipTutorialAndStartGame;
 window.startGameAfterIntro = startGameAfterIntro;
-window.startTutorial = startTutorial;
-window.updateTutorialDisplay = updateTutorialDisplay;
-window.showTutorialFromMenu = showTutorialFromMenu;
 window.loadGameFromIntro = loadGameFromIntro;
 window.selectPortraitForCreation = selectPortraitForCreation;
 window.loadPortraitGrid = loadPortraitGrid;
 window.createCharacter = createCharacter;
 window.goBackToIntro = goBackToIntro;
-window.previousTutorialStep = previousTutorialStep;
-window.nextTutorialStep = nextTutorialStep;
-window.skipTutorial = skipTutorial;
 
 // Territory System (Phase 1)
 window.selectSpawnTerritory = selectSpawnTerritory;

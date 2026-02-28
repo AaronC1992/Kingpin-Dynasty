@@ -5,6 +5,23 @@ All notable changes to From Dusk To Don (Mafia Born) will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.7] - 2026-02-28
+
+### Added
+- Black Market now has 8 category tabs (All, Consumables, Weapons, Armor, Tools, Vehicles, Luxury, Special) for easier browsing
+
+### Fixed
+- Black Market no longer resets scroll position after purchasing an item
+- Jail timer now syncs from server authority, preventing early releases in multiplayer
+- Rebalanced energy items: Coffee $1,000/15E, Energy Drink $2,500/30E, Steroids $4,000/60E
+
+### Removed
+- Removed redundant walkthrough tutorial system from game.js (onboarding.js preserved)
+- Removed ~200 lines of dead respect/relationships UI code (showRelationshipsScreen, renderRelationship, formatTargetName)
+- Removed stale respect system config flags (respectSystemEnabled, respectDecayRate)
+- Removed clearTutorialHighlights() and dead tutorial-prompt-screen cleanup code
+- Updated "tutorial" references to "onboarding" in mobile nav customizer
+
 ## [1.6.5] - 2026-02-27
 
 ### Fixed
