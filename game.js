@@ -4,7 +4,7 @@ import { showEmpireOverview } from './empireOverview.js';
 import { player, gainExperience, checkLevelUp, regenerateEnergy, startEnergyRegenTimer, startEnergyRegeneration, skillTreeDefinitions, availablePerks, achievements } from './player.js';
 import { jobs, stolenCarTypes } from './jobs.js';
 import { crimeFamilies, factionEffects, potentialMentors } from './factions.js';
-import { familyStories, storyCampaigns, factionMissions, turfMissions, bossBattles, missionProgress } from './missions.js?v=1.6.8';
+import { familyStories, storyCampaigns, factionMissions, turfMissions, bossBattles, missionProgress } from './missions.js?v=1.6.9';
 import { narrationVariations, getRandomNarration } from './narration.js';
 import { storeItems, realEstateProperties, businessTypes, loanOptions, launderingMethods } from './economy.js';
 import { prisonerNames, recruitNames, availableRecruits, jailPrisoners, jailbreakPrisoners, setJailPrisoners, setJailbreakPrisoners, generateJailPrisoners, generateJailbreakPrisoners, generateAvailableRecruits } from './generators.js';
@@ -14750,8 +14750,20 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = "1.6.8";
+const CURRENT_VERSION = "1.6.9";
 const VERSION_UPDATES = {
+  "1.6.9": {
+    title: "NPC Rival Bosses & Territory Overhaul",
+    date: "February 2026",
+    changes: [
+      "All 8 territories now start controlled by NPC rival bosses — fight to take over!",
+      "8 themed crime bosses (Vinnie 'The Rat', Don Castellano, Nikolai 'The Bear', etc.)",
+      "NPC defense scales per district difficulty (80–200 base defense rating)",
+      "'RIVAL BOSS' badge on NPC-owned territories",
+      "Fixed Challenge button to use correct territory war system",
+      "No more free territory claims — every takeover is a battle"
+    ]
+  },
   "1.6.8": {
     title: "Horse Racing, Cleanup & Territory Polish",
     date: "February 2026",
