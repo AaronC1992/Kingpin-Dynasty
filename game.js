@@ -1675,7 +1675,7 @@ const RIVAL_FAMILIES = {
     },
     kozlov: {
         name: "Kozlov Bratva",
-        icon: "❄️",
+        icon: "🇷🇺",
         color: "#4169e1",
         motto: "Strength is the only law.",
         don: {
@@ -1701,7 +1701,7 @@ const RIVAL_FAMILIES = {
     },
     chen: {
         name: "Chen Triad",
-        icon: "🐲",
+        icon: "🇨🇳",
         color: "#2e8b57",
         motto: "Patience is the sharpest blade.",
         don: {
@@ -1727,7 +1727,7 @@ const RIVAL_FAMILIES = {
     },
     morales: {
         name: "Morales Cartel",
-        icon: "💀",
+        icon: "🇲🇽",
         color: "#ff8c00",
         motto: "Fear is the foundation of empire.",
         don: {
@@ -8457,7 +8457,7 @@ async function startJob(index) {
     if (drugMultiplier > 1) {
       const bonus = Math.floor(earnings * (drugMultiplier - 1));
       earnings += bonus;
-      logAction(`🐉 Chen Triad smuggling routes boost your earnings by $${bonus.toLocaleString()}.`);
+      logAction(`🇨🇳 Chen Triad smuggling routes boost your earnings by $${bonus.toLocaleString()}.`);
     }
   }
   

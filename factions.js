@@ -126,7 +126,7 @@ export const factionEffects = {
     },
     kozlov: {
         name: "Kozlov Bratva",
-        icon: "❄️",
+        icon: "🇷🇺",
         positiveEffects: [
             { level: 25, effect: "Access to Russian weapons and vehicles" },
             { level: 50, effect: "Bratva backup in gang wars" },
@@ -142,7 +142,7 @@ export const factionEffects = {
     },
     chen: {
         name: "Chen Triad",
-        icon: "🐲",
+        icon: "🇨🇳",
         positiveEffects: [
             { level: 25, effect: "Access to Triad drug networks" },
             { level: 50, effect: "Ancient martial arts training" },
@@ -158,7 +158,7 @@ export const factionEffects = {
     },
     morales: {
         name: "Morales Cartel",
-        icon: "💀",
+        icon: "🇲🇽",
         positiveEffects: [
             { level: 25, effect: "Cartel drug discounts and access" },
             { level: 50, effect: "Border smuggling routes" },

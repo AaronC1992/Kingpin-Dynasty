@@ -51,7 +51,7 @@ export function applyDailyPassives() {
     if (hasPassive('chen')) {
         const networkBonus = Math.floor(50 + Math.random() * 150); // $50-$200 daily
         player.dirtyMoney = (player.dirtyMoney || 0) + networkBonus;
-        if (window.logAction) window.logAction(`🐉 Chen "Smuggling Routes" passive: Your drug network earns $${networkBonus} dirty money overnight.`);
+        if (window.logAction) window.logAction(`🇨🇳 Chen "Smuggling Routes" passive: Your drug network earns $${networkBonus} dirty money overnight.`);
     }
 
     // Morales Cartel: "Cartel Connections" - Small daily wanted level decay
@@ -59,7 +59,7 @@ export function applyDailyPassives() {
         if (player.wantedLevel > 0) {
             const decay = Math.min(player.wantedLevel, Math.floor(Math.random() * 3) + 1);
             player.wantedLevel = Math.max(0, player.wantedLevel - decay);
-            if (window.logAction) window.logAction(`🌮 Morales "Cartel Connections" passive: Corrupt officials scrub ${decay} from your wanted level.`);
+            if (window.logAction) window.logAction(`�🇽 Morales "Cartel Connections" passive: Corrupt officials scrub ${decay} from your wanted level.`);
         }
     }
 }
