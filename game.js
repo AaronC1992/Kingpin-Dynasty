@@ -17992,33 +17992,24 @@ async function confirmDeleteSave(slotNumber) {
   }
   
   const slotName = slotNumber === 0 ? 'Auto-Save' : `Slot ${slotNumber}`;
-  const confirmMessage = `Are you absolutely sure you want to permanently delete ${slotName}?\n\nSave: ${slot.saveName}\nPlayer: ${slot.playerName}\nLevel: ${slot.level}\n\nThis action cannot be undone!`;
+  const confirmMessage = `Are you absolutely sure you want to permanently delete ${slotName}?<br><br>Save: ${slot.saveName}<br>Player: ${slot.playerName}<br>Level: ${slot.level}<br><br>This action cannot be undone!`;
   
   if (await ui.confirm(confirmMessage)) {
-    deleteSaveSlot(slotNumber);
-    
-    // Remove the overlay
+    try {
+      deleteSaveSlot(slotNumber);
+      logAction(`🗑️ Deleted save: ${slotName} (${slot.saveName})`);
+    } catch (e) {
+      console.error('Error during save deletion:', e);
+    }
+
+    // Always clean up overlay and return to title
     const overlay = document.getElementById('delete-save-overlay');
     if (overlay) {
       overlay.remove();
     }
     
-    // Show success message
-    alert(`${slotName} has been permanently deleted!\n\nYou have been returned to the title screen.`);
-    
-    // Check if any saves remain
-    const remainingSlots = getAllSaveSlots();
-    const remainingSaves = remainingSlots.filter(s => !s.empty);
-    
-    if (remainingSaves.length === 0) {
-      // No saves left — return to title screen
-      returnToIntroScreen();
-    } else {
-      // Still have saves — return to title screen so player can choose
-      returnToIntroScreen();
-    }
-    
-    logAction(`🗑️ Deleted save: ${slotName} (${slot.saveName})`);
+    alert(`${slotName} has been permanently deleted! Returning to title screen.`);
+    returnToIntroScreen();
   }
 }
 
@@ -18055,27 +18046,19 @@ function restorePreviousScreen() {
 }
 
 function returnToIntroScreen() {
-  // Hide all game screens
-  const allScreens = document.querySelectorAll('.game-screen');
-  allScreens.forEach(screen => {
-    screen.style.display = 'none';
+  // Use the comprehensive screen-hiding helper so nothing is left visible
+  hideAllScreens();
+
+  // Also hide non-game screens that hideAllScreens() doesn't cover
+  ['character-creation-screen', 'tutorial-screen', 'intro-narrative'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
   });
-  
-  // Hide other specific screens
-  const otherScreens = [
-    'character-creation-screen',
-    'tutorial-screen', 
-    'intro-narrative',
-    'menu'
-  ];
-  
-  otherScreens.forEach(screenId => {
-    const screen = document.getElementById(screenId);
-    if (screen) {
-      screen.style.display = 'none';
-    }
-  });
-  
+
+  // Remove any lingering overlays (delete-save, modals, etc.)
+  const deleteOverlay = document.getElementById('delete-save-overlay');
+  if (deleteOverlay) deleteOverlay.remove();
+
   // Return to title screen
   gameplayActive = false;
   document.getElementById('intro-screen').style.display = 'block';
@@ -20977,18 +20960,66 @@ function startLoadingSequence() {
   
   let currentStep = 0;
   let loadingStartTime = Date.now();
-  
-  // Add timeout check for stuck loading
-  const maxLoadingTime = 10000; // 10 seconds max
+  let stepsComplete = false;
+  let serverReady = false;
+  let loadingFinished = false; // guard against duplicate completeLoading calls
+
+  // ── Server health ping ────────────────────────────────────────
+  // Resolve the HTTP health URL from the same logic multiplayer.js uses.
+  const SERVER_HEALTH_URL = (function () {
+    try {
+      if (window.__MULTIPLAYER_SERVER_URL__) {
+        return window.__MULTIPLAYER_SERVER_URL__.replace(/^ws/, 'http').replace(/\/$/, '') + '/health';
+      }
+      const h = window.location.hostname;
+      if (h === 'localhost' || h === '127.0.0.1') return 'http://localhost:3000/health';
+    } catch (e) { /* fall through */ }
+    return 'https://mafia-born.onrender.com/health';
+  })();
+
+  function pingServer() {
+    fetch(SERVER_HEALTH_URL, { cache: 'no-store' })
+      .then(res => {
+        if (res.ok) {
+          serverReady = true;
+          console.log('[loading] Server is ready');
+          if (stepsComplete) finishLoading();
+        } else {
+          throw new Error('Server returned ' + res.status);
+        }
+      })
+      .catch(err => {
+        console.log('[loading] Server not ready, retrying in 3s...', err.message);
+        if (stepsComplete) {
+          loadingText.textContent = "Waking up the server...";
+        }
+        setTimeout(pingServer, 3000);
+      });
+  }
+
+  // Start pinging immediately so the server wakes while visual steps run
+  pingServer();
+
+  // ── Timeout guard ─────────────────────────────────────────────
+  // Render cold-starts can take ~15-20 s; give up to 30 s before forcing.
+  const maxLoadingTime = 30000;
   setTimeout(() => {
-    if (currentStep < loadingSteps.length) {
-      console.warn('Loading appears to be stuck. Forcing completion...');
-      loadingText.textContent = "Loading took longer than expected, proceeding anyway...";
+    if (!loadingFinished) {
+      console.warn('Loading timeout reached. Proceeding without server...');
+      loadingText.textContent = "Server unavailable — starting in offline mode...";
       loadingPercentage.textContent = '100%';
-      setTimeout(completeLoading, 1000);
+      loadingProgress.style.width = '100%';
+      finishLoading();
     }
   }, maxLoadingTime);
-  
+
+  function finishLoading() {
+    if (loadingFinished) return; // prevent double-fire
+    loadingFinished = true;
+    completeLoading();
+  }
+
+  // ── Visual loading steps ──────────────────────────────────────
   function updateLoading() {
     if (currentStep < loadingSteps.length) {
       const step = loadingSteps[currentStep];
@@ -21002,8 +21033,17 @@ function startLoadingSequence() {
         updateLoading();
       }, step.duration);
     } else {
-      // Loading complete, initialize game
-      completeLoading();
+      // Visual steps done
+      stepsComplete = true;
+      if (serverReady) {
+        finishLoading();
+      } else {
+        // Keep loading screen up while server wakes
+        loadingText.textContent = "Waking up the server...";
+        loadingProgress.style.width = '100%';
+        loadingPercentage.textContent = '100%';
+        // finishLoading() will be called by pingServer once it succeeds
+      }
     }
   }
   
