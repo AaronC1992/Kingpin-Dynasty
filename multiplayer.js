@@ -2899,14 +2899,14 @@ function renderMarketplaceTab() {
         html += `<div style="display: grid; gap: 8px;">`;
         playerCars.forEach((car, idx) => {
             const condition = 100 - car.damagePercentage;
-            const condColor = condition > 70 ? '#2ecc71' : condition > 40 ? '#f39c12' : '#e74c3c';
+            const condColor = car.damagePercentage < 30 ? '#2ecc71' : car.damagePercentage < 60 ? '#f39c12' : '#e74c3c';
             const suggestedPrice = Math.floor(car.baseValue * (condition / 100) * 0.8);
             const alreadyListed = myListings.some(l => l.vehicleName === car.name && l.vehicleIndex === idx);
             
             html += `<div style="padding: 10px; background: rgba(0,0,0,0.4); border-radius: 8px; border: 1px solid #34495e; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
                 <div>
                     <strong style="color: #ecf0f1;">${car.name}</strong><br>
-                    <small style="color: #bdc3c7;">Base: $${car.baseValue.toLocaleString()} | Condition: <span style="color: ${condColor};">${condition.toFixed(0)}%</span></small>
+                    <small style="color: #bdc3c7;">Base: $${car.baseValue.toLocaleString()} | <span style="color: ${condColor};">${car.damagePercentage}% damaged</span></small>
                 </div>
                 <div style="display: flex; gap: 8px; align-items: center;">
                     ${alreadyListed ? '<span style="color: #f39c12; font-size: 0.9em;">Already Listed</span>' : `
@@ -2935,7 +2935,7 @@ function renderMarketplaceTab() {
             html += `<div style="padding: 10px; background: rgba(0,0,0,0.4); border-radius: 8px; border: 1px solid #e67e22; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
                 <div>
                     <strong style="color: #ecf0f1;">${listing.vehicleName}</strong><br>
-                    <small style="color: #bdc3c7;">Asking: <span style="color: #2ecc71; font-weight: bold;">$${listing.price.toLocaleString()}</span> | Condition: ${(100 - listing.damagePercentage).toFixed(0)}%</small>
+                    <small style="color: #bdc3c7;">Asking: <span style="color: #2ecc71; font-weight: bold;">$${listing.price.toLocaleString()}</span> | ${listing.damagePercentage}% damaged</small>
                 </div>
                 <button onclick="cancelMarketplaceListing('${listing.id}')" 
                         style="background: #c0392b; color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: bold;">
@@ -2957,8 +2957,7 @@ function renderMarketplaceTab() {
     } else {
         html += `<div style="display: grid; gap: 8px;">`;
         otherListings.forEach(listing => {
-            const condition = 100 - listing.damagePercentage;
-            const condColor = condition > 70 ? '#2ecc71' : condition > 40 ? '#f39c12' : '#e74c3c';
+            const condColor = listing.damagePercentage < 30 ? '#2ecc71' : listing.damagePercentage < 60 ? '#f39c12' : '#e74c3c';
             const canAfford = (typeof player !== 'undefined') && player.money >= listing.price;
             
             html += `<div style="padding: 12px; background: rgba(0,0,0,0.4); border-radius: 10px; border: 1px solid ${canAfford ? '#2ecc71' : '#7f8c8d'}; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
@@ -2966,7 +2965,7 @@ function renderMarketplaceTab() {
                     <strong style="color: #ecf0f1;">${listing.vehicleName}</strong>
                     <span style="color: #7f8c8d; font-size: 0.85em;"> — sold by ${escapeHTML(listing.sellerName)}</span><br>
                     <small style="color: #bdc3c7;">
-                        Base Value: $${listing.baseValue.toLocaleString()} | Condition: <span style="color: ${condColor};">${condition.toFixed(0)}%</span>
+                        Base Value: $${listing.baseValue.toLocaleString()} | <span style="color: ${condColor};">${listing.damagePercentage}% damaged</span>
                     </small><br>
                     <small style="color: #2ecc71; font-weight: bold; font-size: 1.05em;">Price: $${listing.price.toLocaleString()}</small>
                 </div>

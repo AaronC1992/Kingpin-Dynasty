@@ -15255,7 +15255,7 @@ function showInventory() {
       html += `<div style="padding:10px;background:rgba(0,0,0,0.4);border-radius:8px;border:2px solid ${selected ? '#2ecc71' : '#34495e'};display:flex;justify-content:space-between;align-items:center;">
         <div>
           <strong style="color:${selected ? '#2ecc71' : '#ecf0f1'};">${car.name} ${selected ? '🚗 SELECTED' : ''}</strong><br>
-          <small style="color:#bdc3c7;">Value: $${car.baseValue.toLocaleString()} | Condition: ${(100 - car.damagePercentage).toFixed(0)}%</small>
+          <small style="color:#bdc3c7;">Value: $${car.baseValue.toLocaleString()} | ${car.damagePercentage}% damaged</small>
         </div>
         <div style="display:flex;gap:8px;">
           ${!selected ? `<button onclick="selectCar(${idx})" style="background:#3498db;color:white;border:none;padding:6px 12px;border-radius:5px;cursor:pointer;">Select</button>` : ''}
