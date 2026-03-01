@@ -506,3 +506,92 @@ export function getRandomNarration(category) {
     return variations[Math.floor(Math.random() * variations.length)];
 }
 
+
+// ==================== FAMILY-SPECIFIC NARRATIONS ====================
+// Chosen-family-aware flavor text that adds depth to regular gameplay
+
+export const familyNarrations = {
+  torrino: {
+    jobSuccess: [
+      " The Torrino way — clean, quiet, professional. Old Man Torrino would nod his approval.",
+      " A job done with respect. The Family sees everything, and tonight they saw a true Torrino soldier at work.",
+      " Tradition demands precision. You delivered. The Torrino name carries weight because of nights like this."
+    ],
+    jobFailure: [
+      " A Torrino doesn't fail. Not like this. The Don's disappointment is worse than any bullet.",
+      " Sloppy. The old guard in the Family won't forget this. You need to earn back their trust.",
+      " This isn't how things are done in the Torrino organization. Fix it, or someone else will fix you."
+    ],
+    atmosphere: [
+      "The smell of espresso and cigars drifts from the Torrino social club. Inside, men play cards and discuss business in hushed Italian.",
+      "A black sedan bearing the Torrino crest rolls past. The driver tips his hat. Everyone on the block straightens up.",
+      "At the Torrino compound, the fountains run clean. Everything about the Family speaks of old money and older principles."
+    ]
+  },
+  kozlov: {
+    jobSuccess: [
+      " The Bratva way — swift, brutal, effective. The Kozlov operation runs like a military unit. No wasted movement.",
+      " The Kozlov Brotherhood values efficiency above all. Tonight, you were efficient. That earns respect in the Bratva.",
+      " Another successful operation. In the Kozlov outfit, success is expected — but it's still rewarded."
+    ],
+    jobFailure: [
+      " In the Bratva, failure has consequences. The Kozlov hierarchy doesn't tolerate weakness.",
+      " Discipline. That's what separates the Kozlov Brotherhood from street gangs. Tonight, you lacked discipline.",
+      " The Bratva remembers. This failure will be noted. Redemption is earned in blood and results."
+    ],
+    atmosphere: [
+      "Vodka and steel. The Kozlov warehouse is a fortress — guarded, spartan, functional. No luxury. Only purpose.",
+      "Kozlov soldiers train in the basement gym. Push-ups, sparring, weapons drills. The Bratva doesn't breed weakness.",
+      "A Kozlov enforcer watches the street from a rooftop. In the Brotherhood, vigilance is a virtue and complacency is death."
+    ]
+  },
+  chen: {
+    jobSuccess: [
+      " The Chen Triad values subtlety. Your work tonight was invisible — and invisibility is the highest art.",
+      " Like silk over steel. The Chen organization moves in shadows, and tonight you became one of those shadows.",
+      " Information, patience, precision. The three pillars of the Chen Triad. You honored all three tonight."
+    ],
+    jobFailure: [
+      " The Chen Triad does not forgive exposure. A failed operation draws attention — the one thing the Triad cannot tolerate.",
+      " Clumsy. The Chen organization moves like water; you moved like stone. Learn subtlety or be discarded.",
+      " In the Triad, mistakes are lessons. But too many lessons and you become an example instead of a student."
+    ],
+    atmosphere: [
+      "The tea house on Mott Street is quiet. Too quiet. Behind the bamboo screens, the Chen Triad conducts business in whispers.",
+      "A jade dragon pendant catches the light. Every Chen operative wears one — a sign of belonging that only the initiated recognize.",
+      "Chen operatives move through Chinatown like ghosts. By the time you notice them, whatever they came for is already done."
+    ]
+  },
+  morales: {
+    jobSuccess: [
+      " Blood and fire! The Morales Cartel celebrates tonight. Loyalty earned, respect demanded, victory claimed!",
+      " La Familia Morales knows how to handle business. You proved your worth on the streets tonight. Familia above all.",
+      " The Morales way — passionate, fierce, unapologetic. You carried the family's fire tonight and burned bright."
+    ],
+    jobFailure: [
+      " The Morales Cartel doesn't accept excuses. La Familia demands results. Tonight, you came up short.",
+      " In the Morales organization, failure is personal. You didn't just fail a job — you failed your family.",
+      " La Familia Morales forgives once. Remember that. This is your once."
+    ],
+    atmosphere: [
+      "Norteño music plays from the Morales cantina. Inside, men toast with tequila and plan with passion. Everything the Cartel does burns hot.",
+      "A mural on the wall shows the Morales family tree — generations of fire and blood. You are the newest branch.",
+      "The Morales compound smells like chili peppers and gunpowder. In this family, both are essential ingredients."
+    ]
+  }
+};
+
+/**
+ * Get a family-aware narration if the player has chosen a family.
+ * Falls back to the generic narration if no family match.
+ */
+export function getFamilyNarration(category) {
+  const chosenFamily = (typeof window !== 'undefined' && window.player?.chosenFamily) || null;
+  if (chosenFamily && familyNarrations[chosenFamily]) {
+    const familyTexts = familyNarrations[chosenFamily][category];
+    if (familyTexts && familyTexts.length > 0 && Math.random() < 0.35) {
+      return familyTexts[Math.floor(Math.random() * familyTexts.length)];
+    }
+  }
+  return getRandomNarration(category);
+}

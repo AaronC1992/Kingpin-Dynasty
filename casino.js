@@ -35,11 +35,16 @@ function getCasinoBetRange() {
 }
 
 function getGamblingLuckBonus() {
-  let bonus = player.skillTrees.luck.gambling * 0.01;
+  let bonus = (player.skillTree?.luck?.gambling || 0) * 0.01;
   return bonus;
 }
 
 function casinoWin(winnings) {
+  // Lucky Devil perk: +20% casino winnings
+  if (player.perk === 'lucky_devil') {
+    const bonus = Math.floor(winnings * 0.20);
+    winnings += bonus;
+  }
   player.money += winnings;
   player.playstyleStats.gamblingWins = (player.playstyleStats.gamblingWins || 0) + 1;
   _casinoWins++;
@@ -354,7 +359,7 @@ export function slotSpin() {
   resultEl.textContent = '';
 
   // Pre-determine final symbols
-  let winChance = 0.12 + player.skillTrees.luck.gambling * 0.008;
+  let winChance = 0.12 + (player.skillTree?.luck?.gambling || 0) * 0.008;
   winChance = Math.min(0.30, winChance);
 
   let finalSymbols;

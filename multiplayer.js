@@ -2126,9 +2126,9 @@ function syncJailStatus(inJail, jailTime) {
 // Helper to calculate attack power for display
 function calculateAttackPower() {
     return (player.level * 10) + 
-           (player.skills.stealth * 8) + 
-           (player.skills.violence * 12) + 
-           (player.skills.intelligence * 6) + 
+           ((player.skillTree?.stealth?.shadow_step || 0) * 8) + 
+           ((player.skillTree?.combat?.brawler || 0) * 12) + 
+           ((player.skillTree?.intelligence?.quick_study || 0) * 6) + 
            ((player.power || 0) * 2);
 }
 

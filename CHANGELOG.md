@@ -5,6 +5,26 @@ All notable changes to From Dusk To Don (Mafia Born) will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.0] - 2026-03-01
+
+### Added
+- **Unified RPG Talent Tree** — replaced basic skills and old skill trees with a single talent tree system across 6 branches (Muscle, Stealth, Business, Street Smarts, Leadership, Racketeer)
+- **16 Street Story encounters** — rich random events with dialogue, scene-setting, and branching choices (old debts, journalist, FBI approach, funeral, wedding, hospital visit, dock strike, etc.)
+- **5 Multi-Step Side Quest chains** — Informant Network, Safe Houses, Ghost Money, Code of Honor, Nightlife Empire — each with 3 progressive steps and escalating rewards
+- **4 Post-Don Endgame Story Arcs** — The Successor, The Commission, The Reckoning (RICO), Legacy — unlocked by reputation thresholds
+- **Level milestone narrations** at levels 5, 10, 15, 20, 25, 30 with immersive story overlays
+- **Atmospheric world narrations** — 16 dynamic street atmosphere texts displayed on a rolling timer
+- **Family-specific narrations** — Torrino, Kozlov, Chen, and Morales families now have unique job success/failure/atmosphere flavour text
+- **storyExpansion.js** — new central content module for all story expansion content
+- **Side quest UI system** — full screen with active/available/locked/completed quest views and progress bars
+
+### Changed
+- Re-enabled interactive events system with expanded event pool (original 5 + 16 street stories) and deduplication
+- Job success/failure narrations now use family-aware text when player has chosen a family
+- Post-Don epilogue screen expanded with endgame arc cards and side operations access
+- Interactive event descriptions now render as multi-paragraph formatted text
+- Story chapter view now includes Side Operations button
+
 ## [1.7.6] - 2026-03-01
 
 ### Changed

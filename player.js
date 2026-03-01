@@ -10,12 +10,126 @@
  * - Player progression functions (XP, level up, energy regeneration)
  */
 
+// ── CHARACTER BACKGROUNDS ──────────────────────────────────────
+// Chosen at character creation. Each gives a small one-time starting bonus.
+export const CHARACTER_BACKGROUNDS = [
+  {
+    id: 'street_rat',
+    name: 'Street Rat',
+    icon: '🐀',
+    description: 'Grew up in the gutter. You know every alley and shortcut in the city.',
+    flavor: 'The streets raised you — and the streets never forget their own.',
+    bonus: { stealth: 2, energy: 10 },
+    bonusText: '+2 Stealth, +10 Starting Energy'
+  },
+  {
+    id: 'ex_cop',
+    name: 'Disgraced Cop',
+    icon: '🚔',
+    description: 'Kicked off the force for corruption. You know how the law thinks.',
+    flavor: 'You swore to protect and serve — now you serve yourself.',
+    bonus: { intelligence: 2, reputation: 5 },
+    bonusText: '+2 Intelligence, +5 Starting Reputation'
+  },
+  {
+    id: 'trust_fund',
+    name: 'Trust Fund Kid',
+    icon: '💎',
+    description: 'Born rich, bored of luxury. You crave the thrill of the underworld.',
+    flavor: 'Money can\'t buy street cred — but it can buy a head start.',
+    bonus: { money: 5000, charisma: 1 },
+    bonusText: '+$5,000 Starting Cash, +1 Charisma'
+  },
+  {
+    id: 'ex_con',
+    name: 'Ex-Con',
+    icon: '⛓️',
+    description: 'Fresh out of prison with debts to pay and scores to settle.',
+    flavor: 'Three years behind bars taught you more than any school ever could.',
+    bonus: { violence: 2, power: 5 },
+    bonusText: '+2 Violence, +5 Starting Power'
+  },
+  {
+    id: 'immigrant',
+    name: 'Immigrant Outsider',
+    icon: '🌍',
+    description: 'Came to this country with nothing. You\'ll take everything.',
+    flavor: 'They said the streets had no room for outsiders. They were wrong.',
+    bonus: { endurance: 2, luck: 1 },
+    bonusText: '+2 Endurance, +1 Luck'
+  },
+  {
+    id: 'hustler',
+    name: 'Born Hustler',
+    icon: '🎲',
+    description: 'You\'ve been running cons since grade school. It\'s in your blood.',
+    flavor: 'Everyone\'s a mark. Everyone\'s an opportunity.',
+    bonus: { charisma: 1, luck: 1, money: 2000 },
+    bonusText: '+1 Charisma, +1 Luck, +$2,000 Starting Cash'
+  }
+];
+
+// ── CHARACTER PERKS ───────────────────────────────────────────
+// Chosen at character creation. Permanent passive buffs that affect gameplay.
+export const CHARACTER_PERKS = [
+  {
+    id: 'iron_will',
+    name: 'Iron Will',
+    icon: '🔥',
+    description: 'Your willpower is unbreakable. You resist jail time better than anyone.',
+    effect: 'Jail sentences reduced by 25%. +10% breakout success chance.',
+    color: '#e74c3c'
+  },
+  {
+    id: 'silver_tongue',
+    name: 'Silver Tongue',
+    icon: '🗣️',
+    description: 'You could sell ice to a penguin. People trust you — that\'s their mistake.',
+    effect: '+15% better prices when selling. +10% bribe & negotiation success.',
+    color: '#f39c12'
+  },
+  {
+    id: 'quick_hands',
+    name: 'Quick Hands',
+    icon: '🤚',
+    description: 'Lightning-fast reflexes. You act before others can react.',
+    effect: '-15% energy cost on all jobs. +10% car theft success.',
+    color: '#3498db'
+  },
+  {
+    id: 'street_smarts',
+    name: 'Street Smarts',
+    icon: '🧠',
+    description: 'You read people and situations like an open book.',
+    effect: '+15% job success chance. +10% XP from all sources.',
+    color: '#2ecc71'
+  },
+  {
+    id: 'lucky_devil',
+    name: 'Lucky Devil',
+    icon: '🍀',
+    description: 'Fortune favors you. Lucky breaks seem to follow you everywhere.',
+    effect: '+20% casino winnings. +10% chance for bonus loot on jobs.',
+    color: '#9b59b6'
+  },
+  {
+    id: 'thick_skin',
+    name: 'Thick Skin',
+    icon: '🛡️',
+    description: 'You can take a beating and keep on ticking.',
+    effect: '-25% health loss from jobs. +15 max health.',
+    color: '#1abc9c'
+  }
+];
+
 // Global player stats
 export const player = {
   name: "", // Player's name
   gender: "", // Player's gender: "male" or "female"
   ethnicity: "", // Player's ethnicity: "white", "black", "asian", "mexican"
   portrait: "", // Path to player's portrait image
+  background: null, // CHARACTER_BACKGROUNDS id chosen at creation
+  perk: null,       // CHARACTER_PERKS id chosen at creation
   money: 0, // Starting with no money for maximum challenge
   inventory: [],
   stolenCars: [], // Array to store stolen cars
@@ -36,46 +150,15 @@ export const player = {
   level: 1, // Player's level
   experience: 0, // Player's experience points
   skillPoints: 0, // Available skill points
-  skills: {
-    stealth: 0, // Reduces jail chance
-    violence: 0, // Increases success chance for combat jobs
-    charisma: 0, // Better prices and reduced suspicion
-    intelligence: 0, // Better success rates overall
-    luck: 0, // Better random events and payouts
-    endurance: 0 // Reduces energy costs for jobs
-  },
-  // Advanced Skills System
-  skillTrees: {
-    stealth: {
-      infiltration: 0, // Breaking into secured locations
-      escape: 0, // Evading the Feds
-      surveillance: 0 // Gathering intel on rivals
-    },
-    violence: {
-      firearms: 0, // Tommy gun proficiency
-      melee: 0, // Brass knuckles and bats
-      intimidation: 0 // Making them an offer they can't refuse
-    },
-    charisma: {
-      negotiation: 0, // Better deals with the Don
-      leadership: 0, // Commanding your soldiers
-      manipulation: 0 // Pulling the strings
-    },
-    intelligence: {
-      hacking: 0, // Cracking safes and codes
-      planning: 0, // Orchestrating the perfect hit
-      forensics: 0 // Cleaning up the mess
-    },
-    luck: {
-      gambling: 0, // Winning at the tables
-      fortune: 0, // The devil's luck
-      serendipity: 0 // Finding opportunities in chaos
-    },
-    endurance: {
-      stamina: 0, // Outlasting the competition
-      recovery: 0, // Bouncing back from a beating
-      resistance: 0 // Tough as nails
-    }
+  // ── Unified RPG Skill Tree ──
+  // 6 trees × 6 nodes each (2 per tier). Tier 1: max 10, Tier 2: max 10, Tier 3: max 5.
+  skillTree: {
+    stealth:      { shadow_step: 0, light_feet: 0, infiltration: 0, escape_artist: 0, ghost_protocol: 0, surveillance: 0 },
+    combat:       { brawler: 0, toughness: 0, firearms: 0, melee_mastery: 0, intimidation: 0, enforcer: 0 },
+    charisma:     { smooth_talker: 0, street_cred: 0, negotiation: 0, leadership: 0, manipulation: 0, kingpin_aura: 0 },
+    intelligence: { quick_study: 0, awareness: 0, hacking: 0, planning: 0, forensics: 0, mastermind: 0 },
+    luck:         { fortune: 0, serendipity: 0, gambling: 0, scavenger: 0, jackpot: 0, lucky_break: 0 },
+    endurance:    { vitality: 0, conditioning: 0, recovery: 0, resilience: 0, resistance: 0, unstoppable: 0 }
   },
   streetReputation: {
     torrino: 0, // Torrino Family reputation
@@ -179,6 +262,10 @@ export const player = {
  * @param {number} amount - Amount of XP to grant
  */
 export function gainExperience(amount) {
+  // Street Smarts perk: +10% XP from all sources
+  if (player.perk === 'street_smarts') {
+    amount = Math.floor(amount * 1.10);
+  }
   player.experience += amount;
   // Note: logAction is defined in game.js - will be available when modules are imported
   if (typeof logAction === 'function') {
@@ -224,13 +311,13 @@ export function regenerateEnergy() {
     
     if (player.energyRegenTimer <= 0) {
       // Base 1 energy per tick; Recovery skill increases energy gained per tick
-      const recoveryLevel = (player.skillTrees && player.skillTrees.endurance && player.skillTrees.endurance.recovery) || 0;
-      const extraPerTick = Math.floor(recoveryLevel / 3); // +1 energy per 3 recovery levels (was 5)
+      const recoveryLevel = (player.skillTree && player.skillTree.endurance && player.skillTree.endurance.recovery) || 0;
+      const extraPerTick = Math.floor(recoveryLevel / 3); // +1 energy per 3 recovery levels
       const energyGain = Math.max(1, 1 + extraPerTick);
       
-      // Max energy scales with stamina skill tree (base 100 + 3 per stamina level)
-      const staminaLevel = (player.skillTrees && player.skillTrees.endurance && player.skillTrees.endurance.stamina) || 0;
-      player.maxEnergy = 100 + staminaLevel * 3;
+      // Max energy scales with conditioning skill (base 100 + 3 per conditioning rank)
+      const conditioningLevel = (player.skillTree && player.skillTree.endurance && player.skillTree.endurance.conditioning) || 0;
+      player.maxEnergy = 100 + conditioningLevel * 3;
       
       player.energy = Math.min(player.energy + energyGain, player.maxEnergy);
       
@@ -243,8 +330,8 @@ export function regenerateEnergy() {
       }
       
       // Forensics skill: Advanced wanted level decay
-      if (player.wantedLevel > 0 && player.skillTrees.intelligence.forensics > 0) {
-        let forensicsDecayChance = player.skillTrees.intelligence.forensics * 3; // 3% chance per level
+      if (player.wantedLevel > 0 && player.skillTree.intelligence.forensics > 0) {
+        let forensicsDecayChance = player.skillTree.intelligence.forensics * 3; // 3% chance per level
         if (Math.random() * 100 < forensicsDecayChance) {
           player.wantedLevel = Math.max(0, player.wantedLevel - 1);
           if (typeof logAction === 'function') {
@@ -257,8 +344,8 @@ export function regenerateEnergy() {
       // Base 15% chance per energy tick to lose 1 suspicion, boosted by forensics and stealth
       if (player.suspicionLevel && player.suspicionLevel > 0) {
         let decayChance = 15; // 15% base chance per energy tick
-        const forensicsLevel = (player.skillTrees && player.skillTrees.intelligence && player.skillTrees.intelligence.forensics) || 0;
-        const stealthLevel = (player.skills && player.skills.stealth) || 0;
+        const forensicsLevel = (player.skillTree && player.skillTree.intelligence && player.skillTree.intelligence.forensics) || 0;
+        const stealthLevel = (player.skillTree && player.skillTree.stealth && player.skillTree.stealth.shadow_step) || 0;
         decayChance += forensicsLevel * 3; // +3% per forensics level
         decayChance += stealthLevel * 1; // +1% per stealth level
         
@@ -283,7 +370,7 @@ export function regenerateEnergy() {
  */
 export function startEnergyRegenTimer() {
   if (player.energyRegenTimer === 0 && player.energy < player.maxEnergy) {
-    const recoveryLevel = (player.skillTrees && player.skillTrees.endurance && player.skillTrees.endurance.recovery) || 0;
+    const recoveryLevel = (player.skillTree && player.skillTree.endurance && player.skillTree.endurance.recovery) || 0;
     const regenInterval = Math.max(10, 20 - Math.floor(recoveryLevel / 2));
     player.energyRegenTimer = regenInterval;
   }
@@ -299,179 +386,138 @@ export function startEnergyRegeneration() {
   }, 1000); // Update every second for timer display
 }
 
-// Advanced Skills System Definitions
-
-// Skill Tree Specializations
-export const skillTreeDefinitions = {
+// ── Unified Skill Tree Definitions ──────────────────────────────
+// RPG-style talent trees with 3 tiers per discipline.
+// Tier 1: Foundation skills (max 10 ranks, no prereqs)
+// Tier 2: Specializations (max 10 ranks, require tier 1 node at rank 3 + 5 pts in tree)
+// Tier 3: Masteries (max 5 ranks, require tier 2 node at rank 5 + 20 pts in tree)
+export const SKILL_TREE_DEFS = {
   stealth: {
-    name: "Stealth Mastery",
+    name: "Shadow Arts",
     icon: "🕵️",
     color: "#9b59b6",
-    branches: {
-      infiltration: {
-        name: "Infiltration",
-        icon: "🔓",
-        description: "Master the art of breaking into secured locations",
-        maxLevel: 10,
-        benefits: level => level === 0 ? `Next: +5% stealth job success, +2% lockpicking (per level)` : `+${level * 5}% stealth job success, +${level * 2}% lockpicking`
-      },
-      escape: {
-        name: "Escape Artist",
-        icon: "💨",
-        description: "Become a master of getting out of sticky situations",
-        maxLevel: 10,
-        benefits: level => level === 0 ? `Next: +3% breakout success, -2% arrest chance (per level)` : `+${level * 3}% breakout success, -${level * 2}% arrest chance`
-      },
-      surveillance: {
-        name: "Surveillance",
-        icon: "👁️",
-        description: "Gather intel and stay ahead of enemies",
-        maxLevel: 10,
-        benefits: level => level === 0 ? `Next: +4% mission intel, +1% crit chance (per level)` : `+${level * 4}% mission intel, +${level}% critical hit chance`
-      }
+    desc: "Move unseen, strike unheard. The art of the invisible hand.",
+    nodes: {
+      shadow_step:    { tier: 1, name: "Shadow Step",    icon: "🌑", maxRank: 10, desc: "Move unseen through the criminal underworld", effect: "-2% arrest chance per rank", prereqs: [] },
+      light_feet:     { tier: 1, name: "Light Feet",     icon: "👣", maxRank: 10, desc: "Reduce energy cost with silent movement", effect: "-1 energy cost per rank", prereqs: [] },
+      infiltration:   { tier: 2, name: "Infiltration",   icon: "🔓", maxRank: 10, desc: "Break into secured locations with ease", effect: "+5% stealth job success per rank", prereqs: [{ node: "shadow_step", rank: 3 }] },
+      escape_artist:  { tier: 2, name: "Escape Artist",  icon: "💨", maxRank: 10, desc: "Slip out of the tightest situations", effect: "-2s jail time, +3% breakout per rank", prereqs: [{ node: "light_feet", rank: 3 }] },
+      ghost_protocol: { tier: 3, name: "Ghost Protocol", icon: "👻", maxRank: 5,  desc: "Become a phantom — practically invisible", effect: "-4% suspicion gain per rank", prereqs: [{ node: "infiltration", rank: 5 }] },
+      surveillance:   { tier: 3, name: "Surveillance",   icon: "👁️", maxRank: 5,  desc: "Gather intel and stay ahead of enemies", effect: "+4% job intel per rank", prereqs: [{ node: "escape_artist", rank: 5 }] }
     }
   },
-  violence: {
-    name: "Combat Prowess",
+  combat: {
+    name: "Combat",
     icon: "⚔️",
-    color: "#8b0000",
-    branches: {
-      firearms: {
-        name: "Firearms",
-        icon: "🔫",
-        description: "Master the use of guns and ranged weapons",
-        maxLevel: 10,
-        benefits: level => level === 0 ? `Next: +6% combat job success, +3% headshot chance (per level)` : `+${level * 6}% combat job success, +${level * 3}% headshot chance`
-      },
-      melee: {
-        name: "Melee Combat",
-        icon: "👊",
-        description: "Excel in hand-to-hand combat situations",
-        maxLevel: 10,
-        benefits: level => level === 0 ? `Next: +4% unarmed damage, +2% disarm chance (per level)` : `+${level * 4}% unarmed damage, +${level * 2}% disarm chance`
-      },
-      intimidation: {
-        name: "Intimidation",
-        icon: "😈",
-        description: "Use fear as your weapon",
-        maxLevel: 10,
-        benefits: level => level === 0 ? `Next: +5% extortion success, +3% reputation gain (per level)` : `+${level * 5}% extortion success, +${level * 3}% reputation gain`
-      }
+    color: "#e74c3c",
+    desc: "Raw power, deadly precision. Violence is a language you speak fluently.",
+    nodes: {
+      brawler:       { tier: 1, name: "Brawler",       icon: "👊", maxRank: 10, desc: "Raw fighting power and combat instincts", effect: "+5% combat power per rank", prereqs: [] },
+      toughness:     { tier: 1, name: "Toughness",     icon: "🛡️", maxRank: 10, desc: "Shrug off hits that would drop lesser men", effect: "-2% hurt chance per rank", prereqs: [] },
+      firearms:      { tier: 2, name: "Firearms",      icon: "🔫", maxRank: 10, desc: "Master the art of the gun", effect: "+6% armed job success per rank", prereqs: [{ node: "brawler", rank: 3 }] },
+      melee_mastery: { tier: 2, name: "Melee Mastery", icon: "🗡️", maxRank: 10, desc: "Deadly in close quarters combat", effect: "+4% unarmed job success per rank", prereqs: [{ node: "brawler", rank: 3 }] },
+      intimidation:  { tier: 3, name: "Intimidation",  icon: "😈", maxRank: 5,  desc: "Your reputation alone strikes terror", effect: "-10% wanted gain per rank", prereqs: [{ node: "firearms", rank: 5 }] },
+      enforcer:      { tier: 3, name: "Enforcer",      icon: "💀", maxRank: 5,  desc: "The ultimate weapon of the underworld", effect: "+15% boss fight power per rank", prereqs: [{ node: "melee_mastery", rank: 5 }] }
     }
   },
   charisma: {
-    name: "Social Influence",
+    name: "Influence",
     icon: "🗣️",
-    color: "#c0a062",
-    branches: {
-      negotiation: {
-        name: "Negotiation",
-        icon: "🤝",
-        description: "Secure better deals and prices",
-        maxLevel: 10,
-        benefits: level => level === 0 ? `Next: +3% better prices, +2% bribe success (per level)` : `+${level * 3}% better prices, +${level * 2}% bribe success`
-      },
-      leadership: {
-        name: "Leadership",
-        icon: "👑",
-        description: "Command respect and loyalty from your gang",
-        maxLevel: 10,
-        benefits: level => level === 0 ? `Next: +5% gang loyalty, +1% gang capacity (per level)` : `+${level * 5}% gang loyalty, +${level}% gang member capacity`
-      },
-      manipulation: {
-        name: "Manipulation",
-        icon: "🎭",
-        description: "Control others through psychological tactics",
-        maxLevel: 10,
-        benefits: level => level === 0 ? `Next: +4% info extraction, +2% defection resist (per level)` : `+${level * 4}% information extraction, +${level * 2}% defection resistance`
-      }
+    color: "#f39c12",
+    desc: "Words sharper than knives. Bend the world to your will without lifting a finger.",
+    nodes: {
+      smooth_talker: { tier: 1, name: "Smooth Talker",  icon: "💬", maxRank: 10, desc: "Words are your greatest weapon", effect: "+3% negotiation per rank", prereqs: [] },
+      street_cred:   { tier: 1, name: "Street Cred",    icon: "🏆", maxRank: 10, desc: "Build your name on the streets", effect: "+2% reputation gain per rank", prereqs: [] },
+      negotiation:   { tier: 2, name: "Negotiation",    icon: "🤝", maxRank: 10, desc: "Secure better deals and prices", effect: "+3% sell prices per rank", prereqs: [{ node: "smooth_talker", rank: 3 }] },
+      leadership:    { tier: 2, name: "Leadership",     icon: "👑", maxRank: 10, desc: "Command respect and loyalty from your crew", effect: "+5% gang loyalty per rank", prereqs: [{ node: "street_cred", rank: 3 }] },
+      manipulation:  { tier: 3, name: "Manipulation",   icon: "🎭", maxRank: 5,  desc: "Pull the strings from the shadows", effect: "+4% faction mission success per rank", prereqs: [{ node: "negotiation", rank: 5 }] },
+      kingpin_aura:  { tier: 3, name: "Kingpin Aura",   icon: "💎", maxRank: 5,  desc: "Your presence commands every room", effect: "+5% all income per rank", prereqs: [{ node: "leadership", rank: 5 }] }
     }
   },
   intelligence: {
-    name: "Mental Acuity",
+    name: "Intellect",
     icon: "🧠",
-    color: "#c0a062",
-    branches: {
-      hacking: {
-        name: "Hacking",
-        icon: "💻",
-        description: "Master digital infiltration and cyber warfare",
-        maxLevel: 10,
-        benefits: level => level === 0 ? `Next: +7% hacking success, +3% digital heist rewards (per level)` : `+${level * 7}% hacking success, +${level * 3}% digital heist rewards`
-      },
-      planning: {
-        name: "Strategic Planning",
-        icon: "📋",
-        description: "Perfect preparation prevents poor performance",
-        maxLevel: 10,
-        benefits: level => level === 0 ? `Next: +4% mission success, +2% backup plan chance (per level)` : `+${level * 4}% mission success, +${level * 2}% backup plan chance`
-      },
-      forensics: {
-        name: "Forensics",
-        icon: "🔬",
-        description: "Clean up evidence and avoid detection",
-        maxLevel: 10,
-        benefits: level => level === 0 ? `Next: +5% evidence cleanup, -3% investigation heat (per level)` : `+${level * 5}% evidence cleanup, -${level * 3}% investigation heat`
-      }
+    color: "#3498db",
+    desc: "Outsmart, outplan, outmaneuver. The mind is the deadliest weapon.",
+    nodes: {
+      quick_study: { tier: 1, name: "Quick Study",   icon: "📚", maxRank: 10, desc: "A sharp mind that learns from every job", effect: "+4% job success per rank", prereqs: [] },
+      awareness:   { tier: 1, name: "Awareness",     icon: "🔍", maxRank: 10, desc: "Nothing escapes your notice", effect: "+2% luck-based outcomes per rank", prereqs: [] },
+      hacking:     { tier: 2, name: "Hacking",       icon: "💻", maxRank: 10, desc: "Master of digital infiltration", effect: "+7% cyber job success per rank", prereqs: [{ node: "quick_study", rank: 3 }] },
+      planning:    { tier: 2, name: "Planning",       icon: "📋", maxRank: 10, desc: "Every detail accounted for", effect: "+4% heist success per rank", prereqs: [{ node: "quick_study", rank: 3 }] },
+      forensics:   { tier: 3, name: "Forensics",     icon: "🔬", maxRank: 5,  desc: "Clean up evidence like a professional", effect: "8% chance per rank to reduce wanted", prereqs: [{ node: "planning", rank: 5 }] },
+      mastermind:  { tier: 3, name: "Mastermind",     icon: "🎯", maxRank: 5,  desc: "The brain behind every operation", effect: "+10% XP gain per rank", prereqs: [{ node: "hacking", rank: 5 }] }
     }
   },
   luck: {
-    name: "Fortune's Favor",
+    name: "Fortune",
     icon: "🍀",
-    color: "#f39c12",
-    branches: {
-      gambling: {
-        name: "Gambling",
-        icon: "🎰",
-        description: "Turn the odds in your favor",
-        maxLevel: 10,
-        benefits: level => level === 0 ? `Next: +6% casino winnings, +2% jackpot chance (per level)` : `+${level * 6}% casino winnings, +${level * 2}% jackpot chance`
-      },
-      fortune: {
-        name: "Fortune",
-        icon: "🌟",
-        description: "Improve random events and discoveries",
-        maxLevel: 10,
-        benefits: level => level === 0 ? `Next: +4% positive events, +3% rare item finds (per level)` : `+${level * 4}% positive events, +${level * 3}% rare item finds`
-      },
-      serendipity: {
-        name: "Serendipity",
-        icon: "✨",
-        description: "Find unexpected opportunities",
-        maxLevel: 10,
-        benefits: level => level === 0 ? `Next: +5% bonus opportunities, +2% special job unlocks (per level)` : `+${level * 5}% bonus opportunities, +${level * 2}% special job unlocks`
-      }
+    color: "#2ecc71",
+    desc: "Fortune favors the bold — and sometimes, the downright reckless.",
+    nodes: {
+      fortune:     { tier: 1, name: "Fortune",       icon: "🌟", maxRank: 10, desc: "The universe favors the bold", effect: "+2% earnings per rank", prereqs: [] },
+      serendipity: { tier: 1, name: "Serendipity",   icon: "✨", maxRank: 10, desc: "Stumble into unexpected opportunities", effect: "+1% rare event chance per rank", prereqs: [] },
+      gambling:    { tier: 2, name: "Gambling",       icon: "🎰", maxRank: 10, desc: "Turn the odds in your favor", effect: "+1% casino win rate per rank", prereqs: [{ node: "fortune", rank: 3 }] },
+      scavenger:   { tier: 2, name: "Scavenger",      icon: "🔎", maxRank: 10, desc: "Find valuables others overlook", effect: "+3% bonus loot per rank", prereqs: [{ node: "serendipity", rank: 3 }] },
+      jackpot:     { tier: 3, name: "Jackpot",        icon: "💰", maxRank: 5,  desc: "When you win, you win BIG", effect: "+4% critical success chance per rank", prereqs: [{ node: "gambling", rank: 5 }] },
+      lucky_break: { tier: 3, name: "Lucky Break",    icon: "🍀", maxRank: 5,  desc: "Dodge bullets that fate aimed at your head", effect: "+5% avoid negative events per rank", prereqs: [{ node: "scavenger", rank: 5 }] }
     }
   },
   endurance: {
-    name: "Physical Resilience",
+    name: "Endurance",
     icon: "💪",
     color: "#1abc9c",
-    branches: {
-      stamina: {
-        name: "Stamina",
-        icon: "🏃",
-        description: "Perform longer operations without fatigue",
-        maxLevel: 10,
-        benefits: level => level === 0 ? `Next: +3 max energy, -2% energy costs (per level)` : `+${level * 3} max energy, -${level * 2}% energy costs`
-      },
-      recovery: {
-        name: "Recovery",
-        icon: "❤️‍🩹",
-        description: "Heal faster and recover energy more quickly",
-        maxLevel: 10,
-        benefits: level => level === 0 ? `Next: +5% healing rate, +3% energy regen (per level)` : `+${level * 5}% healing rate, +${level * 3}% energy regen`
-      },
-      resistance: {
-        name: "Resistance",
-        icon: "🛡️",
-        description: "Resist drugs, poisons, and environmental hazards",
-        maxLevel: 10,
-        benefits: level => level === 0 ? `Next: +4% poison resistance, +3% drug tolerance (per level)` : `+${level * 4}% poison resistance, +${level * 3}% drug tolerance`
-      }
+    desc: "Outlast them all. When everyone else drops, you're still standing.",
+    nodes: {
+      vitality:     { tier: 1, name: "Vitality",      icon: "❤️", maxRank: 10, desc: "Raw physical toughness and stamina", effect: "-1 energy cost per rank", prereqs: [] },
+      conditioning: { tier: 1, name: "Conditioning",  icon: "🏃", maxRank: 10, desc: "Push your body past its limits", effect: "+3 max energy per rank", prereqs: [] },
+      recovery:     { tier: 2, name: "Recovery",       icon: "❤️‍🩹", maxRank: 10, desc: "Bounce back from anything", effect: "+energy regen speed per rank", prereqs: [{ node: "vitality", rank: 3 }] },
+      resilience:   { tier: 2, name: "Resilience",     icon: "🦾", maxRank: 10, desc: "Reduce the impact of injuries", effect: "-3% injury severity per rank", prereqs: [{ node: "conditioning", rank: 3 }] },
+      resistance:   { tier: 3, name: "Resistance",     icon: "🛡️", maxRank: 5,  desc: "Nearly immune to punishment", effect: "-5% all damage taken per rank", prereqs: [{ node: "resilience", rank: 5 }] },
+      unstoppable:  { tier: 3, name: "Unstoppable",    icon: "⚡", maxRank: 5,  desc: "An unstoppable force of nature", effect: "+20% energy efficiency per rank", prereqs: [{ node: "recovery", rank: 5 }] }
     }
   }
 };
+
+// Helper: get total points invested in a skill tree
+export function getTreePointsSpent(treeName) {
+  const tree = player.skillTree[treeName];
+  if (!tree) return 0;
+  return Object.values(tree).reduce((sum, v) => sum + v, 0);
+}
+
+// Helper: check if a node's prerequisites are met
+export function canUnlockNode(treeName, nodeId) {
+  const treeDef = SKILL_TREE_DEFS[treeName];
+  if (!treeDef) return false;
+  const nodeDef = treeDef.nodes[nodeId];
+  if (!nodeDef) return false;
+  const currentRank = player.skillTree[treeName][nodeId] || 0;
+  if (currentRank >= nodeDef.maxRank) return false;
+  if (player.skillPoints < 1) return false;
+  // Tier point requirements: tier 2 needs 5 pts in tree, tier 3 needs 20 pts
+  const ptsInTree = getTreePointsSpent(treeName);
+  if (nodeDef.tier === 2 && ptsInTree < 5) return false;
+  if (nodeDef.tier === 3 && ptsInTree < 20) return false;
+  // Check prerequisite nodes
+  for (const req of nodeDef.prereqs) {
+    if ((player.skillTree[treeName][req.node] || 0) < req.rank) return false;
+  }
+  return true;
+}
+
+// Helper: check if a node is visible (prerequisites partially met or met)
+export function isNodeAccessible(treeName, nodeId) {
+  const treeDef = SKILL_TREE_DEFS[treeName];
+  if (!treeDef) return false;
+  const nodeDef = treeDef.nodes[nodeId];
+  if (!nodeDef) return false;
+  if (nodeDef.tier === 1) return true;
+  // For tier 2+, show if at least one prereq node has been started
+  for (const req of nodeDef.prereqs) {
+    if ((player.skillTree[treeName][req.node] || 0) > 0) return true;
+  }
+  return false;
+}
 
 // Perk System removed — Phase 31
 

@@ -1,11 +1,11 @@
 ﻿// onboarding removed — tutorial system fully stripped
 import { applyDailyPassives, getDrugIncomeMultiplier, getViolenceHeatMultiplier, getWeaponPriceMultiplier } from './passiveManager.js';
 import { showEmpireOverview } from './empireOverview.js';
-import { player, gainExperience, checkLevelUp, regenerateEnergy, startEnergyRegenTimer, startEnergyRegeneration, skillTreeDefinitions, achievements } from './player.js';
+import { player, gainExperience, checkLevelUp, regenerateEnergy, startEnergyRegenTimer, startEnergyRegeneration, SKILL_TREE_DEFS, getTreePointsSpent, canUnlockNode, isNodeAccessible, achievements, CHARACTER_BACKGROUNDS, CHARACTER_PERKS } from './player.js';
 import { jobs, stolenCarTypes } from './jobs.js';
 import { crimeFamilies, factionEffects } from './factions.js';
-import { familyStories, missionProgress, factionMissions } from './missions.js?v=1.7.6';
-import { narrationVariations, getRandomNarration } from './narration.js';
+import { familyStories, missionProgress, factionMissions } from './missions.js?v=1.8.0';
+import { narrationVariations, getRandomNarration, getFamilyNarration } from './narration.js';
 import { storeItems, realEstateProperties, businessTypes, launderingMethods } from './economy.js';
 import { prisonerNames, recruitNames, availableRecruits, jailPrisoners, jailbreakPrisoners, setJailPrisoners, setJailbreakPrisoners, generateJailPrisoners, generateJailbreakPrisoners, generateAvailableRecruits } from './generators.js';
 import { EventBus } from './eventBus.js';
@@ -34,6 +34,7 @@ import {
   startQuickDraw, startReactionTest, handleReactionClick
 } from './miniGames.js';
 import { DISTRICTS, getDistrict, MOVE_COOLDOWN_MS, MIN_CLAIM_LEVEL, CLAIM_COSTS, MIN_WAR_GANG_SIZE, WAR_ENERGY_COST, BUSINESS_TAX_RATE, getBusinessMultiplier, NPC_OWNER_NAMES } from './territories.js';
+import { STREET_STORIES, SIDE_QUESTS, POST_DON_ARCS, DEEP_NARRATIONS } from './storyExpansion.js';
 
 // Expose to window for legacy compatibility
 window.player = player;
@@ -62,7 +63,7 @@ window.recruitNames = recruitNames;
 window.availableRecruits = availableRecruits;
 window.jailPrisoners = jailPrisoners;
 window.jailbreakPrisoners = jailbreakPrisoners;
-window.skillTreeDefinitions = skillTreeDefinitions;
+window.SKILL_TREE_DEFS = SKILL_TREE_DEFS;
 window.factionEffects = factionEffects;
 // availablePerks removed (Phase 31)
 // potentialMentors removed (Phase 31)
@@ -619,6 +620,7 @@ function renderStoryChapter() {
       ${advanceHTML}
 
       <!-- Turf Access -->
+      <button class="story-action-btn" style="margin-bottom:10px;" onclick="showSideQuestScreen();">Side Operations</button>
       <button class="story-action-btn" style="margin-bottom:10px;" onclick="showTerritoryControl();">View Turf Map</button>
 
       <!-- Back Button -->
@@ -631,6 +633,43 @@ function renderStoryEpilogue(famKey, fam) {
   const rivalFam = typeof RIVAL_FAMILIES !== 'undefined' ? RIVAL_FAMILIES[famKey] : null;
   const ownedZones = (player.turf?.owned || []).length;
   const totalZones = typeof TURF_ZONES !== 'undefined' ? TURF_ZONES.length : 0;
+
+  // Determine which endgame arcs the player qualifies for
+  const rep = Math.floor(player.reputation || 0);
+  const questsCompleted = (player.sideQuests?.completed || []).length;
+  const totalQuests = SIDE_QUESTS.length;
+
+  // Build endgame arc cards
+  let arcsHTML = '';
+  const availableArcs = POST_DON_ARCS.filter(arc => {
+    if (arc.conditions.minRespect && rep < arc.conditions.minRespect) return false;
+    if (arc.conditions.minReputation && rep < arc.conditions.minReputation) return false;
+    return true;
+  });
+  const lockedArcs = POST_DON_ARCS.filter(arc => !availableArcs.includes(arc));
+
+  if (availableArcs.length > 0 || lockedArcs.length > 0) {
+    arcsHTML = `
+      <div style="margin:20px 0;">
+        <h3 style="color:#f1c40f;margin-bottom:12px;">Endgame Story Arcs</h3>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;">
+          ${availableArcs.map(arc => `
+            <div style="background:linear-gradient(135deg,#1a1a2e,#16213e);border:1px solid #f1c40f55;border-radius:12px;padding:15px;cursor:pointer;" onclick="showPostDonArc('${arc.id}')">
+              <div style="font-size:2em;text-align:center;">${arc.icon}</div>
+              <h4 style="color:#f1c40f;text-align:center;margin:8px 0 4px;">${arc.title}</h4>
+              <p style="color:#aaa;font-size:0.85em;line-height:1.4;text-align:center;">${arc.description}</p>
+            </div>
+          `).join('')}
+          ${lockedArcs.map(arc => `
+            <div style="background:#111;border:1px solid #33333355;border-radius:12px;padding:15px;opacity:0.5;">
+              <div style="font-size:2em;text-align:center;">🔒</div>
+              <h4 style="color:#666;text-align:center;margin:8px 0 4px;">${arc.title}</h4>
+              <p style="color:#555;font-size:0.8em;text-align:center;">Requires ${arc.conditions.minRespect || '?'} Rep</p>
+            </div>
+          `).join('')}
+        </div>
+      </div>`;
+  }
 
   return `
     <div class="story-screen">
@@ -646,17 +685,22 @@ function renderStoryEpilogue(famKey, fam) {
 
       <div class="story-epilogue-text">
         <p>You've completed <strong>"${fam.storyTitle}"</strong> and claimed leadership of the ${rivalFam?.name || famKey}.</p>
-        <p>The streets are yours. Now defend them.</p>
+        <p style="color:#aaa;margin-top:10px;font-style:italic;">The crown is heavy. Every family in the city watches your next move. Rivals circle like sharks. The feds build their case. And somewhere in the shadows, the next you is rising — hungry, angry, and willing to do whatever it takes.</p>
+        <p style="color:#ccc;margin-top:8px;">The streets are yours. Now defend them.</p>
       </div>
 
       <div class="story-empire-stats">
         <div class="empire-stat"><span class="empire-stat-label">Turf Controlled</span><span class="empire-stat-val">${ownedZones} / ${totalZones}</span></div>
         <div class="empire-stat"><span class="empire-stat-label">Gang Size</span><span class="empire-stat-val">${player.gang.members}</span></div>
-        <div class="empire-stat"><span class="empire-stat-label">Reputation</span><span class="empire-stat-val">${Math.floor(player.reputation)}</span></div>
+        <div class="empire-stat"><span class="empire-stat-label">Reputation</span><span class="empire-stat-val">${rep}</span></div>
         <div class="empire-stat"><span class="empire-stat-label">Net Worth</span><span class="empire-stat-val">$${(player.money + (player.dirtyMoney || 0)).toLocaleString()}</span></div>
+        <div class="empire-stat"><span class="empire-stat-label">Side Ops</span><span class="empire-stat-val">${questsCompleted} / ${totalQuests}</span></div>
       </div>
 
+      ${arcsHTML}
+
       <div style="display:flex;flex-direction:column;gap:12px;margin:20px 0;">
+        <button class="story-action-btn" onclick="showSideQuestScreen();">Side Operations</button>
         <button class="story-action-btn" onclick="showTerritoryControl();">Turf Wars &amp; Territory</button>
         <button class="story-action-btn" onclick="showProtectionRackets();">Protection Rackets</button>
         <button class="story-action-btn" onclick="showCorruption();">Corruption Network</button>
@@ -736,7 +780,7 @@ async function startStoryBossFight(chapterId) {
   player.energy -= energyCost;
 
   // Battle calculation
-  const playerStrength = player.power + (player.gang.members * 8) + (player.skills.violence * 10);
+  const playerStrength = player.power + (player.gang.members * 8) + (player.skillTree.combat.brawler * 10);
   const bossStrength = boss.power + (boss.gangSize * 6);
   const successChance = Math.min(85, 30 + ((playerStrength / bossStrength) * 40));
 
@@ -848,7 +892,7 @@ async function startFactionMission(familyKey, missionId) {
   player.energy -= mission.energyCost;
   
   // Calculate success chance
-  let successChance = 60 + (player.power * 0.5) + (player.skills.intelligence * 2);
+  let successChance = 60 + (player.power * 0.5) + (player.skillTree.intelligence.quick_study * 2);
   successChance = Math.min(successChance, 95);
   
   // Execute mission
@@ -917,9 +961,9 @@ function startSignatureJob(familyKey) {
   player.energy -= energyCost;
   startEnergyRegenTimer();
   
-  // Success chance based on the signature job's type (maps to player skill)
-  const skillMap = { charisma: 'charisma', violence: 'violence', intelligence: 'intelligence', stealth: 'stealth' };
-  const relevantSkill = player.skills[skillMap[sigJob.type]] || 0;
+  // Success chance based on the signature job's type (maps to player skill tree)
+  const skillMap = { charisma: player.skillTree.charisma.smooth_talker, violence: player.skillTree.combat.brawler, intelligence: player.skillTree.intelligence.quick_study, stealth: player.skillTree.stealth.shadow_step };
+  const relevantSkill = skillMap[sigJob.type] || 0;
   let successChance = 40 + (relevantSkill * 3) + (player.power * 0.15) + (reputation * 0.5);
   successChance = Math.min(successChance, 90);
   
@@ -1006,7 +1050,7 @@ const SPECIALIZATION_TO_EXPANDED = {
 const EXPANDED_SYSTEMS_CONFIG = {
     gangRolesEnabled: true,
     territoryWarsEnabled: true,
-    interactiveEventsEnabled: false, // Disabled — interactive random encounters removed
+    interactiveEventsEnabled: true, // Re-enabled with story expansion content
     rivalKingpinsEnabled: true,
     // Balance settings
     rivalGrowthInterval: 120000, // 2 minutes between rival actions
@@ -1884,10 +1928,31 @@ const INTERACTIVE_EVENTS = [
 
 // Trigger an interactive event
 function triggerInteractiveEvent(player) {
+    // Merge classic events + street stories from storyExpansion
+    const allEvents = [...INTERACTIVE_EVENTS];
+    // Street stories are richer — adapt them to the interactive event format
+    STREET_STORIES.forEach(ss => {
+      if (player.level >= (ss.minLevel || 0) && player.level <= (ss.maxLevel || 999)) {
+        allEvents.push({
+          id: ss.id,
+          title: ss.title,
+          description: ss.scene + '\n\n' + ss.dialogue.map(d => d.speaker === 'Narrator' ? d.text : `${d.speaker}: ${d.text}`).join('\n\n'),
+          choices: ss.choices.map(c => ({
+            text: c.text,
+            requirements: c.requirements || {},
+            successChance: c.successChance,
+            outcomes: c.outcomes
+          }))
+        });
+      }
+    });
+
     // Filter events based on player status
-    const availableEvents = INTERACTIVE_EVENTS.filter(event => {
-        // Add any event-specific availability logic here
-        return true;
+    const availableEvents = allEvents.filter(event => {
+        // Don't repeat recently triggered events
+        const recentlyTriggered = (player.interactiveEvents?.eventsTriggered || []);
+        const lastFive = recentlyTriggered.slice(-8);
+        return !lastFive.includes(event.id);
     });
     
     if (availableEvents.length === 0) return null;
@@ -1947,15 +2012,15 @@ function checkEventRequirements(requirements, player) {
         missing.push(`${requirements.gangMembers} gang members`);
     }
     
-    if (requirements.violence && player.skills.violence < requirements.violence) {
+    if (requirements.violence && player.skillTree.combat.brawler < requirements.violence) {
         missing.push(`Violence ${requirements.violence}`);
     }
     
-    if (requirements.intelligence && player.skills.intelligence < requirements.intelligence) {
+    if (requirements.intelligence && player.skillTree.intelligence.quick_study < requirements.intelligence) {
         missing.push(`Intelligence ${requirements.intelligence}`);
     }
     
-    if (requirements.charisma && player.skills.charisma < requirements.charisma) {
+    if (requirements.charisma && player.skillTree.charisma.smooth_talker < requirements.charisma) {
         missing.push(`Charisma ${requirements.charisma}`);
     }
     
@@ -1981,6 +2046,12 @@ function applyEventOutcomes(outcome, player) {
     if (outcome.respect) {
         player.reputation += outcome.respect;
         changes.respect = outcome.respect;
+    }
+
+    // Street stories also use 'reputation' as a separate modifier
+    if (outcome.reputation) {
+        player.reputation += outcome.reputation;
+        changes.respect = (changes.respect || 0) + outcome.reputation;
     }
     
     if (outcome.gangMemberLoss && player.gang.gangMembers.length > 0) {
@@ -2036,6 +2107,276 @@ const RIVAL_KINGPINS = Object.values(RIVAL_FAMILIES).flatMap(f => {
 
 // processRivalTurn removed — dead code (never called)
 
+// ==================== SIDE QUEST SYSTEM ====================
+
+function initSideQuests() {
+  if (!player.sideQuests) {
+    player.sideQuests = {
+      active: [],      // quest IDs the player has accepted
+      stepProgress: {}, // { questId: currentStepIndex }
+      completed: []     // finished quest IDs
+    };
+  }
+}
+
+function getSideQuestState(questId) {
+  const sq = player.sideQuests || {};
+  if ((sq.completed || []).includes(questId)) return 'completed';
+  if ((sq.active || []).includes(questId)) return 'active';
+  return 'available';
+}
+
+function getActiveQuestStep(quest) {
+  const idx = (player.sideQuests?.stepProgress?.[quest.id]) || 0;
+  return { step: quest.steps[idx], index: idx };
+}
+
+function canStartSideQuest(quest) {
+  return player.level >= (quest.minLevel || 1);
+}
+
+function startSideQuest(questId) {
+  initSideQuests();
+  const quest = SIDE_QUESTS.find(q => q.id === questId);
+  if (!quest || !canStartSideQuest(quest)) return;
+  if (player.sideQuests.active.includes(questId)) return;
+  if (player.sideQuests.completed.includes(questId)) return;
+
+  player.sideQuests.active.push(questId);
+  player.sideQuests.stepProgress[questId] = 0;
+  logAction(`Side quest started: <strong>${quest.title}</strong>`);
+  showBriefNotification(`Quest Started: ${quest.title}`, 'success');
+  updateUI();
+  showSideQuestScreen();
+}
+window.startSideQuest = startSideQuest;
+
+function completeSideQuestStep(questId) {
+  initSideQuests();
+  const quest = SIDE_QUESTS.find(q => q.id === questId);
+  if (!quest) return;
+  const { step, index } = getActiveQuestStep(quest);
+  if (!step) return;
+
+  // Check objective
+  const obj = step.objective;
+  let met = false;
+  if (obj.type === 'money' && player.money >= obj.target) met = true;
+  if (obj.type === 'level' && player.level >= obj.target) met = true;
+  if (obj.type === 'jobs' && (player.missions?.missionStats?.jobsCompleted || 0) >= obj.target) met = true;
+
+  if (!met) {
+    showBriefNotification('Objective not yet met!', 'danger');
+    return;
+  }
+
+  // Apply step reward (costs are negative money values)
+  if (step.reward) {
+    if (step.reward.money) player.money += step.reward.money;
+    if (step.reward.respect) player.reputation += step.reward.respect;
+    if (step.reward.reputation) player.reputation += step.reward.reputation;
+  }
+
+  logAction(`Quest step complete: <strong>${step.title}</strong>`);
+  showBriefNotification(step.completionText, 'success');
+
+  // Advance or finish
+  if (index + 1 < quest.steps.length) {
+    player.sideQuests.stepProgress[questId] = index + 1;
+  } else {
+    // Quest complete!
+    player.sideQuests.active = player.sideQuests.active.filter(id => id !== questId);
+    player.sideQuests.completed.push(questId);
+    delete player.sideQuests.stepProgress[questId];
+
+    // Completion reward
+    const cr = quest.completionReward;
+    if (cr) {
+      if (cr.money) player.money += cr.money;
+      if (cr.respect) player.reputation += cr.respect;
+      if (cr.reputation) player.reputation += cr.reputation;
+    }
+
+    logAction(`Side quest COMPLETE: <strong>${quest.title}</strong>!`);
+    // Show cinematic overlay
+    showNarrativeOverlay(quest.title + ' — Complete', quest.completionNarrative, 'Continue');
+  }
+
+  updateUI();
+  showSideQuestScreen();
+}
+window.completeSideQuestStep = completeSideQuestStep;
+
+function showSideQuestScreen() {
+  initSideQuests();
+  const sq = player.sideQuests;
+
+  let html = `
+    <div class="story-screen">
+      <div class="story-title-block">
+        <h1 class="story-main-title">Side Operations</h1>
+        <p class="story-subtitle">Optional quest chains that build your empire from the ground up.</p>
+      </div>`;
+
+  // Active quests first
+  const activeQuests = SIDE_QUESTS.filter(q => sq.active.includes(q.id));
+  if (activeQuests.length > 0) {
+    html += `<h2 style="color:#f1c40f;margin:20px 0 10px;">Active Quests</h2>`;
+    activeQuests.forEach(quest => {
+      const { step, index } = getActiveQuestStep(quest);
+      if (!step) return;
+      const obj = step.objective;
+      let currentVal = 0;
+      if (obj.type === 'money') currentVal = player.money;
+      if (obj.type === 'level') currentVal = player.level;
+      if (obj.type === 'jobs') currentVal = player.missions?.missionStats?.jobsCompleted || 0;
+      const met = currentVal >= obj.target;
+
+      html += `
+        <div class="story-family-card" style="--fam-color:#f1c40f;margin-bottom:15px;">
+          <div class="story-family-icon">${quest.icon}</div>
+          <h2 class="story-family-name">${quest.title}</h2>
+          <div style="color:#aaa;margin-bottom:8px;">Step ${index +1} of ${quest.steps.length}</div>
+          <h3 style="color:#e0c068;">${step.title}</h3>
+          <p style="color:#ccc;line-height:1.5;">${step.narrative}</p>
+          <div class="story-objective ${met ? 'obj-met' : ''}">
+            <span class="obj-icon">${met ? '✅' : '⬜'}</span>
+            <span class="obj-label">${obj.text}</span>
+            <span class="obj-val">${currentVal.toLocaleString()} / ${obj.target.toLocaleString()}</span>
+          </div>
+          ${met ? `<button class="story-advance-btn" onclick="completeSideQuestStep('${quest.id}')">Complete Step →</button>` : ''}
+        </div>`;
+    });
+  }
+
+  // Available quests
+  const availableQuests = SIDE_QUESTS.filter(q => getSideQuestState(q.id) === 'available' && canStartSideQuest(q));
+  if (availableQuests.length > 0) {
+    html += `<h2 style="color:#3498db;margin:20px 0 10px;">Available Quests</h2>`;
+    availableQuests.forEach(quest => {
+      html += `
+        <div class="story-family-card" style="--fam-color:#3498db;margin-bottom:15px;">
+          <div class="story-family-icon">${quest.icon}</div>
+          <h2 class="story-family-name">${quest.title}</h2>
+          <p style="color:#ccc;line-height:1.5;">${quest.description}</p>
+          <div style="color:#888;font-size:0.9em;">Min Level: ${quest.minLevel} &middot; ${quest.steps.length} Steps</div>
+          <div style="color:#f1c40f;font-size:0.9em;margin-top:5px;">
+            Completion Reward: ${quest.completionReward.money ? '$' + quest.completionReward.money.toLocaleString() + ' ' : ''}${quest.completionReward.respect ? '+' + quest.completionReward.respect + ' Respect ' : ''}${quest.completionReward.reputation ? '+' + quest.completionReward.reputation + ' Rep' : ''}
+          </div>
+          <button class="story-pledge-btn" style="background:linear-gradient(135deg,#3498db,#2980b9);" onclick="startSideQuest('${quest.id}')">Accept Quest</button>
+        </div>`;
+    });
+  }
+
+  // Locked quests
+  const lockedQuests = SIDE_QUESTS.filter(q => getSideQuestState(q.id) === 'available' && !canStartSideQuest(q));
+  if (lockedQuests.length > 0) {
+    html += `<h2 style="color:#666;margin:20px 0 10px;">Locked Quests</h2>`;
+    lockedQuests.forEach(quest => {
+      html += `
+        <div class="story-family-card" style="--fam-color:#444;margin-bottom:15px;opacity:0.6;">
+          <div class="story-family-icon">${quest.icon}</div>
+          <h2 class="story-family-name">${quest.title}</h2>
+          <p style="color:#888;">${quest.description}</p>
+          <div style="color:#e74c3c;font-size:0.9em;">🔒 Requires Level ${quest.minLevel}</div>
+        </div>`;
+    });
+  }
+
+  // Completed quests
+  const completedQuests = SIDE_QUESTS.filter(q => sq.completed.includes(q.id));
+  if (completedQuests.length > 0) {
+    html += `<h2 style="color:#2ecc71;margin:20px 0 10px;">Completed</h2>`;
+    completedQuests.forEach(quest => {
+      html += `
+        <div class="story-family-card" style="--fam-color:#2ecc71;margin-bottom:15px;opacity:0.7;">
+          <div class="story-family-icon">${quest.icon}</div>
+          <h2 class="story-family-name">✅ ${quest.title}</h2>
+          <p style="color:#888;font-style:italic;">${quest.completionNarrative.substring(0, 120)}...</p>
+        </div>`;
+    });
+  }
+
+  html += `
+      <button class="story-back-btn" onclick="showMissions()">← Back to Story</button>
+      <button class="story-back-btn" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
+    </div>`;
+
+  document.getElementById("missions-content").innerHTML = html;
+  hideAllScreens();
+  document.getElementById("missions-screen").style.display = "block";
+}
+window.showSideQuestScreen = showSideQuestScreen;
+
+// ==================== POST-DON ENDGAME ARCS ====================
+
+function showPostDonArc(arcId) {
+  const arc = POST_DON_ARCS.find(a => a.id === arcId);
+  if (!arc) return;
+
+  let narrativeHTML = arc.narrative.map(block => {
+    if (block.type === 'scene') return `<div class="story-block story-scene"><em>${block.text}</em></div>`;
+    if (block.type === 'dialogue') {
+      return `<div class="story-block story-dialogue"><span class="story-speaker">${block.speaker}:</span> ${block.text}</div>`;
+    }
+    return `<div class="story-block story-narration">${block.text}</div>`;
+  }).join('');
+
+  // Successor arc has candidate cards
+  let candidatesHTML = '';
+  if (arc.candidates) {
+    candidatesHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;margin:20px 0;">` +
+      arc.candidates.map(c => `
+        <div style="background:#1a1a2e;border:1px solid #f1c40f33;border-radius:12px;padding:15px;">
+          <h3 style="color:#f1c40f;margin:0 0 8px;">${c.name}</h3>
+          <p style="color:#ccc;font-size:0.9em;line-height:1.4;">${c.desc}</p>
+          <div style="color:#e74c3c;font-size:0.8em;margin-top:8px;">⚠ Risk: ${c.risk}</div>
+        </div>`).join('') +
+      `</div>`;
+  }
+
+  let html = `
+    <div class="story-screen">
+      <div class="story-act-banner" style="border-color:#f1c40f;">
+        <span class="story-act-label">Endgame</span>
+        <h2 class="story-chapter-title">${arc.icon} ${arc.title}</h2>
+      </div>
+      <p style="color:#aaa;line-height:1.5;margin-bottom:15px;">${arc.description}</p>
+      <div class="story-narrative">${narrativeHTML}</div>
+      ${candidatesHTML}
+      <button class="story-back-btn" onclick="showMissions()">← Back</button>
+    </div>`;
+
+  document.getElementById("missions-content").innerHTML = html;
+  hideAllScreens();
+  document.getElementById("missions-screen").style.display = "block";
+}
+window.showPostDonArc = showPostDonArc;
+
+// ==================== LEVEL-UP MILESTONE NARRATIONS ====================
+
+function checkMilestoneNarration(newLevel) {
+  const milestone = DEEP_NARRATIONS.levelMilestones[newLevel];
+  if (milestone) {
+    showNarrativeOverlay(milestone.title, milestone.text, 'Continue');
+  }
+}
+
+// Hook into the world narration system — periodic atmospheric text
+let lastWorldNarrationTime = 0;
+function maybeShowWorldNarration() {
+  const now = Date.now();
+  if (now - lastWorldNarrationTime < 600000) return; // 10 min cooldown
+  if (Math.random() > 0.15) return; // 15% chance
+
+  const texts = DEEP_NARRATIONS.worldTexts;
+  const text = texts[Math.floor(Math.random() * texts.length)];
+  lastWorldNarrationTime = now;
+
+  // Show as a brief atmospheric notification
+  GameLogging.logEvent(text);
+}
+
 // ==================== INTEGRATION & INITIALIZATION ==
 
 // Initialize all expanded systems for a new game
@@ -2066,6 +2407,20 @@ function initializeExpandedSystems(player) {
             eventsTriggered: [],
             eventCooldown: 300000 // 5 minutes between events
         };
+    }
+
+    // Side quests
+    if (!player.sideQuests) {
+        player.sideQuests = {
+            active: [],
+            stepProgress: {},
+            completed: []
+        };
+    }
+
+    // Story milestones seen
+    if (!player.milestonesShown) {
+        player.milestonesShown = [];
     }
 }
 
@@ -2170,10 +2525,13 @@ function checkAndTriggerInteractiveEvent() {
 function showInteractiveEvent(event) {
   currentEvent = event;
   
+  // Format description: convert newlines to paragraphs for richer display
+  const descHtml = event.description.split('\n\n').map(p => `<p class="event-description">${p.trim()}</p>`).join('');
+
   let html = `
     <div class="interactive-event">
       <h2>${event.title}</h2>
-      <p class="event-description">${event.description}</p>
+      ${descHtml}
       
       <div class="event-choices">
         ${event.choices.map((choice, index) => {
@@ -2206,13 +2564,13 @@ function checkChoiceRequirements(requirements) {
   if (requirements.gangMembers && player.gang.gangMembers.filter(m => m.status === "active").length < requirements.gangMembers) {
     return { canChoose: false, reason: `Need ${requirements.gangMembers} gang members` };
   }
-  if (requirements.violence && player.skills.violence < requirements.violence) {
+  if (requirements.violence && player.skillTree.combat.brawler < requirements.violence) {
     return { canChoose: false, reason: `Need Violence ${requirements.violence}` };
   }
-  if (requirements.intelligence && player.skills.intelligence < requirements.intelligence) {
+  if (requirements.intelligence && player.skillTree.intelligence.quick_study < requirements.intelligence) {
     return { canChoose: false, reason: `Need Intelligence ${requirements.intelligence}` };
   }
-  if (requirements.charisma && player.skills.charisma < requirements.charisma) {
+  if (requirements.charisma && player.skillTree.charisma.smooth_talker < requirements.charisma) {
     return { canChoose: false, reason: `Need Charisma ${requirements.charisma}` };
   }
   
@@ -4855,7 +5213,7 @@ window.attackTurfZone = attackTurfZone;
 function resolveBossFight(bossInfo, playerPower) {
   const reflexBonus = player.combatReflexBonus || 0;
   const bossStrength = bossInfo.power + Math.floor(Math.random() * 40) - 20;
-  const playerStrength = playerPower + Math.floor(Math.random() * 50) - 25 + (player.skills?.violence || 0) * 3 + reflexBonus * 2;
+  const playerStrength = playerPower + Math.floor(Math.random() * 50) - 25 + (player.skillTree?.combat?.brawler || 0) * 3 + reflexBonus * 2;
   const won = playerStrength > bossStrength;
   // Reflex bonus reduces damage taken (each point = ~1 less damage)
   const rawDamage = won ? Math.floor(Math.random() * 15) + 5 : Math.floor(Math.random() * 25) + 15;
@@ -6585,12 +6943,9 @@ function adminFullHeal() {
 }
 
 function adminSetAllSkills(level) {
-  if (player.skills) {
-    Object.keys(player.skills).forEach(skill => { player.skills[skill] = level; });
-  }
-  if (player.skillTrees) {
-    Object.keys(player.skillTrees).forEach(tree => {
-      Object.keys(player.skillTrees[tree]).forEach(sub => { player.skillTrees[tree][sub] = level; });
+  if (player.skillTree) {
+    Object.keys(player.skillTree).forEach(tree => {
+      Object.keys(player.skillTree[tree]).forEach(node => { player.skillTree[tree][node] = level; });
     });
   }
   showBriefNotification(`Admin: All skills set to ${level}`, 'success');
@@ -6638,7 +6993,7 @@ function refreshJobsButtons() {
     if (!job) return;
 
     const hasRequirements = hasRequiredItems(job.requiredItems) && player.reputation >= job.reputation;
-    const actualEnergyCost = Math.max(1, job.energyCost - player.skills.endurance);
+    const actualEnergyCost = Math.max(1, job.energyCost - player.skillTree.endurance.vitality);
 
     let buttonColor = "green";
     let buttonText = "Work";
@@ -6681,7 +7036,7 @@ function refreshJobsList() {
   let jobListHTML = jobs.map((job, index) => {
     const hasRequirements = hasRequiredItems(job.requiredItems) && player.reputation >= job.reputation;
     const requirementsText = job.requiredItems.length > 0 ? `Required Items: ${job.requiredItems.join(", ")}` : "No required items";
-    const actualEnergyCost = Math.max(1, job.energyCost - player.skills.endurance);
+    const actualEnergyCost = Math.max(1, job.energyCost - player.skillTree.endurance.vitality);
 
     let payoutText = "";
     if (job.special === "car_theft") {
@@ -7287,7 +7642,7 @@ function showJobs() {
         const requirementsText = job.requiredItems.length > 0 ? `Required Items: ${job.requiredItems.join(", ")}` : "No required items";
         
         // Calculate actual energy cost with endurance skill
-        const actualEnergyCost = Math.max(1, job.energyCost - player.skills.endurance);
+        const actualEnergyCost = Math.max(1, job.energyCost - player.skillTree.endurance.vitality);
         
         let payoutText = "";
         if (job.special === "car_theft") {
@@ -7423,27 +7778,27 @@ function applySkillTreeBonuses(job, successChance) {
   
   // Apply skill tree bonuses based on job type
   if (jobName.includes('stealth') || jobName.includes('sneak')) {
-    bonuses += player.skillTrees.stealth.infiltration * 5; // 5% per level
-    bonuses += player.skillTrees.stealth.surveillance * 4; // 4% per level
+    bonuses += player.skillTree.stealth.infiltration * 5; // 5% per level
+    bonuses += player.skillTree.stealth.surveillance * 4; // 4% per level
   }
   
   if (jobName.includes('fight') || jobName.includes('rob') || jobName.includes('assault') || 
     jobName.includes('protection') || jobName.includes('extortion') || jobName.includes('heist')) {
-    bonuses += player.skillTrees.violence.firearms * 6; // 6% per level
-    bonuses += player.skillTrees.violence.melee * 4; // 4% per level
-    bonuses += player.skillTrees.violence.intimidation * 5; // 5% per level - NEW!
+    bonuses += player.skillTree.combat.firearms * 6; // 6% per level
+    bonuses += player.skillTree.combat.melee_mastery * 4; // 4% per level
+    bonuses += player.skillTree.combat.intimidation * 5; // 5% per level - NEW!
   }
   
   if (jobName.includes('negotiate') || jobName.includes('bribe')) {
-    bonuses += player.skillTrees.charisma.negotiation * 3; // 3% per level
-    bonuses += player.skillTrees.charisma.manipulation * 4; // 4% per level
+    bonuses += player.skillTree.charisma.negotiation * 3; // 3% per level
+    bonuses += player.skillTree.charisma.manipulation * 4; // 4% per level
   }
   
   if (jobName.includes('hack') || jobName.includes('cyber') || jobName.includes('heist') || 
     jobName.includes('plan') || jobName.includes('intel')) {
-    bonuses += player.skillTrees.intelligence.hacking * 7; // 7% per level
-    bonuses += player.skillTrees.intelligence.planning * 4; // 4% per level
-    bonuses += player.skillTrees.intelligence.forensics * 3; // 3% per level - helps with clean execution
+    bonuses += player.skillTree.intelligence.hacking * 7; // 7% per level
+    bonuses += player.skillTree.intelligence.planning * 4; // 4% per level
+    bonuses += player.skillTree.intelligence.forensics * 3; // 3% per level - helps with clean execution
   }
   
   return Math.min(bonuses, 50); // Cap at 50% bonus
@@ -7520,7 +7875,12 @@ async function startJob(index) {
   const activeEffects = getActiveEffects();
 
   // Calculate actual energy cost with endurance skill reduction
-  let actualEnergyCost = Math.max(1, job.energyCost - player.skills.endurance); // Minimum 1 energy
+  let actualEnergyCost = Math.max(1, job.energyCost - player.skillTree.endurance.vitality); // Minimum 1 energy
+  
+  // Quick Hands perk: -15% energy cost on all jobs
+  if (hasPlayerPerk('quick_hands')) {
+    actualEnergyCost = Math.max(1, Math.floor(actualEnergyCost * 0.85));
+  }
   
   // Apply event effects to energy cost
   if (activeEffects.energyReduction) {
@@ -7572,11 +7932,11 @@ async function startJob(index) {
     if (!choice || choice === 'abort') return;
     
     if (choice === 'loud') {
-      approachBonus = player.skills.violence * 3;
+      approachBonus = player.skillTree.combat.brawler * 3;
       approachLabel = 'Loud';
       logAction(`You gear up for a loud approach on the ${job.name}. Violence is your friend today.`);
     } else {
-      approachBonus = player.skills.stealth * 3;
+      approachBonus = player.skillTree.stealth.shadow_step * 3;
       approachLabel = 'Quiet';
       logAction(`« You plan a stealthy approach for the ${job.name}. Patience is key.`);
     }
@@ -7625,7 +7985,7 @@ async function startJob(index) {
 
   // Calculate job success chance based on player's power level and skills
   let successChance;
-  let skillBonus = (player.skills.intelligence + player.skills.luck) * 2;
+  let skillBonus = (player.skillTree.intelligence.quick_study + player.skillTree.luck.fortune) * 2;
   let carBonus = 0;
   
   // Apply advanced skill tree bonuses
@@ -7694,8 +8054,8 @@ async function startJob(index) {
     updateFactionReputation(job, false);
     trackJobPlaystyle(job, false);
     
-    showBriefNotification(`${getRandomNarration('jobFailure')} You lost ${actualEnergyCost} energy.`, 'danger');
-    logAction(getRandomNarration('jobFailure'));
+    showBriefNotification(`${getFamilyNarration('jobFailure')} You lost ${actualEnergyCost} energy.`, 'danger');
+    logAction(getFamilyNarration('jobFailure'));
     // Still gain some experience for trying
     gainExperience(2);
     updateUI();
@@ -7720,7 +8080,7 @@ async function startJob(index) {
   if (Array.isArray(job.payout)) {
     earnings = Math.floor(Math.random() * (job.payout[1] - job.payout[0] + 1)) + job.payout[0];
     // Luck skill can increase earnings
-    earnings += Math.floor(earnings * (player.skills.luck * 0.02));
+    earnings += Math.floor(earnings * (player.skillTree.luck.fortune * 0.02));
   } else {
     earnings = job.payout;
   }
@@ -7748,11 +8108,17 @@ async function startJob(index) {
   }
 
   // Calculate jail chance with stealth skill reducing it
-  let stealthBonus = player.skills.stealth * 2;
-  stealthBonus += player.skillTrees.stealth.escape * 3; // Advanced escape skills
-  stealthBonus += player.skillTrees.stealth.infiltration * 2; // Advanced infiltration skills
+  let stealthBonus = player.skillTree.stealth.shadow_step * 2;
+  stealthBonus += player.skillTree.stealth.escape_artist * 3; // Advanced escape skills
+  stealthBonus += player.skillTree.stealth.infiltration * 2; // Advanced infiltration skills
   
   let adjustedJailChance = Math.max(1, job.jailChance - stealthBonus);
+  
+  // Street Smarts perk: +15% job success (reduces effective jail chance by 15%)
+  if (hasPlayerPerk('street_smarts')) {
+    adjustedJailChance = Math.max(1, Math.floor(adjustedJailChance * 0.85));
+  }
+  
   let jailChance = Math.random() * 100;
 
   if (jailChance <= adjustedJailChance) {
@@ -7780,7 +8146,7 @@ async function startJob(index) {
     wantedLevelGain = Math.ceil(wantedLevelGain * 1.3);
   }
   
-  let intimidationReduction = player.skillTrees.violence.intimidation * 0.1; // 10% reduction per level
+  let intimidationReduction = player.skillTree.combat.intimidation * 0.1; // 10% reduction per level
   wantedLevelGain = Math.max(1, Math.floor(wantedLevelGain * (1 - intimidationReduction)));
   
   // Utility item: Police Scanner reduces wanted level gain by 20%
@@ -7806,12 +8172,12 @@ async function startJob(index) {
   }
   
   // Apply forensics skill for evidence cleanup
-  if (player.skillTrees.intelligence.forensics > 0) {
+  if (player.skillTree.intelligence.forensics > 0) {
     let forensicsSuccess = Math.random() * 100;
-    let forensicsChance = player.skillTrees.intelligence.forensics * 8; // 8% chance per level
+    let forensicsChance = player.skillTree.intelligence.forensics * 8; // 8% chance per level
     
     if (forensicsSuccess < forensicsChance) {
-      let evidenceReduction = Math.min(2, Math.floor(player.skillTrees.intelligence.forensics / 3)); // 1-2 wanted level reduction
+      let evidenceReduction = Math.min(2, Math.floor(player.skillTree.intelligence.forensics / 3)); // 1-2 wanted level reduction
       player.wantedLevel = Math.max(0, player.wantedLevel - evidenceReduction);
       logAction(`¹ Your forensics expertise helps you clean up evidence, reducing heat by ${evidenceReduction}!`);
     }
@@ -7835,32 +8201,32 @@ async function startJob(index) {
   let hurtChance;
   let maxHealthLoss;
   if (job.risk === "low") {
-    hurtChance = Math.max(0, 1 - player.power * 0.01 - player.skills.violence * 0.5);
+    hurtChance = Math.max(0, 1 - player.power * 0.01 - player.skillTree.combat.brawler * 0.5);
     maxHealthLoss = 5;
     player.reputation += 0.3;
     gainExperience(2);
   } else if (job.risk === "medium") {
-    hurtChance = Math.max(0, 5 - player.power * 0.05 - player.skills.violence * 0.5);
+    hurtChance = Math.max(0, 5 - player.power * 0.05 - player.skillTree.combat.brawler * 0.5);
     maxHealthLoss = 20;
     player.reputation += 0.5;
     gainExperience(6);
   } else if (job.risk === "high") {
-    hurtChance = Math.max(0, 10 - player.power * 0.1 - player.skills.violence * 0.5);
+    hurtChance = Math.max(0, 10 - player.power * 0.1 - player.skillTree.combat.brawler * 0.5);
     maxHealthLoss = 50;
     player.reputation += 1;
     gainExperience(14);
   } else if (job.risk === "very high") {
-    hurtChance = Math.max(0, 15 - player.power * 0.12 - player.skills.violence * 0.5);
+    hurtChance = Math.max(0, 15 - player.power * 0.12 - player.skillTree.combat.brawler * 0.5);
     maxHealthLoss = 60;
     player.reputation += 1.5;
     gainExperience(22);
   } else if (job.risk === "extreme") {
-    hurtChance = Math.max(0, 20 - player.power * 0.15 - player.skills.violence * 0.5);
+    hurtChance = Math.max(0, 20 - player.power * 0.15 - player.skillTree.combat.brawler * 0.5);
     maxHealthLoss = 75;
     player.reputation += 2.5;
     gainExperience(35);
   } else if (job.risk === "legendary") {
-    hurtChance = Math.max(0, 25 - player.power * 0.18 - player.skills.violence * 0.5);
+    hurtChance = Math.max(0, 25 - player.power * 0.18 - player.skillTree.combat.brawler * 0.5);
     maxHealthLoss = 90;
     player.reputation += 4;
     gainExperience(50);
@@ -7872,10 +8238,22 @@ async function startJob(index) {
   // Check if the player gets hurt
   if (Math.random() * 100 < hurtChance) {
     let healthLoss = Math.floor(Math.random() * maxHealthLoss) + 1;
+    // Thick Skin perk: -25% health loss from jobs
+    if (hasPlayerPerk('thick_skin')) {
+      healthLoss = Math.max(1, Math.floor(healthLoss * 0.75));
+    }
     player.health -= healthLoss;
     flashHurtScreen();
     showBriefNotification(`${getRandomNarration('healthLoss')} You have ${player.health} health left.`, true, 'success');
     logAction(`${getRandomNarration('healthLoss')} (-${healthLoss} health).`);
+  }
+
+  // Lucky Devil perk: 10% chance for bonus cash loot on any job
+  if (hasPlayerPerk('lucky_devil') && Math.random() < 0.10) {
+    const bonusCash = Math.floor(earnings * 0.25); // 25% of base earnings as bonus
+    player.money += bonusCash;
+    logAction(`🍀 Lucky Devil! You found an extra $${bonusCash.toLocaleString()} while on the job!`);
+    showBriefNotification(`🍀 Lucky bonus: +$${bonusCash.toLocaleString()}!`, 'success');
   }
 
   // Deduct ammo and gas if used
@@ -7907,7 +8285,7 @@ async function startJob(index) {
     const moneyType = job.paysDirty ? ' (dirty money — must be laundered!)' : '';
     flashSuccessScreen();
     showBriefNotification(`You completed the job as a ${job.name} (${job.risk} risk) and earned $${earnings.toLocaleString()}${moneyType}!`, 'success');
-    logAction(`${getRandomNarration('jobSuccess')} (+$${earnings.toLocaleString()}${moneyType}).`);
+    logAction(`${getFamilyNarration('jobSuccess')} (+$${earnings.toLocaleString()}${moneyType}).`);
   }
 
   degradeEquipment('job');
@@ -7925,7 +8303,11 @@ async function startJob(index) {
 // Function to handle car theft
 function handleCarTheft(job, actualEnergyCost) {
   // Calculate jail chance with stealth skill reducing it
-  let adjustedJailChance = Math.max(10, job.jailChance - (player.skills.stealth * 2));
+  let adjustedJailChance = Math.max(10, job.jailChance - (player.skillTree.stealth.shadow_step * 2));
+  // Quick Hands perk: +10% car theft success (reduces jail chance)
+  if (hasPlayerPerk('quick_hands')) {
+    adjustedJailChance = Math.max(5, Math.floor(adjustedJailChance * 0.9));
+  }
   let jailChance = Math.random() * 100;
 
   if (jailChance <= adjustedJailChance) {
@@ -7935,7 +8317,7 @@ function handleCarTheft(job, actualEnergyCost) {
   }
 
   // Check if player actually finds a car to steal (15% base chance — very hard)
-  let findCarChance = 15 + (player.skills.luck * 2); // Luck skill helps find cars
+  let findCarChance = 15 + (player.skillTree.luck.fortune * 2); // Luck skill helps find cars
   if (Math.random() * 100 > findCarChance) {
     showBriefNotification(`${getRandomNarration('carTheftFailure')} Lost ${actualEnergyCost} energy.`, 'danger');
     logAction(`${getRandomNarration('carTheftFailure')} The streets can be unforgiving to those seeking easy rides.`);
@@ -8046,7 +8428,7 @@ function handleLaunderMoneyJob(job, approachLabel) {
   let launderCapacity;
   if (Array.isArray(job.payout)) {
     launderCapacity = Math.floor(Math.random() * (job.payout[1] - job.payout[0] + 1)) + job.payout[0];
-    launderCapacity += Math.floor(launderCapacity * (player.skills.luck * 0.02));
+    launderCapacity += Math.floor(launderCapacity * (player.skillTree.luck.fortune * 0.02));
   } else {
     launderCapacity = job.payout;
   }
@@ -8063,9 +8445,9 @@ function handleLaunderMoneyJob(job, approachLabel) {
   const amountToLaunder = Math.min(launderCapacity, player.dirtyMoney);
 
   // Jail check — stealth skills reduce the chance
-  let stealthBonus = player.skills.stealth * 2;
-  stealthBonus += player.skillTrees.stealth.escape * 3;
-  stealthBonus += player.skillTrees.stealth.infiltration * 2;
+  let stealthBonus = player.skillTree.stealth.shadow_step * 2;
+  stealthBonus += player.skillTree.stealth.escape_artist * 3;
+  stealthBonus += player.skillTree.stealth.infiltration * 2;
   let adjustedJailChance = Math.max(1, job.jailChance - stealthBonus);
   
   // Approach modifies jail chance
@@ -8090,8 +8472,8 @@ function handleLaunderMoneyJob(job, approachLabel) {
   let conversionRate = 0.80 + (Math.random() * 0.10);
 
   // Intelligence skill improves conversion rate
-  conversionRate += player.skills.intelligence * 0.005; // +0.5% per level
-  conversionRate += (player.skillTrees.intelligence.forensics || 0) * 0.01; // +1% per forensics level
+  conversionRate += player.skillTree.intelligence.quick_study * 0.005; // +0.5% per level
+  conversionRate += (player.skillTree.intelligence.forensics || 0) * 0.01; // +1% per forensics level
 
   // Approach bonus: each approach has distinct trade-offs
   if (approachLabel === 'Smart') {
@@ -8129,7 +8511,7 @@ function handleLaunderMoneyJob(job, approachLabel) {
   if (approachLabel === 'Loud') {
     wantedLevelGain = Math.ceil(wantedLevelGain * 1.3);
   }
-  let intimidationReduction = player.skillTrees.violence.intimidation * 0.1;
+  let intimidationReduction = player.skillTree.combat.intimidation * 0.1;
   wantedLevelGain = Math.max(1, Math.floor(wantedLevelGain * (1 - intimidationReduction)));
   if (hasUtilityItem('Police Scanner')) {
     wantedLevelGain = Math.max(1, Math.floor(wantedLevelGain * 0.8));
@@ -8165,10 +8547,10 @@ function handleLaunderMoneyJob(job, approachLabel) {
   updateMissionProgress('money_earned', cleanAmount);
 
   // Forensics skill can reduce evidence trail
-  if (player.skillTrees.intelligence.forensics > 0) {
-    let forensicsChance = player.skillTrees.intelligence.forensics * 8;
+  if (player.skillTree.intelligence.forensics > 0) {
+    let forensicsChance = player.skillTree.intelligence.forensics * 8;
     if (Math.random() * 100 < forensicsChance) {
-      let evidenceReduction = Math.min(2, Math.floor(player.skillTrees.intelligence.forensics / 3));
+      let evidenceReduction = Math.min(2, Math.floor(player.skillTree.intelligence.forensics / 3));
       player.wantedLevel = Math.max(0, player.wantedLevel - evidenceReduction);
       logAction(`¹ Your forensics expertise helps you cover the paper trail, reducing heat by ${evidenceReduction}!`);
     }
@@ -8573,9 +8955,16 @@ function sendToJail(wantedLevelLoss) {
   player.inJail = true;
   _jobsWithoutArrest = 0; // Reset consecutive clean jobs on arrest
   // Jail time scales with wanted level but caps at 90 seconds. Escape skill reduces time.
-  const escapeReduction = (player.skillTrees.stealth.escape || 0) * 2; // -2s per escape level
+  const escapeReduction = (player.skillTree.stealth.escape_artist || 0) * 2; // -2s per escape level
   const baseJailTime = Math.min(90, 15 + Math.floor(player.wantedLevel * 0.8));
   let calculatedJailTime = Math.max(10, baseJailTime - escapeReduction);
+  
+  // Iron Will perk: -25% jail time
+  if (hasPlayerPerk('iron_will')) {
+    const reduced = Math.floor(calculatedJailTime * 0.25);
+    calculatedJailTime = Math.max(5, calculatedJailTime - reduced);
+    logAction(`🔥 Iron Will kicks in — your jail sentence is shortened by ${reduced}s.`);
+  }
   
   // Utility item: Fake ID Kit reduces jail time by 5 seconds
   if (hasUtilityItem('Fake ID Kit')) {
@@ -8613,7 +9002,11 @@ function sendToJail(wantedLevelLoss) {
 
 // Bribe guard to get released early
 function bribeGuard() {
-  const bribeCost = Math.floor(1000 + player.level * 500 + player.wantedLevel * 200);
+  let bribeCost = Math.floor(1000 + player.level * 500 + player.wantedLevel * 200);
+  // Silver Tongue perk: -10% bribe cost
+  if (hasPlayerPerk('silver_tongue')) {
+    bribeCost = Math.floor(bribeCost * 0.90);
+  }
   
   if (player.money < bribeCost) {
     showBriefNotification(`You need $${bribeCost.toLocaleString()} to bribe the guard. You only have $${Math.floor(player.money).toLocaleString()}.`, 'warning');
@@ -8651,7 +9044,9 @@ function attemptBreakout() {
   player.wantedLevel++; // Increase wanted level with each breakout attempt
 
   // Stealth skill improves breakout chance
-  let adjustedBreakoutChance = player.breakoutChance + (player.skills.stealth * 3);
+  let adjustedBreakoutChance = player.breakoutChance + (player.skillTree.stealth.shadow_step * 3);
+  // Iron Will perk: +10% breakout success
+  if (hasPlayerPerk('iron_will')) adjustedBreakoutChance += 10;
   let success = Math.random() * 100 < adjustedBreakoutChance;
   
   if (success) {
@@ -8691,463 +9086,190 @@ function attemptBreakout() {
   }
 }
 
-// Function to show skill system
+// ══════════════════════════════════════════════════════════════
+// UNIFIED RPG SKILL TREE SYSTEM
+// ══════════════════════════════════════════════════════════════
+
+// Currently selected tree in the skill UI
+let _activeSkillTree = 'stealth';
+
 function showSkills() {
   if (player.inJail) {
     showBriefNotification("You can't access skills while you're in jail!", 'danger');
     return;
   }
+  hideAllScreens();
+  document.getElementById("skills-screen").style.display = "block";
+  renderSkillTreeUI();
+}
 
-  let skillsHTML = `
-    <div style="background: linear-gradient(135deg, #2c3e50, #34495e); padding: 30px; border-radius: 15px; color: #ecf0f1;">
-      <h2 style="text-align: center; color: #3498db; margin-bottom: 20px; font-size: 2.5em;">
-          Expertise
-      </h2>
-      
-      <div style="text-align: center; margin-bottom: 30px; padding: 15px; background: rgba(52, 152, 219, 0.2); border-radius: 10px;">
-        <h3 style="color: #f39c12; margin: 0;">Skill Points Available: ${player.skillPoints}</h3>
-        ${player.skillPoints === 0 ? 
-          '<p style="color: #e67e22; margin: 10px 0;"><strong>Complete jobs and missions to earn skill points!</strong></p>' : 
-          '<p style="color: #2ecc71; margin: 10px 0;">Spend your points wisely to unlock powerful abilities!</p>'
-        }
-      </div>
-      
-      <!-- Navigation Tabs -->
-      <div style="display: flex; justify-content: center; margin-bottom: 30px; gap: 10px; flex-wrap: wrap;">
-        <button onclick="showSkillTab('basic')" id="tab-basic" class="skill-tab active-tab">
-          Basic Skills
-        </button>
-        <button onclick="showSkillTab('trees')" id="tab-trees" class="skill-tab">
-          Skill Trees
-        </button>
-        <button onclick="showSkillTab('reputation')" id="tab-reputation" class="skill-tab">
-          Reputation
-        </button>
+function renderSkillTreeUI() {
+  const totalPts = Object.values(player.skillTree).reduce((s, nodes) => s + Object.values(nodes).reduce((a, b) => a + b, 0), 0);
 
+  // Build tree selector tabs
+  const treeTabs = Object.entries(SKILL_TREE_DEFS).map(([id, def]) => {
+    const pts = getTreePointsSpent(id);
+    const active = id === _activeSkillTree;
+    return `<button onclick="selectSkillTree('${id}')" class="rpg-tree-tab ${active ? 'rpg-tree-tab-active' : ''}" style="--tab-color:${def.color}">
+      <span class="rpg-tree-tab-icon">${def.icon}</span>
+      <span class="rpg-tree-tab-name">${def.name}</span>
+      <span class="rpg-tree-tab-pts">${pts} pts</span>
+    </button>`;
+  }).join('');
+
+  // Build the active tree
+  const treeDef = SKILL_TREE_DEFS[_activeSkillTree];
+  const treeData = player.skillTree[_activeSkillTree];
+  const ptsInTree = getTreePointsSpent(_activeSkillTree);
+
+  // Separate nodes by tier
+  const tiers = [1, 2, 3];
+  const tierLabels = ['Foundation', 'Specialization', 'Mastery'];
+  const tierReqs = [0, 5, 20];
+
+  let treeNodesHTML = '';
+  for (let ti = 0; ti < tiers.length; ti++) {
+    const tier = tiers[ti];
+    const tierNodes = Object.entries(treeDef.nodes).filter(([, n]) => n.tier === tier);
+    const tierUnlocked = ptsInTree >= tierReqs[ti];
+
+    treeNodesHTML += `
+      <div class="rpg-tier-section">
+        <div class="rpg-tier-header">
+          <span class="rpg-tier-label">${tierLabels[ti]} — Tier ${tier}</span>
+          <span class="rpg-tier-req ${tierUnlocked ? 'rpg-tier-unlocked' : ''}">${tierReqs[ti] > 0 ? (tierUnlocked ? '✓ Unlocked' : `Requires ${tierReqs[ti]} pts in tree (${ptsInTree}/${tierReqs[ti]})`) : 'Always Available'}</span>
+        </div>
+        ${tier > 1 ? '<div class="rpg-tier-connector"><div class="rpg-connector-line"></div></div>' : ''}
+        <div class="rpg-tier-nodes">
+    `;
+
+    for (const [nodeId, nodeDef] of tierNodes) {
+      const rank = treeData[nodeId] || 0;
+      const maxRank = nodeDef.maxRank;
+      const canUpgrade = canUnlockNode(_activeSkillTree, nodeId);
+      const isMaxed = rank >= maxRank;
+      const meetsPrereqs = nodeDef.prereqs.every(req => (treeData[req.node] || 0) >= req.rank);
+      const isLocked = !tierUnlocked || !meetsPrereqs;
+      const pctFill = Math.round((rank / maxRank) * 100);
+
+      // Prereq display
+      let prereqText = '';
+      if (nodeDef.prereqs.length > 0) {
+        prereqText = nodeDef.prereqs.map(req => {
+          const reqDef = treeDef.nodes[req.node];
+          const reqMet = (treeData[req.node] || 0) >= req.rank;
+          return `<span style="color:${reqMet ? '#2ecc71' : '#e74c3c'}">${reqMet ? '✓' : '✗'} ${reqDef.name} Rank ${req.rank}</span>`;
+        }).join(' ');
+      }
+
+      treeNodesHTML += `
+        <div class="rpg-node ${isMaxed ? 'rpg-node-maxed' : ''} ${isLocked ? 'rpg-node-locked' : ''} ${canUpgrade ? 'rpg-node-available' : ''}" style="--node-color:${treeDef.color}">
+          <div class="rpg-node-header">
+            <span class="rpg-node-icon">${nodeDef.icon}</span>
+            <div class="rpg-node-title">
+              <span class="rpg-node-name">${nodeDef.name}</span>
+              <span class="rpg-node-rank">${rank} / ${maxRank}</span>
+            </div>
+          </div>
+          <div class="rpg-node-bar">
+            <div class="rpg-node-bar-fill" style="width:${pctFill}%;background:${isMaxed ? '#d4af37' : treeDef.color}"></div>
+          </div>
+          <p class="rpg-node-desc">${nodeDef.desc}</p>
+          <p class="rpg-node-effect">${nodeDef.effect}</p>
+          ${prereqText ? `<div class="rpg-node-prereqs">Requires: ${prereqText}</div>` : ''}
+          <button onclick="upgradeNode('${_activeSkillTree}', '${nodeId}')" class="rpg-node-btn ${canUpgrade ? 'rpg-node-btn-active' : ''}" ${!canUpgrade ? 'disabled' : ''}>
+            ${isMaxed ? '★ MAXED' : isLocked ? '🔒 Locked' : canUpgrade ? 'Upgrade (1 pt)' : 'No Points'}
+          </button>
+        </div>
+      `;
+    }
+    treeNodesHTML += `</div></div>`;
+  }
+
+  document.getElementById("skills-content").innerHTML = `
+    <div class="rpg-skill-container">
+      <div class="rpg-skill-header">
+        <h2 class="rpg-skill-title">⚔️ Skill Trees</h2>
+        <div class="rpg-skill-points">
+          <span class="rpg-sp-label">Skill Points</span>
+          <span class="rpg-sp-value">${player.skillPoints}</span>
+        </div>
+        <div class="rpg-skill-summary">Total invested: ${totalPts} pts across all trees</div>
       </div>
-      
-      <!-- Tab Content -->
-      <div id="skill-tab-content">
-        <!-- Content will be loaded by showSkillTab function -->
+
+      <div class="rpg-tree-tabs">${treeTabs}</div>
+
+      <div class="rpg-tree-panel" style="--tree-color:${treeDef.color}">
+        <div class="rpg-tree-title-bar">
+          <span class="rpg-tree-title-icon">${treeDef.icon}</span>
+          <div>
+            <h3 class="rpg-tree-title">${treeDef.name}</h3>
+            <p class="rpg-tree-desc">${treeDef.desc}</p>
+          </div>
+          <span class="rpg-tree-invested">${ptsInTree} pts invested</span>
+        </div>
+        ${treeNodesHTML}
       </div>
-      
-      <div style="text-align: center; margin-top: 30px;">
+
+      <div style="text-align:center;margin-top:20px;">
         <button class="nav-btn-back" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
       </div>
     </div>
-    
-    <style>
-      .skill-tab {
-        background: rgba(52, 73, 94, 0.8);
-        color: #bdc3c7;
-        border: 2px solid #7f8c8d;
-        padding: 12px 20px;
-        border-radius: 8px;
-        cursor: pointer;
-        font-weight: bold;
-        transition: all 0.3s ease;
-      }
-      
-      .skill-tab:hover {
-        background: rgba(52, 152, 219, 0.3);
-        border-color: #3498db;
-        color: #ecf0f1;
-      }
-      
-      .active-tab {
-        background: linear-gradient(135deg, #3498db, #2980b9) !important;
-        border-color: #3498db !important;
-        color: white !important;
-      }
-      
-      .skill-card {
-        background: rgba(44, 62, 80, 0.9);
-        border: 2px solid #7f8c8d;
-        border-radius: 12px;
-        padding: 20px;
-        margin: 15px 0;
-        transition: all 0.3s ease;
-      }
-      
-      .skill-card:hover {
-        border-color: #3498db;
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(52, 152, 219, 0.3);
-      }
-      
-      .skill-tree-branch {
-        background: rgba(52, 73, 94, 0.6);
-        border-radius: 8px;
-        padding: 15px;
-        margin: 10px 0;
-        border-left: 4px solid #3498db;
-      }
-      
-      .reputation-bar {
-        width: 100%;
-        height: 20px;
-        background: rgba(52, 73, 94, 0.8);
-        border-radius: 10px;
-        overflow: hidden;
-        margin: 10px 0;
-      }
-      
-      .reputation-fill {
-        height: 100%;
-        border-radius: 10px;
-        transition: width 0.3s ease;
-      }
-      
-
-    </style>
   `;
-
-  document.getElementById("skills-content").innerHTML = skillsHTML;
-  hideAllScreens();
-  document.getElementById("skills-screen").style.display = "block";
-  
-  // Show basic skills tab by default
-  showSkillTab('basic');
 }
 
-// Function to upgrade skills
-// Advanced Skills System Functions
-
-function showSkillTab(tabName) {
-  // Update tab appearance
-  document.querySelectorAll('.skill-tab').forEach(tab => {
-    tab.classList.remove('active-tab');
-  });
-  document.getElementById(`tab-${tabName}`).classList.add('active-tab');
-
-  // Failsafe: always reset skill upgrade lock when showing skill tab
-  window.upgradingSkill = false;
-
-  // Load tab content
-  let content = '';
-
-  switch(tabName) {
-    case 'basic':
-      content = generateBasicSkillsContent();
-      break;
-    case 'trees':
-      content = generateSkillTreesContent();
-      break;
-    case 'reputation':
-      content = generateReputationContent();
-      break;
-  }
-
-  document.getElementById('skill-tab-content').innerHTML = content;
+function selectSkillTree(treeId) {
+  _activeSkillTree = treeId;
+  renderSkillTreeUI();
 }
 
-function generateBasicSkillsContent() {
-  let content = `
-    <h3 style="color: #3498db; text-align: center; margin-bottom: 25px;">Foundation Skills</h3>
-    <p style="text-align: center; color: #bdc3c7; margin-bottom: 30px;">
-      Master these fundamental abilities to unlock specialized skill trees.
-    </p>
-    
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
-  `;
-  
-  Object.entries(player.skills).forEach(([skillName, level]) => {
-    const skillDef = skillTreeDefinitions[skillName];
-    const canUpgrade = player.skillPoints > 0;
-    const nextLevelCost = Math.floor(level / 5) + 1; // Increasing cost every 5 levels
-    
-    content += `
-      <div class="skill-card">
-        <div style="display: flex; align-items: center; margin-bottom: 15px;">
-          <span style="font-size: 2em; margin-right: 15px;">${skillDef.icon}</span>
-          <div>
-            <h4 style="color: ${skillDef.color}; margin: 0;">${skillDef.name}</h4>
-            <p style="color: #bdc3c7; margin: 5px 0; font-size: 0.9em;">Level ${level}</p>
-          </div>
-        </div>
-        
-        <div style="margin-bottom: 15px;">
-          <div style="background: rgba(52, 73, 94, 0.5); height: 8px; border-radius: 4px; overflow: hidden;">
-            <div style="background: ${skillDef.color}; height: 100%; width: ${Math.min((level % 5) * 20, 100)}%; transition: width 0.3s ease;"></div>
-          </div>
-          <p style="font-size: 0.8em; color: #95a5a6; margin: 5px 0;">Progress to next milestone: ${level % 5}/5</p>
-        </div>
-        
-        <div style="margin-bottom: 15px;">
-          <p style="color: #ecf0f1; font-size: 0.9em; margin: 0;">
-            ${getSkillDescription(skillName, level)}
-          </p>
-        </div>
-        
-        <button onclick="upgradeSkill('${skillName}')" 
-            style="background: ${canUpgrade ? `linear-gradient(135deg, ${skillDef.color}, ${skillDef.color}cc)` : '#7f8c8d'}; 
-                color: white; border: none; padding: 10px 20px; border-radius: 8px; 
-                cursor: ${canUpgrade ? 'pointer' : 'not-allowed'}; font-weight: bold; width: 100%;"
-            ${!canUpgrade ? 'disabled' : ''}>
-          ${canUpgrade ? `Upgrade (${nextLevelCost} point${nextLevelCost > 1 ? 's' : ''})` : 'No Points Available'}
-        </button>
-        
-        ${level >= 5 && level % 5 === 0 ? `
-          <div style="margin-top: 10px; padding: 8px; background: rgba(46, 204, 113, 0.2); border-radius: 5px; border: 1px solid #2ecc71;">
-            <p style="color: #2ecc71; font-size: 0.8em; margin: 0; text-align: center;">
-              Milestone reached! Skill tree branches unlocked!
-            </p>
-          </div>
-        ` : ''}
-      </div>
-    `;
-  });
-  
-  content += `</div>`;
-  return content;
-}
-
-function generateSkillTreesContent() {
-  let content = `
-    <h3 style="color: #3498db; text-align: center; margin-bottom: 25px;">Specialized Skill Trees</h3>
-    <p style="text-align: center; color: #bdc3c7; margin-bottom: 30px;">
-      Unlock and master specialized branches to become a true expert in your chosen fields.
-    </p>
-  `;
-  
-  Object.entries(skillTreeDefinitions).forEach(([skillName, skillDef]) => {
-    const mainSkillLevel = player.skills[skillName];
-    const isUnlocked = mainSkillLevel >= 5;
-    
-    content += `
-      <div class="skill-card" style="margin-bottom: 30px;">
-        <div style="display: flex; align-items: center; margin-bottom: 20px;">
-          <span style="font-size: 2.5em; margin-right: 15px;">${skillDef.icon}</span>
-          <div>
-            <h3 style="color: ${skillDef.color}; margin: 0;">${skillDef.name} Tree</h3>
-            <p style="color: #bdc3c7; margin: 5px 0;">
-              ${isUnlocked ? 'Unlocked' : `Requires ${skillName} level 5 (currently ${mainSkillLevel})`}
-            </p>
-          </div>
-        </div>
-        
-        ${isUnlocked ? `
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
-            ${Object.entries(skillDef.branches).map(([branchName, branch]) => {
-              const currentLevel = player.skillTrees[skillName][branchName];
-              const branchCost = currentLevel < 3 ? 1 : (currentLevel < 6 ? 2 : 3);
-              const canUpgrade = player.skillPoints >= branchCost && currentLevel < branch.maxLevel;
-              
-              return `
-                <div class="skill-tree-branch">
-                  <div style="display: flex; align-items: center; margin-bottom: 10px;">
-                    <span style="font-size: 1.5em; margin-right: 10px;">${branch.icon}</span>
-                    <div>
-                      <h4 style="color: #ecf0f1; margin: 0;">${branch.name}</h4>
-                      <p style="color: #95a5a6; margin: 0; font-size: 0.8em;">Level ${currentLevel}/${branch.maxLevel}</p>
-                    </div>
-                  </div>
-                  
-                  <p style="color: #bdc3c7; font-size: 0.9em; margin-bottom: 10px;">
-                    ${branch.description}
-                  </p>
-                  
-                  <div style="background: rgba(52, 73, 94, 0.5); height: 6px; border-radius: 3px; margin-bottom: 10px;">
-                    <div style="background: ${skillDef.color}; height: 100%; width: ${(currentLevel / branch.maxLevel) * 100}%; border-radius: 3px;"></div>
-                  </div>
-                  
-                  <p style="color: #f39c12; font-size: 0.8em; margin-bottom: 15px;">
-                    ${branch.benefits(currentLevel)}
-                  </p>
-                  
-                  <button onclick="upgradeSkillTree('${skillName}', '${branchName}')"
-                      style="background: ${canUpgrade ? `linear-gradient(135deg, ${skillDef.color}, ${skillDef.color}cc)` : '#7f8c8d'}; 
-                          color: white; border: none; padding: 8px 15px; border-radius: 5px; 
-                          cursor: ${canUpgrade ? 'pointer' : 'not-allowed'}; font-size: 0.9em; width: 100%;"
-                      ${!canUpgrade ? 'disabled' : ''}>
-                    ${currentLevel >= branch.maxLevel ? 'Maxed' : canUpgrade ? `Upgrade (${branchCost} pt${branchCost > 1 ? 's' : ''})` : `Need ${branchCost} pts`}
-                  </button>
-                </div>
-              `;
-            }).join('')}
-          </div>
-        ` : `
-          <div style="text-align: center; padding: 40px; background: rgba(52, 73, 94, 0.3); border-radius: 10px;">
-            <span style="font-size: 3em; opacity: 0.5;">🔒</span>
-            <p style="color: #95a5a6; margin: 10px 0;">This skill tree is locked.</p>
-            <p style="color: #bdc3c7; font-size: 0.9em;">Reach level 5 in ${skillName} to unlock specialized branches.</p>
-          </div>
-        `}
-      </div>
-    `;
-  });
-  
-  return content;
-}
-
-function generateReputationContent() {
-  let content = `
-    <h3 style="color: #3498db; text-align: center; margin-bottom: 25px;">Street Reputation</h3>
-    <p style="text-align: center; color: #bdc3c7; margin-bottom: 30px;">
-      Your standing with different factions affects prices, opportunities, and survival.
-    </p>
-    
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
-  `;
-  
-  Object.entries(factionEffects).forEach(([factionId, faction]) => {
-    const reputation = player.streetReputation[factionId] || 0;
-    const reputationPercent = Math.min(Math.abs(reputation), 100);
-    const isPositive = reputation >= 0;
-    const color = isPositive ? '#2ecc71' : '#e74c3c';
-    
-    // Get current effects
-    const currentEffects = [];
-    const effects = isPositive ? faction.positiveEffects : faction.negativeEffects;
-    effects.forEach(effect => {
-      if (Math.abs(reputation) >= effect.level) {
-        currentEffects.push(effect.effect);
-      }
-    });
-    
-    content += `
-      <div class="skill-card">
-        <div style="display: flex; align-items: center; margin-bottom: 15px;">
-          <span style="font-size: 2em; margin-right: 15px;">${faction.icon}</span>
-          <div style="flex: 1;">
-            <h4 style="color: #ecf0f1; margin: 0;">${faction.name}</h4>
-            <p style="color: ${color}; margin: 5px 0; font-weight: bold;">
-              ${reputation > 0 ? '+' : ''}${reputation} / 100
-            </p>
-          </div>
-        </div>
-        
-        <div class="reputation-bar">
-          <div class="reputation-fill" style="background: ${color}; width: ${reputationPercent}%;"></div>
-        </div>
-        
-        <div style="margin-top: 15px;">
-          <h5 style="color: #f39c12; margin: 0 0 10px 0;">Current Effects:</h5>
-          ${currentEffects.length > 0 ? 
-            currentEffects.map(effect => `
-              <p style="color: ${color}; font-size: 0.9em; margin: 5px 0; padding: 5px; background: rgba(${isPositive ? '46, 204, 113' : '231, 76, 60'}, 0.1); border-radius: 5px;">
-                ${isPositive ? '✓' : ''} ${effect}
-              </p>
-            `).join('') : 
-            '<p style="color: #95a5a6; font-style: italic;">No effects active</p>'
-          }
-        </div>
-        
-        <div style="margin-top: 15px;">
-          <h5 style="color: #3498db; margin: 0 0 10px 0;">Next Milestone:</h5>
-          ${(() => {
-            const nextMilestone = effects.find(effect => Math.abs(reputation) < effect.level);
-            if (nextMilestone) {
-              return `
-                <p style="color: #bdc3c7; font-size: 0.9em;">
-                  At ${isPositive ? '+' : '-'}${nextMilestone.level}: ${nextMilestone.effect}
-                </p>
-              `;
-            } else {
-              return '<p style="color: #f39c12; font-size: 0.9em;">Maximum level reached!</p>';
-            }
-          })()}
-        </div>
-      </div>
-    `;
-  });
-  
-  content += `</div>`;
-  return content;
-}
-
-// generateMentorsContent removed — Phase 31
-// generatePerksContent removed — Phase 31
-
-function getSkillDescription(skillName, level) {
-  const nextLevel = level + 1;
-  const descriptions = {
-    stealth: `<strong>Current:</strong> -${level * 2}% arrest chance | <strong>Next level:</strong> -${nextLevel * 2}%<br><em style="color:#95a5a6;">Each level: -2% arrest chance, better stealth jobs</em>`,
-    violence: `<strong>Current:</strong> +${level * 5}% combat effectiveness | <strong>Next level:</strong> +${nextLevel * 5}%<br><em style="color:#95a5a6;">Each level: +5% combat power, reduced injuries</em>`,
-    charisma: `<strong>Current:</strong> +${level * 3}% negotiation, -${level * 2}% store prices | <strong>Next level:</strong> +${nextLevel * 3}%, -${nextLevel * 2}%<br><em style="color:#95a5a6;">Each level: +3% negotiation, -2% prices</em>`,
-    intelligence: `<strong>Current:</strong> +${level * 4}% job success | <strong>Next level:</strong> +${nextLevel * 4}%<br><em style="color:#95a5a6;">Each level: +4% success rate, advanced planning</em>`,
-    luck: `<strong>Current:</strong> +${level * 6}% event rewards | <strong>Next level:</strong> +${nextLevel * 6}%<br><em style="color:#95a5a6;">Each level: +6% random event rewards, better gambling</em>`,
-    endurance: `<strong>Current:</strong> -${level} energy cost, +${level * 2} max energy | <strong>Next level:</strong> -${nextLevel}, +${nextLevel * 2}<br><em style="color:#95a5a6;">Each level: -1 energy cost, +2 max energy</em>`
-  };
-  
-  return descriptions[skillName] || 'Unknown skill effect.';
-}
-
-function upgradeSkillTree(skillName, branchName) {
-  const currentLevel = player.skillTrees[skillName][branchName];
-  const maxLevel = skillTreeDefinitions[skillName].branches[branchName].maxLevel;
-  
-  // Cost scales: 1 point for levels 1-3, 2 for 4-6, 3 for 7+
-  const cost = currentLevel < 3 ? 1 : (currentLevel < 6 ? 2 : 3);
-  
-  if (player.skillPoints < cost) {
-    showBriefNotification(`Need ${cost} skill point${cost > 1 ? 's' : ''} to upgrade ${branchName} (you have ${player.skillPoints}).`, 'warning');
-    return;
-  }
-  
-  if (currentLevel < maxLevel) {
-    player.skillTrees[skillName][branchName]++;
-    player.skillPoints -= cost;
-    player.playstyleStats.skillTreeUpgrades = (player.playstyleStats.skillTreeUpgrades || 0) + 1; // Track skill tree usage
-    
-    const newLevel = currentLevel + 1;
-    
-    // Milestone feedback at max level
-    if (newLevel >= maxLevel) {
-      showBriefNotification(`MASTERED: ${branchName}! You've reached the pinnacle.`, 'success');
-      logAction(`${branchName} MASTERED! You've reached level ${newLevel} — the absolute peak of this discipline.`);
-    } else {
-      logAction(`Specialized training complete! Your ${branchName} skills have improved significantly (Level ${newLevel}).`);
-    }
-    updateUI();
-    showSkillTab('trees'); // Refresh the trees view
-  } else {
-    showBriefNotification(`${branchName} is already at max level!`, 'warning');
-  }
-}
-
-// startMentoring removed — Phase 31
-// checkMentorDiscovery removed — Phase 31
-// checkPerkRequirements, unlockPerk, applyPerkEffects removed — Phase 31
-
-function upgradeSkill(skillName) {
-  // Prevent rapid clicking
+function upgradeNode(treeName, nodeId) {
   if (window.upgradingSkill) {
-    // Failsafe: if stuck for more than 1 second, reset
     setTimeout(() => { window.upgradingSkill = false; }, 1000);
     return;
   }
-  
-  const currentLevel = player.skills[skillName];
-  const cost = Math.floor(currentLevel / 5) + 1; // Increasing cost every 5 levels
-  
-  if (player.skillPoints >= cost) {
-    window.upgradingSkill = true;
-    player.skills[skillName]++;
-    player.skillPoints -= cost;
-    
-    // Check for milestone achievements
-    const newLevel = player.skills[skillName];
-    if (newLevel % 5 === 0) {
-      logAction(`Milestone reached! ${skillName} level ${newLevel} unlocks specialized skill trees and new opportunities!`);
+  if (!canUnlockNode(treeName, nodeId)) {
+    const nodeDef = SKILL_TREE_DEFS[treeName]?.nodes[nodeId];
+    if (!nodeDef) return;
+    const rank = player.skillTree[treeName][nodeId] || 0;
+    if (rank >= nodeDef.maxRank) {
+      showBriefNotification(`${nodeDef.name} is already maxed out!`, 'warning');
+    } else if (player.skillPoints < 1) {
+      showBriefNotification('No skill points available! Level up to earn more.', 'danger');
+    } else {
+      showBriefNotification(`Prerequisites not met for ${nodeDef.name}.`, 'warning');
     }
-    
-    logAction(`Hours of practice pay off! Your ${skillName} skills sharpen like a blade. Every lesson learned in blood and sweat (Level ${newLevel}).`);
-    updateUI();
-    showSkillTab('basic'); // Refresh the current tab
-    
-    // Reset the cooldown after a short delay
-    setTimeout(() => {
-      window.upgradingSkill = false;
-    }, 100);
-    // Extra failsafe: reset after 1 second in case of UI issues
-    setTimeout(() => {
-      window.upgradingSkill = false;
-    }, 1000);
-  } else {
-    showBriefNotification(`You need ${cost} skill point${cost > 1 ? 's' : ''} to upgrade this skill!`, 'danger');
+    return;
   }
+
+  window.upgradingSkill = true;
+  player.skillTree[treeName][nodeId]++;
+  player.skillPoints -= 1;
+
+  const nodeDef = SKILL_TREE_DEFS[treeName].nodes[nodeId];
+  const newRank = player.skillTree[treeName][nodeId];
+
+  if (newRank >= nodeDef.maxRank) {
+    showBriefNotification(`★ MASTERED: ${nodeDef.name}! Maximum rank reached.`, 'success');
+    logAction(`${nodeDef.name} MASTERED! You've reached rank ${newRank} — the pinnacle of this discipline.`);
+  } else {
+    logAction(`Training complete! ${nodeDef.name} improved to rank ${newRank}. ${nodeDef.effect}`);
+  }
+
+  // Track playstyle
+  player.playstyleStats.skillTreeUpgrades = (player.playstyleStats.skillTreeUpgrades || 0) + 1;
+
+  updateUI();
+  renderSkillTreeUI();
+
+  setTimeout(() => { window.upgradingSkill = false; }, 100);
+  setTimeout(() => { window.upgradingSkill = false; }, 1000);
 }
+
+// Legacy aliases for onclick handlers
+function showSkillTab() { renderSkillTreeUI(); }
+function upgradeSkill() {}
+function upgradeSkillTree() {}
 
 // Function to show gang management
 // (Removed duplicate showGang function)
@@ -9235,7 +9357,7 @@ function expandTerritory() {
   player.money -= moneyCost;
   
   // Success chance scales: 70% base, +3% per gang member beyond 5, +2% per leadership level, cap at 95%
-  const leadershipLevel = (player.skillTrees.charisma && player.skillTrees.charisma.leadership) || 0;
+  const leadershipLevel = (player.skillTree.charisma && player.skillTree.charisma.leadership) || 0;
   const successChance = Math.min(0.95, 0.70 + (actualGangSize - 5) * 0.03 + leadershipLevel * 0.02);
   
   if (Math.random() < successChance) {
@@ -9559,7 +9681,7 @@ function breakoutPrisoner(prisonerIndex) {
   const prisoner = jailPrisoners[prisonerIndex];
   if (!prisoner || prisoner.isPlayer) return;
   
-  const successChance = prisoner.breakoutSuccess + (player.skills.stealth * 2);
+  const successChance = prisoner.breakoutSuccess + (player.skillTree.stealth.shadow_step * 2);
   const success = Math.random() * 100 < successChance;
   
   if (success) {
@@ -9579,7 +9701,7 @@ function breakoutPrisoner(prisonerIndex) {
     
   } else {
     // Failed breakout - chance of getting caught
-    const caughtChance = 40 - (player.skills.stealth * 3);
+    const caughtChance = 40 - (player.skillTree.stealth.shadow_step * 3);
     if (Math.random() * 100 < caughtChance) {
       showBriefNotification(`${getRandomNarration('prisonerBreakoutFailure')} You've been caught and sent to jail!`, 'danger');
       logAction(`Busted! The guards catch you red-handed helping ${prisoner.name}. They're dragging you to a cell of your own.`);
@@ -11058,8 +11180,7 @@ function showPlayerStats() {
   hideAllScreens();
   document.getElementById("player-stats-screen").style.display = "block";
 
-  const s = player.skills;
-  const t = player.skillTrees;
+  const st = player.skillTree;
 
   // --- Helper: stat row ---
   function row(label, value, color) {
@@ -11077,8 +11198,25 @@ function showPlayerStats() {
     </div>`;
   }
 
+  // ---- SECTION 0: Background & Perk ----
+  const bgInfo = getPlayerBackgroundInfo();
+  const perkInfo = getPlayerPerkInfo();
+  let originHTML = '';
+  if (bgInfo) {
+    originHTML += row('Background', `${bgInfo.icon} ${bgInfo.name}`, '#d4af37');
+    originHTML += row('Background Bonus', bgInfo.bonusText, '#2ecc71');
+  } else {
+    originHTML += row('Background', 'None chosen', '#7f8c8d');
+  }
+  if (perkInfo) {
+    originHTML += row('Active Perk', `${perkInfo.icon} ${perkInfo.name}`, perkInfo.color || '#e74c3c');
+    originHTML += row('Perk Effect', perkInfo.effect, '#3498db');
+  } else {
+    originHTML += row('Active Perk', 'None chosen', '#7f8c8d');
+  }
+
   // ---- SECTION 1: Core Stats ----
-  const maxEnergy = 100 + (s.endurance * 2) + (t.endurance.stamina * 3);
+  const maxEnergy = 100 + ((st.endurance?.vitality || 0) * 2) + ((st.endurance?.conditioning || 0) * 3);
   const coreHTML = [
     row('Level', player.level, '#d4af37'),
     row('XP', `${player.experience} / ${player.level * 500 + Math.pow(player.level, 2) * 80 + Math.pow(player.level, 3) * 5}`, '#3498db'),
@@ -11093,42 +11231,36 @@ function showPlayerStats() {
     row('Skill Points', player.skillPoints || 0, '#d4af37'),
   ].join('');
 
-  // ---- SECTION 2: Base Skills ----
-  const skillLabels = {
-    stealth: { icon: '🕵️', desc: '-2% arrest chance per level' },
-    violence: { icon: '⚔️', desc: '+5% combat power per level' },
-    charisma: { icon: '🗣️', desc: '+3% negotiation per level' },
-    intelligence: { icon: '🧠 ', desc: '+4% job success per level' },
-    luck: { icon: '🍀', desc: '+6% event rewards per level' },
-    endurance: { icon: '💪', desc: '+2 max energy per level' }
-  };
-  const baseSkillsHTML = Object.entries(s).map(([name, level]) => {
-    const info = skillLabels[name] || { icon: '❓', desc: '' };
-    const pctMap = { stealth: level * 2, violence: level * 5, charisma: level * 3, intelligence: level * 4, luck: level * 6, endurance: level * 2 };
-    const bonusVal = name === 'endurance' ? `+${pctMap[name]} max energy` : (name === 'stealth' ? `-${pctMap[name]}%` : `+${pctMap[name]}%`);
-    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06);">
-      <span style="color:#bdc3c7;">${info.icon} ${name.charAt(0).toUpperCase() + name.slice(1)}</span>
-      <span style="color:#ecf0f1;">Lv ${level}</span>
-      <span style="color:#d4af37;font-weight:600;">${bonusVal}</span>
-    </div>`;
-  }).join('');
-
-  // ---- SECTION 3: Skill Tree Branches ----
-  let treeBranchesHTML = '';
-  for (const [skillName, branches] of Object.entries(t)) {
-    const def = skillTreeDefinitions[skillName];
-    if (!def) continue;
-    for (const [branchName, level] of Object.entries(branches)) {
-      const branchDef = def.branches[branchName];
-      if (!branchDef) continue;
-      const bonusText = level > 0 ? branchDef.benefits(level) : 'Not started';
-      treeBranchesHTML += `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
-        <span style="color:#bdc3c7;">${branchDef.icon} ${branchDef.name}</span>
-        <span style="color:#ecf0f1;">Lv ${level}/${branchDef.maxLevel}</span>
-        <span style="color:${level > 0 ? '#d4af37' : '#7f8c8d'};font-size:0.85em;">${bonusText}</span>
+  // ---- SECTION 2: Skill Trees Overview ----
+  let skillTreeOverviewHTML = '';
+  for (const [treeName, treeDef] of Object.entries(SKILL_TREE_DEFS)) {
+    const nodes = st[treeName] || {};
+    const totalPts = Object.values(nodes).reduce((a, b) => a + b, 0);
+    if (totalPts === 0) {
+      skillTreeOverviewHTML += `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+        <span style="color:#7f8c8d;">${treeDef.icon} ${treeDef.name}</span>
+        <span style="color:#7f8c8d;">No points invested</span>
       </div>`;
+      continue;
     }
+    skillTreeOverviewHTML += `<div style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06);">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+        <span style="color:${treeDef.color};font-weight:600;">${treeDef.icon} ${treeDef.name}</span>
+        <span style="color:#d4af37;font-weight:600;">${totalPts} pts</span>
+      </div>`;
+    for (const [nodeId, nodeDef] of Object.entries(treeDef.nodes)) {
+      const rank = nodes[nodeId] || 0;
+      if (rank > 0) {
+        skillTreeOverviewHTML += `<div style="display:flex;justify-content:space-between;padding:2px 0 2px 16px;">
+          <span style="color:#bdc3c7;font-size:0.9em;">${nodeDef.icon} ${nodeDef.name}</span>
+          <span style="color:#ecf0f1;font-size:0.9em;">${rank}/${nodeDef.maxRank}</span>
+        </div>`;
+      }
+    }
+    skillTreeOverviewHTML += `</div>`;
   }
+
+  // ---- SECTION 3: Gang & Territory ----
 
   // ---- SECTION 4: Gang & Territory ----
   const gangHTML = [
@@ -11196,9 +11328,9 @@ function showPlayerStats() {
     <!-- Stats Tab (default) -->
     <div id="panel-stats">
       <h2 style="color:#d4af37;text-align:center;margin:10px 0 18px;">Player Stats Overview</h2>
+      ${card('Origin &amp; Perk', '🎭', originHTML)}
       ${card('Core Stats', '', coreHTML)}
-      ${card('Base Skills', '', baseSkillsHTML)}
-      ${card('Skill Specializations', '', treeBranchesHTML)}
+      ${card('Skill Trees', '⚔️', skillTreeOverviewHTML)}
       ${card('Gang & Territory', '', gangHTML)}
       ${card('Faction Reputation', '', factionHTML)}
       ${card('Equipment', '', equipHTML)}
@@ -11589,7 +11721,7 @@ function attemptJailbreak(prisonerIndex) {
   player.energy = Math.max(0, player.energy - prisoner.energyCost);
   
   // Calculate success chance with stealth bonus
-  const successChance = prisoner.breakoutSuccess + (player.skills.stealth * 2);
+  const successChance = prisoner.breakoutSuccess + (player.skillTree.stealth.shadow_step * 2);
   const success = Math.random() * 100 < successChance;
   
   if (success) {
@@ -11609,7 +11741,7 @@ function attemptJailbreak(prisonerIndex) {
     
   } else {
     // Failed jailbreak - chance of getting arrested
-    const arrestChance = prisoner.arrestChance - (player.skills.stealth * 3);
+    const arrestChance = prisoner.arrestChance - (player.skillTree.stealth.shadow_step * 3);
     
     if (Math.random() * 100 < arrestChance) {
       // Got caught - go to jail
@@ -11980,8 +12112,8 @@ function renderStoreTab(tabId) {
 
   const storeListHTML = filteredItems.map(item => {
     const index = storeItems.indexOf(item);
-    let finalPrice = Math.floor(item.price * (1 - player.skills.charisma * 0.02));
-    let discountText = player.skills.charisma > 0 ? ` (${((1 - finalPrice/item.price) * 100).toFixed(0)}% off!)` : '';
+    let finalPrice = Math.floor(item.price * (1 - player.skillTree.charisma.smooth_talker * 0.02));
+    let discountText = player.skillTree.charisma.smooth_talker > 0 ? ` (${((1 - finalPrice/item.price) * 100).toFixed(0)}% off!)` : '';
     
     let itemDescription = "";
     if (item.type === "energy") {
@@ -12089,8 +12221,8 @@ function refreshStoreDynamicElements() {
     const btnEl = document.getElementById(`buy-btn-${index}`);
     if (!priceEl || !btnEl) return;
     const base = parseInt(priceEl.getAttribute('data-base-price'), 10) || item.price;
-    const finalPrice = Math.floor(base * (1 - player.skills.charisma * 0.02));
-    const discountText = player.skills.charisma > 0 ? ` (${((1 - finalPrice/base) * 100).toFixed(0)}% off!)` : '';
+    const finalPrice = Math.floor(base * (1 - player.skillTree.charisma.smooth_talker * 0.02));
+    const discountText = player.skillTree.charisma.smooth_talker > 0 ? ` (${((1 - finalPrice/base) * 100).toFixed(0)}% off!)` : '';
     priceEl.textContent = `$${finalPrice.toLocaleString()}${discountText}`;
     if (player.money >= finalPrice) {
       btnEl.disabled = false;
@@ -12120,7 +12252,7 @@ async function buyItem(index) {
   }
   
   // Apply charisma discount
-  let finalPrice = Math.floor(item.price * (1 - player.skills.charisma * 0.02));
+  let finalPrice = Math.floor(item.price * (1 - player.skillTree.charisma.smooth_talker * 0.02));
   
   // Kozlov Bratva passive: weapons cost 10% less
   if (item.type === 'weapon' || item.type === 'armor' || item.type === 'ammo') {
@@ -12566,6 +12698,9 @@ function closeLevelUpOverlay() {
   
   // Show alert with level up info
   showBriefNotification(`Level Up! You are now level ${player.level}. You gained 3 skill points!`, 'success');
+
+  // Check for deep milestone narration (storyExpansion)
+  checkMilestoneNarration(player.level);
 }
 
 // Function to unlock achievements
@@ -12593,7 +12728,7 @@ function checkAchievements() {
   const stats = player.missions.missionStats;
   const fRep = player.missions.factionReputation;
   const maxFRep = Math.max(fRep.torrino || 0, fRep.kozlov || 0, fRep.chen || 0, fRep.morales || 0);
-  const maxSkill = Math.max(player.skills.stealth, player.skills.violence, player.skills.charisma, player.skills.intelligence, player.skills.luck, player.skills.endurance);
+  const maxSkill = Math.max(player.skillTree.stealth.shadow_step, player.skillTree.combat.brawler, player.skillTree.charisma.smooth_talker, player.skillTree.intelligence.quick_study, player.skillTree.luck.fortune, player.skillTree.endurance.vitality);
   const ac = id => !achievements.find(a => a.id === id)?.unlocked;
 
   // Money milestones
@@ -12643,6 +12778,8 @@ function resetPlayerForNewGame() {
     gender: "",
     ethnicity: "",
     portrait: "",
+    background: null,
+    perk: null,
     money: 0,
     inventory: [],
     stolenCars: [],
@@ -12663,21 +12800,13 @@ function resetPlayerForNewGame() {
     level: 1,
     experience: 0,
     skillPoints: 0,
-    skills: {
-      stealth: 0,
-      violence: 0,
-      charisma: 0,
-      intelligence: 0,
-      luck: 0,
-      endurance: 0
-    },
-    skillTrees: {
-      stealth: { infiltration: 0, escape: 0, surveillance: 0 },
-      violence: { firearms: 0, melee: 0, intimidation: 0 },
-      charisma: { negotiation: 0, leadership: 0, manipulation: 0 },
-      intelligence: { hacking: 0, planning: 0, forensics: 0 },
-      luck: { gambling: 0, fortune: 0, serendipity: 0 },
-      endurance: { stamina: 0, recovery: 0, resistance: 0 }
+    skillTree: {
+      stealth:      { shadow_step: 0, light_feet: 0, infiltration: 0, escape_artist: 0, ghost_protocol: 0, surveillance: 0 },
+      combat:       { brawler: 0, toughness: 0, firearms: 0, melee_mastery: 0, intimidation: 0, enforcer: 0 },
+      charisma:     { smooth_talker: 0, street_cred: 0, negotiation: 0, leadership: 0, manipulation: 0, kingpin_aura: 0 },
+      intelligence: { quick_study: 0, awareness: 0, hacking: 0, planning: 0, forensics: 0, mastermind: 0 },
+      luck:         { fortune: 0, serendipity: 0, gambling: 0, scavenger: 0, jackpot: 0, lucky_break: 0 },
+      endurance:    { vitality: 0, conditioning: 0, recovery: 0, resilience: 0, resistance: 0, unstoppable: 0 }
     },
     mentors: [],
     streetReputation: {
@@ -13074,11 +13203,205 @@ function selectPortrait(portraitFile, portraitLabel) {
     portraitScreen.remove();
   }
   
-  // Log character creation
-  logAction(`${player.name} emerges from the shadows - ready to conquer the criminal underworld.`);
-  
-  // Show territory spawn selection (Phase 1 territory system)
+  // Show background & perk selection before territory spawn
+  showBackgroundAndPerkSelection();
+}
+
+// ──────────────────────────────────────────────────────────────
+// TERRITORY SPAWN SELECTION (Phase 1)
+// ──────────────────────────────────────────────────────────────
+// BACKGROUND & PERK SELECTION
+// Shown during character creation after portrait selection.
+// Player picks a backstory and one permanent perk.
+// ──────────────────────────────────────────────────────────────
+
+let _selectedBackground = null;
+let _selectedPerk = null;
+
+function showBackgroundAndPerkSelection() {
+  _selectedBackground = null;
+  _selectedPerk = null;
+
+  const container = document.getElementById('bg-perk-screen') || (() => {
+    const div = document.createElement('div');
+    div.id = 'bg-perk-screen';
+    document.body.appendChild(div);
+    return div;
+  })();
+
+  container.innerHTML = `
+    <div class="bg-perk-overlay">
+      <div class="bg-perk-container">
+        <h2 style="color: #e74c3c; font-size: 2em; margin-bottom: 4px;">Build Your Story</h2>
+        <p style="color: #bdc3c7; margin-bottom: 20px; font-size: 1.05em;">
+          Every criminal has an origin. Choose your <strong style="color:#f39c12;">background</strong> and a <strong style="color:#2ecc71;">permanent perk</strong> that will shape your journey.
+        </p>
+
+        <!-- BACKGROUNDS -->
+        <h3 style="color: #f39c12; font-size: 1.4em; margin-bottom: 12px; border-bottom: 2px solid #f39c12; padding-bottom: 6px;">Your Background</h3>
+        <div class="bg-perk-grid" id="background-grid">
+          ${CHARACTER_BACKGROUNDS.map(bg => `
+            <div class="bg-perk-card" data-bg-id="${bg.id}" onclick="selectBackground('${bg.id}')">
+              <div class="bg-perk-icon">${bg.icon}</div>
+              <div class="bg-perk-name">${bg.name}</div>
+              <div class="bg-perk-desc">${bg.description}</div>
+              <div class="bg-perk-bonus">${bg.bonusText}</div>
+            </div>
+          `).join('')}
+        </div>
+
+        <!-- PERKS -->
+        <h3 style="color: #2ecc71; font-size: 1.4em; margin: 24px 0 12px; border-bottom: 2px solid #2ecc71; padding-bottom: 6px;">Choose Your Perk</h3>
+        <div class="bg-perk-grid" id="perk-grid">
+          ${CHARACTER_PERKS.map(pk => `
+            <div class="bg-perk-card perk-card" data-perk-id="${pk.id}" onclick="selectPerk('${pk.id}')" style="--perk-color: ${pk.color};">
+              <div class="bg-perk-icon">${pk.icon}</div>
+              <div class="bg-perk-name">${pk.name}</div>
+              <div class="bg-perk-desc">${pk.description}</div>
+              <div class="bg-perk-effect">${pk.effect}</div>
+            </div>
+          `).join('')}
+        </div>
+
+        <!-- PREVIEW + CONFIRM -->
+        <div class="bg-perk-preview" id="bg-perk-preview">
+          <div id="preview-bg-text" style="color: #f39c12;">Background: <em>Not selected</em></div>
+          <div id="preview-perk-text" style="color: #2ecc71;">Perk: <em>Not selected</em></div>
+        </div>
+
+        <div style="text-align: center; margin-top: 20px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+          <button id="confirm-bg-perk-btn" onclick="confirmBackgroundAndPerk()" disabled
+            style="padding: 14px 32px; font-size: 1.15em; font-weight: bold; border: none; border-radius: 10px;
+                   background: #7f8c8d; color: white; cursor: not-allowed; transition: all 0.3s ease;">
+            Continue →
+          </button>
+          <button onclick="skipBackgroundAndPerk()"
+            style="padding: 14px 24px; font-size: 1em; background: transparent; color: #7f8c8d;
+                   border: 1px solid #555; border-radius: 10px; cursor: pointer; transition: all 0.3s ease;">
+            Skip (Randomize)
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  container.style.display = 'block';
+}
+
+function selectBackground(bgId) {
+  _selectedBackground = bgId;
+  document.querySelectorAll('#background-grid .bg-perk-card').forEach(el => {
+    el.classList.toggle('selected', el.dataset.bgId === bgId);
+  });
+  const bg = CHARACTER_BACKGROUNDS.find(b => b.id === bgId);
+  document.getElementById('preview-bg-text').innerHTML = bg
+    ? `Background: <strong>${bg.icon} ${bg.name}</strong> — <span style="color:#bdc3c7;">${bg.bonusText}</span>`
+    : 'Background: <em>Not selected</em>';
+  updateConfirmButton();
+}
+
+function selectPerk(perkId) {
+  _selectedPerk = perkId;
+  document.querySelectorAll('#perk-grid .bg-perk-card').forEach(el => {
+    el.classList.toggle('selected', el.dataset.perkId === perkId);
+  });
+  const pk = CHARACTER_PERKS.find(p => p.id === perkId);
+  document.getElementById('preview-perk-text').innerHTML = pk
+    ? `Perk: <strong>${pk.icon} ${pk.name}</strong> — <span style="color:#bdc3c7;">${pk.effect}</span>`
+    : 'Perk: <em>Not selected</em>';
+  updateConfirmButton();
+}
+
+function updateConfirmButton() {
+  const btn = document.getElementById('confirm-bg-perk-btn');
+  if (!btn) return;
+  const ready = _selectedBackground && _selectedPerk;
+  btn.disabled = !ready;
+  btn.style.background = ready ? 'linear-gradient(45deg, #e74c3c, #c0392b)' : '#7f8c8d';
+  btn.style.cursor = ready ? 'pointer' : 'not-allowed';
+}
+
+function applyBackgroundBonuses(bgId) {
+  const bg = CHARACTER_BACKGROUNDS.find(b => b.id === bgId);
+  if (!bg) return;
+  const bonus = bg.bonus;
+  if (bonus.stealth) player.skillTree.stealth.shadow_step += bonus.stealth;
+  if (bonus.violence) player.skillTree.combat.brawler += bonus.violence;
+  if (bonus.charisma) player.skillTree.charisma.smooth_talker += bonus.charisma;
+  if (bonus.intelligence) player.skillTree.intelligence.quick_study += bonus.intelligence;
+  if (bonus.luck) player.skillTree.luck.fortune += bonus.luck;
+  if (bonus.endurance) player.skillTree.endurance.vitality += bonus.endurance;
+  if (bonus.money) player.money += bonus.money;
+  if (bonus.energy) player.maxEnergy += bonus.energy;
+  if (bonus.energy) player.energy = player.maxEnergy;
+  if (bonus.reputation) player.reputation += bonus.reputation;
+  if (bonus.power) player.power += bonus.power;
+}
+
+function applyPerkBonuses(perkId) {
+  // One-time stat bonuses applied at character creation
+  if (perkId === 'thick_skin') {
+    player.health += 15;
+    player.maxEnergy = player.maxEnergy; // no change, just for clarity
+  }
+  // Other perks are passive and checked at runtime via hasPlayerPerk()
+}
+
+function confirmBackgroundAndPerk() {
+  if (!_selectedBackground || !_selectedPerk) return;
+
+  player.background = _selectedBackground;
+  player.perk = _selectedPerk;
+  applyBackgroundBonuses(_selectedBackground);
+  applyPerkBonuses(_selectedPerk);
+
+  // Remove selection screen
+  const screen = document.getElementById('bg-perk-screen');
+  if (screen) screen.remove();
+
+  const bg = CHARACTER_BACKGROUNDS.find(b => b.id === _selectedBackground);
+  const pk = CHARACTER_PERKS.find(p => p.id === _selectedPerk);
+  logAction(`${player.name} — ${bg ? bg.name : 'Unknown'} with the ${pk ? pk.name : 'Unknown'} perk — emerges from the shadows.`);
+
+  // Continue to territory spawn
   showTerritorySpawn();
+}
+
+function skipBackgroundAndPerk() {
+  // Random selections
+  const randomBg = CHARACTER_BACKGROUNDS[Math.floor(Math.random() * CHARACTER_BACKGROUNDS.length)];
+  const randomPk = CHARACTER_PERKS[Math.floor(Math.random() * CHARACTER_PERKS.length)];
+
+  player.background = randomBg.id;
+  player.perk = randomPk.id;
+  applyBackgroundBonuses(randomBg.id);
+  applyPerkBonuses(randomPk.id);
+
+  // Remove selection screen
+  const screen = document.getElementById('bg-perk-screen');
+  if (screen) screen.remove();
+
+  logAction(`${player.name} — ${randomBg.name} with the ${randomPk.name} perk — emerges from the shadows.`);
+  showBriefNotification(`Randomized: ${randomBg.icon} ${randomBg.name} + ${randomPk.icon} ${randomPk.name}`, 'success');
+
+  showTerritorySpawn();
+}
+
+// ── PERK HELPER: Check if player has a specific perk ──
+function hasPlayerPerk(perkId) {
+  return player.perk === perkId;
+}
+
+// ── PERK HELPER: Get perk info for display ──
+function getPlayerPerkInfo() {
+  if (!player.perk) return null;
+  return CHARACTER_PERKS.find(p => p.id === player.perk) || null;
+}
+
+// ── PERK HELPER: Get background info for display ──
+function getPlayerBackgroundInfo() {
+  if (!player.background) return null;
+  return CHARACTER_BACKGROUNDS.find(b => b.id === player.background) || null;
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -13690,8 +14013,23 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = "1.7.6";
+const CURRENT_VERSION = "1.8.0";
 const VERSION_UPDATES = {
+  "1.8.0": {
+    title: "Story Expansion & Unified Skill Tree",
+    date: "March 2026",
+    changes: [
+      "Unified RPG Talent Tree — replaced basic skills + old skill trees with a single talent tree system across 6 branches",
+      "16 new Street Story encounters — rich random events with dialogue, scene-setting, and branching choices",
+      "5 Multi-Step Side Quest chains — Informant Network, Safe Houses, Ghost Money, Code of Honor, Nightlife Empire",
+      "4 Post-Don Endgame Story Arcs — The Successor, The Commission, The Reckoning, Legacy",
+      "Level milestone narrations at levels 5, 10, 15, 20, 25, 30 with immersive story text",
+      "Atmospheric world narrations — 16 dynamic street atmosphere texts on a rolling timer",
+      "Family-specific narrations — Torrino, Kozlov, Chen, and Morales families now have unique job success/failure/atmosphere flavour text",
+      "Re-enabled interactive events system with expanded event pool and deduplication",
+      "New storyExpansion.js module — central content hub for all narrative expansion content"
+    ]
+  },
   "1.7.6": {
     title: "README & Cleanup",
     date: "March 2026",
@@ -14572,7 +14910,10 @@ function sellItem(index) {
   if (player.equippedArmor === item) player.equippedArmor = null;
   if (player.equippedVehicle === item) player.equippedVehicle = null;
   
-  const sellPrice = Math.floor((item.price || 0) * 0.4);
+  let sellMultiplier = 0.4;
+  // Silver Tongue perk: +15% better sell prices
+  if (hasPlayerPerk('silver_tongue')) sellMultiplier += 0.06;
+  const sellPrice = Math.floor((item.price || 0) * sellMultiplier);
   player.money += sellPrice;
   player.inventory.splice(index, 1);
   recalculatePower();
@@ -15054,7 +15395,13 @@ function showDeathScreen(causeOfDeath) {
   const territoriesOwned = (player.turf?.owned || []).length;
   const businessCount = player.businesses ? player.businesses.length : 0;
   const propertiesOwned = player.realEstate ? player.realEstate.ownedProperties.length : 0;
-  const highestSkill = Object.entries(player.skills).reduce((a, b) => b[1] > a[1] ? b : a, ['none', 0]);
+  // Find highest skill across all trees
+  let highestSkill = ['none', 0];
+  for (const [treeName, nodes] of Object.entries(player.skillTree)) {
+    for (const [nodeName, rank] of Object.entries(nodes)) {
+      if (rank > highestSkill[1]) highestSkill = [nodeName, rank];
+    }
+  }
 
   // Determine legacy title
   let legacyTitle = 'Street Rat';
@@ -15256,10 +15603,10 @@ function triggerRandomEvent() {
 function policeRaid() {
   let wantedIncrease = Math.floor(Math.random() * 5) + 1;
   // Stealth skill can reduce the impact
-  wantedIncrease = Math.max(1, wantedIncrease - player.skills.stealth);
+  wantedIncrease = Math.max(1, wantedIncrease - player.skillTree.stealth.shadow_step);
   player.wantedLevel += wantedIncrease;
   showBriefNotification(`Police Raid! Wanted +${wantedIncrease}`, 3000);
-  logAction(`A police raid sweeps through your area! Wanted level increased by ${wantedIncrease}. ${player.skills.stealth > 0 ? 'Your stealth skills minimized the damage.' : ''}`);
+  logAction(`A police raid sweeps through your area! Wanted level increased by ${wantedIncrease}. ${player.skillTree.stealth.shadow_step > 0 ? 'Your stealth skills minimized the damage.' : ''}`);
   updateUI();
 }
 
@@ -15294,7 +15641,7 @@ function luckyFind() {
   // Scale lucky find with player level so it stays relevant
   const base = 75 + player.level * 25;
   let found = Math.floor(Math.random() * base) + base;
-  found += Math.floor(found * (player.skills.luck * 0.05));
+  found += Math.floor(found * (player.skillTree.luck.fortune * 0.05));
   player.money += found;
   showBriefNotification(`Lucky find! +$${found.toLocaleString()}`, 3000);
   logAction(`You stumble upon a hidden stash on the street. $${found.toLocaleString()} richer!`);
@@ -15317,7 +15664,7 @@ function mysteriousTip() {
 function healthScare() {
   // Small random health loss, offset by endurance skill
   const baseLoss = Math.floor(Math.random() * 15) + 5;
-  const reduction = Math.min(baseLoss - 1, player.skills.endurance * 2);
+  const reduction = Math.min(baseLoss - 1, player.skillTree.endurance.vitality * 2);
   const actualLoss = Math.max(1, baseLoss - reduction);
   player.health = Math.max(1, player.health - actualLoss);
   showBriefNotification(`Health scare! -${actualLoss} HP`, 3000);
@@ -16559,8 +16906,11 @@ function activateGameplaySystems() {
   // Initialize expanded systems (gang roles, territory wars, etc.)
   initializeExpandedSystems(player);
 
-  // Interactive events system disabled (random encounters removed)
-  // setInterval(() => { if (gameplayActive) checkAndTriggerInteractiveEvent(); }, 60000);
+  // Interactive events & street stories (re-enabled with story expansion)
+  setInterval(() => { if (gameplayActive) checkAndTriggerInteractiveEvent(); }, 60000);
+
+  // World atmosphere narrations (every few minutes, ambient storytelling)
+  setInterval(() => { if (gameplayActive) maybeShowWorldNarration(); }, 120000);
 
   // Initialize UI Events
   if (typeof initUIEvents === 'function') {
@@ -17234,7 +17584,7 @@ function calculateEmpireRating() {
   player.empireRating.reputationPower = Math.min(2000, Math.floor(player.reputation) * 5);
   
   // Skill Power (max 1500 points)
-  const totalSkills = Object.values(player.skills).reduce((sum, skill) => sum + skill, 0);
+  const totalSkills = Object.values(player.skillTree).reduce((treeSum, nodes) => treeSum + Object.values(nodes).reduce((s, v) => s + v, 0), 0);
   player.empireRating.skillPower = Math.min(1500, totalSkills * 10);
   
   // Calculate total score
@@ -17660,7 +18010,7 @@ function validateSaveData(saveData) {
   if (typeof saveData.player.health !== 'number') return false;
   if (!Array.isArray(saveData.player.inventory)) return false;
   if (!saveData.player.gang || typeof saveData.player.gang !== 'object') return false;
-  if (!saveData.player.skills || typeof saveData.player.skills !== 'object') return false;
+  if (!saveData.player.skillTree || typeof saveData.player.skillTree !== 'object') return false;
   
   return true;
 }
@@ -19535,13 +19885,12 @@ window.hireRandomRecruit = hireRandomRecruit;
 window.showGangManagementScreen = showGangManagementScreen;
 window.deleteGameSlot = deleteGameSlot;
 
-// Skills & Progression
+// Skills & Progression (Unified RPG Skill Tree)
 window.showSkills = showSkills;
 window.showSkillTab = showSkillTab;
-window.generateBasicSkillsContent = generateBasicSkillsContent;
-window.generateSkillTreesContent = generateSkillTreesContent;
-window.generateReputationContent = generateReputationContent;
-window.getSkillDescription = getSkillDescription;
+window.selectSkillTree = selectSkillTree;
+window.renderSkillTreeUI = renderSkillTreeUI;
+window.upgradeNode = upgradeNode;
 window.upgradeSkillTree = upgradeSkillTree;
 window.upgradeSkill = upgradeSkill;
 window.gainExperience = gainExperience;
@@ -19712,6 +20061,12 @@ window.goBackToIntro = goBackToIntro;
 window.selectSpawnTerritory = selectSpawnTerritory;
 window.showTerritoryRelocation = showTerritoryRelocation;
 window.confirmRelocation = confirmRelocation;
+
+// Background & Perk System
+window.selectBackground = selectBackground;
+window.selectPerk = selectPerk;
+window.confirmBackgroundAndPerk = confirmBackgroundAndPerk;
+window.skipBackgroundAndPerk = skipBackgroundAndPerk;
 
 // Territory System (Phase 2) — Ownership & Conquest
 window.wageWar = wageWar;
