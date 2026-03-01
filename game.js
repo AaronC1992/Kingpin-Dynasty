@@ -1,10 +1,10 @@
-// onboarding removed — tutorial system fully stripped
+﻿// onboarding removed — tutorial system fully stripped
 import { applyDailyPassives, getDrugIncomeMultiplier, getViolenceHeatMultiplier, getWeaponPriceMultiplier } from './passiveManager.js';
 import { showEmpireOverview } from './empireOverview.js';
 import { player, gainExperience, checkLevelUp, regenerateEnergy, startEnergyRegenTimer, startEnergyRegeneration, skillTreeDefinitions, availablePerks, achievements } from './player.js';
 import { jobs, stolenCarTypes } from './jobs.js';
 import { crimeFamilies, factionEffects, potentialMentors } from './factions.js';
-import { familyStories, missionProgress } from './missions.js?v=1.7.0';
+import { familyStories, missionProgress, factionMissions } from './missions.js?v=1.7.0';
 import { narrationVariations, getRandomNarration } from './narration.js';
 import { storeItems, realEstateProperties, businessTypes, loanOptions, launderingMethods } from './economy.js';
 import { prisonerNames, recruitNames, availableRecruits, jailPrisoners, jailbreakPrisoners, setJailPrisoners, setJailbreakPrisoners, generateJailPrisoners, generateJailbreakPrisoners, generateAvailableRecruits } from './generators.js';
@@ -20234,6 +20234,7 @@ window.closeNarrativeOverlay = closeNarrativeOverlay;
 window.closeLevelUpOverlay = closeLevelUpOverlay;
 window.unlockAchievement = unlockAchievement;
 window.checkAchievements = checkAchievements;
+window.showAchievements = showAchievements;
 
 // FBI Investigation
 window.handleFBIChoice = handleFBIChoice;
@@ -20411,6 +20412,12 @@ window.showEmpireOverview = showEmpireOverview;
 window.showMap = showMap;
 window.showTerritoryInfo = showTerritoryInfo;
 window.showRivalsScreen = showRivalsScreen;
+window.showRivalsTab = showRivalsTab;
+window.showCompetitionTab = showCompetitionTab;
+window.showCompetition = showCompetition;
+window.showLeaderboards = showLeaderboards;
+window.showWeeklyChallenges = showWeeklyChallenges;
+window.submitToLeaderboards = submitToLeaderboards;
 window.showHospital = showHospital;
 window.showCasino = showCasino;
 window.healAtHospital = healAtHospital;
@@ -20424,6 +20431,9 @@ window.exportCharacterShowcase = exportCharacterShowcase;
 window.importCharacterShowcase = importCharacterShowcase;
 window.showStatistics = showStatistics;
 window.showCharacterShowcase = showCharacterShowcase;
+
+// Calendar
+window.showDayDetails = showDayDetails;
 
 // Auth & Cloud Save
 window.showAuthModal = showAuthModal;

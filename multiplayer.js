@@ -1843,6 +1843,8 @@ async function attemptBotJailbreak(botId, botName) {
         updateUI();
     }
 }
+window.attemptPlayerJailbreak = attemptPlayerJailbreak;
+window.attemptBotJailbreak = attemptBotJailbreak;
 
 // Show "You've been freed!" popup with option to send a gift
 function showFreedFromJailPopup(helperName, helperId) {
