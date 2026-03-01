@@ -236,6 +236,9 @@ const server = http.createServer(async (req, res) => {
     if (reqPath.includes('\0')) reqPath = reqPath.replace(/\0/g, '');
     // Strip query strings so ?v=1.6.2 cache-busters don't break file lookup
     reqPath = reqPath.split('?')[0];
+
+    // Redirect /favicon.ico to GameLogo.png (browsers request this automatically)
+    if (reqPath === '/favicon.ico') reqPath = '/GameLogo.png';
     
     // Determine the static files root directory
     // In cPanel, game files may be in ../public_html while server runs from a separate dir
