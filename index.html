@@ -568,6 +568,11 @@
                 <button onclick="showQuickActionCustomizer()">Customize Quick Actions</button>
                 <button onclick="showMobileNavCustomizer()">Customize Mobile Nav Bar</button>
             </div>
+            <div class="section-header">Help & Tutorials</div>
+            <div class="content-card">
+                <button onclick="showHelpScreen()" style="border-color: #3498db; color: #3498db;">❓ Help & Game Guide</button>
+                <button id="tutorial-toggle-btn" onclick="toggleTutorialFromSettings()" style="border-color: #2ecc71; color: #2ecc71;">Tutorials: Enabled</button>
+            </div>
             <div class="section-header">UI Toggles</div>
             <div class="content-card" style="display:flex; flex-direction:column; gap:10px;">
                 <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
@@ -923,6 +928,6 @@
     <!-- Multiplayer client (global script, must load before game.js module) -->
     <script src="multiplayer.js"></script>
     <!-- Main game logic (Module) -->
-    <script type="module" src="game.js?v=1.9.0"></script>
+    <script type="module" src="game.js?v=1.10.0"></script>
 </body>
 </html>

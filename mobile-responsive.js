@@ -12,8 +12,6 @@ export const MobileSystem = {
     mobileNavigationActive: false,
     swipeGesturesConfigured: false,
     
-    // Track whether the objective tracker is visible
-    objectiveTrackerVisible: true,
     
     // Initialize mobile system
     init() {
@@ -429,12 +427,6 @@ export const MobileSystem = {
                     Business
                 </button>
                 
-                ${!tutorialDone ? `<button onclick="MobileSystem.toggleObjectiveTracker(); MobileSystem.toggleMobileMenu();" 
-                        style="width: 100%; margin: 5px 0; padding: 12px; background: linear-gradient(45deg, #333, #000); 
-                               color: #c0a062; border: 1px solid #c0a062; border-radius: 6px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
-                    Objective
-                </button>` : ''}
-                
                 <button onclick="showSkills(); MobileSystem.toggleMobileMenu();" 
                         style="width: 100%; margin: 5px 0; padding: 12px; background: linear-gradient(45deg, #333, #000); 
                                color: #c0a062; border: 1px solid #c0a062; border-radius: 6px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
@@ -451,6 +443,18 @@ export const MobileSystem = {
                         style="width: 100%; margin: 5px 0; padding: 12px; background: linear-gradient(45deg, #333, #000); 
                                color: #c0a062; border: 1px solid #c0a062; border-radius: 6px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
                     The Record
+                </button>
+                
+                ${localStorage.getItem('tutorialSkipAll') !== '1' ? `<button onclick="skipAllTutorials(); MobileSystem.toggleMobileMenu();" 
+                        style="width: 100%; margin: 5px 0; padding: 12px; background: linear-gradient(45deg, #333, #000); 
+                               color: #e74c3c; border: 1px solid #e74c3c; border-radius: 6px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
+                    ⏭ Skip Tutorials
+                </button>` : ''}
+                
+                <button onclick="showHelpScreen(); MobileSystem.toggleMobileMenu();" 
+                        style="width: 100%; margin: 5px 0; padding: 12px; background: linear-gradient(45deg, #333, #000); 
+                               color: #3498db; border: 1px solid #3498db; border-radius: 6px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
+                    ❓ Help
                 </button>
                 
                 <div id="mobile-action-log" style="margin-top: 30px; border-top: 2px solid #c0a062; padding-top: 20px;">
@@ -494,32 +498,6 @@ export const MobileSystem = {
             } else {
                 mobileActionList.innerHTML = '<div style="color: #8b0000; font-style: italic; text-align: center; padding: 20px;">Record not found</div>';
             }
-        }
-    },
-    
-    // Toggle the tutorial objective tracker visibility (used by mobile Objective buttons)
-    toggleObjectiveTracker() {
-        const tracker = document.getElementById('tutorial-tracker');
-        const overlay = document.getElementById('tutorial-tracker-overlay');
-        
-        if (!tracker) {
-            // Tracker not created yet; nothing to toggle
-            return;
-        }
-        
-        // Toggle visibility
-        const isCurrentlyHidden = tracker.style.display === 'none';
-        
-        if (isCurrentlyHidden) {
-            // Show the modal
-            tracker.style.display = 'block';
-            if (overlay) overlay.style.display = 'flex';
-            this.objectiveTrackerVisible = true;
-        } else {
-            // Hide the modal
-            tracker.style.display = 'none';
-            if (overlay) overlay.style.display = 'none';
-            this.objectiveTrackerVisible = false;
         }
     },
     
@@ -598,7 +576,6 @@ export const MobileSystem = {
         safehouse:  { label: 'Safehouse', action: 'goBackToMainMenu()',                   locked: true },
         market:     { label: 'Market',    action: 'showStore()' },
         ledger:     { label: 'Ledger',    action: 'MobileSystem.openActionPanel()' },
-        objective:  { label: 'Objective', action: 'MobileSystem.toggleObjectiveTracker()' },
         stash:      { label: 'Stash',     action: 'showInventory()' },
         jobs:       { label: 'Jobs',      action: 'showJobs()' },
         doctor:     { label: 'Doctor',    action: 'showHospital()' },
@@ -620,10 +597,6 @@ export const MobileSystem = {
     
     // Get the current mobile nav tab configuration
     getMobileNavTabs() {
-        // During tutorial, always show Objective instead of the 4th slot
-        const tutorialStep = localStorage.getItem('tutorialStep');
-        const tutorialDone = !tutorialStep || tutorialStep === 'skipped' || tutorialStep === 'complete';
-        
         try {
             const saved = localStorage.getItem('mobileNavTabs');
             if (saved) {
@@ -632,26 +605,12 @@ export const MobileSystem = {
                 if (!tabs.some(t => t.id === 'safehouse')) {
                     tabs.unshift({ id: 'safehouse' });
                 }
-                // During tutorial, replace last non-safehouse slot with objective
-                if (!tutorialDone && !tabs.some(t => t.id === 'objective')) {
-                    // Replace the last tab with objective
-                    if (tabs.length > 1) {
-                        tabs[tabs.length - 1] = { id: 'objective' };
-                    } else {
-                        tabs.push({ id: 'objective' });
-                    }
-                }
                 return tabs;
             }
         } catch(e) { /* use defaults */ }
         
         // Default config
-        const defaults = this.defaultMobileNavTabs.map(id => ({ id }));
-        if (!tutorialDone) {
-            // Replace last tab with objective during tutorial
-            defaults[defaults.length - 1] = { id: 'objective' };
-        }
-        return defaults;
+        return this.defaultMobileNavTabs.map(id => ({ id }));
     },
     
     // Save mobile nav tab configuration

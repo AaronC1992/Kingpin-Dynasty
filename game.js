@@ -7263,6 +7263,14 @@ function updateQuickActions() {
 
   html += `<button onclick="saveGame()" class="quick-btn save-btn">Save Records</button>`;
 
+  // Skip Tutorial button (only visible when tutorials are still active)
+  if (localStorage.getItem('tutorialSkipAll') !== '1') {
+    html += `<button onclick="skipAllTutorials(); updateQuickActions();" class="quick-btn" style="border-color:#e74c3c;color:#e74c3c;font-size:0.85em;">⏭ Skip Tutorials</button>`;
+  }
+
+  // Help button
+  html += `<button onclick="showHelpScreen()" class="quick-btn" style="border-color:#3498db;color:#3498db;">❓ Help</button>`;
+
   container.innerHTML = html;
 }
 window.updateQuickActions = updateQuickActions;
@@ -7344,7 +7352,6 @@ function showMobileNavCustomizer() {
   const defs = MobileSystem.mobileNavTabDefs;
   const allIds = Object.keys(defs);
   
-  // Get current selection (excluding objective which is auto-managed)
   let currentTabs;
   try {
     const saved = localStorage.getItem('mobileNavTabs');
@@ -7375,14 +7382,12 @@ function showMobileNavCustomizer() {
           const def = defs[id];
           const active = currentTabs.includes(id);
           const locked = id === 'safehouse';
-          const isObjective = id === 'objective';
-          return `<label data-mnavid="${id}" onclick="${locked || isObjective ? '' : `toggleMobileNavTab('${id}')`}" 
+          return `<label data-mnavid="${id}" onclick="${locked ? '' : `toggleMobileNavTab('${id}')`}" 
             style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:10px;
-            cursor:${locked || isObjective ? 'not-allowed' : 'pointer'};transition:all 0.2s;
-            background:${active ? 'rgba(46,204,113,0.15)' : locked ? 'rgba(139,0,0,0.2)' : isObjective ? 'rgba(52,73,94,0.2)' : 'rgba(52,73,94,0.5)'};
-            border:2px solid ${locked ? '#ff0000' : active ? '#2ecc71' : isObjective ? '#555' : '#555'};
-            opacity:${isObjective ? '0.5' : '1'};">
-            <span style="font-size:1.4em;">${locked ? '🔒' : isObjective ? '' : active ? '✅' : '⬜'}</span>
+            cursor:${locked ? 'not-allowed' : 'pointer'};transition:all 0.2s;
+            background:${active ? 'rgba(46,204,113,0.15)' : locked ? 'rgba(139,0,0,0.2)' : 'rgba(52,73,94,0.5)'};
+            border:2px solid ${locked ? '#ff0000' : active ? '#2ecc71' : '#555'};">
+            <span style="font-size:1.4em;">${locked ? '🔒' : active ? '✅' : '⬜'}</span>
             <div>
               <span style="color:${locked ? '#ff6b6b' : '#ecf0f1'};font-weight:bold;">${def.label}</span>
               ${locked ? '<br><small style="color:#ff6b6b;">Always shown</small>' : ''}
@@ -7729,6 +7734,534 @@ function hideAllScreens() {
   const multiplayerScreen = document.getElementById("multiplayer-screen");
   if (multiplayerScreen) multiplayerScreen.style.display = "none";
 }
+
+// ==================== TUTORIAL SYSTEM ====================
+// First-visit tutorial overlays that explain each screen/tab.
+// Stores seen flags in localStorage as `tutorialSeen_<screenId>`.
+// Player can skip all tutorials via quickbar/mobile nav button.
+
+const TUTORIAL_CONTENT = {
+  safehouse: {
+    title: 'Welcome to Your SafeHouse',
+    sections: [
+      { heading: 'Your Hub', text: 'This is your base of operations. Every action you take in the city starts here.' },
+      { heading: 'Navigation', text: 'Tap any unlocked button to visit that part of the city. New screens unlock as you level up.' },
+      { heading: 'Quick Actions', text: 'The panel on the right (or swipe on mobile) gives fast access to your favourite screens.' },
+      { heading: 'Status Bar', text: 'The bar at the top tracks your cash, health, energy, heat, and rank in real time.' },
+    ]
+  },
+  jobs: {
+    title: 'Jobs & Hustles',
+    sections: [
+      { heading: 'Earn Cash & XP', text: 'Pick a job from the list to earn money and experience. Higher-tier jobs pay more but cost more energy.' },
+      { heading: 'Energy Cost', text: 'Every job costs energy. When you run out, wait for it to regenerate or buy an energy item.' },
+      { heading: 'Levelling Up', text: 'XP from jobs levels you up, unlocking new screens, gear, and story chapters.' },
+    ]
+  },
+  store: {
+    title: 'The Black Market',
+    sections: [
+      { heading: 'Buy Tab', text: 'Browse weapons, armour, and supplies. Better gear boosts your attack & defence in fights.' },
+      { heading: 'The Fence', text: 'Sell stolen goods from heists and jobs at premium rates. Higher heat = riskier but more profitable.' },
+      { heading: 'Player Market', text: 'Trade vehicles with other players. List your rides for sale or grab someone else\'s.' },
+    ]
+  },
+  missions: {
+    title: 'Missions & Story',
+    sections: [
+      { heading: 'Family Story', text: 'Choose a crime family and follow their story from street-level to Don. Each chapter has cinematic missions.' },
+      { heading: 'Side Operations', text: 'Optional quest chains with countdown timers. Complete objectives while the timer ticks to advance.' },
+      { heading: 'Street Stories', text: 'Narrative encounters tied to side operation steps — they add flavour and consequences to your quests.' },
+    ]
+  },
+  gang: {
+    title: 'The Family',
+    sections: [
+      { heading: 'Create or Join', text: 'Start your own crime family or join an existing one. Families share territory and resources.' },
+      { heading: 'Members', text: 'Recruit AI members or invite real players. Assign roles and manage your crew.' },
+      { heading: 'Family Wars', text: 'Clash with rival families for territory and dominance. Coordinate attacks with your crew.' },
+    ]
+  },
+  properties: {
+    title: 'Properties & Fronts',
+    sections: [
+      { heading: 'Properties Tab', text: 'Buy real estate across the city. Properties generate passive income every cycle.' },
+      { heading: 'Fronts Tab', text: 'Business fronts launder dirty money into clean cash. Higher-tier fronts process more per cycle.' },
+    ]
+  },
+  casino: {
+    title: 'Casino & Mini Games',
+    sections: [
+      { heading: 'Gambling', text: 'Try your luck at poker, slots, blackjack, and more. Win big or lose it all.' },
+      { heading: 'Mini Games', text: 'Quick pastimes like lockpicking and card games. Fun distractions with small rewards.' },
+    ]
+  },
+  stash: {
+    title: 'Stash & Motor Pool',
+    sections: [
+      { heading: 'Stash Tab', text: 'Your inventory of weapons, armour, consumables, and stolen goods. Equip gear to boost stats.' },
+      { heading: 'Motor Pool', text: 'View and manage your vehicles. Cars give speed bonuses and are used for heists and getaways.' },
+    ]
+  },
+  hospital: {
+    title: 'The Doctor',
+    sections: [
+      { heading: 'Heal Up', text: 'Pay the back-alley doctor to restore health. Full treatment costs more but heals everything.' },
+      { heading: 'Patch Job', text: 'Cheaper partial heal or rest with energy. Use when you just need a quick fix.' },
+    ]
+  },
+  skills: {
+    title: 'Talents & Skills',
+    sections: [
+      { heading: 'Skill Trees', text: 'Spend skill points across Combat, Stealth, Business, Endurance, Street Smarts, and Leadership.' },
+      { heading: 'Passive Bonuses', text: 'Each skill node gives permanent bonuses like extra damage, income boosts, or cheaper heals.' },
+    ]
+  },
+  stats: {
+    title: 'Player Stats',
+    sections: [
+      { heading: 'Overview', text: 'Detailed breakdown of your character — level, cash, reputation, combat stats, and more.' },
+      { heading: 'Empire Rating', text: 'Your overall empire score based on territory, income, crew size, and story progress.' },
+      { heading: 'Empire Overview', text: 'Visual dashboard showing all your assets, income sources, and power at a glance.' },
+    ]
+  },
+  territory: {
+    title: 'Territory Control',
+    sections: [
+      { heading: 'Districts', text: 'The city is divided into districts. Claim and defend them to earn tribute and influence.' },
+      { heading: 'Turf Wars', text: 'Attack rival territories or defend your own. Bring weapons, crew, and a plan.' },
+      { heading: 'Tribute', text: 'Controlled districts generate tribute income every cycle. More turf = more money.' },
+    ]
+  },
+  settings: {
+    title: 'Settings',
+    sections: [
+      { heading: 'Save & Load', text: 'Save your game to multiple slots. Cloud save syncs across devices when signed in.' },
+      { heading: 'Customize', text: 'Customise your quick-action bar and mobile nav bar with your most-used screens.' },
+      { heading: 'UI Toggles', text: 'Show or hide the quick-actions panel, mobile nav bar, and individual HUD stats.' },
+      { heading: 'Help', text: 'Tap the Help button for a full guide covering every game system.' },
+    ]
+  },
+};
+
+// Check if tutorial has been seen for a screen
+function isTutorialSeen(screenId) {
+  return localStorage.getItem('tutorialSeen_' + screenId) === '1' || localStorage.getItem('tutorialSkipAll') === '1';
+}
+
+// Mark tutorial as seen for a screen
+function markTutorialSeen(screenId) {
+  localStorage.setItem('tutorialSeen_' + screenId, '1');
+}
+
+// Skip all tutorials
+function skipAllTutorials() {
+  localStorage.setItem('tutorialSkipAll', '1');
+  // Remove any active tutorial overlay
+  const existing = document.getElementById('tutorial-overlay');
+  if (existing) existing.remove();
+  showBriefNotification('Tutorials disabled. Re-enable from Settings > Help.', 'info');
+}
+window.skipAllTutorials = skipAllTutorials;
+
+// Re-enable tutorials (called from help screen)
+function reEnableTutorials() {
+  localStorage.removeItem('tutorialSkipAll');
+  // Clear all individual seen flags
+  Object.keys(TUTORIAL_CONTENT).forEach(id => {
+    localStorage.removeItem('tutorialSeen_' + id);
+  });
+  showBriefNotification('Tutorials re-enabled! Visit any screen to see its guide.', 'success');
+}
+window.reEnableTutorials = reEnableTutorials;
+
+// Show tutorial overlay for a screen
+function showTutorialOverlay(screenId) {
+  if (isTutorialSeen(screenId)) return;
+  const content = TUTORIAL_CONTENT[screenId];
+  if (!content) return;
+
+  // Remove any existing overlay
+  const existing = document.getElementById('tutorial-overlay');
+  if (existing) existing.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'tutorial-overlay';
+  overlay.style.cssText = `
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 100000;
+    background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center;
+    animation: tutorialFadeIn 0.3s ease;
+  `;
+
+  overlay.innerHTML = `
+    <div style="background: linear-gradient(135deg, #1a1a2e, #16213e); border: 2px solid #c0a062;
+         border-radius: 16px; padding: 30px; max-width: 520px; width: 90%; max-height: 80vh;
+         overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.8); position: relative;">
+      <div style="text-align: center; margin-bottom: 20px;">
+        <div style="font-size: 2em; margin-bottom: 8px;">📖</div>
+        <h2 style="color: #c0a062; margin: 0; font-size: 1.5em; font-family: 'Georgia', serif;">${content.title}</h2>
+        <p style="color: #7f8c8d; font-size: 0.85em; margin: 6px 0 0;">First time here? Here's what you need to know.</p>
+      </div>
+      ${content.sections.map(s => `
+        <div style="background: rgba(52,73,94,0.4); border-left: 3px solid #c0a062; border-radius: 0 8px 8px 0;
+             padding: 12px 16px; margin-bottom: 10px;">
+          <strong style="color: #d4af37; font-size: 1em;">${s.heading}</strong>
+          <p style="color: #bdc3c7; margin: 6px 0 0; font-size: 0.92em; line-height: 1.5;">${s.text}</p>
+        </div>
+      `).join('')}
+      <div style="display: flex; gap: 12px; justify-content: center; margin-top: 20px; flex-wrap: wrap;">
+        <button onclick="document.getElementById('tutorial-overlay').remove(); markTutorialSeen('${screenId}');"
+          style="background: linear-gradient(135deg, #d4af37, #b8962e); color: #1a1a2e; border: none;
+                 padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1em;
+                 font-family: 'Georgia', serif;">
+          Got It
+        </button>
+        <button onclick="skipAllTutorials();"
+          style="background: transparent; color: #7f8c8d; border: 1px solid #555;
+                 padding: 12px 20px; border-radius: 8px; cursor: pointer; font-size: 0.9em;">
+          Skip All Tutorials
+        </button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+  markTutorialSeen(screenId);
+}
+window.showTutorialOverlay = showTutorialOverlay;
+window.markTutorialSeen = markTutorialSeen;
+
+// Inject tutorial CSS animation
+(function injectTutorialCSS() {
+  if (document.getElementById('tutorial-css')) return;
+  const style = document.createElement('style');
+  style.id = 'tutorial-css';
+  style.textContent = `
+    @keyframes tutorialFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    #tutorial-overlay > div {
+      animation: tutorialSlideIn 0.3s ease;
+    }
+    @keyframes tutorialSlideIn {
+      from { transform: translateY(30px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+  `;
+  document.head.appendChild(style);
+})();
+
+// Map screen IDs to tutorial IDs
+const SCREEN_TUTORIAL_MAP = {
+  'safehouse': 'safehouse',
+  'menu': 'safehouse',
+  'jobs-screen': 'jobs',
+  'store-screen': 'store',
+  'missions-screen': 'missions',
+  'gang-screen': 'gang',
+  'real-estate-screen': 'properties',
+  'casino-screen': 'casino',
+  'inventory-screen': 'stash',
+  'hospital-screen': 'hospital',
+  'skills-screen': 'skills',
+  'player-stats-screen': 'stats',
+  'territory-control-screen': 'territory',
+  'options-screen': 'settings',
+};
+
+// Hook into screen transitions — show tutorial on first visit
+(function setupTutorialHooks() {
+  const originalHideAllScreens = hideAllScreens;
+  
+  // We observe screen display changes. When a screen becomes visible,
+  // trigger the tutorial if it hasn't been seen yet.
+  const tutorialObserver = new MutationObserver(mutations => {
+    for (const m of mutations) {
+      if (m.type === 'attributes' && m.attributeName === 'style') {
+        const el = m.target;
+        if (el.style.display === 'block' || el.style.display === 'flex') {
+          const tutorialId = SCREEN_TUTORIAL_MAP[el.id];
+          if (tutorialId) {
+            // Small delay so screen content renders first
+            setTimeout(() => showTutorialOverlay(tutorialId), 200);
+          }
+        }
+      }
+    }
+  });
+
+  const startObserving = () => {
+    document.querySelectorAll('.game-screen, #safehouse, #menu').forEach(screen => {
+      tutorialObserver.observe(screen, { attributes: true, attributeFilter: ['style'] });
+    });
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startObserving);
+  } else {
+    startObserving();
+  }
+})();
+
+// ==================== HELP / INDEX SYSTEM ====================
+// Full help reference accessed from Settings > Help button.
+
+const HELP_TOPICS = [
+  { id: 'getting-started', icon: '🏁', title: 'Getting Started', content: `
+    <p>Welcome to <strong>Mafia-Born</strong> — a browser-based crime RPG where you rise from street thug to Don.</p>
+    <ul>
+      <li><strong>Energy</strong> — Most actions cost energy. It regenerates over time, or buy coffee/energy drinks from the mobile nav.</li>
+      <li><strong>Cash & Dirty Money</strong> — Cash is earned from jobs and businesses. Dirty money comes from heists and must be laundered through business fronts.</li>
+      <li><strong>XP & Levelling</strong> — XP from jobs, missions, and side ops. Level up to unlock new screens and features.</li>
+      <li><strong>Health</strong> — Drops when attacked or during failed jobs. Heal at the Hospital or rest.</li>
+    </ul>
+  `},
+  { id: 'safehouse-help', icon: '🏠', title: 'SafeHouse', content: `
+    <p>Your home base. All navigation starts here. Buttons unlock as you level up.</p>
+    <ul>
+      <li><strong>Quick Actions</strong> — The right-side panel (desktop) or swipe menu (mobile) with shortcuts to your favourite screens.</li>
+      <li><strong>Status Bar</strong> — Top bar showing cash, health, energy, heat, rank, and more. Customise which stats show in Settings.</li>
+    </ul>
+  `},
+  { id: 'jobs-help', icon: '💼', title: 'Jobs', content: `
+    <p>Your main source of income and XP early on.</p>
+    <ul>
+      <li>Each job has an <strong>energy cost</strong> and pays cash + XP on success.</li>
+      <li>Higher-tier jobs unlock at higher levels and pay significantly more.</li>
+      <li>Some jobs increase <strong>Heat</strong> (wanted level), which makes cops more aggressive.</li>
+    </ul>
+  `},
+  { id: 'store-help', icon: '🏪', title: 'Black Market', content: `
+    <p>Three tabs: <strong>Buy</strong>, <strong>The Fence</strong>, and <strong>Player Market</strong>.</p>
+    <ul>
+      <li><strong>Buy</strong> — Purchase weapons, armour, and supplies. Better gear = higher attack/defence.</li>
+      <li><strong>The Fence</strong> — Sell stolen items at premium prices. Fence prices vary by your heat level.</li>
+      <li><strong>Player Market</strong> — Buy/sell vehicles with other real players.</li>
+    </ul>
+  `},
+  { id: 'missions-help', icon: '📜', title: 'Missions & Story', content: `
+    <p>The narrative heart of the game.</p>
+    <ul>
+      <li><strong>Family Story</strong> — Choose a crime family (Corleone, Moretti, etc.) and play through their cinematic storyline from thug to Don.</li>
+      <li><strong>Side Operations</strong> — Optional quest chains. Each step has a <strong>countdown timer</strong> (3–20 min). You must wait AND complete the objective to advance.</li>
+      <li><strong>Street Stories</strong> — Narrative events tied to side operation steps. They add consequences and flavour.</li>
+    </ul>
+  `},
+  { id: 'gang-help', icon: '👥', title: 'The Family (Gang)', content: `
+    <p>Crime families are the multiplayer social system.</p>
+    <ul>
+      <li><strong>Create</strong> a family (costs cash) or <strong>join</strong> an existing one.</li>
+      <li><strong>Roles</strong> — Boss, Underboss, Capo, Soldier. Higher roles have more authority.</li>
+      <li><strong>Family Wars</strong> — Coordinate with members to attack rival families for territory and respect.</li>
+      <li><strong>Recruitment</strong> — Hire AI crew members that boost your stats and join heists.</li>
+    </ul>
+  `},
+  { id: 'properties-help', icon: '🏢', title: 'Properties & Fronts', content: `
+    <ul>
+      <li><strong>Properties</strong> — Buy apartments, shops, warehouses. They generate <strong>passive income</strong> every cycle.</li>
+      <li><strong>Fronts</strong> — Business fronts (laundromats, restaurants, etc.) launder dirty money into clean cash automatically.</li>
+    </ul>
+  `},
+  { id: 'casino-help', icon: '🎰', title: 'Casino & Mini Games', content: `
+    <ul>
+      <li><strong>Casino</strong> — Poker, Blackjack, Slots, Roulette, and more. High risk, high reward.</li>
+      <li><strong>Mini Games</strong> — Quick games like Lockpicking and Number Cracking with small but consistent rewards.</li>
+    </ul>
+  `},
+  { id: 'stash-help', icon: '📦', title: 'Stash & Motor Pool', content: `
+    <ul>
+      <li><strong>Stash</strong> — Your inventory. Equip weapons and armour, use consumables, or sell items at the Fence.</li>
+      <li><strong>Motor Pool</strong> — Manage your vehicle collection. Vehicles give speed bonuses and are used in heists/getaways.</li>
+    </ul>
+  `},
+  { id: 'hospital-help', icon: '🏥', title: 'Hospital', content: `
+    <p>Heal injuries at the underground doctor.</p>
+    <ul>
+      <li><strong>Full Treatment</strong> — Expensive but heals to 100%.</li>
+      <li><strong>Patch Job</strong> — Cheaper partial heal (up to 25 HP).</li>
+      <li><strong>Rest</strong> — Costs energy instead of cash but heals less.</li>
+    </ul>
+  `},
+  { id: 'skills-help', icon: '⭐', title: 'Talents & Skills', content: `
+    <p>Spend skill points in 6 trees:</p>
+    <ul>
+      <li><strong>Combat</strong> — Attack power, crit chance, armour penetration.</li>
+      <li><strong>Stealth</strong> — Dodge chance, theft success, reduced heat gain.</li>
+      <li><strong>Business</strong> — Income boosts, cheaper purchases, better property returns.</li>
+      <li><strong>Endurance</strong> — Max energy, faster regen, HP bonuses.</li>
+      <li><strong>Street Smarts</strong> — XP boosts, jail time reduction, better loot.</li>
+      <li><strong>Leadership</strong> — Crew bonuses, family buffs, territory defence.</li>
+    </ul>
+  `},
+  { id: 'territory-help', icon: '🗺️', title: 'Territory Control', content: `
+    <ul>
+      <li><strong>Districts</strong> — The city is split into districts. Claim them by spending influence and fighting NPCs/players.</li>
+      <li><strong>Tribute</strong> — Controlled districts pay tribute income every cycle. More turf = more money.</li>
+      <li><strong>Defence</strong> — Upgrade district defences to hold turf against rivals. Assign crew to defend.</li>
+      <li><strong>Relocation</strong> — Move to a different district to access local bonuses and job variants.</li>
+    </ul>
+  `},
+  { id: 'stats-help', icon: '📊', title: 'Stats & Empire', content: `
+    <ul>
+      <li><strong>Player Stats</strong> — Full stat breakdown: level, cash, combat stats, reputation, etc.</li>
+      <li><strong>Empire Rating</strong> — Composite score of your territory, businesses, crew, and story progress.</li>
+      <li><strong>Empire Overview</strong> — Visual dashboard of all your assets at a glance.</li>
+    </ul>
+  `},
+  { id: 'heat-help', icon: '🔥', title: 'Heat (Wanted Level)', content: `
+    <p>Heat is your wanted level. It rises from crime and falls over time.</p>
+    <ul>
+      <li><strong>Low Heat (0-30)</strong> — Cops mostly leave you alone.</li>
+      <li><strong>Medium Heat (30-60)</strong> — Random police encounters, fines, possible arrest.</li>
+      <li><strong>High Heat (60-100)</strong> — Frequent raids, higher bail, tougher consequences.</li>
+      <li><strong>Reducing Heat</strong> — Lay low (wait), bribe officials, or use certain skills.</li>
+    </ul>
+  `},
+  { id: 'energy-help', icon: '⚡', title: 'Energy System', content: `
+    <p>Energy is needed for most actions.</p>
+    <ul>
+      <li><strong>Regeneration</strong> — Energy regenerates slowly over time.</li>
+      <li><strong>Coffee (☕)</strong> — Restores a small amount, cheap.</li>
+      <li><strong>Energy Drink (⚡)</strong> — Moderate restore, moderate cost.</li>
+      <li><strong>Steroids (💉)</strong> — Large restore, expensive.</li>
+      <li><strong>Max Energy</strong> — Increases with Endurance skill tree investments.</li>
+    </ul>
+  `},
+  { id: 'multiplayer-help', icon: '🌐', title: 'Multiplayer & Cloud', content: `
+    <p>Play with others and sync your progress.</p>
+    <ul>
+      <li><strong>Cloud Save</strong> — Sign in from Settings to sync saves across devices.</li>
+      <li><strong>World Chat</strong> — Chat with other players in real time.</li>
+      <li><strong>Player Market</strong> — Trade vehicles with other players via the Black Market.</li>
+      <li><strong>PvP</strong> — Attack other players, steal their cash, and climb the leaderboard.</li>
+    </ul>
+  `},
+  { id: 'saving-help', icon: '💾', title: 'Saving & Loading', content: `
+    <ul>
+      <li><strong>Auto-Save</strong> — Game auto-saves to Slot 0 periodically.</li>
+      <li><strong>Manual Save</strong> — Save to any slot from Settings > Save Game.</li>
+      <li><strong>Cloud Sync</strong> — Sign in for cloud saves that persist across browsers/devices.</li>
+      <li><strong>Load Game</strong> — Pick any save slot to resume from Settings > Resume.</li>
+    </ul>
+  `},
+];
+
+function showHelpScreen(topicId) {
+  hideAllScreens();
+  
+  const container = document.getElementById('statistics-screen');
+  container.style.display = 'block';
+  
+  let html = `
+    <div class="page-header">
+      <h1><span class="icon"></span> Help & Guide</h1>
+      <div class="breadcrumb">
+        <a href="#" onclick="goBackToMainMenu(); return false;">SafeHouse</a>
+        <span class="separator">›</span>
+        <a href="#" onclick="showOptions(); return false;">Settings</a>
+        <span class="separator">›</span>
+        <span class="current">Help</span>
+      </div>
+    </div>
+  `;
+
+  if (topicId) {
+    // Show specific topic
+    const topic = HELP_TOPICS.find(t => t.id === topicId);
+    if (topic) {
+      html += `
+        <div style="max-width: 700px; margin: 0 auto;">
+          <div style="background: linear-gradient(135deg, rgba(26,26,46,0.9), rgba(22,33,62,0.9));
+               border: 2px solid #c0a062; border-radius: 14px; padding: 24px; margin-bottom: 20px;">
+            <h2 style="color: #c0a062; margin: 0 0 16px; font-family: 'Georgia', serif;">
+              ${topic.icon} ${topic.title}
+            </h2>
+            <div style="color: #bdc3c7; line-height: 1.7; font-size: 0.95em;">
+              ${topic.content}
+            </div>
+          </div>
+          <div style="text-align: center; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+            <button onclick="showHelpScreen()" style="background: linear-gradient(135deg, #d4af37, #b8962e); color: #1a1a2e;
+              padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">
+              ← All Topics
+            </button>
+            <button onclick="showOptions()" style="background: #34495e; color: #ecf0f1;
+              padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer;">
+              Back to Settings
+            </button>
+          </div>
+        </div>
+      `;
+    }
+  } else {
+    // Show topic index
+    const tutorialsSkipped = localStorage.getItem('tutorialSkipAll') === '1';
+    html += `
+      <div style="max-width: 700px; margin: 0 auto;">
+        <p style="color: #bdc3c7; text-align: center; margin-bottom: 20px; font-size: 0.95em;">
+          Choose a topic to learn more about any game system.
+        </p>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-bottom: 24px;">
+          ${HELP_TOPICS.map(topic => `
+            <button onclick="showHelpScreen('${topic.id}')"
+              style="display: flex; align-items: center; gap: 12px; padding: 14px 16px;
+              background: rgba(52,73,94,0.5); border: 2px solid #555; border-radius: 10px;
+              cursor: pointer; transition: all 0.2s; text-align: left; width: 100%;"
+              onmouseover="this.style.borderColor='#c0a062'; this.style.background='rgba(192,160,98,0.15)';"
+              onmouseout="this.style.borderColor='#555'; this.style.background='rgba(52,73,94,0.5)';">
+              <span style="font-size: 1.5em;">${topic.icon}</span>
+              <span style="color: #ecf0f1; font-weight: bold; font-size: 0.95em;">${topic.title}</span>
+            </button>
+          `).join('')}
+        </div>
+
+        <div style="background: rgba(52,73,94,0.3); border: 1px solid #555; border-radius: 10px; padding: 16px; margin-bottom: 20px; text-align: center;">
+          <p style="color: #95a5a6; margin: 0 0 10px; font-size: 0.9em;">
+            Screen tutorials ${tutorialsSkipped ? 'are currently <strong style="color:#e74c3c;">disabled</strong>' : 'are currently <strong style="color:#2ecc71;">enabled</strong>'}.
+            These pop up the first time you visit each screen.
+          </p>
+          <button onclick="${tutorialsSkipped ? 'reEnableTutorials(); showHelpScreen();' : 'skipAllTutorials(); showHelpScreen();'}"
+            style="background: ${tutorialsSkipped ? '#27ae60' : '#e74c3c'}; color: #fff;
+            padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9em;">
+            ${tutorialsSkipped ? '✅ Re-enable Tutorials' : '⏭ Disable All Tutorials'}
+          </button>
+        </div>
+
+        <div class="page-nav" style="justify-content: center;">
+          <button class="nav-btn-back" onclick="showOptions()">← Back to Settings</button>
+        </div>
+      </div>
+    `;
+  }
+
+  document.getElementById('statistics-content').innerHTML = html;
+}
+window.showHelpScreen = showHelpScreen;
+
+// Toggle tutorials from Settings screen
+function toggleTutorialFromSettings() {
+  if (localStorage.getItem('tutorialSkipAll') === '1') {
+    reEnableTutorials();
+  } else {
+    skipAllTutorials();
+  }
+  syncTutorialToggleButton();
+  updateQuickActions(); // Refresh quickbar to show/hide skip button
+}
+window.toggleTutorialFromSettings = toggleTutorialFromSettings;
+
+// Sync the tutorial toggle button state on the Settings screen
+function syncTutorialToggleButton() {
+  const btn = document.getElementById('tutorial-toggle-btn');
+  if (!btn) return;
+  const skipped = localStorage.getItem('tutorialSkipAll') === '1';
+  btn.textContent = skipped ? 'Tutorials: Disabled' : 'Tutorials: Enabled';
+  btn.style.borderColor = skipped ? '#e74c3c' : '#2ecc71';
+  btn.style.color = skipped ? '#e74c3c' : '#2ecc71';
+}
+window.syncTutorialToggleButton = syncTutorialToggleButton;
 
 // Auto-sync .screen-active class with display state so CSS can hide
 // fixed-position page-headers inside inactive screens (mobile ghost fix).
@@ -13897,8 +14430,22 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = "1.9.0";
+const CURRENT_VERSION = "1.10.0";
 const VERSION_UPDATES = {
+  "1.10.0": {
+    title: "Tutorial System, Help Guide & Objective Cleanup",
+    date: "March 2026",
+    changes: [
+      "First-visit tutorial overlays — each screen shows a guide the first time you visit it",
+      "Tutorial overlays explain every section of every major screen (SafeHouse, Jobs, Market, Missions, etc.)",
+      "Skip All Tutorials button in Quick Actions bar and mobile hamburger menu",
+      "Tutorial toggle in Settings — disable/re-enable tutorials any time",
+      "Help & Game Guide — full reference covering every game system, accessible from Settings",
+      "Help index with 16 browsable topics: Getting Started, Jobs, Market, Missions, Territory, and more",
+      "Removed dead Objective button and tracker code from mobile nav, hamburger menu, and nav customizer",
+      "Cleaned up objective injection logic from mobile nav tab system",
+    ]
+  },
   "1.9.0": {
     title: "Quest-Linked Street Stories & Operation Timers",
     date: "March 2026",
@@ -16144,6 +16691,9 @@ function showOptions() {
 
   // Sync stat-bar visibility checkboxes
   syncStatBarCheckboxes();
+
+  // Sync tutorial toggle button
+  syncTutorialToggleButton();
 }
 
 // Function to save the game
