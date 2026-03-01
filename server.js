@@ -3338,13 +3338,17 @@ function handleAllianceDeposit(clientId, message) {
     if (ps) { ps.money = player.money; ps.lastUpdate = Date.now(); }
 
     // Notify all alliance members
+    const sanitized = sanitizeAlliance(alliance);
     alliance.members.forEach(mId => {
         const mWs = clients.get(mId);
         if (mWs && mWs.readyState === 1) {
-            mWs.send(JSON.stringify({
+            const payload = {
                 type: 'alliance_result', success: true, action: 'deposit',
-                alliance: sanitizeAlliance(alliance), depositor: player.name, amount: amount
-            }));
+                alliance: sanitized, depositor: player.name, amount: amount
+            };
+            // Send the depositor their updated money balance
+            if (mId === clientId) payload.newMoney = player.money;
+            mWs.send(JSON.stringify(payload));
         }
     });
 

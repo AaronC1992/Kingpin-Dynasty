@@ -4585,7 +4585,17 @@ function handleAllianceResult(message) {
             break;
         case 'deposit':
             showMPToast(`💰 ${message.depositor} deposited $${(message.amount || 0).toLocaleString()} to treasury.`, '#2ecc71');
-            if (message.alliance) _currentAllianceData = { myAlliance: message.alliance, allAlliances: _currentAllianceData?.allAlliances || [] };
+            // Sync depositor's money
+            if (typeof message.newMoney === 'number') {
+                player.money = message.newMoney;
+            }
+            // Update cached alliance data with new treasury
+            if (message.alliance) {
+                _currentAllianceData = { myAlliance: message.alliance, allAlliances: _currentAllianceData?.allAlliances || [] };
+            }
+            // Refresh UI so treasury and cash display update
+            if (typeof updateUI === 'function') updateUI();
+            showAlliancePanel();
             break;
     }
 }
