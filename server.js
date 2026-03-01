@@ -812,9 +812,6 @@ function handleClientMessage(clientId, message, ws) {
         case 'alliance_kick':
             handleAllianceKick(clientId, message);
             break;
-        case 'alliance_betray':
-            handleAllianceBetray(clientId, message);
-            break;
         case 'alliance_info':
             handleAllianceInfo(clientId, message);
             break;
@@ -3252,53 +3249,6 @@ function handleAllianceKick(clientId, message) {
     });
 
     addGlobalChatMessage('System', `🚫 ${message.targetPlayer} was kicked from [${alliance.tag}] ${alliance.name}.`, '#e74c3c');
-    scheduleWorldSave();
-}
-
-function handleAllianceBetray(clientId, message) {
-    const player = gameState.players.get(clientId);
-    if (!player) return;
-    const ws = clients.get(clientId);
-    const fail = (err) => { if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'alliance_result', success: false, error: err })); };
-
-    const alliance = findPlayerAlliance(clientId);
-    if (!alliance) return fail('You are not in an alliance.');
-    if (alliance.members.length < 2) return fail('Nothing to betray — you are alone.');
-
-    // Betrayal: steal 25% of alliance treasury, -50 rep
-    const stolen = Math.floor(alliance.treasury * 0.25);
-    alliance.treasury -= stolen;
-    player.money = (player.money || 0) + stolen;
-    player.reputation = Math.max(0, (player.reputation || 0) - 50);
-    const ps = gameState.playerStates.get(clientId);
-    if (ps) { ps.money = player.money; ps.reputation = player.reputation; ps.lastUpdate = Date.now(); }
-
-    // Remove from alliance
-    alliance.members = alliance.members.filter(id => id !== clientId);
-    if (alliance.members.length === 0) {
-        gameState.alliances.delete(alliance.id);
-    } else if (alliance.leader === clientId) {
-        alliance.leader = alliance.members[0];
-    }
-
-    // Notify former allies
-    alliance.members.forEach(mId => {
-        const mWs = clients.get(mId);
-        if (mWs && mWs.readyState === 1) {
-            mWs.send(JSON.stringify({
-                type: 'alliance_result', success: true, action: 'betrayed',
-                alliance: sanitizeAlliance(alliance), traitor: player.name, stolenAmount: stolen
-            }));
-        }
-    });
-
-    if (ws && ws.readyState === 1) {
-        ws.send(JSON.stringify({ type: 'alliance_result', success: true, action: 'betrayal_success', stolen: stolen, newMoney: player.money }));
-    }
-
-    console.log(`🗡️ BETRAYAL: ${player.name} betrayed [${alliance.tag}] ${alliance.name}, stole $${stolen}`);
-    addGlobalChatMessage('System', `🗡️ ${player.name} BETRAYED [${alliance.tag}] ${alliance.name} and stole $${stolen.toLocaleString()} from the treasury!`, '#8b0000');
-    broadcastPlayerStates();
     scheduleWorldSave();
 }
 

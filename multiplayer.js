@@ -4415,7 +4415,7 @@ function showAlliancePanel() {
     const content = document.getElementById('multiplayer-content');
     content.innerHTML = `
         <h2 style="color: #c0a062; font-family: Georgia, serif;">🤝 Alliances</h2>
-        <p style="color: #ccc;">Form powerful alliances with other players. Share territory bonuses, deposit to a shared treasury, or betray your allies for personal gain.</p>
+        <p style="color: #ccc;">Form powerful alliances with other players. Share territory bonuses and deposit to a shared treasury.</p>
         <div id="alliance-panel-content" style="color: #888; text-align: center; padding: 30px;">Loading alliance data...</div>
         <div style="text-align: center; margin-top: 30px;">
             <button onclick="showOnlineWorld()" style="background: #333; color: #c0a062; padding: 12px 25px; border: 1px solid #c0a062; border-radius: 8px; cursor: pointer; font-family: Georgia, serif;">← Back to Commission</button>
@@ -4464,7 +4464,6 @@ function handleAllianceInfoResult(message) {
                     ${isLeader ? `<button onclick="allianceInvitePrompt()" style="background: #3498db; color: #fff; padding: 8px 15px; border: none; border-radius: 6px; cursor: pointer;">➕ Invite</button>` : ''}
                     ${isLeader ? `<button onclick="allianceKickPrompt()" style="background: #e74c3c; color: #fff; padding: 8px 15px; border: none; border-radius: 6px; cursor: pointer;">🚫 Kick</button>` : ''}
                     <button onclick="allianceLeave()" style="background: #666; color: #fff; padding: 8px 15px; border: none; border-radius: 6px; cursor: pointer;">🚪 Leave</button>
-                    <button onclick="allianceBetray()" style="background: linear-gradient(180deg,#8b0000,#4a0000); color: #ff4444; padding: 8px 15px; border: 1px solid #ff0000; border-radius: 6px; cursor: pointer; font-weight: bold;">🗡️ Betray</button>
                 </div>
             </div>
         `;
@@ -4529,12 +4528,6 @@ function allianceLeave() {
     }
 }
 
-function allianceBetray() {
-    if (confirm('⚠️ BETRAY your alliance?!\n\nYou will steal 25% of the treasury but lose 50 reputation.\nThis is irreversible and everyone will know.')) {
-        sendMP({ type: 'alliance_betray' });
-    }
-}
-
 function handleAllianceResult(message) {
     if (!message.success) {
         showSystemMessage(message.error || 'Alliance action failed.', '#e74c3c');
@@ -4570,18 +4563,6 @@ function handleAllianceResult(message) {
             break;
         case 'member_kicked':
             showMPToast(`🚫 ${message.kickedMember} was kicked.`, '#e74c3c');
-            break;
-        case 'betrayed':
-            showMPToast(`🗡️ ${message.traitor} BETRAYED the alliance! Stole $${(message.stolenAmount || 0).toLocaleString()}!`, '#8b0000', 7000);
-            playNotificationSound('combat');
-            showAlliancePanel();
-            break;
-        case 'betrayal_success':
-            showMPToast(`🗡️ Betrayal successful! Stole $${(message.stolen || 0).toLocaleString()}!`, '#ff6600', 5000);
-            playNotificationSound('cash');
-            player.money = message.newMoney || player.money;
-            if (typeof updateUI === 'function') updateUI();
-            showAlliancePanel();
             break;
         case 'deposit':
             showMPToast(`💰 ${message.depositor} deposited $${(message.amount || 0).toLocaleString()} to treasury.`, '#2ecc71');
