@@ -4,7 +4,7 @@ import { showEmpireOverview } from './empireOverview.js';
 import { player, gainExperience, checkLevelUp, regenerateEnergy, startEnergyRegenTimer, startEnergyRegeneration, skillTreeDefinitions, availablePerks, achievements } from './player.js';
 import { jobs, stolenCarTypes } from './jobs.js';
 import { crimeFamilies, factionEffects, potentialMentors } from './factions.js';
-import { familyStories, missionProgress, factionMissions } from './missions.js?v=1.7.0';
+import { familyStories, missionProgress, factionMissions } from './missions.js?v=1.7.2';
 import { narrationVariations, getRandomNarration } from './narration.js';
 import { storeItems, realEstateProperties, businessTypes, loanOptions, launderingMethods } from './economy.js';
 import { prisonerNames, recruitNames, availableRecruits, jailPrisoners, jailbreakPrisoners, setJailPrisoners, setJailbreakPrisoners, generateJailPrisoners, generateJailbreakPrisoners, generateAvailableRecruits } from './generators.js';
@@ -14464,8 +14464,23 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = "1.7.0";
+const CURRENT_VERSION = "1.7.2";
 const VERSION_UPDATES = {
+  "1.7.2": {
+    title: "Comprehensive Systems Audit & Bug Fix",
+    date: "February 2026",
+    changes: [
+      "Fixed crash bug: generateTurfOverviewHTML infinite recursion",
+      "Unified reputation system — faction rep now syncs to passives & achievements",
+      "All territory references migrated from dead player.territories to player.turf.owned",
+      "Map rewritten to use TURF_ZONES — shows actual turf war zones with boss info",
+      "Removed ~500 lines of dead code (legacy missions, rivalGangs, districtTypes)",
+      "Wired mini-game rewards: Quick Draw boosts combat, TikTakToe buffers loyalty loss",
+      "Fixed 5 routing bugs (hotkey t, map button, back buttons)",
+      "Fixed 11 crash bugs from missing window exports (jailbreak, achievements, calendar, rivals, leaderboards)",
+      "Blocking alert popups converted to toast notifications"
+    ]
+  },
   "1.7.0": {
     title: "Money Laundering Overhaul",
     date: "February 2026",
