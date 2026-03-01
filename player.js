@@ -130,7 +130,6 @@ export const player = {
     maxGangMembers: 5 // Base capacity without any safehouses
   },
   missions: {
-    activeCampaign: "risingThroughRanks",
     currentChapter: 0,
     completedMissions: [],
     completedCampaigns: [],
@@ -140,7 +139,7 @@ export const player = {
       chen: 0,
       morales: 0
     },
-    unlockedTurfMissions: ["old_quarter_expansion"],
+    unlockedTurfMissions: [],
     unlockedBossBattles: [],
     missionStats: {
       jobsCompleted: 0,
@@ -160,8 +159,7 @@ export const player = {
   activeLaundering: [], // Array of pending laundering ops {id, methodId, methodName, amount, cleanAmount, startedAt, completesAt}
   businessLastCollected: {}, // Object to track last collection time for each front
   
-  // Territory Control — also mirrored by turf system above
-  territories: [],
+  // Territory Control — legacy props kept for updateUI sync
   protectionRackets: [], // Active protection rackets
   territoryIncome: 0, // Weekly tribute
   corruptedOfficials: [], // Bribed officials with expiration

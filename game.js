@@ -1,10 +1,10 @@
-﻿// onboarding removed — tutorial system fully stripped
+// onboarding removed — tutorial system fully stripped
 import { applyDailyPassives, getDrugIncomeMultiplier, getViolenceHeatMultiplier, getWeaponPriceMultiplier } from './passiveManager.js';
 import { showEmpireOverview } from './empireOverview.js';
 import { player, gainExperience, checkLevelUp, regenerateEnergy, startEnergyRegenTimer, startEnergyRegeneration, skillTreeDefinitions, availablePerks, achievements } from './player.js';
 import { jobs, stolenCarTypes } from './jobs.js';
 import { crimeFamilies, factionEffects, potentialMentors } from './factions.js';
-import { familyStories, storyCampaigns, factionMissions, bossBattles, missionProgress } from './missions.js?v=1.7.0';
+import { familyStories, missionProgress } from './missions.js?v=1.7.0';
 import { narrationVariations, getRandomNarration } from './narration.js';
 import { storeItems, realEstateProperties, businessTypes, loanOptions, launderingMethods } from './economy.js';
 import { prisonerNames, recruitNames, availableRecruits, jailPrisoners, jailbreakPrisoners, setJailPrisoners, setJailbreakPrisoners, generateJailPrisoners, generateJailbreakPrisoners, generateAvailableRecruits } from './generators.js';
@@ -46,9 +46,6 @@ window.jobs = jobs;
 window.stolenCarTypes = stolenCarTypes;
 window.crimeFamilies = crimeFamilies;
 window.familyStories = familyStories;
-window.storyCampaigns = storyCampaigns;
-window.factionMissions = factionMissions;
-window.bossBattles = bossBattles;
 window.missionProgress = missionProgress;
 window.narrationVariations = narrationVariations;
 window.getRandomNarration = getRandomNarration;
@@ -273,132 +270,18 @@ function updateMissionProgress(actionType, value = 1) {
       stats.factionMissionsCompleted += value;
       break;
     case 'reputation_changed':
-      // No stat to update — checkCampaignProgress reads player.reputation directly
       break;
     case 'property_acquired':
-      // No stat to update — checkCampaignProgress reads ownedProperties.length directly
       break;
   }
-  
-  // Check if current campaign chapter is completed
-  checkCampaignProgress();
   
   // Update mission availability
   updateMissionAvailability();
 }
 
-// Function to check campaign progress
-function checkCampaignProgress() {
-  const campaign = storyCampaigns[player.missions.activeCampaign];
-  if (!campaign) return;
-  
-  const currentChapter = campaign.chapters[player.missions.currentChapter];
-  if (!currentChapter) return;
-  
-  let allObjectivesComplete = true;
-  const stats = player.missions.missionStats;
-  
-  // Check each objective
-  currentChapter.objectives.forEach(objective => {
-    switch(objective.type) {
-      case 'complete_jobs':
-        objective.current = stats.jobsCompleted;
-        break;
-      case 'earn_money':
-        objective.current = stats.moneyEarned;
-        break;
-      case 'recruit_members':
-        objective.current = stats.gangMembersRecruited;
-        break;
-      case 'complete_faction_mission':
-        objective.current = stats.factionMissionsCompleted;
-        break;
-      case 'control_turf':
-        objective.current = (player.turf?.owned || []).length;
-        break;
-      case 'win_boss_battle':
-        objective.current = stats.bossesDefeated;
-        break;
-      case 'reach_reputation':
-        objective.current = Math.floor(player.reputation);
-        break;
-      case 'own_properties':
-        objective.current = player.realEstate.ownedProperties.length;
-        break;
-    }
-    
-    if (objective.current < objective.target) {
-      allObjectivesComplete = false;
-    }
-  });
-  
-  // Complete chapter if all objectives are met
-  if (allObjectivesComplete) {
-    completeChapter(campaign, currentChapter);
-  }
-}
-
-// Function to complete a campaign chapter
-function completeChapter(campaign, chapter) {
-  // Give rewards
-  player.money += chapter.rewards.money || 0;
-  player.experience += chapter.rewards.experience || 0;
-  player.reputation += chapter.rewards.reputation || 0;
-  
-  // Log completion
-  logAction(`Chapter Complete: "${chapter.title}"! You earned $${chapter.rewards.money || 0}, ${chapter.rewards.experience || 0} XP, and ${chapter.rewards.reputation || 0} reputation.`);
-  
-  // Move to next chapter
-  if (chapter.nextChapter !== null) {
-    player.missions.currentChapter = chapter.nextChapter;
-    const nextChapter = campaign.chapters[chapter.nextChapter];
-    if (nextChapter) {
-      logAction(`New Chapter: "${nextChapter.title}" - ${nextChapter.description}`);
-    }
-  } else {
-    // Campaign completed
-    player.missions.completedCampaigns.push(campaign.id);
-    logAction(`Campaign "${campaign.name}" completed! You've proven yourself as a true criminal mastermind.`);
-  }
-  
-  updateUI();
-}
-
 // Function to update mission availability based on player progress
+// (factionMissions and bossBattles arrays are empty — loops removed)
 function updateMissionAvailability() {
-  // Unlock faction missions based on reputation with each family
-  Object.keys(factionMissions).forEach(family => {
-    factionMissions[family].forEach(mission => {
-      const hasItems = hasRequiredItems(mission.requiredItems);
-      const hasReputation = player.missions.factionReputation[family] >= (mission.factionRep - 5);
-      
-      if (!mission.unlocked && hasReputation && hasItems) {
-        mission.unlocked = true;
-        logAction(`New ${crimeFamilies[family].name} mission available: "${mission.name}"`);
-      } else if (mission.unlocked && (!hasReputation || !hasItems)) {
-        mission.unlocked = false;
-        // Only log if it's due to missing items, not reputation loss
-        if (hasReputation && !hasItems) {
-          logAction(`Mission "${mission.name}" locked - missing required items: ${mission.requiredItems.join(', ')}`);
-        }
-      }
-    });
-  });
-  
-
-  
-  // Unlock boss battles based on power and reputation
-  bossBattles.forEach(battle => {
-    if (!battle.unlocked && !player.missions.unlockedBossBattles.includes(battle.id)) {
-      if (player.power >= battle.requirements.minPower && 
-        player.gang.members >= battle.requirements.minGangMembers && 
-        player.reputation >= battle.requirements.minReputation) {
-        battle.unlocked = true;
-        player.missions.unlockedBossBattles.push(battle.id);
-        logAction(`Boss battle available: "${battle.name}" - ${battle.boss.name} awaits your challenge!`);
-      }
-    }
-  });
 }
 
 // Function to show missions/story screen
@@ -1073,7 +956,7 @@ function startSignatureJob(familyKey) {
       return;
     }
     logAction(`⭐ Signature job "${sigJob.name}" failed. ${family.name} is disappointed but willing to give you another shot.`);
-    alert(`The ${sigJob.name} didn't go as planned. Better luck next time.`);
+    showBriefNotification(`The ${sigJob.name} didn't go as planned.`, 'danger');
   }
   
   // Set cooldown regardless of outcome
@@ -1084,98 +967,7 @@ function startSignatureJob(familyKey) {
 }
 
 // startTurfMission removed — turfMissions was always empty; turf is handled by attackTurfZone()
-
-async function startBossBattle(battleId) {
-  const battle = bossBattles.find(b => b.id === battleId);
-  if (!battle) return;
-  
-  // Check requirements
-  if (player.energy < battle.energyCost) {
-    showBriefNotification(`Need ${battle.energyCost} energy for this confrontation!`, 'danger');
-    return;
-  }
-  
-  if (player.power < battle.requirements.minPower) {
-    showBriefNotification(`Need ${battle.requirements.minPower} power to challenge ${battle.boss.name}!`, 'danger');
-    return;
-  }
-  
-  if (player.gang.members < battle.requirements.minGangMembers) {
-    showBriefNotification(`Need ${battle.requirements.minGangMembers} gang members for this battle!`, 'danger');
-    return;
-  }
-  
-  // Consume energy
-  player.energy -= battle.energyCost;
-  
-  // Calculate battle outcome
-  const playerStrength = player.power + (player.gang.members * 8) + (player.skills.violence * 10);
-  const bossStrength = battle.boss.power + (battle.boss.gang_size * 6);
-  
-  const successChance = Math.min(85, 30 + ((playerStrength / bossStrength) * 40));
-  
-  // Execute battle
-  if (Math.random() * 100 < successChance) {
-    // Victory!
-    player.money += battle.rewards.money;
-    player.reputation += battle.rewards.reputation;
-    // Turf reward: grant reputation bonus (zone control happens via turf attacks)
-    if (player.turf) player.turf.reputation = (player.turf.reputation || 0) + (battle.rewards.territory || 1) * 5;
-    player.experience += battle.rewards.experience;
-    updateMissionProgress('reputation_changed');
-    
-    // Add unique item if exists
-    if (battle.rewards.unique_item) {
-      player.inventory.push({ name: battle.rewards.unique_item, power: 75, type: "unique_weapon" });
-      logAction(`You claimed ${battle.boss.name}'s legendary weapon: ${battle.rewards.unique_item}!`);
-    }
-    
-    // Reduce wanted level if specified
-    if (battle.rewards.wanted_level_reduction) {
-      player.wantedLevel = Math.max(0, player.wantedLevel - battle.rewards.wanted_level_reduction);
-    }
-    
-    // Remove from available battles
-    player.missions.unlockedBossBattles = player.missions.unlockedBossBattles.filter(id => id !== battleId);
-    player.missions.completedMissions.push(battleId);
-    updateMissionProgress('boss_defeated');
-    
-    logAction(`VICTORY! ${battle.boss.name} has fallen! Your reputation echoes through every corner of the criminal underworld. +$${battle.rewards.money}, +${battle.rewards.reputation} reputation.`);
-    logAction(battle.story);
-    
-    await ui.alert(`${battle.boss.name} defeated! You've proven your dominance and earned legendary status in the underworld.`);
-    degradeEquipment('boss_battle');
-  } else {
-    // Defeat
-    if (Math.random() * 100 < battle.risks.jailChance) {
-      sendToJail(15);
-      return;
-    }
-    
-    // Gang casualties
-    const gangLosses = Math.floor(Math.random() * 3) + 1;
-    for (let i = 0; i < gangLosses && player.gang.gangMembers.length > 0; i++) {
-      const lostMember = player.gang.gangMembers.pop();
-      player.gang.members = Math.max(0, player.gang.members - 1);
-    }
-    recalculatePower();
-    
-    // Health loss
-    const healthLoss = Math.floor(Math.random() * battle.risks.healthLoss) + 10;
-    player.health -= healthLoss;
-    
-    logAction(`DEFEAT! ${battle.boss.name} proved too powerful. You retreat with heavy casualties, bloodied but alive to fight another day.`);
-    await ui.alert(`Boss battle failed! Lost ${healthLoss} health and ${gangLosses} gang members. Regroup and try again when you're stronger.`);
-    
-    if (player.health <= 0) {
-      showDeathScreen(`Slain by ${battle.boss.name} in a boss battle`);
-      return;
-    }
-  }
-  
-  updateUI();
-  showMissions();
-}
+// startBossBattle removed — bossBattles array was always empty
 
 // ==================== GANG MANAGEMENT OVERHAUL ====================
 
@@ -2893,160 +2685,7 @@ const betrayalEvents = [
     detectionChance: 40
   }
 ];
-
-// ==================== DISTRICT ECONOMY (LEGACY) ====================
-
-// District Types with Different Benefits — used by the Map screen and protection rackets.
-// The turf system (TURF_ZONES / RIVAL_FAMILIES) handles ownership & combat.
-// See also: multiplayer.js cityDistricts (5 zones for multiplayer area control)
-const districtTypes = [
-  {
-    id: "residential_low",
-    name: "Low-Income Residential",
-    icon: "🏘️",
-    description: "Working-class neighborhoods with modest protection opportunities",
-    baseIncome: 150,
-    maxBusinesses: 3,
-    riskLevel: "low",
-    policePresence: 20,
-    benefits: {
-      drugSales: 1.2, // 20% bonus to drug operations
-      recruitment: 1.3, // 30% better recruitment rates
-      heatReduction: 0.1 // 10% less police attention
-    },
-    acquisitionCost: 8000,
-    maintenanceCost: 200,
-    category: "residential"
-  },
-  {
-    id: "residential_middle",
-    name: "Middle-Class Residential",
-    icon: "🏡",
-    description: "Suburban areas with better protection money potential",
-    baseIncome: 300,
-    maxBusinesses: 5,
-    riskLevel: "medium",
-    policePresence: 35,
-    benefits: {
-      protection: 1.4, // 40% better protection racket income
-      legitimacy: 1.2, // 20% better business legitimacy
-      recruitment: 1.1
-    },
-    acquisitionCost: 15000,
-    maintenanceCost: 400,
-    category: "residential"
-  },
-  {
-    id: "residential_upscale",
-    name: "Upscale Residential",
-    icon: "🏛️",
-    description: "Wealthy neighborhoods with high-value targets but heavy security",
-    baseIncome: 600,
-    maxBusinesses: 4,
-    riskLevel: "high",
-    policePresence: 60,
-    benefits: {
-      protection: 1.8, // 80% better protection income
-      heistRewards: 1.5, // 50% better heist payouts
-      corruption: 1.3 // 30% more effective bribes
-    },
-    acquisitionCost: 35000,
-    maintenanceCost: 800,
-    category: "residential"
-  },
-  {
-    id: "commercial_downtown",
-    name: "Downtown Commercial",
-    icon: "🏙️",
-    description: "Business district with shops, restaurants, and offices",
-    baseIncome: 800,
-    maxBusinesses: 8,
-    riskLevel: "medium",
-    policePresence: 45,
-    benefits: {
-      business: 1.5, // 50% better business income
-      laundering: 1.4, // 40% better money laundering
-      networking: 1.6 // 60% better faction relationships
-    },
-    acquisitionCost: 25000,
-    maintenanceCost: 600,
-    category: "commercial"
-  },
-  {
-    id: "commercial_shopping",
-    name: "Shopping District",
-    icon: "🏬",
-    description: "Retail area with stores, malls, and consumer businesses",
-    baseIncome: 500,
-    maxBusinesses: 6,
-    riskLevel: "low",
-    policePresence: 30,
-    benefits: {
-      theft: 1.3, // 30% better theft operations
-      smuggling: 1.2, // 20% better smuggling
-      business: 1.3
-    },
-    acquisitionCost: 18000,
-    maintenanceCost: 350,
-    category: "commercial"
-  },
-  {
-    id: "industrial_warehouse",
-    name: "Warehouse District",
-    icon: "🏭",
-    description: "Industrial area perfect for smuggling and large operations",
-    baseIncome: 400,
-    maxBusinesses: 4,
-    riskLevel: "medium",
-    policePresence: 25,
-    benefits: {
-      smuggling: 1.8, // 80% better smuggling operations
-      weapons: 1.5, // 50% better weapons trafficking
-      storage: 1.4 // 40% more storage capacity
-    },
-    acquisitionCost: 20000,
-    maintenanceCost: 300,
-    category: "industrial"
-  },
-  {
-    id: "industrial_port",
-    name: "Port District",
-    icon: "⚓",
-    description: "Docks and shipping facilities for international operations",
-    baseIncome: 1000,
-    maxBusinesses: 5,
-    riskLevel: "high",
-    policePresence: 50,
-    benefits: {
-      smuggling: 2.0, // 100% better smuggling
-      international: 1.8, // 80% better international crime
-      weapons: 1.6,
-      corruption: 1.4
-    },
-    acquisitionCost: 50000,
-    maintenanceCost: 1000,
-    category: "industrial"
-  },
-  {
-    id: "entertainment_nightlife",
-    name: "Nightlife District",
-    icon: "🌃",
-    description: "Bars, clubs, and entertainment venues",
-    baseIncome: 700,
-    maxBusinesses: 6,
-    riskLevel: "medium",
-    policePresence: 40,
-    benefits: {
-      vice: 1.6, // 60% better vice operations
-      recruitment: 1.4, // 40% better recruitment
-      information: 1.5, // 50% better intel gathering
-      laundering: 1.3
-    },
-    acquisitionCost: 30000,
-    maintenanceCost: 500,
-    category: "entertainment"
-  }
-];
+// districtTypes array removed — Map now uses TURF_ZONES; businesses use DISTRICTS from territories.js
 
 // Protection Racket Businesses
 const protectionBusinesses = [
@@ -3140,69 +2779,7 @@ const protectionBusinesses = [
   }
 ];
 
-// Rival AI Gangs
-const rivalGangs = [
-  {
-    id: "iron_wolves",
-    name: "Iron Wolves MC",
-    description: "Motorcycle gang specializing in drug trafficking",
-    power: 150,
-    territories: 2,
-    specialties: ["drugs", "weapons"],
-    aggressiveness: 0.7,
-    color: "#8b4513",
-    boss: "Steel Murphy",
-    preferredDistricts: ["industrial_warehouse", "entertainment_nightlife"]
-  },
-  {
-    id: "jade_serpents",
-    name: "Jade Serpents",
-    description: "Asian crime syndicate focused on smuggling",
-    power: 200,
-    territories: 3,
-    specialties: ["smuggling", "tech_crime"],
-    aggressiveness: 0.5,
-    color: "#228b22",
-    boss: "Master Liu",
-    preferredDistricts: ["industrial_port", "commercial_downtown"]
-  },
-  {
-    id: "crimson_brotherhood",
-    name: "Crimson Brotherhood",
-    description: "Violent street gang controlling drug corners",
-    power: 120,
-    territories: 1,
-    specialties: ["violence", "territory_control"],
-    aggressiveness: 0.9,
-    color: "#dc143c",
-    boss: "Blood Martinez",
-    preferredDistricts: ["residential_low", "commercial_shopping"]
-  },
-  {
-    id: "golden_eagles",
-    name: "Golden Eagles",
-    description: "Well-connected gang with political ties",
-    power: 250,
-    territories: 4,
-    specialties: ["corruption", "white_collar"],
-    aggressiveness: 0.3,
-    color: "#ffd700",
-    boss: "Don Aurelius",
-    preferredDistricts: ["residential_upscale", "commercial_downtown"]
-  },
-  {
-    id: "shadow_syndicate",
-    name: "Shadow Syndicate",
-    description: "Mysterious organization with unknown goals",
-    power: 300,
-    territories: 2,
-    specialties: ["assassination", "espionage"],
-    aggressiveness: 0.4,
-    color: "#2f4f4f",
-    boss: "The Phantom",
-    preferredDistricts: ["industrial_port", "entertainment_nightlife"]
-  }
-];
+// rivalGangs removed — 5 gangs were defined but never referenced anywhere
 
 // Corruption Targets
 const corruptionTargets = [
@@ -5542,7 +5119,7 @@ function showTurfMap() {
   
   html += `</div>
     <div style="text-align:center; margin-top:25px;">
-      <button onclick="window._opsActiveTab='territory'; showMissions();" style="padding:12px 30px;background:linear-gradient(135deg,#95a5a6,#7f8c8d);border:none;border-radius:10px;color:white;font-weight:bold;cursor:pointer;">← Back to Operations</button>
+      <button onclick="showTerritoryControl();" style="padding:12px 30px;background:linear-gradient(135deg,#95a5a6,#7f8c8d);border:none;border-radius:10px;color:white;font-weight:bold;cursor:pointer;">← Back to Turf</button>
     </div>`;
   
   document.getElementById("territory-control-content").innerHTML = html;
@@ -5630,12 +5207,15 @@ async function attackTurfZone(zoneId) {
 }
 window.attackTurfZone = attackTurfZone;
 
-// Boss fight resolution
+// Boss fight resolution — combatReflexBonus (from Quick Draw mini-game) adds dodge bonus
 function resolveBossFight(bossInfo, playerPower) {
+  const reflexBonus = player.combatReflexBonus || 0;
   const bossStrength = bossInfo.power + Math.floor(Math.random() * 40) - 20;
-  const playerStrength = playerPower + Math.floor(Math.random() * 50) - 25 + (player.skills?.violence || 0) * 3;
+  const playerStrength = playerPower + Math.floor(Math.random() * 50) - 25 + (player.skills?.violence || 0) * 3 + reflexBonus * 2;
   const won = playerStrength > bossStrength;
-  const damageTaken = won ? Math.floor(Math.random() * 15) + 5 : Math.floor(Math.random() * 25) + 15;
+  // Reflex bonus reduces damage taken (each point = ~1 less damage)
+  const rawDamage = won ? Math.floor(Math.random() * 15) + 5 : Math.floor(Math.random() * 25) + 15;
+  const damageTaken = Math.max(1, rawDamage - reflexBonus);
   return { won, damageTaken, bossStrength, playerStrength };
 }
 
@@ -5696,7 +5276,7 @@ function manageTurfDetails(zoneId) {
       <button onclick="collectTurfTribute('${zone.id}')" style="padding:10px 20px;background:linear-gradient(135deg,#27ae60,#229954);border:none;border-radius:8px;color:white;cursor:pointer;font-weight:bold;">💰 Collect Tribute</button>
     </div>
     <div style="text-align:center;">
-      <button onclick="window._opsActiveTab='territory'; showMissions();" style="padding:12px 30px;background:linear-gradient(135deg,#95a5a6,#7f8c8d);border:none;border-radius:10px;color:white;font-weight:bold;cursor:pointer;">← Back to Operations</button>
+      <button onclick="showTerritoryControl();" style="padding:12px 30px;background:linear-gradient(135deg,#95a5a6,#7f8c8d);border:none;border-radius:10px;color:white;font-weight:bold;cursor:pointer;">← Back to Turf</button>
     </div>`;
   
   document.getElementById("territory-control-content").innerHTML = html;
@@ -5838,7 +5418,7 @@ function showFamilyChoice() {
   
   html += `</div>
     <div style="text-align:center; margin-top:25px;">
-      <button onclick="window._opsActiveTab='territory'; showMissions();" style="padding:12px 30px;background:linear-gradient(135deg,#95a5a6,#7f8c8d);border:none;border-radius:10px;color:white;font-weight:bold;cursor:pointer;">← Back to Operations</button>
+      <button onclick="showTerritoryControl();" style="padding:12px 30px;background:linear-gradient(135deg,#95a5a6,#7f8c8d);border:none;border-radius:10px;color:white;font-weight:bold;cursor:pointer;">← Back to Turf</button>
     </div>`;
   
   document.getElementById("territory-control-content").innerHTML = html;
@@ -6355,9 +5935,6 @@ function generateTurfOverviewHTML() {
       <p style="color:#bdc3c7; margin:0;">Every zone is held by a rival family. Complete missions and fight for control!</p>
     </div>`;
   }
-
-  // ── 5. Turf Missions (reuse existing generator) ──
-  html += generateTurfOverviewHTML();
 
   html += '</div>';
   return html;
@@ -8288,11 +7865,16 @@ function updateFactionReputation(job, success) {
     reputationChanges.police = -1; // High-profile crimes hurt police relations
   }
   
-  // Apply reputation changes
+  // Apply reputation changes — keep both streetReputation and missions.factionReputation in sync
   Object.entries(reputationChanges).forEach(([faction, change]) => {
     if (player.streetReputation[faction] !== undefined) {
       player.streetReputation[faction] = Math.max(-100, Math.min(100, 
         player.streetReputation[faction] + change));
+    }
+    // Sync to missions.factionReputation so passives, empire overview, and achievements work
+    if (player.missions?.factionReputation && player.missions.factionReputation[faction] !== undefined) {
+      player.missions.factionReputation[faction] = Math.max(0, Math.min(100,
+        (player.missions.factionReputation[faction] || 0) + Math.max(0, change)));
     }
   });
 }
@@ -10187,7 +9769,7 @@ function generatePerksContent() {
                 reqText = `level: ${player.level}/${value}`;
                 break;
               case 'territories':
-                const territoryCount = player.territories ? player.territories.length : 0;
+                const territoryCount = (player.turf?.owned || []).length;
                 isMet = territoryCount >= value;
                 reqText = `territories: ${territoryCount}/${value}`;
                 break;
@@ -10372,7 +9954,7 @@ function checkPerkRequirements(requirements) {
       case 'level':
         return player.level >= value;
       case 'territories':
-        return (player.territories ? player.territories.length : 0) >= value;
+        return (player.turf?.owned || []).length >= value;
       case 'mentors':
         return (player.mentors ? player.mentors.length : 0) >= value;
       case 'count':
@@ -10552,7 +10134,7 @@ function collectTribute() {
     bonusText += ` (${Math.floor((1 - loyaltyMultiplier) * 100)}% reduced due to low loyalty)`;
   }
   
-  alert(`Your gang collected $${tribute.toLocaleString()} in tribute (dirty)!${bonusText}`);
+  showBriefNotification(`💰 Collected $${tribute.toLocaleString()} in tribute (dirty)!${bonusText}`, 'success');
   logAction(`💰 Your crew comes through! Envelopes stuffed with cash find their way to you. The family business is paying dividends (+$${tribute.toLocaleString()} dirty${bonusText}).`);
   updateUI();
   showGang(); // Refresh the gang screen to show new cooldown
@@ -10568,7 +10150,7 @@ function expandTerritory() {
   
   // Territory expansion costs energy and money
   const energyCost = 15;
-  const moneyCost = Math.floor(2000 + player.territories.length * 3000); // Scales with holdings
+  const moneyCost = Math.floor(2000 + (player.turf?.owned || []).length * 3000); // Scales with holdings
   
   if (player.energy < energyCost) {
     showBriefNotification(`Need ${energyCost} energy to expand territory. You have ${player.energy}.`, 'warning');
@@ -10591,7 +10173,7 @@ function expandTerritory() {
     player.reputation += 5;
     
     // Income bonus from new territory
-    const incomeGain = Math.floor(500 + Math.random() * 1500 + player.territories.length * 200);
+    const incomeGain = Math.floor(500 + Math.random() * 1500 + (player.turf?.owned || []).length * 200);
     player.territoryIncome += incomeGain;
     
     // Track statistics
@@ -12006,7 +11588,7 @@ function triggerPoliceCrackdown() {
       switch(trigger) {
         case 'high_drug_activity': return player.experience > 100;
         case 'public_pressure': return player.wantedLevel > 30;
-        case 'territory_violence': return player.territories.length > 2;
+        case 'territory_violence': return (player.turf?.owned || []).length > 2;
         case 'gang_visibility': return player.gang.members > 5;
         case 'car_theft_reports': return player.stolenCars.length > 3;
         case 'insurance_pressure': return player.stolenCars.length > 5;
@@ -12516,7 +12098,7 @@ function showPlayerStats() {
     row('Gang Members', (player.gang.gangMembers || []).length, '#3498db'),
     row('Gang Loyalty', `${player.gang.loyalty || 100}%`, '#2ecc71'),
     row('Max Gang Size', player.realEstate.maxGangMembers || 5, '#ecf0f1'),
-    row('Territories Held', (player.territories || []).length, '#e67e22'),
+    row('Territories Held', (player.turf?.owned || []).length, '#e67e22'),
     row('Territory Power', player.territoryPower || 100, '#e74c3c'),
     row('Territory Rep', player.territoryReputation || 0, '#9b59b6'),
     row('Properties Owned', (player.realEstate.ownedProperties || []).length, '#d4af37'),
@@ -12679,7 +12261,7 @@ function buildCareerStatisticsHTML() {
         <div class="stat-item"><span class="stat-label">Current Money:</span><span class="stat-value">$${player.money.toLocaleString()}</span></div>
         <div class="stat-item"><span class="stat-label">Profit Margin:</span><span class="stat-highlight">${profitMargin}%</span></div>
         <div class="stat-item"><span class="stat-label">Businesses Owned:</span><span class="stat-value">${player.businesses ? player.businesses.length : 0}</span></div>
-        <div class="stat-item"><span class="stat-label">Territories Controlled:</span><span class="stat-value">${player.territories ? player.territories.length : 0}</span></div>
+        <div class="stat-item"><span class="stat-label">Territories Controlled:</span><span class="stat-value">${(player.turf?.owned || []).length}</span></div>
       </div>
       
       <div class="stat-category">
@@ -13987,7 +13569,7 @@ function checkAchievements() {
   const w = player.wantedLevel;
   const r = player.reputation;
   const l = player.level;
-  const t = player.territories ? player.territories.length : 0;
+  const t = (player.turf?.owned || []).length;
   const stats = player.missions.missionStats;
   const fRep = player.missions.factionReputation;
   const maxFRep = Math.max(fRep.torrino || 0, fRep.kozlov || 0, fRep.chen || 0, fRep.morales || 0);
@@ -14112,7 +13694,6 @@ function resetPlayerForNewGame() {
       maxGangMembers: 5
     },
     missions: {
-      activeCampaign: "risingThroughRanks",
       currentChapter: 0,
       completedMissions: [],
       completedCampaigns: [],
@@ -14122,7 +13703,7 @@ function resetPlayerForNewGame() {
         chen: 0,
         morales: 0
       },
-      unlockedTurfMissions: ["old_quarter_expansion"],
+      unlockedTurfMissions: [],
       unlockedBossBattles: [],
       signatureJobCooldowns: {},
       missionStats: {
@@ -14141,7 +13722,6 @@ function resetPlayerForNewGame() {
     suspicionLevel: 0,
     launderingSetups: [],
     businessLastCollected: {},
-    territories: [],
     protectionRackets: [],
     territoryIncome: 0,
     corruptedOfficials: [],
@@ -16149,7 +15729,7 @@ function showDeathScreen(causeOfDeath) {
   const cause = causeOfDeath || "Died on the streets";
   const totalCrimes = (player.playstyleStats.stealthyJobs || 0) + (player.playstyleStats.violentJobs || 0) + (player.playstyleStats.diplomaticActions || 0);
   const gangSize = player.gang ? player.gang.members : 0;
-  const territoriesOwned = player.territories ? player.territories.length : 0;
+  const territoriesOwned = (player.turf?.owned || []).length;
   const businessCount = player.businesses ? player.businesses.length : 0;
   const propertiesOwned = player.realEstate ? player.realEstate.ownedProperties.length : 0;
   const highestSkill = Object.entries(player.skills).reduce((a, b) => b[1] > a[1] ? b : a, ['none', 0]);
@@ -16618,9 +16198,11 @@ function territoryDispute() {
     } else {
       // Reduce turf power instead of decrementing territory counter
       if (player.turf) player.turf.power = Math.max(0, (player.turf.power || 100) - 15);
-      player.gang.loyalty = Math.max(50, player.gang.loyalty - 10);
+      // gangRespect (from TikTakToe) cushions loyalty loss
+      const respectBuffer = Math.min(5, (player.gangRespect || 0));
+      player.gang.loyalty = Math.max(50, player.gang.loyalty - Math.max(2, 10 - respectBuffer));
       showBriefNotification('⚔️ Lost territory to rivals!', 3000);
-      logAction('⚔️ A rival gang overwhelmed your defenses! You lost 1 territory and gang loyalty dropped.');
+      logAction('⚔️ A rival gang overwhelmed your defenses! You lost turf power and gang loyalty dropped.');
     }
     updateUI();
   }
@@ -17710,7 +17292,7 @@ function initializeHotkeys() {
       'c': () => showStolenCars(),
       'k': () => showSkills(),
       'b': () => showBusinesses(),
-      't': () => { window._opsActiveTab = 'territory'; showMissions(); },
+      't': () => showTerritoryControl(),
       'l': () => showCalendar(),
       'm': () => showMap(),
       'z': () => showStatistics(),
@@ -17729,66 +17311,62 @@ function initializeHotkeys() {
   });
 }
 
-// Map System
+// Map System — uses TURF_ZONES (the real SP turf data)
 function showMap() {
   hideAllScreens();
   document.getElementById("map-screen").style.display = "block";
   
+  const ownedIds = (player.turf?.owned || []).map(o => o.id || o);
+  
   let mapHTML = `
     <h2>🗺️ Turf Map</h2>
-    <p>Visual representation of your criminal empire and turf zones</p>
+    <p>Visual overview of the city's turf zones and your criminal empire</p>
     
     <div style="margin: 20px 0; padding: 15px; background: rgba(52, 152, 219, 0.2); border-radius: 10px;">
       <h3 style="color: #3498db; margin: 0 0 10px 0;">💡 Map Legend</h3>
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
-        <div style="color: #2ecc71;">🏟¢ Controlled Territory</div>
-        <div style="color: #f39c12;">🏟  Available Territory</div>
-        <div style="color: #e74c3c;">🔴 Rival Gang Territory</div>
-        <div style="color: #95a5a6;">⚫ Locked Territory</div>
+        <div style="color: #2ecc71;">✅ Your Turf</div>
+        <div style="color: #e74c3c;">⚔️ Rival Controlled</div>
+        <div style="color: #f39c12;">🏴 Contested</div>
       </div>
     </div>
     
     <div class="map-container">`;
   
-  // Derive map tiles from the canonical districtTypes (single source of truth)
-  const allDistricts = districtTypes;
-  
-  allDistricts.forEach(district => {
-    const isControlled = player.territories && player.territories.some(t => t.districtId === district.id);
-    const canAfford = player.money >= district.acquisitionCost;
-    const hasEnoughPower = player.territoryPower >= (district.acquisitionCost / 100);
+  TURF_ZONES.forEach(zone => {
+    const isOwned = ownedIds.includes(zone.id);
+    const isContested = zone.controlledBy === 'contested';
     
     let tileClass = 'territory-tile ';
     let statusText = '';
     let clickAction = '';
+    let statusColor = '';
     
-    if (isControlled) {
+    if (isOwned) {
       tileClass += 'territory-controlled';
-      statusText = 'CONTROLLED';
-      clickAction = `onclick="manageTerritoryDetails('${district.id}')"`;
-    } else if (canAfford && hasEnoughPower) {
+      statusText = 'YOUR TURF';
+      statusColor = '#2ecc71';
+      clickAction = `onclick="manageTurfDetails('${zone.id}')"`;
+    } else if (isContested) {
       tileClass += 'territory-available';
-      statusText = `$${(district.acquisitionCost / 1000)}K`;
-      clickAction = `onclick="acquireTerritory('${district.id}')"`;
+      statusText = 'CONTESTED';
+      statusColor = '#f39c12';
+      clickAction = `onclick="showTerritoryInfo('${zone.id}')"`;
     } else {
-      // Deterministic rival check: districts costing more than player level * 5000 are rival-held
-      const isRivalTerritory = district.acquisitionCost > player.level * 5000;
-      tileClass += isRivalTerritory ? 'territory-rival' : 'territory-available';
-      statusText = isRivalTerritory ? 'RIVAL GANG' : 'LOCKED';
-      clickAction = `onclick="showTerritoryInfo('${district.id}')"`;
+      tileClass += 'territory-rival';
+      statusText = zone.controlledBy ? zone.controlledBy.toUpperCase() : 'RIVAL';
+      statusColor = '#e74c3c';
+      clickAction = `onclick="showTerritoryInfo('${zone.id}')"`;
     }
     
     mapHTML += `
-      <div class="${tileClass}" ${clickAction} title="Click for details">
-        <div class="territory-icon">${district.icon}</div>
-        <div class="territory-name">${district.name}</div>
+      <div class="${tileClass}" ${clickAction} title="${zone.description}" style="cursor:pointer;">
+        <div class="territory-icon">${zone.icon}</div>
+        <div class="territory-name">${zone.name}</div>
         <div class="territory-info">
-          <div style="color: ${isControlled ? '#2ecc71' : canAfford ? '#f39c12' : '#e74c3c'}; font-weight: bold;">
-            ${statusText}
-          </div>
-          <div style="font-size: 0.8em;">
-            Income: $${district.baseIncome.toLocaleString()}/week
-          </div>
+          <div style="color: ${statusColor}; font-weight: bold;">${statusText}</div>
+          <div style="font-size: 0.8em;">Income: $${zone.baseIncome.toLocaleString()}/week</div>
+          <div style="font-size: 0.75em; color: #95a5a6;">Defense: ${zone.defenseRequired} | Risk: ${zone.riskLevel}</div>
         </div>
       </div>
     `;
@@ -17798,24 +17376,19 @@ function showMap() {
     </div>
     
     <div style="text-align: center; margin-top: 30px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-      <button onclick="window._opsActiveTab='territory'; showMissions();" style="background: #3498db; color: white; padding: 12px 25px; margin: 5px; border: none; border-radius: 8px; cursor: pointer;">
+      <button onclick="showTerritoryControl();" style="background: #3498db; color: white; padding: 12px 25px; margin: 5px; border: none; border-radius: 8px; cursor: pointer;">
         🏛️ Turf Management
       </button>
       <button class="nav-btn-back" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
-    </div>
-      </button>
     </div>
   `;
   
   document.getElementById("map-content").innerHTML = mapHTML;
 }
-
-function showTerritoryInfo(districtId) {
-  // Look up from the canonical districtTypes array instead of a separate hardcoded list
-  const district = districtTypes.find(d => d.id === districtId);
-  const name = district ? district.name : 'Unknown Territory';
-  const desc = district ? district.description : 'No information available.';
-  alert(`${name}\n\n${desc}\n\nThis territory is currently not available for acquisition.`);
+function showTerritoryInfo(zoneId) {
+  const zone = TURF_ZONES.find(z => z.id === zoneId);
+  if (!zone) return;
+  showBriefNotification(`${zone.icon} ${zone.name} — ${zone.description}`, 'info');
 }
 
 // Calendar System
@@ -17867,7 +17440,7 @@ function showCalendar() {
     let events = [];
     
     // Territory tribute collection (every 7 days)
-    if (player.territories && player.territories.length > 0 && day % 7 === 0) {
+    if ((player.turf?.owned || []).length > 0 && day % 7 === 0) {
       events.push('<div class="calendar-event">💰 Tribute Collection</div>');
     }
     
@@ -17910,7 +17483,7 @@ function showCalendar() {
   // Show upcoming events
   const upcomingEvents = [];
   
-  if (player.territories && player.territories.length > 0) {
+  if ((player.turf?.owned || []).length > 0) {
     const nextTribute = Math.ceil(currentDay / 7) * 7;
     if (nextTribute <= daysInMonth) {
       upcomingEvents.push(`💰 Next tribute collection: ${monthNames[currentMonth]} ${nextTribute}`);
@@ -17951,7 +17524,7 @@ function showDayDetails(day, month, year) {
   let details = `${monthNames[month]} ${day}, ${year}\n\n`;
   
   // Add any special events for this day
-  if (player.territories && player.territories.length > 0 && day % 7 === 0) {
+  if ((player.turf?.owned || []).length > 0 && day % 7 === 0) {
     details += "💰 Territory tribute collection day\n";
   }
   
@@ -18073,7 +17646,7 @@ function showStatistics() {
         </div>
         <div class="stat-item">
           <span class="stat-label">Territories Controlled:</span>
-          <span class="stat-value">${player.territories ? player.territories.length : 0}</span>
+          <span class="stat-value">${(player.turf?.owned || []).length}</span>
         </div>
       </div>
       
@@ -18923,8 +18496,7 @@ function initializeMissingData() {
     player.missions = {};
   }
   if (!player.missions.unlockedTurfMissions) {
-    // Migrate old unlockedTerritoryMissions if present
-    player.missions.unlockedTurfMissions = player.missions.unlockedTerritoryMissions || ["old_quarter_expansion"];
+    player.missions.unlockedTurfMissions = [];
     delete player.missions.unlockedTerritoryMissions;
   }
   if (!player.missions.unlockedBossBattles) {
@@ -20549,8 +20121,6 @@ window.showJobs = showJobs;
 window.refreshJobsList = refreshJobsList;
 window.startJob = startJob;
 window.updateMissionProgress = updateMissionProgress;
-window.checkCampaignProgress = checkCampaignProgress;
-window.completeChapter = completeChapter;
 window.updateMissionAvailability = updateMissionAvailability;
 window.showMissions = showMissions;
 window.switchOpsTab = switchOpsTab;
@@ -20558,7 +20128,6 @@ window.toggleFamilyGroup = toggleFamilyGroup;
 window.toggleLockedMissions = toggleLockedMissions;
 window.startFactionMission = startFactionMission;
 window.startSignatureJob = startSignatureJob;
-window.startBossBattle = startBossBattle;
 
 // Business & Economy
 window.showBusinesses = showBusinesses;

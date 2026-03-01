@@ -214,7 +214,7 @@ function showMPToast(text, color, duration) {
 // Sync server territory data to local player object
 function syncMultiplayerTerritoriesToPlayer() {
     // If connected to server, territories come from server state
-    // Otherwise use local player.territories
+    // Otherwise use local player.turf.owned
     if (onlineWorldState.isConnected && onlineWorldState.territories) {
         // Server territories override local
         console.log('[multiplayer] Syncing territories from server');
@@ -224,8 +224,8 @@ function syncMultiplayerTerritoriesToPlayer() {
 
 // Count territories the player controls
 function countControlledTerritories() {
-    if (typeof player !== 'undefined' && player.territories) {
-        return player.territories.length;
+    if (typeof player !== 'undefined' && player.turf && player.turf.owned) {
+        return player.turf.owned.length;
     }
     return 0;
 }
