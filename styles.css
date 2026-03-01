@@ -1834,15 +1834,27 @@ p, ul {
 }
 
 .portrait-selection-grid {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
+    display: flex;
+    flex-direction: column;
     gap: 10px;
     margin: 20px 0;
-    max-height: 400px;
+    max-height: 500px;
     overflow-y: auto;
     padding: 10px;
     background: rgba(0, 0, 0, 0.3);
     border-radius: 8px;
+}
+
+.portrait-gender-section {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 10px;
+    width: 100%;
+}
+
+.portrait-gender-section h3 {
+    grid-column: 1 / -1;
+    margin: 0;
 }
 
 .portrait-option {
@@ -2475,10 +2487,14 @@ p, ul {
     
     /* Portrait selection mobile adjustments */
     .portrait-selection-grid {
-        grid-template-columns: repeat(3, 1fr);
         gap: 8px;
         max-height: 60vh;
         padding: 8px;
+    }
+    
+    .portrait-gender-section {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
     }
     
     .portrait-option {
@@ -2595,9 +2611,13 @@ p, ul {
     
     /* Portrait selection for very small screens */
     .portrait-selection-grid {
-        grid-template-columns: repeat(2, 1fr);
         gap: 6px;
         max-height: 50vh;
+    }
+    
+    .portrait-gender-section {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 6px;
     }
     
     .portrait-section h3 {
