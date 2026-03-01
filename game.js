@@ -4,7 +4,7 @@ import { showEmpireOverview } from './empireOverview.js';
 import { player, gainExperience, checkLevelUp, regenerateEnergy, startEnergyRegenTimer, startEnergyRegeneration, skillTreeDefinitions, availablePerks, achievements } from './player.js';
 import { jobs, stolenCarTypes } from './jobs.js';
 import { crimeFamilies, factionEffects, potentialMentors } from './factions.js';
-import { familyStories, missionProgress, factionMissions } from './missions.js?v=1.7.3';
+import { familyStories, missionProgress, factionMissions } from './missions.js?v=1.7.4';
 import { narrationVariations, getRandomNarration } from './narration.js';
 import { storeItems, realEstateProperties, businessTypes, loanOptions, launderingMethods } from './economy.js';
 import { prisonerNames, recruitNames, availableRecruits, jailPrisoners, jailbreakPrisoners, setJailPrisoners, setJailbreakPrisoners, generateJailPrisoners, generateJailbreakPrisoners, generateAvailableRecruits } from './generators.js';
@@ -14608,8 +14608,20 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = "1.7.3";
+const CURRENT_VERSION = "1.7.4";
 const VERSION_UPDATES = {
+  "1.7.4": {
+    title: "Bug Audit & Alert/Confirm Overhaul",
+    date: "March 2026",
+    changes: [
+      "Fixed PowerShell corruption in multiplayer PvP result popup",
+      "Fixed dismissMember ghost member bug — members now properly removed",
+      "Converted 137 bare alert() calls to themed showBriefNotification toasts",
+      "Converted 3 bare confirm() calls to themed ui.confirm() modal dialogs",
+      "Fixed fragile gangSize calculations to use gangMembers array directly",
+      "Removed dead legacy alert override function"
+    ]
+  },
   "1.7.3": {
     title: "Territory Management & Alliance Territories",
     date: "June 2025",

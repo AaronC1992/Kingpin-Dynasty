@@ -5,6 +5,16 @@ All notable changes to From Dusk To Don (Mafia Born) will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.4] - 2026-03-01
+
+### Fixed
+- **PowerShell Corruption Repair** — fixed 6 corrupted emoji expressions in multiplayer.js PvP result popup
+- **dismissMember() Ghost Bug** — members now properly removed from array instead of just flagged, counter synced
+- **137 bare alert() converted** to themed `showBriefNotification()` toasts with danger/success/warning classification
+- **3 bare confirm() converted** to themed `ui.confirm()` modal dialogs (territory functions made async)
+- **3 fragile gangSize calculations** fixed to use `gangMembers.length` directly
+- **Dead legacy alert override function** removed (superseded by showBriefNotification)
+
 ## [1.7.3] - 2025-06-14
 
 ### Added
