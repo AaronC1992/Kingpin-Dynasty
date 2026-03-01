@@ -5,6 +5,33 @@ All notable changes to From Dusk To Don (Mafia Born) will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.4] - 2026-03-01
+
+### Changed
+- **Black Market restructured** — now has 3 top-level tabs: Buy, The Fence, and Player Market
+- **Fence merged into Black Market** — no more separate Fence screen; fence functionality lives under the Fence tab
+- **Player Market tab added** — trade vehicles with other players directly from Black Market
+- Fence sell functions now use Heat (Wanted Level) instead of the removed Suspicion system
+- `getFenceMultiplier()` heat penalty now based on `wantedLevel`
+
+### Removed
+- Fence nav sidebar button — one fewer menu button
+- ~400 lines of commented-out dead code (old suspicion / FBI investigation block)
+- `suspicionTimer` / `fbiTimer` references in event timer system
+- `fence-screen` div from HTML
+
+## [1.8.3] - 2026-03-01
+
+### Changed
+- **Suspicion system removed** — all suspicion gains now route through the existing Heat (Wanted Level) system
+- **Motor Pool merged into Stash** — new Stash & Motor Pool screen with tabs
+- **Skills/Expertise merged into Stats** — Stats screen now has 6 tabs
+
+### Removed
+- FBI Investigation popups, suspicion timers, and suspicion-based consequences
+- Expertise and Motor Pool nav buttons — fewer buttons, less clutter
+- 'c' and 'k' keyboard shortcuts (now accessed through Stash and Stats tabs)
+
 ## [1.8.2] - 2026-03-01
 
 ### Changed

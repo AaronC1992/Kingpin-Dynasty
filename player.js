@@ -383,7 +383,7 @@ export const SKILL_TREE_DEFS = {
       light_feet:     { tier: 1, name: "Light Feet",     icon: "👣", maxRank: 10, desc: "Reduce energy cost with silent movement", effect: "-1 energy cost per rank", prereqs: [] },
       infiltration:   { tier: 2, name: "Infiltration",   icon: "🔓", maxRank: 10, desc: "Break into secured locations with ease", effect: "+5% stealth job success per rank", prereqs: [{ node: "shadow_step", rank: 3 }] },
       escape_artist:  { tier: 2, name: "Escape Artist",  icon: "💨", maxRank: 10, desc: "Slip out of the tightest situations", effect: "-2s jail time, +3% breakout per rank", prereqs: [{ node: "light_feet", rank: 3 }] },
-      ghost_protocol: { tier: 3, name: "Ghost Protocol", icon: "👻", maxRank: 5,  desc: "Become a phantom — practically invisible", effect: "-4% suspicion gain per rank", prereqs: [{ node: "infiltration", rank: 5 }] },
+      ghost_protocol: { tier: 3, name: "Ghost Protocol", icon: "👻", maxRank: 5,  desc: "Become a phantom — practically invisible", effect: "-4% heat gain per rank", prereqs: [{ node: "infiltration", rank: 5 }] },
       surveillance:   { tier: 3, name: "Surveillance",   icon: "👁️", maxRank: 5,  desc: "Gather intel and stay ahead of enemies", effect: "+4% job intel per rank", prereqs: [{ node: "escape_artist", rank: 5 }] }
     }
   },

@@ -7565,8 +7565,7 @@ function hideAllScreens() {
   const loanSharkScreen = document.getElementById("loan-shark-screen");
   if (loanSharkScreen) loanSharkScreen.style.display = "none";
   document.getElementById("money-laundering-screen").style.display = "none";
-  const fenceScreen = document.getElementById("fence-screen");
-  if (fenceScreen) fenceScreen.style.display = "none";
+  // Fence merged into Black Market — no separate screen
   document.getElementById("territory-control-screen").style.display = "none";
   const territoriesScreen = document.getElementById("territories-screen");
   if (territoriesScreen) territoriesScreen.style.display = "none";
@@ -10024,419 +10023,6 @@ function checkFBIInvestigation() { /* no-op */ }
 function handleFBIChoice() { /* no-op */ }
 /* eslint-enable no-unused-vars */
 
-/* --- REMOVED BLOCK START (suspicion + FBI investigation) ---
-function _removed_checkSuspicionConsequences() {
-  const suspicion = player.suspicionLevel || 0;
-  const now = Date.now();
-  
-  // Only check every 60 seconds to prevent spam
-  if (now - lastSuspicionCheck < 60000) return;
-  lastSuspicionCheck = now;
-  
-  if (suspicion < 25) return; // No consequences below 25
-  
-  // Threshold 1: 25+ Suspicion — Minor consequences (random spot checks)
-  if (suspicion >= 25 && suspicion < 50) {
-    if (Math.random() < 0.08) { // 8% chance per check
-      const events = [
-        { msg: "An unmarked car has been spotted watching your businesses. The feds are taking notice.", moneyLoss: 0, wantedGain: 2 },
-        { msg: "Your burner phone intercepted a police radio call mentioning your name. Stay careful.", moneyLoss: 0, wantedGain: 1 },
-        { msg: "A suspicious person was asking questions about you in the neighborhood. Word is getting around.", moneyLoss: 0, wantedGain: 3 }
-      ];
-      const event = events[Math.floor(Math.random() * events.length)];
-      player.wantedLevel += event.wantedGain;
-      logAction(event.msg);
-    }
-  }
-  
-  // Threshold 2: 50+ Suspicion — Business raids (temporary income loss)
-  if (suspicion >= 50 && suspicion < 75) {
-    if (Math.random() < 0.06) { // 6% chance per check
-      if (player.businesses && player.businesses.length > 0) {
-        // Raid a random business — reset its collection timer (losing income)
-        const raidedIndex = Math.floor(Math.random() * player.businesses.length);
-        const raidedBusiness = player.businesses[raidedIndex];
-        raidedBusiness.lastCollection = Date.now(); // Reset timer, losing accumulated income
-        
-        const dirtyLoss = Math.floor((player.dirtyMoney || 0) * (0.05 + Math.random() * 0.10)); // Seize 5-15% dirty money
-        player.dirtyMoney = Math.max(0, (player.dirtyMoney || 0) - dirtyLoss);
-        player.wantedLevel += 5;
-        
-        const lossMsg = dirtyLoss > 0 ? ` They seize $${dirtyLoss.toLocaleString()} in suspicious cash.` : '';
-        logAction(`POLICE RAID! Officers descend on your ${raidedBusiness.name} with a search warrant.${lossMsg} Business income reset while they investigate.`);
-        showBriefNotification(`POLICE RAID!\n\nYour ${raidedBusiness.name} was raided by law enforcement!\n${dirtyLoss > 0 ? `$${dirtyLoss.toLocaleString()} in dirty money seized.\n` : ''}Business income timer has been reset.\n\nYour suspicion level is too high — lay low!`, 'success');
-      } else {
-        // No businesses to raid — just seize some dirty money
-        const dirtyLoss = Math.floor((player.dirtyMoney || 0) * (0.10 + Math.random() * 0.15)); // 10-25%
-        player.dirtyMoney = Math.max(0, (player.dirtyMoney || 0) - dirtyLoss);
-        if (dirtyLoss > 0) {
-          player.wantedLevel += 3;
-          logAction(`Police search your vehicle at a checkpoint and confiscate $${dirtyLoss.toLocaleString()} in dirty cash.`);
-        }
-      }
-    }
-  }
-  
-  // Threshold 3: 75+ Suspicion — Severe consequences (asset seizure, business shutdown)
-  if (suspicion >= 75 && suspicion < 100) {
-    if (Math.random() < 0.05) { // 5% chance per check
-      const severity = Math.random();
-      
-      if (severity < 0.4 && player.businesses && player.businesses.length > 0) {
-        // Business temporarily shut down (force sell at reduced price)
-        const targetIndex = Math.floor(Math.random() * player.businesses.length);
-        const targetBusiness = player.businesses[targetIndex];
-        const businessType = businessTypes.find(bt => bt.id === targetBusiness.type);
-        
-        // Seize the business — player loses it but gets partial refund (30-50% of base price)
-        const refund = Math.floor(businessType.basePrice * (0.3 + Math.random() * 0.2));
-        player.money += refund;
-        const businessName = targetBusiness.name;
-        player.businesses.splice(targetIndex, 1);
-        
-        logAction(`ASSET SEIZURE! The government seizes your ${businessName} under RICO statutes! You recover $${refund.toLocaleString()} through your lawyer.`);
-        showBriefNotification(`ASSET SEIZURE!\n\nThe federal government has seized your ${businessName}!\n\nYour lawyer negotiates a partial recovery of $${refund.toLocaleString()}.\n\nSuspicion at ${suspicion}% — the feds are closing in!`, 'success');
-        
-      } else if (severity < 0.7) {
-        // Major dirty money seizure (25-40%)
-        const seizureRate = 0.25 + Math.random() * 0.15;
-        const seized = Math.floor((player.dirtyMoney || 0) * seizureRate);
-        if (seized > 0) {
-          player.dirtyMoney = Math.max(0, (player.dirtyMoney || 0) - seized);
-          player.wantedLevel += 8;
-          logAction(`Federal agents freeze your accounts and seize $${seized.toLocaleString()} in dirty money! Your lawyer is working overtime.`);
-          showBriefNotification(`ACCOUNT FREEZE!\n\n$${seized.toLocaleString()} in dirty money has been seized by federal agents!\n\nWanted level increased significantly.`, 'success');
-        }
-      } else {
-        // Forced arrest — go directly to jail
-        player.wantedLevel += 10;
-        const suspicionJailTime = 15 + Math.floor(suspicion / 5); // 15-35 seconds
-        logAction(`FBI ARREST! A tactical team ambushes you — there's no escape. You're taken into federal custody.`);
-        showBriefNotification(`FBI ARREST!\n\nA federal tactical team takes you down!\nYou're being held on suspicion of racketeering.\n\nJail time: ${suspicionJailTime} seconds`, 'success');
-        sendToJail(10);
-      }
-      
-      // Reduce suspicion after major consequences (they "got" something)
-      player.suspicionLevel = Math.max(0, player.suspicionLevel - 15);
-    }
-  }
-  
-  // Threshold 4: 100 Suspicion — Guaranteed arrest
-  if (suspicion >= 100) {
-    // Massive crackdown — lose everything dirty and go to jail
-    const allDirty = player.dirtyMoney || 0;
-    player.dirtyMoney = 0;
-    player.wantedLevel += 20;
-    
-    logAction(`FULL FEDERAL CRACKDOWN! The FBI, DEA, and local police coordinate a massive operation against your empire. All $${allDirty.toLocaleString()} in dirty money is seized as evidence!`);
-    showBriefNotification(`FULL FEDERAL CRACKDOWN! \n\nYour suspicion hit 100% — the feds bring the hammer down!\n\nAll dirty money ($${allDirty.toLocaleString()}) SEIZED!\nWanted level massively increased!\n\nYou're going away for a long time...`, 'success');
-    
-    // Reduce suspicion significantly after the crackdown
-    player.suspicionLevel = 30; // Reset to moderate, they'll still be watching
-    
-    sendToJail(20);
-  }
-  
-  updateUI();
-}
-
-// ==================== FBI INVESTIGATION EVENT CHAIN ====================
-// Multi-step investigation that escalates through stages when suspicion is high
-// Stages: 0 = None, 1 = Surveillance, 2 = Evidence Gathering, 3 = Grand Jury, 4 = Raid
-
-function checkFBIInvestigation() {
-  const suspicion = player.suspicionLevel || 0;
-  
-  // Initialize FBI investigation tracker
-  if (!player.fbiInvestigation) {
-    player.fbiInvestigation = { stage: 0, progress: 0, lastEscalation: 0 };
-  }
-  
-  const fbi = player.fbiInvestigation;
-  const now = Date.now();
-  
-  // Don't escalate if already at max or recently escalated (5 min cooldown)
-  if (now - fbi.lastEscalation < 300000) return;
-  
-  // Investigation starts at suspicion 60+
-  if (suspicion >= 60 && fbi.stage === 0) {
-    fbi.stage = 1;
-    fbi.progress = 0;
-    fbi.lastEscalation = now;
-    
-    showFBIEventOverlay(
-      'FBI SURVEILLANCE DETECTED',
-      'Your contacts in law enforcement tip you off — the FBI has opened a file on your operations. Agents have been spotted photographing your businesses and associates.',
-      [
-        { label: 'Lay Low (costs $50K)', action: 'laylow', cost: 50000 },
-        { label: 'Destroy Evidence (costs 15 energy)', action: 'destroy', energyCost: 15 },
-        { label: '¤ Ignore It', action: 'ignore' }
-      ],
-      1
-    );
-    return;
-  }
-  
-  // Escalate investigation if suspicion stays high
-  if (suspicion >= 70 && fbi.stage === 1) {
-    // Progress builds over time
-    fbi.progress += 10 + Math.floor(suspicion / 10);
-    if (fbi.progress >= 100) {
-      fbi.stage = 2;
-      fbi.progress = 0;
-      fbi.lastEscalation = now;
-      
-      showFBIEventOverlay(
-        'FBI EVIDENCE GATHERING',
-        'The investigation has escalated. Federal agents are interviewing your associates and subpoenaing financial records. They\'re building a RICO case against you.',
-        [
-          { label: 'Bribe a Contact ($200K)', action: 'bribe', cost: 200000 },
-          { label: 'Burn the Books (costs 25 energy)', action: 'burn', energyCost: 25 },
-          { label: 'Hire a Lawyer ($100K)', action: 'lawyer', cost: 100000 },
-          { label: '¤ Let Them Try', action: 'ignore' }
-        ],
-        2
-      );
-    }
-    return;
-  }
-  
-  if (suspicion >= 80 && fbi.stage === 2) {
-    fbi.progress += 15 + Math.floor(suspicion / 8);
-    if (fbi.progress >= 100) {
-      fbi.stage = 3;
-      fbi.progress = 0;
-      fbi.lastEscalation = now;
-      
-      showFBIEventOverlay(
-        'GRAND JURY CONVENED',
-        'A federal grand jury has been convened to hear evidence against you. Indictments are imminent. Your lawyer says you have one last chance to act before they move in.',
-        [
-          { label: 'Flee the Country ($500K)', action: 'flee', cost: 500000 },
-          { label: ' Cut a Deal (lose 50% dirty money)', action: 'deal' },
-          { label: 'Bribe the Jury ($350K)', action: 'bribejury', cost: 350000 },
-          { label: 'Go to War', action: 'war' }
-        ],
-        3
-      );
-    }
-    return;
-  }
-  
-  if (fbi.stage === 3 && suspicion >= 85) {
-    fbi.progress += 20;
-    if (fbi.progress >= 80) {
-      // Stage 4: The Raid — automatic, no choices
-      fbi.stage = 4;
-      fbi.lastEscalation = now;
-      executeFBIRaid();
-    }
-  }
-}
-
-function showFBIEventOverlay(title, description, choices, stage) {
-  // Remove existing overlay if any
-  const existing = document.getElementById('fbi-event-overlay');
-  if (existing) existing.remove();
-  
-  const stageColors = { 1: '#f39c12', 2: '#e67e22', 3: '#e74c3c', 4: '#c0392b' };
-  const color = stageColors[stage] || '#e74c3c';
-  
-  let choiceHTML = choices.map(c => {
-    let disabled = '';
-    let tooltip = '';
-    if (c.cost && player.money < c.cost) { disabled = 'disabled'; tooltip = `title="Need $${c.cost.toLocaleString()}"`; }
-    if (c.energyCost && player.energy < c.energyCost) { disabled = 'disabled'; tooltip = `title="Need ${c.energyCost} energy"`; }
-    return `<button onclick="handleFBIChoice('${c.action}', ${c.cost || 0}, ${c.energyCost || 0})" 
-              class="popup-btn ${disabled ? '' : 'popup-btn-danger'}" style="${disabled ? 'background:#7f8c8d;cursor:not-allowed;' : ''} min-width:200px;"
-              ${disabled} ${tooltip}>
-      ${c.label}
-    </button>`;
-  }).join('');
-  
-  const overlay = document.createElement('div');
-  overlay.id = 'fbi-event-overlay';
-  overlay.className = 'popup-overlay';
-  overlay.innerHTML = `
-      <div class="popup-card popup-danger" style="max-width:550px;">
-        <button onclick="handleFBIChoice('ignore', 0, 0)" style="position:absolute;top:12px;right:16px;background:none;border:none;color:#888;font-size:1.5em;cursor:pointer;" title="Dismiss (Ignore)">&times;</button>
-        <h2 class="popup-title" style="color:${color};">${title}</h2>
-        <p class="popup-subtitle">Investigation Stage: ${stage}/4</p>
-        <div style="width:100%;background:rgba(0,0,0,0.3);border-radius:10px;height:8px;margin-bottom:20px;">
-          <div style="width:${stage * 25}%;background:${color};border-radius:10px;height:100%;transition:width 0.5s;"></div>
-        </div>
-        <p class="popup-text" style="margin-bottom:25px;line-height:1.6;">${description}</p>
-        <div style="display:flex;flex-direction:column;gap:10px;align-items:center;">
-          ${choiceHTML}
-        </div>
-      </div>
-  `;
-  document.body.appendChild(overlay);
-}
-
-function handleFBIChoice(action, cost, energyCost) {
-  const fbi = player.fbiInvestigation;
-  const overlay = document.getElementById('fbi-event-overlay');
-  if (overlay) overlay.remove();
-  
-  switch (action) {
-    case 'laylow':
-      if (player.money >= cost) {
-        player.money -= cost;
-        player.suspicionLevel = Math.max(0, player.suspicionLevel - 10);
-        fbi.progress = Math.max(0, fbi.progress - 30);
-        logAction(`You pay $${cost.toLocaleString()} to your contacts and lay low. The FBI loses some interest (-10 suspicion).`);
-      }
-      break;
-      
-    case 'destroy':
-      if (player.energy >= energyCost) {
-        player.energy -= energyCost;
-        player.suspicionLevel = Math.max(0, player.suspicionLevel - 15);
-        fbi.progress = Math.max(0, fbi.progress - 50);
-        logAction(`You destroy financial records and evidence. The paper trail goes cold (-15 suspicion).`);
-      }
-      break;
-      
-    case 'bribe':
-      if (player.money >= cost) {
-        player.money -= cost;
-        player.suspicionLevel = Math.max(0, player.suspicionLevel - 20);
-        fbi.stage = Math.max(0, fbi.stage - 1);
-        fbi.progress = 0;
-        logAction(`Your $${cost.toLocaleString()} bribe reaches the right person. The investigation is downgraded (-20 suspicion, stage reduced).`);
-      }
-      break;
-      
-    case 'burn':
-      if (player.energy >= energyCost) {
-        player.energy -= energyCost;
-        player.suspicionLevel = Math.max(0, player.suspicionLevel - 12);
-        fbi.progress = Math.max(0, fbi.progress - 40);
-        logAction(`You spend the night burning books and destroying hard drives. Key evidence disappears (-12 suspicion).`);
-      }
-      break;
-      
-    case 'lawyer':
-      if (player.money >= cost) {
-        player.money -= cost;
-        fbi.progress = Math.max(0, fbi.progress - 60);
-        player.suspicionLevel = Math.max(0, player.suspicionLevel - 8);
-        logAction(`Your high-powered lawyer files motions to suppress evidence and delay proceedings. It buys you time.`);
-      }
-      break;
-      
-    case 'flee':
-      if (player.money >= cost) {
-        player.money -= cost;
-        fbi.stage = 0;
-        fbi.progress = 0;
-        player.suspicionLevel = Math.max(10, player.suspicionLevel - 40);
-        // Lose some businesses during absence
-        if (player.businesses && player.businesses.length > 1) {
-          const lostBusiness = player.businesses.pop();
-          logAction(`While you were gone, your ${lostBusiness.name} was seized.`);
-        }
-        logAction(`You spend $${cost.toLocaleString()} to flee the country. After weeks abroad, you return when things cool down. Investigation dropped (-40 suspicion, lost a business).`);
-      }
-      break;
-      
-    case 'deal':
-      // Lose 50% dirty money, suspicion drops significantly, investigation ends
-      const dealCost = Math.floor((player.dirtyMoney || 0) * 0.5);
-      player.dirtyMoney = Math.max(0, (player.dirtyMoney || 0) - dealCost);
-      fbi.stage = 0;
-      fbi.progress = 0;
-      player.suspicionLevel = Math.max(5, player.suspicionLevel - 50);
-      logAction(` You cooperate with the feds, surrendering $${dealCost.toLocaleString()} in dirty money. The investigation is closed in exchange for your "cooperation." (-50 suspicion)`);
-      break;
-      
-    case 'bribejury':
-      if (player.money >= cost) {
-        player.money -= cost;
-        if (Math.random() < 0.65) { // 65% chance of success
-          fbi.stage = 1;
-          fbi.progress = 0;
-          player.suspicionLevel = Math.max(10, player.suspicionLevel - 25);
-          logAction(`Your jury bribe works! Key jurors refuse to indict. The investigation is set back to surveillance (-25 suspicion).`);
-        } else {
-          // Bribe discovered — makes things worse
-          player.suspicionLevel = Math.min(100, player.suspicionLevel + 15);
-          fbi.progress += 30;
-          player.wantedLevel += 10;
-          logAction(`The jury bribe is DISCOVERED! An honest juror reports the attempt. Obstruction of justice charges added (+15 suspicion, +10 wanted).`);
-        }
-      }
-      break;
-      
-    case 'war':
-      // Violent resistance — high risk, high reward
-      player.wantedLevel += 15;
-      player.suspicionLevel = Math.min(100, player.suspicionLevel + 10);
-      if (player.power > 300 && Math.random() < 0.4) {
-        fbi.stage = 0;
-        fbi.progress = 0;
-        player.suspicionLevel = Math.max(20, player.suspicionLevel - 30);
-        logAction(`Your organization wages a shadow war against the investigation. Witnesses recant, evidence disappears, agents are reassigned. The investigation collapses — for now.`);
-      } else {
-        executeFBIRaid();
-        return;
-      }
-      break;
-      
-    case 'ignore':
-    default:
-      fbi.progress += 20;
-      logAction(`¤ You ignore the FBI's investigation. Risky move — they're not going away.`);
-      break;
-  }
-  
-  updateUI();
-}
-
-function executeFBIRaid() {
-  const fbi = player.fbiInvestigation;
-  
-  // Full FBI raid — severe consequences
-  const dirtySeized = player.dirtyMoney || 0;
-  player.dirtyMoney = 0;
-  
-  // Seize 10-20% of clean money too
-  const cleanSeized = Math.floor(player.money * (0.10 + Math.random() * 0.10));
-  player.money = Math.max(0, player.money - cleanSeized);
-  
-  // Possibly lose a business
-  let lostBusinessName = 'none';
-  if (player.businesses && player.businesses.length > 0) {
-    // Target illegal businesses first
-    const illegalIdx = player.businesses.findIndex(b => {
-      const bt = businessTypes.find(t => t.id === b.type);
-      return bt && bt.paysDirty;
-    });
-    if (illegalIdx >= 0) {
-      lostBusinessName = player.businesses[illegalIdx].name;
-      player.businesses.splice(illegalIdx, 1);
-    } else if (Math.random() < 0.3) {
-      const idx = Math.floor(Math.random() * player.businesses.length);
-      lostBusinessName = player.businesses[idx].name;
-      player.businesses.splice(idx, 1);
-    }
-  }
-  
-  player.wantedLevel += 20;
-  player.suspicionLevel = 25; // Reset after the crackdown
-  fbi.stage = 0;
-  fbi.progress = 0;
-  
-  const businessMsg = lostBusinessName !== 'none' ? `\n${lostBusinessName} SEIZED by the feds!` : '';
-  logAction(`FBI RAID! Tactical teams swarm your operations! $${dirtySeized.toLocaleString()} dirty money confiscated, $${cleanSeized.toLocaleString()} in assets frozen.${businessMsg}`);
-  showBriefNotification(`FBI RAID! \n\nThe feds bring the full weight of the law!\n\nDirty money seized: $${dirtySeized.toLocaleString()}\nAssets frozen: $${cleanSeized.toLocaleString()}${businessMsg}\n\nYou're going to federal prison...`, 'danger');
-  
-  sendToJail(25);
-  updateUI();
-}
---- REMOVED BLOCK END --- */
-
 // Police Crackdown System
 const crackdownTypes = [
   {
@@ -10767,8 +10353,6 @@ function clearEventTimers() {
   if (seasonalEventTimer) { clearInterval(seasonalEventTimer); seasonalEventTimer = null; }
   if (crackdownTimer) { clearInterval(crackdownTimer); crackdownTimer = null; }
   if (cleanupTimer) { clearInterval(cleanupTimer); cleanupTimer = null; }
-  if (suspicionTimer) { clearInterval(suspicionTimer); suspicionTimer = null; }
-  if (fbiTimer) { clearInterval(fbiTimer); fbiTimer = null; }
 }
 
 // Start event system timers
@@ -10807,12 +10391,6 @@ function startEventTimers() {
     if (!gameplayActive) return;
     cleanupExpiredEvents();
   }, 5 * 60 * 1000);
-  
-  // Suspicion consequences — REMOVED (popup events disabled)
-  // suspicionTimer = setInterval(() => { checkSuspicionConsequences(); }, 60 * 1000);
-  
-  // FBI investigation escalation — REMOVED (popup events disabled)
-  // fbiTimer = setInterval(() => { checkFBIInvestigation(); }, 90 * 1000);
 }
 
 // Function to show current events and weather status
@@ -10932,7 +10510,7 @@ const menuUnlockConfig = [
   { id: 'events',      fn: 'showEventsStatus()',      label: 'Events',         tip: 'Current weather & world events',   level: 5 },
   // Mini Games merged into Gambling screen as a tab
   { id: 'casino',      fn: 'showCasino()',            label: 'Gambling',       tip: 'Slots, roulette, cards & mini games', level: 0 },
-  { id: 'fence',       fn: 'showFence()',             label: 'The Fence',      tip: 'Sell stolen goods at premium rates',level: 7 },
+  // Fence merged into Black Market screen as a tab
   // Crew Details merged into The Family — access via 'Manage Crew' button
   { id: 'jailbreak',   fn: 'showJailbreak()',         label: 'Breakout',       tip: 'Break allies out of prison',       level: 0 },
 
@@ -11939,9 +11517,10 @@ function refreshRecruits() {
 }
 
 
-// Function to show the store
+// Function to show the store (Black Market with tabs: Buy / Fence / Player Market)
 // Track which store tab is currently active
 let _currentStoreTab = 'all';
+let _currentBlackMarketTab = 'buy';
 
 // Store item category definitions
 const storeCategories = [
@@ -11955,13 +11534,85 @@ const storeCategories = [
   { id: 'trade',     label: 'Trade Goods',   icon: '💊', types: ['highLevelDrug'] }
 ];
 
-function showStore() {
+function showStore(activeTab) {
   if (player.inJail) {
-    showBriefNotification("You can't shop while you're in jail!", 'danger');
+    showBriefNotification("You can't access the Black Market while you're in jail!", 'danger');
     return;
   }
 
-  // Build category tabs
+  if (activeTab) _currentBlackMarketTab = activeTab;
+
+  // Build top-level tabs (Buy / Fence / Player Market)
+  const topTabs = [
+    { id: 'buy',    label: '🏪 Buy',           tip: 'Browse weapons, armor & supplies' },
+    { id: 'fence',  label: '🔄 The Fence',     tip: 'Sell stolen goods at premium rates' },
+    { id: 'market', label: '👥 Player Market',  tip: 'Trade vehicles with other players' }
+  ];
+  const topTabsHTML = topTabs.map(tab => {
+    const isActive = tab.id === _currentBlackMarketTab;
+    return `<button onclick="switchBlackMarketTab('${tab.id}')" 
+        title="${tab.tip}"
+        style="padding: 12px 20px; border: 2px solid ${isActive ? '#c0a062' : '#555'}; 
+        background: ${isActive ? 'rgba(192, 160, 98, 0.25)' : 'rgba(52, 73, 94, 0.4)'}; 
+        color: ${isActive ? '#c0a062' : '#bdc3c7'}; border-radius: 10px 10px 0 0; cursor: pointer; 
+        font-weight: ${isActive ? 'bold' : 'normal'}; font-size: 1em; transition: all 0.2s ease;
+        border-bottom: ${isActive ? '2px solid transparent' : '2px solid #555'};"
+        onmouseover="if(!${isActive}) { this.style.borderColor='#c0a062'; this.style.color='#c0a062'; }" 
+        onmouseout="if(!${isActive}) { this.style.borderColor='${isActive ? '#c0a062' : '#555'}'; this.style.color='${isActive ? '#c0a062' : '#bdc3c7'}'; }">
+      ${tab.label}
+    </button>`;
+  }).join('');
+
+  // Build content based on active tab
+  let contentHTML = '';
+  if (_currentBlackMarketTab === 'buy') {
+    contentHTML = buildBuyTabContent();
+  } else if (_currentBlackMarketTab === 'fence') {
+    contentHTML = buildFenceTabContent();
+  } else if (_currentBlackMarketTab === 'market') {
+    contentHTML = buildPlayerMarketTabContent();
+  }
+
+  const storeScreen = document.getElementById('store-screen');
+  storeScreen.innerHTML = `
+    <div class="page-header">
+      <h1><span class="icon"></span> Black Market</h1>
+      <div class="breadcrumb">
+        <a href="#" onclick="goBackToMainMenu(); return false;">SafeHouse</a>
+        <span class="separator">›</span>
+        <span class="current">Black Market</span>
+      </div>
+    </div>
+
+    <div id="black-market-tabs" style="display: flex; flex-wrap: wrap; gap: 4px; margin: 15px 0 0; padding: 0; border-bottom: 2px solid #c0a062;">
+      ${topTabsHTML}
+    </div>
+
+    <div id="black-market-content" style="margin-top: 15px;">
+      ${contentHTML}
+    </div>
+
+    <div class="page-nav">
+      <button class="nav-btn-back" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
+    </div>
+  `;
+
+  // After rendering, run tab-specific setup
+  if (_currentBlackMarketTab === 'buy') {
+    renderStoreTab(_currentStoreTab);
+  }
+
+  hideAllScreens();
+  document.getElementById("store-screen").style.display = "block";
+}
+
+function switchBlackMarketTab(tabId) {
+  _currentBlackMarketTab = tabId;
+  showStore(tabId);
+}
+
+function buildBuyTabContent() {
+  // Build category sub-tabs
   const tabsHTML = storeCategories.map(cat => {
     const isActive = cat.id === _currentStoreTab;
     return `<button onclick="switchStoreTab('${cat.id}')" 
@@ -12000,46 +11651,169 @@ function showStore() {
     `;
   }).join('');
 
-  // Inject tabs bar into the store screen above the grid
-  const storeScreen = document.getElementById('store-screen');
-  // Preserve the page-header and description, rebuild the rest
-  storeScreen.innerHTML = `
-    <div class="page-header">
-      <h1><span class="icon"></span> Black Market</h1>
-      <div class="breadcrumb">
-        <a href="#" onclick="goBackToMainMenu(); return false;">SafeHouse</a>
-        <span class="separator">›</span>
-        <span class="current">Black Market</span>
-      </div>
-    </div>
+  return `
     <p>Tools of the trade. Don't ask where they came from.</p>
-    
     <div id="store-tabs" style="display: flex; flex-wrap: wrap; gap: 8px; margin: 15px 0; padding: 10px 0; border-bottom: 2px solid #333;">
       ${tabsHTML}
     </div>
-    
     <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-top: 10px;">
       <div class="content-card">
         <h3 id="store-section-title">Available Goods</h3>
         <ul id="item-list" style="list-style: none; padding: 0;"></ul>
       </div>
-      
       <div class="content-card">
         <h3>Your Stash</h3>
         <ul id="inventory-list" style="list-style: none; padding: 0;">${inventoryListHTML}</ul>
       </div>
     </div>
-    
-    <div class="page-nav">
-      <button class="nav-btn-back" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
+  `;
+}
+
+function buildFenceTabContent() {
+  const rates = getFenceMultiplier();
+  const condColor = rates.marketCondition === 'Hot' ? '#2ecc71' : rates.marketCondition === 'Cold' ? '#e74c3c' : '#f39c12';
+
+  let html = `
+    <div style="background: linear-gradient(135deg, rgba(44, 62, 80, 0.9), rgba(52, 73, 94, 0.9)); padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #8e44ad;">
+      <h3 style="color: #8e44ad; margin-bottom: 10px;">Today's Fence Rates</h3>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px;">
+        <div style="padding: 8px; background: rgba(0,0,0,0.3); border-radius: 8px; text-align: center;">
+          <div style="color: #bdc3c7; font-size: 0.8em;">Items</div>
+          <div style="color: #ecf0f1; font-size: 1.2em; font-weight: bold;">${Math.round(rates.items * 100)}%</div>
+        </div>
+        <div style="padding: 8px; background: rgba(0,0,0,0.3); border-radius: 8px; text-align: center;">
+          <div style="color: #bdc3c7; font-size: 0.8em;">Vehicles</div>
+          <div style="color: #ecf0f1; font-size: 1.2em; font-weight: bold;">${Math.round(rates.cars * 100)}%</div>
+        </div>
+        <div style="padding: 8px; background: rgba(0,0,0,0.3); border-radius: 8px; text-align: center;">
+          <div style="color: #bdc3c7; font-size: 0.8em;">Contraband</div>
+          <div style="color: #ecf0f1; font-size: 1.2em; font-weight: bold;">${Math.round(rates.drugs * 100)}%</div>
+        </div>
+        <div style="padding: 8px; background: rgba(0,0,0,0.3); border-radius: 8px; text-align: center;">
+          <div style="color: #bdc3c7; font-size: 0.8em;">Market</div>
+          <div style="color: ${condColor}; font-size: 1.2em; font-weight: bold;">${rates.marketCondition}</div>
+        </div>
+      </div>
+      ${rates.heatPenalty > 0.03 ? '<p style="color: #e74c3c; font-size: 0.85em; margin-top: 8px;">Your heat is bringing down prices. Lay low to get better deals.</p>' : ''}
+      ${rates.chopBonus > 0 ? '<p style="color: #2ecc71; font-size: 0.85em; margin-top: 4px;">Chop Shop connection: +' + Math.round(rates.chopBonus * 100) + '% on vehicle sales</p>' : ''}
+    </div>`;
+
+  // === STOLEN CARS SECTION ===
+  const stolenCars = player.stolenCars || [];
+  html += '<div style="margin-bottom: 20px;">';
+  html += '<h3 style="color: #e67e22; margin-bottom: 10px;">Black Market Vehicles (' + stolenCars.length + ')</h3>';
+  html += '<p style="color: #bdc3c7; font-size: 0.85em; margin: 0 0 10px;">Sell stolen cars through The Fence\'s underground network for full black market value.</p>';
+
+  if (stolenCars.length === 0) {
+    html += '<div style="padding: 15px; background: rgba(0,0,0,0.3); border-radius: 10px; text-align: center; color: #7f8c8d;"><p>No stolen vehicles to move. Boost some rides first.</p></div>';
+  } else {
+    html += '<div style="display: grid; gap: 8px;">';
+    stolenCars.forEach((car, idx) => {
+      const condition = 100 - car.damagePercentage;
+      const fencePrice = Math.floor(car.baseValue * (condition / 100) * rates.cars);
+      const regularPrice = Math.floor(car.baseValue * (condition / 100) * 0.6);
+      const premium = fencePrice - regularPrice;
+      const carCondColor = condition > 70 ? '#2ecc71' : condition > 40 ? '#f39c12' : '#e74c3c';
+      html += '<div style="padding: 12px; background: rgba(0,0,0,0.4); border-radius: 10px; border: 1px solid #34495e; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">';
+      html += '<div><strong style="color: #ecf0f1;">' + car.name + '</strong><br>';
+      html += '<small style="color: #bdc3c7;">Base: $' + car.baseValue.toLocaleString() + ' | Condition: <span style="color: ' + carCondColor + ';">' + condition.toFixed(0) + '%</span></small><br>';
+      html += '<small style="color: #8e44ad;">Fence price: $' + fencePrice.toLocaleString() + ' <span style="color: #2ecc71;">(+$' + premium.toLocaleString() + ' vs street)</span></small></div>';
+      html += '<button onclick="fenceSellCar(' + idx + ')" style="background: #8e44ad; color: white; border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: bold; white-space: nowrap;">Sell $' + fencePrice.toLocaleString() + '</button>';
+      html += '</div>';
+    });
+    html += '</div>';
+    if (stolenCars.length > 1) {
+      const totalCarValue = stolenCars.reduce((sum, car) => sum + Math.floor(car.baseValue * ((100 - car.damagePercentage) / 100) * rates.cars), 0);
+      html += '<button onclick="fenceSellAllCars()" style="background: #c0392b; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; margin-top: 10px; width: 100%; font-weight: bold;">Sell All Vehicles ($' + totalCarValue.toLocaleString() + ')</button>';
+    }
+  }
+  html += '</div>';
+
+  // === SELLABLE INVENTORY ITEMS ===
+  const sellableItems = (player.inventory || []).filter(item => {
+    return item.price && item.price > 0 && item.name !== player.equippedWeapon && item.name !== player.equippedArmor;
+  });
+  const drugItems = sellableItems.filter(i => i.type === 'highLevelDrug');
+  const regularItems = sellableItems.filter(i => i.type !== 'highLevelDrug');
+
+  // Contraband section
+  html += '<div style="margin-bottom: 20px;">';
+  html += '<h3 style="color: #e74c3c; margin-bottom: 10px;">Contraband (' + drugItems.length + ')</h3>';
+  if (drugItems.length === 0) {
+    html += '<div style="padding: 15px; background: rgba(0,0,0,0.3); border-radius: 10px; text-align: center; color: #7f8c8d;"><p>No contraband to move. Buy from the Black Market or cook in your Drug Lab.</p></div>';
+  } else {
+    html += '<div style="display: grid; gap: 8px;">';
+    drugItems.forEach(item => {
+      const globalIdx = player.inventory.indexOf(item);
+      const fencePrice = Math.floor(item.price * rates.drugs);
+      const maxPayout = item.maxPayout || Math.floor(item.price * 1.5);
+      html += '<div style="padding: 12px; background: rgba(0,0,0,0.4); border-radius: 10px; border: 1px solid #e74c3c40; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">';
+      html += '<div><strong style="color: #ecf0f1;">' + item.name + '</strong><br>';
+      html += '<small style="color: #bdc3c7;">Bought at: $' + item.price.toLocaleString() + ' | Max street value: $' + maxPayout.toLocaleString() + '</small><br>';
+      html += '<small style="color: #8e44ad;">Fence price: $' + fencePrice.toLocaleString() + '</small></div>';
+      html += '<button onclick="fenceSellItem(' + globalIdx + ', \'drug\')" style="background: #e74c3c; color: white; border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: bold; white-space: nowrap;">Sell $' + fencePrice.toLocaleString() + '</button>';
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+  html += '</div>';
+
+  // Merchandise section
+  html += '<div style="margin-bottom: 20px;">';
+  html += '<h3 style="color: #3498db; margin-bottom: 10px;">Merchandise (' + regularItems.length + ')</h3>';
+  if (regularItems.length === 0) {
+    html += '<div style="padding: 15px; background: rgba(0,0,0,0.3); border-radius: 10px; text-align: center; color: #7f8c8d;"><p>No merchandise to fence. Equipped items can\'t be sold here - unequip first.</p></div>';
+  } else {
+    html += '<div style="display: grid; gap: 8px;">';
+    regularItems.forEach(item => {
+      const globalIdx = player.inventory.indexOf(item);
+      const fencePrice = Math.floor(item.price * rates.items);
+      const regularSellPrice = Math.floor(item.price * 0.4);
+      const premium = fencePrice - regularSellPrice;
+      html += '<div style="padding: 12px; background: rgba(0,0,0,0.4); border-radius: 10px; border: 1px solid #34495e; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">';
+      html += '<div><strong style="color: #ecf0f1;">' + item.name + '</strong> ' + (item.power ? '<small style="color: #bdc3c7;">(+' + item.power + ' Power)</small>' : '') + '<br>';
+      html += '<small style="color: #bdc3c7;">Value: $' + item.price.toLocaleString() + ' | Regular sell: $' + regularSellPrice.toLocaleString() + '</small><br>';
+      html += '<small style="color: #8e44ad;">Fence price: $' + fencePrice.toLocaleString() + ' <span style="color: #2ecc71;">(+$' + premium.toLocaleString() + ')</span></small></div>';
+      html += '<button onclick="fenceSellItem(' + globalIdx + ', \'item\')" style="background: #8e44ad; color: white; border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: bold; white-space: nowrap;">Sell $' + fencePrice.toLocaleString() + '</button>';
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+  html += '</div>';
+
+  // Heat warning
+  html += '<div style="padding: 12px; background: rgba(142, 68, 173, 0.15); border-radius: 10px; border: 1px solid #8e44ad40; margin-bottom: 15px; text-align: center;">';
+  html += '<small style="color: #bdc3c7;">Selling through the fence adds heat. Move product carefully.</small>';
+  html += '</div>';
+
+  return html;
+}
+
+function buildPlayerMarketTabContent() {
+  const isConnected = typeof onlineWorldState !== 'undefined' && onlineWorldState && onlineWorldState.isConnected;
+  if (isConnected && typeof renderMarketplaceTab === 'function') {
+    return renderMarketplaceTab();
+  }
+  return `
+    <div class="content-card" style="text-align: center; padding: 40px 20px;">
+      <h3 style="color: #2980b9; margin-bottom: 15px;">Player Marketplace</h3>
+      <p style="color: #bdc3c7; margin-bottom: 20px;">Trade vehicles with other players in real-time through The Commission's underground network.</p>
+      <div style="background: rgba(41, 128, 185, 0.15); padding: 20px; border-radius: 12px; border: 1px solid #2980b9; margin-bottom: 20px;">
+        <p style="color: #ecf0f1; margin: 0 0 15px 0;"><strong>Features:</strong></p>
+        <ul style="color: #bdc3c7; text-align: left; list-style: none; padding: 0;">
+          <li style="margin: 8px 0;">List your stolen vehicles for sale to other players</li>
+          <li style="margin: 8px 0;">Set your own asking prices</li>
+          <li style="margin: 8px 0;">Browse and buy vehicles from other players</li>
+          <li style="margin: 8px 0;">Real-time market listings</li>
+        </ul>
+      </div>
+      <p style="color: #f39c12; margin-bottom: 20px;">You must be connected to The Commission to access the Player Market.</p>
+      <button onclick="if(typeof showOnlineWorld==='function') showOnlineWorld('market'); else showBriefNotification('Online features not available', 'error');" 
+        style="background: linear-gradient(45deg, #2980b9, #1a5276); color: white; padding: 12px 30px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 1.1em;">
+        Connect to The Commission
+      </button>
     </div>
   `;
-
-  // Render items for the active tab
-  renderStoreTab(_currentStoreTab);
-
-  hideAllScreens();
-  document.getElementById("store-screen").style.display = "block";
 }
 
 // Switch between store category tabs
@@ -13975,8 +13749,21 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = "1.8.3";
+const CURRENT_VERSION = "1.8.4";
 const VERSION_UPDATES = {
+  "1.8.4": {
+    title: "Black Market Tabs — Fence & Player Market Merged",
+    date: "March 2026",
+    changes: [
+      "Fence merged into the Black Market as a dedicated tab — no more separate Fence screen",
+      "Player Market added as a third tab in Black Market — trade vehicles with other players",
+      "Black Market now has 3 tabs: Buy, The Fence, and Player Market",
+      "Fence sell functions updated to use Heat (Wanted Level) instead of removed Suspicion",
+      "Removed ~400 lines of commented-out dead code (old suspicion / FBI investigation block)",
+      "Removed Fence nav button — one fewer sidebar button",
+      "Cleaned up remaining suspicion timer references in event system",
+    ]
+  },
   "1.8.3": {
     title: "Suspicion Removed, Motor Pool & Skills Consolidated",
     date: "March 2026",
@@ -15163,8 +14950,8 @@ function getFenceMultiplier() {
   const chopShop = (player.businesses || []).find(b => b.type === 'chopshop');
   const chopBonus = chopShop ? 0.05 + (chopShop.level * 0.03) : 0; // 8-20%
   
-  // Heat penalty — suspicious sellers get worse deals
-  const heatPenalty = Math.min(0.15, (player.suspicionLevel || 0) / 100 * 0.15);
+  // Heat penalty — hot sellers get worse deals
+  const heatPenalty = Math.min(0.15, (player.wantedLevel || 0) / 100 * 0.15);
   
   // Random market fluctuation (-5% to +10%)
   const marketFlux = -0.05 + Math.random() * 0.15;
@@ -15180,158 +14967,8 @@ function getFenceMultiplier() {
 }
 
 function showFence() {
-  hideAllScreens();
-  const fenceScreen = document.getElementById("fence-screen");
-  if (!fenceScreen) return;
-  fenceScreen.style.display = "block";
-  
-  const rates = getFenceMultiplier();
-  const container = document.getElementById("fence-content");
-  if (!container) return;
-  
-  // Market condition colors
-  const condColor = rates.marketCondition === 'Hot' ? '#2ecc71' : rates.marketCondition === 'Cold' ? '#e74c3c' : '#f39c12';
-  
-  let html = `
-    <div style="background: linear-gradient(135deg, rgba(44, 62, 80, 0.9), rgba(52, 73, 94, 0.9)); padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #8e44ad;">
-      <h3 style="color: #8e44ad; margin-bottom: 10px;">Today's Fence Rates</h3>
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px;">
-        <div style="padding: 8px; background: rgba(0,0,0,0.3); border-radius: 8px; text-align: center;">
-          <div style="color: #bdc3c7; font-size: 0.8em;">Items</div>
-          <div style="color: #ecf0f1; font-size: 1.2em; font-weight: bold;">${Math.round(rates.items * 100)}%</div>
-        </div>
-        <div style="padding: 8px; background: rgba(0,0,0,0.3); border-radius: 8px; text-align: center;">
-          <div style="color: #bdc3c7; font-size: 0.8em;">Vehicles</div>
-          <div style="color: #ecf0f1; font-size: 1.2em; font-weight: bold;">${Math.round(rates.cars * 100)}%</div>
-        </div>
-        <div style="padding: 8px; background: rgba(0,0,0,0.3); border-radius: 8px; text-align: center;">
-          <div style="color: #bdc3c7; font-size: 0.8em;">Contraband</div>
-          <div style="color: #ecf0f1; font-size: 1.2em; font-weight: bold;">${Math.round(rates.drugs * 100)}%</div>
-        </div>
-        <div style="padding: 8px; background: rgba(0,0,0,0.3); border-radius: 8px; text-align: center;">
-          <div style="color: #bdc3c7; font-size: 0.8em;">Market</div>
-          <div style="color: ${condColor}; font-size: 1.2em; font-weight: bold;">${rates.marketCondition}</div>
-        </div>
-      </div>
-      ${rates.heatPenalty > 0.03 ? `<p style="color: #e74c3c; font-size: 0.85em; margin-top: 8px;">Your heat is bringing down prices. Lay low to get better deals.</p>` : ''}
-      ${rates.chopBonus > 0 ? `<p style="color: #2ecc71; font-size: 0.85em; margin-top: 4px;">Chop Shop connection: +${Math.round(rates.chopBonus * 100)}% on vehicle sales</p>` : ''}
-    </div>`;
-  
-  // === STOLEN CARS SECTION — BLACK MARKET VEHICLE SALES ===
-  const stolenCars = player.stolenCars || [];
-  html += `<div style="margin-bottom: 20px;">
-    <h3 style="color: #e67e22; margin-bottom: 10px;">Black Market Vehicles (${stolenCars.length})</h3>
-    <p style="color: #bdc3c7; font-size: 0.85em; margin: 0 0 10px;">The only way to properly sell stolen cars — full black market value through The Fence's underground network.</p>`;
-  
-  if (stolenCars.length === 0) {
-    html += `<div style="padding: 15px; background: rgba(0,0,0,0.3); border-radius: 10px; text-align: center; color: #7f8c8d;">
-      <p>No stolen vehicles to move. Boost some rides first.</p>
-    </div>`;
-  } else {
-    html += `<div style="display: grid; gap: 8px;">`;
-    stolenCars.forEach((car, idx) => {
-      const condition = 100 - car.damagePercentage;
-      const fencePrice = Math.floor(car.baseValue * (condition / 100) * rates.cars);
-      const regularPrice = Math.floor(car.baseValue * (condition / 100) * 0.6);
-      const premium = fencePrice - regularPrice;
-      const condColor = condition > 70 ? '#2ecc71' : condition > 40 ? '#f39c12' : '#e74c3c';
-      
-      html += `<div style="padding: 12px; background: rgba(0,0,0,0.4); border-radius: 10px; border: 1px solid #34495e; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-        <div>
-          <strong style="color: #ecf0f1;">${car.name}</strong><br>
-          <small style="color: #bdc3c7;">
-            Base: $${car.baseValue.toLocaleString()} | Condition: <span style="color: ${condColor};">${condition.toFixed(0)}%</span>
-          </small><br>
-          <small style="color: #8e44ad;">Fence price: $${fencePrice.toLocaleString()} <span style="color: #2ecc71;">(+$${premium.toLocaleString()} vs street)</span></small>
-        </div>
-        <button onclick="fenceSellCar(${idx})" style="background: #8e44ad; color: white; border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: bold; white-space: nowrap;">
-          Sell $${fencePrice.toLocaleString()}
-        </button>
-      </div>`;
-    });
-    html += `</div>`;
-    if (stolenCars.length > 1) {
-      html += `<button onclick="fenceSellAllCars()" style="background: #c0392b; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; margin-top: 10px; width: 100%; font-weight: bold;">
-        Sell All Vehicles ($${stolenCars.reduce((sum, car) => sum + Math.floor(car.baseValue * ((100 - car.damagePercentage) / 100) * rates.cars), 0).toLocaleString()})
-      </button>`;
-    }
-  }
-  html += `</div>`;
-  
-  // === SELLABLE INVENTORY ITEMS ===
-  const sellableItems = (player.inventory || []).filter(item => {
-    return item.price && item.price > 0 && item.name !== player.equippedWeapon && item.name !== player.equippedArmor;
-  });
-  
-  // Separate drugs from regular items
-  const drugItems = sellableItems.filter(i => i.type === 'highLevelDrug');
-  const regularItems = sellableItems.filter(i => i.type !== 'highLevelDrug');
-  
-  // Drug contraband section
-  html += `<div style="margin-bottom: 20px;">
-    <h3 style="color: #e74c3c; margin-bottom: 10px;">Contraband (${drugItems.length})</h3>`;
-  if (drugItems.length === 0) {
-    html += `<div style="padding: 15px; background: rgba(0,0,0,0.3); border-radius: 10px; text-align: center; color: #7f8c8d;">
-      <p>No contraband to move. Buy from the Black Market or cook in your Drug Lab.</p>
-    </div>`;
-  } else {
-    html += `<div style="display: grid; gap: 8px;">`;
-    drugItems.forEach(item => {
-      const globalIdx = player.inventory.indexOf(item);
-      const fencePrice = Math.floor(item.price * rates.drugs);
-      const maxPayout = item.maxPayout || Math.floor(item.price * 1.5);
-      
-      html += `<div style="padding: 12px; background: rgba(0,0,0,0.4); border-radius: 10px; border: 1px solid #e74c3c40; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-        <div>
-          <strong style="color: #ecf0f1;">${item.name}</strong><br>
-          <small style="color: #bdc3c7;">Bought at: $${item.price.toLocaleString()} | Max street value: $${maxPayout.toLocaleString()}</small><br>
-          <small style="color: #8e44ad;">Fence price: $${fencePrice.toLocaleString()}</small>
-        </div>
-        <button onclick="fenceSellItem(${globalIdx}, 'drug')" style="background: #e74c3c; color: white; border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: bold; white-space: nowrap;">
-          Sell $${fencePrice.toLocaleString()}
-        </button>
-      </div>`;
-    });
-    html += `</div>`;
-  }
-  html += `</div>`;
-  
-  // Regular items section
-  html += `<div style="margin-bottom: 20px;">
-    <h3 style="color: #3498db; margin-bottom: 10px;">Merchandise (${regularItems.length})</h3>`;
-  if (regularItems.length === 0) {
-    html += `<div style="padding: 15px; background: rgba(0,0,0,0.3); border-radius: 10px; text-align: center; color: #7f8c8d;">
-      <p>No merchandise to fence. Equipped items can't be sold here — unequip first.</p>
-    </div>`;
-  } else {
-    html += `<div style="display: grid; gap: 8px;">`;
-    regularItems.forEach(item => {
-      const globalIdx = player.inventory.indexOf(item);
-      const fencePrice = Math.floor(item.price * rates.items);
-      const regularSellPrice = Math.floor(item.price * 0.4);
-      const premium = fencePrice - regularSellPrice;
-      
-      html += `<div style="padding: 12px; background: rgba(0,0,0,0.4); border-radius: 10px; border: 1px solid #34495e; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-        <div>
-          <strong style="color: #ecf0f1;">${item.name}</strong> ${item.power ? `<small style="color: #bdc3c7;">(+${item.power} Power)</small>` : ''}<br>
-          <small style="color: #bdc3c7;">Value: $${item.price.toLocaleString()} | Regular sell: $${regularSellPrice.toLocaleString()}</small><br>
-          <small style="color: #8e44ad;">Fence price: $${fencePrice.toLocaleString()} <span style="color: #2ecc71;">(+$${premium.toLocaleString()})</span></small>
-        </div>
-        <button onclick="fenceSellItem(${globalIdx}, 'item')" style="background: #8e44ad; color: white; border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: bold; white-space: nowrap;">
-          Sell $${fencePrice.toLocaleString()}
-        </button>
-      </div>`;
-    });
-    html += `</div>`;
-  }
-  html += `</div>`;
-  
-  // Suspicion warning
-  html += `<div style="padding: 12px; background: rgba(142, 68, 173, 0.15); border-radius: 10px; border: 1px solid #8e44ad40; margin-bottom: 15px; text-align: center;">
-    <small style="color: #bdc3c7;">Selling through the fence adds +1 suspicion per transaction. Move product carefully.</small>
-  </div>`;
-  
-  container.innerHTML = html;
+  // Fence is now a tab inside the Black Market
+  showStore('fence');
 }
 
 function fenceSellItem(index, type) {
@@ -15350,15 +14987,15 @@ function fenceSellItem(index, type) {
   player.money += fencePrice;
   player.inventory.splice(index, 1);
   recalculatePower();
-  player.suspicionLevel = Math.min(100, (player.suspicionLevel || 0) + 1);
+  player.wantedLevel = Math.min(100, (player.wantedLevel || 0) + 0.5);
   
   if (player.statistics) {
     player.statistics.totalEarnings = (player.statistics.totalEarnings || 0) + fencePrice;
   }
   
-  logAction(`« Fenced ${item.name} for $${fencePrice.toLocaleString()} (${Math.round(rate * 100)}% rate). +1 suspicion.`);
+  logAction(`Fenced ${item.name} for $${fencePrice.toLocaleString()} (${Math.round(rate * 100)}% rate). +0.5 heat.`);
   updateUI();
-  showFence();
+  showStore('fence');
 }
 
 function fenceSellCar(index) {
@@ -15373,16 +15010,16 @@ function fenceSellCar(index) {
   if (player.selectedCar === index) player.selectedCar = null;
   else if (player.selectedCar > index) player.selectedCar--;
   player.stolenCars.splice(index, 1);
-  player.suspicionLevel = Math.min(100, (player.suspicionLevel || 0) + 1);
+  player.wantedLevel = Math.min(100, (player.wantedLevel || 0) + 0.5);
   
   if (player.statistics) {
     player.statistics.totalEarnings = (player.statistics.totalEarnings || 0) + fencePrice;
     player.statistics.carsStolen = (player.statistics.carsStolen || 0); // Already tracked
   }
   
-  logAction(`« Fenced ${car.name} for $${fencePrice.toLocaleString()} through the Fence. +1 suspicion.`);
+  logAction(`Fenced ${car.name} for $${fencePrice.toLocaleString()} through the Fence. +0.5 heat.`);
   updateUI();
-  showFence();
+  showStore('fence');
 }
 
 function fenceSellAllCars() {
@@ -15398,15 +15035,16 @@ function fenceSellAllCars() {
   player.money += totalEarned;
   player.stolenCars = [];
   player.selectedCar = null;
-  player.suspicionLevel = Math.min(100, (player.suspicionLevel || 0) + Math.ceil(count * 0.5));
+  const heatGain = Math.ceil(count * 0.25);
+  player.wantedLevel = Math.min(100, (player.wantedLevel || 0) + heatGain);
   
   if (player.statistics) {
     player.statistics.totalEarnings = (player.statistics.totalEarnings || 0) + totalEarned;
   }
   
-  logAction(`« Bulk fenced ${count} vehicles for $${totalEarned.toLocaleString()} through the Fence. +${Math.ceil(count * 0.5)} suspicion.`);
+  logAction(`Bulk fenced ${count} vehicles for $${totalEarned.toLocaleString()} through the Fence. +${heatGain} heat.`);
   updateUI();
-  showFence();
+  showStore('fence');
 }
 
 // Function to show the hospital screen
@@ -20101,6 +19739,7 @@ window.startLaundering = startLaundering;
 window.collectLaundering = collectLaundering;
 window.showToast = showToast;
 window.showStore = showStore;
+window.switchBlackMarketTab = switchBlackMarketTab;
 window.switchStoreTab = switchStoreTab;
 window.renderStoreTab = renderStoreTab;
 window.refreshStoreAfterPurchase = refreshStoreAfterPurchase;
