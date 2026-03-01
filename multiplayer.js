@@ -1501,7 +1501,7 @@ async function handleServerMessage(message) {
                 }
                 // Show ELO change
                 if (message.eloChange && isWinner) {
-                    showMPToast(`${message.eloChange.icon} Ranked: ${message.eloChange.elo} ELO (${message.eloChange.tier})`, '#c0a062', 4000);
+                    showMPToast(`${message.eloChange.icon} Ranked: ${message.eloChange.elo} Rating (${message.eloChange.tier})`, '#c0a062', 4000);
                 }
             } else {
                 // Spectator — show toast
@@ -2729,7 +2729,7 @@ function showOnlineWorld(activeTab) {
                     Bounty Board<br><small style="color: #ffaa66;">Put a price on heads</small>
                 </button>
                 <button onclick="showRankedSeason()" style="background: linear-gradient(180deg, #1a1a3a 0%, #0a0a1a 100%); color: #ffd700; padding: 15px; border: 1px solid #ffd700; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif;">
-                    Ranked Season<br><small style="color: #ffe066;">ELO combat rating</small>
+                    Ranked Season<br><small style="color: #ffe066;">Combat rating</small>
                 </button>
             </div>
         `;
@@ -3264,11 +3264,11 @@ function loadGlobalLeaderboard() {
 
     // Tab bar
     const tabs = [
-        { key: 'reputation', label: '⭐ Rep', color: '#f39c12' },
+        { key: 'reputation', label: 'Rep', color: '#f39c12' },
         { key: 'wealth', label: 'Wealth', color: '#2ecc71' },
         { key: 'combat', label: 'Combat', color: '#e74c3c' },
-        { key: 'territories', label: '�️ Territories', color: '#3498db' },
-        { key: 'ranked', label: 'ELO', color: '#ffd700' }
+        { key: 'territories', label: 'Territories', color: '#3498db' },
+        { key: 'ranked', label: 'Ranked', color: '#ffd700' }
     ];
     const tabHTML = `<div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">${tabs.map(t =>
         `<button onclick="_leaderboardCategory='${t.key}';loadGlobalLeaderboard();" style="background:${_leaderboardCategory === t.key ? t.color : '#222'};color:${_leaderboardCategory === t.key ? '#000' : '#ccc'};border:1px solid ${t.color};padding:5px 10px;border-radius:4px;cursor:pointer;font-family:Georgia,serif;font-size:0.8em;">${t.label}</button>`
@@ -3286,7 +3286,7 @@ function loadGlobalLeaderboard() {
             else if (cat === 'wealth') detail = `$${(entry.money || 0).toLocaleString()}`;
             else if (cat === 'combat') detail = `${entry.pvpWins || 0}W / ${entry.pvpLosses || 0}L`;
             else if (cat === 'territories') detail = `${entry.territories || 0} owned`;
-            else if (cat === 'ranked') detail = `${entry.icon || ''} ${entry.elo || 0} ELO (${entry.tier || '?'}) ${entry.wins || 0}W/${entry.losses || 0}L`;
+            else if (cat === 'ranked') detail = `${entry.icon || ''} ${entry.elo || 0} Rating (${entry.tier || '?'}) ${entry.wins || 0}W/${entry.losses || 0}L`;
 
             return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px;margin:4px 0;background:rgba(0,0,0,0.3);border-radius:5px;${isMe ? 'border:2px solid #2ecc71;' : ''}">
                 <div>
@@ -4773,7 +4773,7 @@ function showRankedSeason() {
     const content = document.getElementById('multiplayer-content');
     content.innerHTML = `
         <h2 style="color: #ffd700; font-family: Georgia, serif;">Ranked Season</h2>
-        <p style="color: #ccc;">Compete in ranked PvP combat. Your ELO rating determines your tier. Seasons last 30 days with soft resets.</p>
+        <p style="color: #ccc;">Compete in ranked PvP combat. Your combat rating determines your tier. Seasons last 30 days with soft resets.</p>
         <div id="season-info-content" style="color: #888; text-align: center; padding: 30px;">Loading season data...</div>
         <div style="text-align: center; margin-top: 30px;">
             <button onclick="showOnlineWorld()" style="background: #333; color: #c0a062; padding: 12px 25px; border: 1px solid #c0a062; border-radius: 8px; cursor: pointer; font-family: Georgia, serif;">← Back to Commission</button>
@@ -4848,7 +4848,7 @@ function handleSeasonInfoResult(message) {
               topPlayers.map((p, i) => `
                 <div style="display:flex;justify-content:space-between;padding:8px;margin:4px 0;background:rgba(255,255,255,0.03);border-radius:5px;${p.name === (player.name || '') ? 'border:2px solid #ffd700;' : ''}">
                     <div><span style="color:${i < 3 ? '#ffd700' : '#ccc'};">#${i+1}</span> <strong style="color:#ecf0f1;margin-left:8px;">${escapeHTML(p.name)}</strong></div>
-                    <div style="color:#888;">${p.icon} ${p.elo} ELO | ${p.wins}W/${p.losses}L</div>
+                    <div style="color:#888;">${p.icon} ${p.elo} Rating | ${p.wins}W/${p.losses}L</div>
                 </div>
               `).join('')}
         </div>

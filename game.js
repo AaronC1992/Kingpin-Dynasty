@@ -941,7 +941,7 @@ function startSignatureJob(familyKey) {
       logAction(`Kozlov bonus: You scored a ${bonusWeapon} from the convoy!`);
     }
     
-    logAction(`⭐ Signature Job "${sigJob.name}" completed for ${family.name}! +$${earnings.toLocaleString()} (dirty), +${sigJob.xpReward} XP, +5 family rep.`);
+    logAction(`Signature Job "${sigJob.name}" completed for ${family.name}! +$${earnings.toLocaleString()} (dirty), +${sigJob.xpReward} XP, +5 family rep.`);
     flashSuccessScreen();
     showBriefNotification(`Signature job complete! Earned $${earnings.toLocaleString()} and gained standing with ${family.name}.`, 'success');
     degradeEquipment('signature_job');
@@ -952,10 +952,10 @@ function startSignatureJob(familyKey) {
     const jailRoll = Math.random() * 100;
     if (jailRoll < 25) {
       sendToJail(3);
-      logAction(`⭐ Signature job "${sigJob.name}" went sideways — you got pinched!`);
+      logAction(`Signature job "${sigJob.name}" went sideways — you got pinched!`);
       return;
     }
-    logAction(`⭐ Signature job "${sigJob.name}" failed. ${family.name} is disappointed but willing to give you another shot.`);
+    logAction(`Signature job "${sigJob.name}" failed. ${family.name} is disappointed but willing to give you another shot.`);
     showBriefNotification(`The ${sigJob.name} didn't go as planned.`, 'danger');
   }
   
@@ -7887,7 +7887,7 @@ function checkForNewPerks() {
       // Auto-unlock if requirements are met (some perks might require manual unlock)
       if (perk.autoUnlock !== false) {
         player.unlockedPerks.push(perkId);
-        logAction(`⭐ New Perk Unlocked: ${perk.name} - ${perk.description}`);
+        logAction(`New Perk Unlocked: ${perk.name} - ${perk.description}`);
         applyPerkEffects(perkId);
       }
     }
@@ -9148,7 +9148,7 @@ function showSkills() {
   let skillsHTML = `
     <div style="background: linear-gradient(135deg, #2c3e50, #34495e); padding: 30px; border-radius: 15px; color: #ecf0f1;">
       <h2 style="text-align: center; color: #3498db; margin-bottom: 20px; font-size: 2.5em;">
-          Advanced Skills System
+          Expertise
       </h2>
       
       <div style="text-align: center; margin-bottom: 30px; padding: 15px; background: rgba(52, 152, 219, 0.2); border-radius: 10px;">
@@ -9174,7 +9174,7 @@ function showSkills() {
           Mentors
         </button>
         <button onclick="showSkillTab('perks')" id="tab-perks" class="skill-tab">
-          ⭐ Perks
+          Perks
         </button>
       </div>
       
@@ -9408,7 +9408,8 @@ function generateSkillTreesContent() {
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
             ${Object.entries(skillDef.branches).map(([branchName, branch]) => {
               const currentLevel = player.skillTrees[skillName][branchName];
-              const canUpgrade = player.skillPoints > 0 && currentLevel < branch.maxLevel;
+              const branchCost = currentLevel < 3 ? 1 : (currentLevel < 6 ? 2 : 3);
+              const canUpgrade = player.skillPoints >= branchCost && currentLevel < branch.maxLevel;
               
               return `
                 <div class="skill-tree-branch">
@@ -9437,7 +9438,7 @@ function generateSkillTreesContent() {
                           color: white; border: none; padding: 8px 15px; border-radius: 5px; 
                           cursor: ${canUpgrade ? 'pointer' : 'not-allowed'}; font-size: 0.9em; width: 100%;"
                       ${!canUpgrade ? 'disabled' : ''}>
-                    ${currentLevel >= branch.maxLevel ? 'Maxed' : canUpgrade ? 'Upgrade (2 pts)' : 'No Points'}
+                    ${currentLevel >= branch.maxLevel ? 'Maxed' : canUpgrade ? `Upgrade (${branchCost} pt${branchCost > 1 ? 's' : ''})` : `Need ${branchCost} pts`}
                   </button>
                 </div>
               `;
@@ -9637,7 +9638,7 @@ function generateMentorsContent() {
 
 function generatePerksContent() {
   let content = `
-    <h3 class="skill-tab-title">⭐ Perks & Achievements</h3>
+    <h3 class="skill-tab-title">Perks & Achievements</h3>
     <p class="skill-tab-subtitle">
       Unlock powerful passive abilities based on your playstyle and achievements.
     </p>
@@ -9906,7 +9907,7 @@ function unlockPerk(perkId) {
   
   if (checkPerkRequirements(perk.requirements)) {
     player.unlockedPerks.push(perkId);
-    logAction(`⭐ Perk Unlocked! ${perk.name}: ${perk.description}`);
+    logAction(`Perk Unlocked! ${perk.name}: ${perk.description}`);
     updateUI();
     showSkillTab('perks'); // Refresh the perks view
     
@@ -9935,10 +9936,10 @@ function applyPerkEffects(perkId) {
       logAction("Ghost Protocol active! You leave no trace — heat generation reduced by 50%.");
       break;
     case 'fearMonger':
-      logAction("ˆ Fear Monger unlocked! Your reputation precedes you — intimidation +30% success.");
+      logAction("Fear Monger unlocked! Your reputation precedes you — intimidation +30% success.");
       break;
     case 'mastermind':
-      logAction("  Mastermind unlocked! 25% of jobs now auto-succeed with zero risk.");
+      logAction("Mastermind unlocked! 25% of jobs now auto-succeed with zero risk.");
       break;
     case 'masterTeacher':
       logAction("Master Teacher unlocked! All skill gains increased by 25%.");
@@ -15988,7 +15989,7 @@ function showDeathScreen(causeOfDeath) {
           <div class="obit-stat"><span class="obit-label">Territories</span><span class="obit-value">${territoriesOwned}</span></div>
           <div class="obit-stat"><span class="obit-label">Businesses</span><span class="obit-value">${businessCount}</span></div>
           <div class="obit-stat"><span class="obit-label">Properties</span><span class="obit-value">${propertiesOwned}</span></div>
-          <div class="obit-stat"><span class="obit-label">⭐ Best Skill</span><span class="obit-value">${highestSkill[0]} (${highestSkill[1]})</span></div>
+          <div class="obit-stat"><span class="obit-label">Best Skill</span><span class="obit-value">${highestSkill[0]} (${highestSkill[1]})</span></div>
           <div class="obit-stat"><span class="obit-label">Gambling Wins</span><span class="obit-value">${player.playstyleStats.gamblingWins || 0}</span></div>
         </div>
       </div>
@@ -16233,8 +16234,8 @@ function streetCredEvent() {
   // Pure reputation boost based on current standing
   const repGain = Math.floor(Math.random() * 5) + 2 + Math.floor(player.level / 5);
   player.reputation += repGain;
-  showBriefNotification(`⭐ Street cred! +${repGain} reputation`, 3000);
-  logAction(`⭐ Word of your exploits spreads through the underworld. Your reputation grows by ${repGain}.`);
+  showBriefNotification(`Street cred! +${repGain} reputation`, 3000);
+  logAction(`Word of your exploits spreads through the underworld. Your reputation grows by ${repGain}.`);
   updateUI();
 }
 
@@ -18172,7 +18173,7 @@ function showEmpireRating() {
   const content = `
     <div style="max-width: 1000px; margin: 0 auto;">
       <h2 style="text-align: center; color: ${grade.color}; font-size: 2.5em; margin-bottom: 10px;">
-        ⭐ Empire Rating ⭐
+        Empire Rating ⭐
       </h2>
       
       <div style="text-align: center; margin-bottom: 30px; padding: 20px; background: rgba(0,0,0,0.3); border-radius: 15px; border: 3px solid ${grade.color};">
@@ -18219,7 +18220,7 @@ function showEmpireRating() {
         </div>
         
         <div class="rating-category">
-          <h3 style="color: #3498db;">⭐ Reputation Power</h3>
+          <h3 style="color: #3498db;">Reputation Power</h3>
           <div class="progress-bar">
             <div style="width: ${(rating.reputationPower/2000)*100}%; background: #3498db;"></div>
           </div>
@@ -19761,7 +19762,7 @@ function showRivalsTab() {
                 <div style="color: #ecf0f1;">Gang Size: ${rival.gangSize}</div>
                 <div style="color: #ecf0f1;">Wealth: $${rival.wealth.toLocaleString()}</div>
                 <div style="color: #ecf0f1;">Territories: ${rival.territories.length}</div>
-                <div style="color: ${respectColor};">⭐ Respect: ${playerRespect > 0 ? '+' : ''}${playerRespect}</div>
+                <div style="color: ${respectColor};">Respect: ${playerRespect > 0 ? '+' : ''}${playerRespect}</div>
               </div>
               
               <div style="background: rgba(0, 0, 0, 0.3); padding: 10px; border-radius: 8px; margin-bottom: 10px;">
@@ -20066,7 +20067,7 @@ function showWeeklyChallenges() {
                         <div style="color: #ecf0f1;">$${challenge.reward.money.toLocaleString()}</div>
                       </div>
                       <div style="text-align: center;">
-                        <div style="color: #3498db; font-weight: bold;">⭐ Experience</div>
+                        <div style="color: #3498db; font-weight: bold;">Experience</div>
                         <div style="color: #ecf0f1;">${challenge.reward.experience.toLocaleString()} XP</div>
                       </div>
                       <div style="text-align: center;">
