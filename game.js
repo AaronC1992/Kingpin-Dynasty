@@ -13464,6 +13464,112 @@ function loadPortraitGrid() {
   `;
 }
 
+// ──────────────────────────────────────────────────────────────
+// CHANGE PORTRAIT (from Settings)
+// ──────────────────────────────────────────────────────────────
+function showChangePortraitScreen() {
+  const container = document.getElementById('options-screen');
+
+  // Save original settings HTML so we can restore it
+  if (!_originalOptionsHTML) {
+    _originalOptionsHTML = container.innerHTML;
+  }
+
+  const malePortraits = [
+    { file: "profile_pics/White male.png", label: "White Male" },
+    { file: "profile_pics/Black male.png", label: "Black Male" },
+    { file: "profile_pics/Asian male.png", label: "Asian Male" },
+    { file: "profile_pics/Mexican male.png", label: "Hispanic Male" },
+    { file: "profile_pics/Old Male.png", label: "Old Male" },
+    { file: "profile_pics/Stylized White Male.png", label: "Stylized White Male" },
+    { file: "profile_pics/Stylized Black Male.png", label: "Stylized Black Male" },
+    { file: "profile_pics/Stylized Asian Male.png", label: "Stylized Asian Male" },
+    { file: "profile_pics/Stylized Hispanic Male.png", label: "Stylized Hispanic Male" }
+  ];
+
+  const femalePortraits = [
+    { file: "profile_pics/White female.png", label: "White Female" },
+    { file: "profile_pics/Black female.png", label: "Black Female" },
+    { file: "profile_pics/Asian female.png", label: "Asian Female" },
+    { file: "profile_pics/Mexican female.png", label: "Hispanic Female" },
+    { file: "profile_pics/Old Female.png", label: "Old Female" },
+    { file: "profile_pics/Stylized White Female.png", label: "Stylized White Female" },
+    { file: "profile_pics/Stylized Black Female.png", label: "Stylized Black Female" },
+    { file: "profile_pics/Stylized Asian Female.png", label: "Stylized Asian Female" },
+    { file: "profile_pics/Stylized Hispanic Female.png", label: "Stylized Hispanic Female" }
+  ];
+
+  const renderBtn = (p) => {
+    const isCurrent = player.portrait === p.file;
+    return `
+      <button class="portrait-option${isCurrent ? ' selected' : ''}" onclick="applyPortraitChange('${p.file}')"
+          title="${p.label}">
+        <img src="${p.file}" alt="${p.label}" />
+      </button>`;
+  };
+
+  container.innerHTML = `
+    <div class="page-header">
+      <h1><span class="icon"></span> Change Portrait</h1>
+      <div class="breadcrumb">
+        <a href="#" onclick="goBackToMainMenu(); return false;">SafeHouse</a>
+        <span class="separator">\u203A</span>
+        <a href="#" onclick="showOptions(); return false;">Settings</a>
+        <span class="separator">\u203A</span>
+        <span class="current">Portrait</span>
+      </div>
+    </div>
+
+    <div class="content-card" style="text-align:center; margin-bottom:20px;">
+      <p style="color:#95a5a6; margin:0 0 10px;">Current portrait:</p>
+      <img src="${player.portrait || ''}" alt="Current portrait"
+           style="width:100px; height:100px; border-radius:50%; object-fit:cover; border:3px solid #2ecc71;${player.portrait ? '' : ' display:none;'}" />
+    </div>
+
+    <div class="section-header" style="color:#3498db;">\uD83D\uDC68 Male</div>
+    <div class="content-card">
+      <div class="portrait-selection-grid" style="max-height:none;">
+        <div class="portrait-gender-section">
+          ${malePortraits.map(renderBtn).join('')}
+        </div>
+      </div>
+    </div>
+
+    <div class="section-header" style="color:#e84393;">\uD83D\uDC69 Female</div>
+    <div class="content-card">
+      <div class="portrait-selection-grid" style="max-height:none;">
+        <div class="portrait-gender-section">
+          ${femalePortraits.map(renderBtn).join('')}
+        </div>
+      </div>
+    </div>
+
+    <div class="page-nav">
+      <button class="nav-btn-back" onclick="showOptions()">\u2190 Back to Settings</button>
+    </div>
+  `;
+}
+
+function applyPortraitChange(portraitFile) {
+  player.portrait = portraitFile;
+
+  // Update gender/ ethnicity tracking from filename
+  const parts = portraitFile.replace('profile_pics/', '').toLowerCase().replace('.png', '').split(' ');
+  if (parts.length >= 2) {
+    player.ethnicity = parts[0];
+    player.gender = parts[1];
+  }
+
+  // Auto-save if there is an active slot
+  if (typeof autoSave === 'function') autoSave();
+
+  showBriefNotification('Portrait updated!', 'success');
+  showChangePortraitScreen(); // Refresh to show new selection
+}
+
+window.showChangePortraitScreen = showChangePortraitScreen;
+window.applyPortraitChange = applyPortraitChange;
+
 // Function to create character after all selections made
 function createCharacter() {
   const nameInput = document.getElementById('character-name');
