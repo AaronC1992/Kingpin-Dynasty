@@ -1,6 +1,6 @@
 # Mafia Born
 
-**v1.8.0** | A deep criminal empire-building browser game where you rise from street thug to legendary kingpin. Build your crew, claim territory, run businesses, and outmanoeuvre rival crime families — all from your browser.
+**v1.8.1** | A deep criminal empire-building browser game where you rise from street thug to legendary kingpin. Build your crew, claim territory, run businesses, and outmanoeuvre rival crime families — all from your browser.
 
 ## **[PLAY NOW](https://mafiaborn.com/)**
 
@@ -113,16 +113,14 @@ Compatible with Chrome, Firefox, Safari, Edge, and their mobile counterparts.
 
 ---
 
-## Recent Changes (v1.8.0)
+## Recent Changes (v1.8.1)
 
-- **Unified RPG Talent Tree** — single talent tree system across 6 branches replacing old basic skills + skill trees
-- **Story Expansion** — 16 street story encounters, 5 multi-step side quest chains, 4 post-Don endgame arcs
-- **Level milestone narrations** — immersive story overlays at key levels
-- **Family-specific narrations** — unique flavour text for all 4 crime families
-- **Atmospheric world narrations** — dynamic street atmosphere text on a rolling timer
-- **Side quest system** — full UI with progress tracking, multi-step objective chains, and narrative payoffs
-- **System Removal** — Mentorship Program, Expertise Perks, Gang Loyalty, and Loan Shark systems all removed to streamline gameplay
-- **Gang danger increased** — gang members die more frequently during turf defense, territory expansion, gang wars, and operations
+- **Political System** — Top Don (most territories) sets server-wide policies: world tax, market fees, crime bonus, jail time mod, heist bonus
+- **Alliance Discipline** — leaders can warn, fine, demote, or kick members with audit logging
+- **Energy items in mobile navbar** — quick access to energy consumables
+- **Bug fix** — gang member dismissal now correctly recalculates player power
+- **Bug fix** — political tax rate above 10% now works (server-authoritative tax computation)
+- **Dead code cleanup** — removed stale TAX_RATE constants
 - **Expertise screen** simplified to 3 tabs: Basic Skills, Skill Trees, Reputation
 - **Vehicle System Overhaul** — buy/sell/upgrade vehicles from a dedicated garage, car degradation and repair
 - **Territory Management** — alliance territories tab, territory power and defense mechanics

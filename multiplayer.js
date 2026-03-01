@@ -118,6 +118,7 @@ let onlineWorldState = {
     activeHeists: [],
     gangWars: [],
     territories: {},   // Phase 1 unified territory state (synced from server)
+    politics: null,    // Political system state (synced from server)
     jailRoster: { realPlayers: [], bots: [], totalOnlineInJail: 0 },
     lastUpdate: null
 };
@@ -1022,6 +1023,11 @@ async function handleServerMessage(message) {
                 onlineWorldState.territories = message.territories;
             }
 
+            // Sync politics state from server
+            if (message.politics) {
+                onlineWorldState.politics = message.politics;
+            }
+
             // Update player states including jail status
             if (message.playerStates) {
                 onlineWorldState.playerStates = message.playerStates;
@@ -1599,6 +1605,23 @@ async function handleServerMessage(message) {
 
         case 'alliance_invite':
             handleAllianceInviteReceived(message);
+            break;
+
+        case 'alliance_discipline_result':
+            handleAllianceDisciplineResult(message);
+            break;
+
+        case 'politics_info_result':
+            handlePoliticsInfoResult(message);
+            break;
+        case 'politics_policy_result':
+            handlePoliticsPolicyResult(message);
+            break;
+        case 'politics_update':
+            if (message.politics) {
+                onlineWorldState.politics = message.politics;
+                refreshPoliticsTab();
+            }
             break;
 
         case 'alliance_info_result':
@@ -2514,6 +2537,7 @@ function showOnlineWorld(activeTab) {
             <button onclick="showOnlineWorld('overview')" style="${tabStyle('overview')}">Overview</button>
             <button onclick="showOnlineWorld('pvp')" style="${tabStyle('pvp')}">PVP</button>
             <button onclick="showOnlineWorld('territories')" style="${tabStyle('territories')}">Territories</button>
+            <button onclick="showOnlineWorld('politics')" style="${tabStyle('politics')}">👑 Politics</button>
             <button onclick="showOnlineWorld('activities')" style="${tabStyle('activities')}">Activities</button>
             <button onclick="showOnlineWorld('market')" style="${tabStyle('market')}">Market</button>
             <button onclick="showOnlineWorld('chat')" style="${tabStyle('chat')}">Chat</button>
@@ -2525,7 +2549,19 @@ function showOnlineWorld(activeTab) {
     
     // ── OVERVIEW TAB ──
     if (tab === 'overview') {
+        // Top Don banner on overview
+        const pol = onlineWorldState.politics;
+        const topDonBanner = pol && pol.topDonName
+            ? `<div style="background: linear-gradient(90deg, rgba(255,215,0,0.1) 0%, rgba(0,0,0,0.6) 50%, rgba(255,215,0,0.1) 100%); padding: 10px 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #ffd700; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer;" onclick="showOnlineWorld('politics')">
+                    <span style="font-size: 1.3em;">👑</span>
+                    <span style="color: #ffd700; font-weight: bold; font-family: 'Georgia', serif;">Top Don: ${escapeHTML(pol.topDonName)}</span>
+                    ${pol.isAlliance ? `<span style="color: #c0a062;">[${escapeHTML(pol.allianceTag)}]</span>` : ''}
+                    <span style="color: #888; font-size: 0.85em;">| ${pol.territoryCount} territories</span>
+                </div>`
+            : '';
+
         worldHTML += `
+            ${topDonBanner}
             <!-- Territory Income Timer -->
             <div id="territory-income-timer" style="background: rgba(39, 174, 96, 0.1); padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 2px solid #27ae60; text-align: center;">
                 <div style="color: #27ae60; font-weight: bold; font-size: 1.1em;">Next Territory Income</div>
@@ -2733,6 +2769,11 @@ function showOnlineWorld(activeTab) {
                 </button>
             </div>
         `;
+    }
+    
+    // ── POLITICS TAB ──
+    if (tab === 'politics') {
+        worldHTML += renderPoliticsTab();
     }
     
     // ── MARKETPLACE TAB ──
@@ -4409,6 +4450,7 @@ function handleAllianceInfoResult(message) {
                     <button onclick="allianceDeposit()" style="background: #2ecc71; color: #000; padding: 8px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">Deposit</button>
                     ${isLeader ? `<button onclick="allianceInvitePrompt()" style="background: #3498db; color: #fff; padding: 8px 15px; border: none; border-radius: 6px; cursor: pointer;">Invite</button>` : ''}
                     ${isLeader ? `<button onclick="allianceKickPrompt()" style="background: #e74c3c; color: #fff; padding: 8px 15px; border: none; border-radius: 6px; cursor: pointer;">Kick</button>` : ''}
+                    ${isLeader ? `<button onclick="showDisciplinePanel()" style="background: #8b0000; color: #fff; padding: 8px 15px; border: none; border-radius: 6px; cursor: pointer;">⚖️ Discipline</button>` : ''}
                     <button onclick="allianceLeave()" style="background: #666; color: #fff; padding: 8px 15px; border: none; border-radius: 6px; cursor: pointer;">Leave</button>
                 </div>
             </div>
@@ -4635,6 +4677,154 @@ function handleAllianceResult(message) {
             // Refresh UI so treasury and cash display update
             if (typeof updateUI === 'function') updateUI();
             showAlliancePanel();
+            break;
+    }
+}
+
+// ==================== ALLIANCE DISCIPLINE SYSTEM ====================
+
+function showDisciplinePanel() {
+    if (!_currentAllianceData || !_currentAllianceData.myAlliance) {
+        showSystemMessage('No alliance data loaded.', '#e74c3c');
+        return;
+    }
+    const myAlliance = _currentAllianceData.myAlliance;
+    const members = myAlliance.members.filter(m => m !== myAlliance.leaderName);
+
+    if (members.length === 0) {
+        showSystemMessage('No members to discipline.', '#f39c12');
+        return;
+    }
+
+    // Remove existing modal if present
+    const existing = document.getElementById('discipline-modal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'discipline-modal';
+    modal.className = 'popup-overlay';
+    modal.innerHTML = `
+        <div class="popup-card" style="max-width:520px; background: #0d0d0d; border: 2px solid #8b0000;">
+            <h2 style="color: #8b0000; font-family: Georgia, serif; margin: 0 0 5px; text-align: center;">⚖️ Discipline a Member</h2>
+            <p style="color: #888; text-align: center; font-size: 0.85em; margin-bottom: 18px;">As leader of [${escapeHTML(myAlliance.tag)}] ${escapeHTML(myAlliance.name)}, bring order to your ranks.<br>All punishments are broadcast live to every player.</p>
+
+            <div style="margin-bottom: 14px;">
+                <label style="color: #ccc; font-size: 0.9em; display: block; margin-bottom: 5px;">Target Member</label>
+                <select id="discipline-target" style="width: 100%; padding: 10px; background: #1a1a1a; color: #c0a062; border: 1px solid #555; border-radius: 6px; font-family: Georgia, serif;">
+                    <option value="">— Select a member —</option>
+                    ${members.map(m => `<option value="${escapeHTML(m)}">${escapeHTML(m)}</option>`).join('')}
+                </select>
+            </div>
+
+            <div style="margin-bottom: 14px;">
+                <label style="color: #ccc; font-size: 0.9em; display: block; margin-bottom: 8px;">Punishment</label>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <label onclick="document.getElementById('discipline-type-warning').checked = true" style="display: flex; align-items: flex-start; gap: 10px; padding: 12px; background: rgba(243,156,18,0.1); border: 2px solid rgba(243,156,18,0.3); border-radius: 8px; cursor: pointer; transition: border-color 0.2s;">
+                        <input type="radio" name="discipline-type" id="discipline-type-warning" value="warning" checked style="margin-top: 3px;">
+                        <div>
+                            <div style="color: #f39c12; font-weight: bold;">⚠️ Formal Warning</div>
+                            <div style="color: #888; font-size: 0.8em;">A public notice that this member is on thin ice. A slap on the wrist — everyone sees it.</div>
+                        </div>
+                    </label>
+                    <label onclick="document.getElementById('discipline-type-humiliation').checked = true" style="display: flex; align-items: flex-start; gap: 10px; padding: 12px; background: rgba(231,76,60,0.1); border: 2px solid rgba(231,76,60,0.3); border-radius: 8px; cursor: pointer; transition: border-color 0.2s;">
+                        <input type="radio" name="discipline-type" id="discipline-type-humiliation" value="humiliation" style="margin-top: 3px;">
+                        <div>
+                            <div style="color: #e74c3c; font-weight: bold;">🤡 Public Humiliation</div>
+                            <div style="color: #888; font-size: 0.8em;">Drag their name through the mud in front of the entire city. Maximum embarrassment.</div>
+                        </div>
+                    </label>
+                    <label onclick="document.getElementById('discipline-type-punishment').checked = true" style="display: flex; align-items: flex-start; gap: 10px; padding: 12px; background: rgba(139,0,0,0.15); border: 2px solid rgba(139,0,0,0.4); border-radius: 8px; cursor: pointer; transition: border-color 0.2s;">
+                        <input type="radio" name="discipline-type" id="discipline-type-punishment" value="punishment" style="margin-top: 3px;">
+                        <div>
+                            <div style="color: #ff4444; font-weight: bold;">🩸 Serious Punishment</div>
+                            <div style="color: #888; font-size: 0.8em;">Make an example of them. The whole server sees this — a message to anyone who steps out of line.</div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 18px;">
+                <label style="color: #ccc; font-size: 0.9em; display: block; margin-bottom: 5px;">Reason <span style="color:#555;">(optional, max 100 chars)</span></label>
+                <input id="discipline-reason" type="text" maxlength="100" placeholder="e.g. Disrespected the family..." style="width: 100%; padding: 10px; background: #1a1a1a; color: #c0a062; border: 1px solid #555; border-radius: 6px; font-family: Georgia, serif; box-sizing: border-box;">
+            </div>
+
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button onclick="executeDiscipline()" style="background: linear-gradient(135deg, #8b0000, #5a0000); color: #fff; padding: 12px 30px; border: 1px solid #ff4444; border-radius: 8px; cursor: pointer; font-family: Georgia, serif; font-weight: bold; font-size: 1em;">Execute Punishment</button>
+                <button onclick="document.getElementById('discipline-modal').remove()" style="background: #333; color: #aaa; padding: 12px 20px; border: 1px solid #555; border-radius: 8px; cursor: pointer; font-family: Georgia, serif;">Cancel</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+window.showDisciplinePanel = showDisciplinePanel;
+
+function executeDiscipline() {
+    const target = document.getElementById('discipline-target')?.value;
+    if (!target) { showSystemMessage('Select a member to discipline.', '#e74c3c'); return; }
+
+    const typeRadio = document.querySelector('input[name="discipline-type"]:checked');
+    if (!typeRadio) { showSystemMessage('Select a punishment type.', '#e74c3c'); return; }
+
+    const reason = document.getElementById('discipline-reason')?.value?.trim() || '';
+
+    sendMP({
+        type: 'alliance_discipline',
+        targetPlayer: target,
+        disciplineType: typeRadio.value,
+        reason: reason
+    });
+
+    // Close the modal
+    const modal = document.getElementById('discipline-modal');
+    if (modal) modal.remove();
+}
+window.executeDiscipline = executeDiscipline;
+
+function handleAllianceDisciplineResult(message) {
+    if (!message.success) {
+        showSystemMessage(message.error || 'Discipline action failed.', '#e74c3c');
+        return;
+    }
+
+    const typeColors = { warning: '#f39c12', humiliation: '#e74c3c', punishment: '#8b0000' };
+    const color = typeColors[message.disciplineType] || '#c0a062';
+
+    switch (message.action) {
+        case 'issued':
+            // Leader confirmation
+            showMPToast(`${message.icon} ${message.disciplineName} issued to ${message.targetPlayer}.`, color, 5000);
+            playNotificationSound('alert');
+            break;
+
+        case 'received': {
+            // The victim sees a dramatic full-screen popup
+            playNotificationSound('defeat');
+            const popup = document.createElement('div');
+            popup.id = 'discipline-received-modal';
+            popup.className = 'popup-overlay';
+            const borderColor = color;
+            popup.innerHTML = `
+                <div class="popup-card" style="max-width:450px; background: #0a0a0a; border: 3px solid ${borderColor}; text-align: center;">
+                    <div style="font-size: 3em; margin-bottom: 10px;">${message.icon}</div>
+                    <h2 style="color: ${borderColor}; font-family: Georgia, serif; margin: 0 0 8px;">${escapeHTML(message.disciplineName)}</h2>
+                    <p style="color: #ccc; font-size: 1.05em; line-height: 1.5;">
+                        <strong style="color: #ffd700;">${escapeHTML(message.leaderName)}</strong>, leader of
+                        <strong style="color: #c0a062;">[${escapeHTML(message.allianceTag)}] ${escapeHTML(message.allianceName)}</strong>,
+                        has disciplined you.
+                    </p>
+                    ${message.reason ? `<p style="color: #e74c3c; font-style: italic; border-left: 3px solid ${borderColor}; padding-left: 12px; margin: 15px 20px;">"${escapeHTML(message.reason)}"</p>` : ''}
+                    <p style="color: #666; font-size: 0.85em; margin-top: 12px;">This has been broadcast to all players in the city.</p>
+                    <button onclick="document.getElementById('discipline-received-modal').remove()" style="background: ${borderColor}; color: #fff; padding: 12px 30px; border: none; border-radius: 8px; cursor: pointer; font-family: Georgia, serif; font-weight: bold; margin-top: 15px;">Understood</button>
+                </div>
+            `;
+            document.body.appendChild(popup);
+            break;
+        }
+
+        case 'witnessed':
+            // Other alliance members see a toast
+            showMPToast(`${message.icon} ${message.leaderName} disciplined ${message.targetPlayer} — ${message.disciplineName}`, color, 6000);
+            playNotificationSound('alert');
             break;
     }
 }
@@ -4871,6 +5061,232 @@ function ensureConnected() {
         return false;
     }
     return true;
+}
+
+// ==================== POLITICAL SYSTEM — TOP DON UI ====================
+let _politicsCache = null; // last received politics data
+let _isTopDon = false;
+let _politicsCooldown = 0;
+
+function renderPoliticsTab() {
+    const pol = onlineWorldState.politics || _politicsCache;
+    const policyDescriptions = {
+        worldTaxRate: 'Tax residents pay to territory owners on all job earnings',
+        marketFee: 'Fee charged on all vehicle marketplace transactions',
+        crimeBonus: 'Bonus earnings from crime jobs for all players',
+        jailTimeMod: 'Modifier to jail sentence duration (negative = shorter)',
+        heistBonus: 'Bonus payout on successful heists for all crews'
+    };
+
+    let html = `
+        <div style="text-align: center; margin-bottom: 20px;">
+            <div style="font-size: 3em; margin-bottom: 5px;">👑</div>
+            <h3 style="color: #ffd700; font-family: 'Georgia', serif; margin: 0; font-size: 1.5em; text-shadow: 2px 2px 6px rgba(255,215,0,0.5);">City Politics</h3>
+            <p style="color: #ccc; margin: 5px 0 0 0;">The player controlling the most territories rules as <strong style="color: #ffd700;">Top Don</strong> and sets policies for the entire city.</p>
+        </div>
+    `;
+
+    // Top Don banner
+    if (pol && pol.topDonName) {
+        const allianceStr = pol.isAlliance ? `<div style="color: #c0a062; font-size: 0.9em; margin-top: 3px;">[${escapeHTML(pol.allianceTag)}] ${escapeHTML(pol.allianceName)}</div>` : '';
+        html += `
+            <div style="background: linear-gradient(180deg, rgba(255,215,0,0.15) 0%, rgba(0,0,0,0.9) 100%); padding: 25px; border-radius: 15px; border: 2px solid #ffd700; margin-bottom: 20px; text-align: center;">
+                <div style="font-size: 2.5em;">🏛️</div>
+                <div style="color: #ffd700; font-size: 1.8em; font-weight: bold; font-family: 'Georgia', serif; text-shadow: 2px 2px 8px rgba(255,215,0,0.4);">${escapeHTML(pol.topDonName)}</div>
+                ${allianceStr}
+                <div style="color: #c0a062; font-size: 0.95em; margin-top: 8px;">Top Don of the City</div>
+                <div style="display: inline-block; background: rgba(255,215,0,0.1); padding: 6px 18px; border-radius: 20px; border: 1px solid #ffd700; margin-top: 10px;">
+                    <span style="color: #ffd700; font-weight: bold;">🏴 ${pol.territoryCount}</span> <span style="color: #ccc;">Territories Controlled</span>
+                </div>
+            </div>
+        `;
+    } else {
+        html += `
+            <div style="background: rgba(100,100,100,0.15); padding: 25px; border-radius: 15px; border: 2px dashed #555; margin-bottom: 20px; text-align: center;">
+                <div style="font-size: 2.5em; opacity: 0.4;">🏛️</div>
+                <div style="color: #888; font-size: 1.3em; font-family: 'Georgia', serif;">No Top Don</div>
+                <p style="color: #666; margin: 10px 0 0 0;">All territories are under NPC control. Conquer territory to become the Top Don!</p>
+            </div>
+        `;
+    }
+
+    // Current Policies
+    html += `
+        <div style="background: rgba(0,0,0,0.6); padding: 20px; border-radius: 12px; border: 1px solid #c0a062; margin-bottom: 20px;">
+            <h4 style="color: #c0a062; margin: 0 0 15px 0; font-family: 'Georgia', serif; text-align: center;">📜 City Policies</h4>
+            <div id="politics-policies-list" style="display: grid; gap: 12px;">
+    `;
+
+    if (pol && pol.policies) {
+        const limits = pol.policyLimits || {};
+        for (const [key, value] of Object.entries(pol.policies)) {
+            const lim = limits[key] || {};
+            const icon = lim.icon || '📋';
+            const label = lim.label || key;
+            const unit = lim.unit || '';
+            const desc = policyDescriptions[key] || '';
+
+            // Color based on value (green = beneficial, red = harsh)
+            let valueColor = '#ccc';
+            if (key === 'crimeBonus' || key === 'heistBonus') {
+                valueColor = value > 0 ? '#2ecc71' : '#ccc';
+            } else if (key === 'worldTaxRate' || key === 'marketFee') {
+                valueColor = value > 10 ? '#e74c3c' : value < 10 ? '#2ecc71' : '#ccc';
+            } else if (key === 'jailTimeMod') {
+                valueColor = value < 0 ? '#2ecc71' : value > 0 ? '#e74c3c' : '#ccc';
+            }
+
+            html += `
+                <div style="background: rgba(255,255,255,0.03); padding: 12px 15px; border-radius: 8px; border-left: 3px solid ${valueColor}; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="color: #ccc; font-weight: bold;">${icon} ${label}</div>
+                        <div style="color: #666; font-size: 0.8em; margin-top: 2px;">${desc}</div>
+                    </div>
+                    <div style="color: ${valueColor}; font-size: 1.4em; font-weight: bold; min-width: 60px; text-align: right;">
+                        ${value > 0 && (key === 'jailTimeMod' || key === 'crimeBonus' || key === 'heistBonus') ? '+' : ''}${value}${unit}
+                    </div>
+                </div>
+            `;
+        }
+    } else {
+        html += `<div style="color: #666; text-align: center; padding: 20px;">Policy data unavailable. Connect to the server to see current policies.</div>`;
+    }
+
+    html += `
+            </div>
+        </div>
+    `;
+
+    // Top Don controls (only if player is the Top Don)
+    html += `<div id="politics-controls-container"></div>`;
+
+    // Info box
+    html += `
+        <div style="background: rgba(192, 160, 98, 0.1); padding: 12px; border-radius: 8px; border: 1px solid #c0a062;">
+            <p style="color: #ccc; margin: 0; font-size: 0.85em; line-height: 1.6;">
+                <strong style="color: #c0a062;">How Politics Work:</strong> The player or alliance controlling the most territories becomes the <strong style="color: #ffd700;">Top Don</strong>. 
+                The Top Don can adjust city-wide policies that affect all players — tax rates, crime bonuses, jail times, and more. 
+                Policies have a 10-minute cooldown between changes. Conquer more territory to seize political power!
+            </p>
+        </div>
+    `;
+
+    // Request fresh data from server
+    if (onlineWorldState.isConnected) {
+        sendMP({ type: 'politics_info' });
+    }
+
+    return html;
+}
+
+function handlePoliticsInfoResult(message) {
+    _politicsCache = message.politics;
+    _isTopDon = message.isTopDon;
+    _politicsCooldown = message.cooldownRemaining || 0;
+
+    // Update the cached state
+    onlineWorldState.politics = message.politics;
+
+    // Render the controls if we're the Top Don
+    const controlsContainer = document.getElementById('politics-controls-container');
+    if (controlsContainer) {
+        if (_isTopDon) {
+            controlsContainer.innerHTML = renderTopDonControls(message.politics);
+        } else {
+            controlsContainer.innerHTML = '';
+        }
+    }
+}
+
+function renderTopDonControls(pol) {
+    if (!pol || !pol.policies || !pol.policyLimits) return '';
+
+    const cooldownActive = _politicsCooldown > 0;
+    const cooldownMin = Math.ceil(_politicsCooldown / 60000);
+
+    let html = `
+        <div style="background: linear-gradient(180deg, rgba(255,215,0,0.08) 0%, rgba(0,0,0,0.8) 100%); padding: 20px; border-radius: 12px; border: 2px solid #ffd700; margin-bottom: 20px;">
+            <h4 style="color: #ffd700; margin: 0 0 5px 0; font-family: 'Georgia', serif; text-align: center;">🏛️ Top Don Controls</h4>
+            <p style="color: #c0a062; text-align: center; margin: 0 0 15px 0; font-size: 0.85em;">You are the Top Don. Set policies for the entire city.</p>
+            ${cooldownActive ? `<div style="text-align: center; color: #e74c3c; margin-bottom: 12px; font-size: 0.9em;">⏳ Policy changes on cooldown — ${cooldownMin} min remaining</div>` : ''}
+            <div style="display: grid; gap: 12px;">
+    `;
+
+    for (const [key, value] of Object.entries(pol.policies)) {
+        const lim = pol.policyLimits[key] || {};
+        const icon = lim.icon || '📋';
+        const label = lim.label || key;
+        const unit = lim.unit || '';
+        const min = lim.min !== undefined ? lim.min : 0;
+        const max = lim.max !== undefined ? lim.max : 100;
+
+        html += `
+            <div style="background: rgba(0,0,0,0.5); padding: 12px; border-radius: 8px; border: 1px solid #555;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="color: #ccc; font-weight: bold;">${icon} ${label}</span>
+                    <span id="policy-val-${key}" style="color: #ffd700; font-weight: bold; font-size: 1.2em;">${value}${unit}</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="color: #666; font-size: 0.8em;">${min}${unit}</span>
+                    <input type="range" id="policy-slider-${key}" min="${min}" max="${max}" value="${value}" 
+                           oninput="document.getElementById('policy-val-${key}').textContent = this.value + '${unit}'"
+                           style="flex: 1; accent-color: #ffd700; cursor: pointer;" ${cooldownActive ? 'disabled' : ''}>
+                    <span style="color: #666; font-size: 0.8em;">${max}${unit}</span>
+                    <button onclick="applyPolicy('${key}')" 
+                            style="background: ${cooldownActive ? '#444' : '#ffd700'}; color: #000; padding: 6px 14px; border: none; border-radius: 6px; cursor: ${cooldownActive ? 'not-allowed' : 'pointer'}; font-weight: bold; font-size: 0.85em;"
+                            ${cooldownActive ? 'disabled' : ''}>
+                        Set
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    html += `
+            </div>
+        </div>
+    `;
+    return html;
+}
+
+function applyPolicy(policyKey) {
+    if (!ensureConnected()) return;
+    const slider = document.getElementById(`policy-slider-${policyKey}`);
+    if (!slider) return;
+
+    const newValue = parseInt(slider.value);
+    sendMP({
+        type: 'politics_set_policy',
+        policy: policyKey,
+        value: newValue
+    });
+}
+window.applyPolicy = applyPolicy;
+
+function handlePoliticsPolicyResult(message) {
+    if (message.success) {
+        const lim = (_politicsCache && _politicsCache.policyLimits) ? _politicsCache.policyLimits[message.policy] : {};
+        const label = (lim && lim.label) || message.policy;
+        const unit = (lim && lim.unit) || '';
+        window.ui.toast(`📜 ${label} set to ${message.newValue}${unit} (was ${message.oldValue}${unit})`, 'success');
+
+        // Update cooldown
+        _politicsCooldown = message.cooldownRemaining || 0;
+
+        // Request fresh politics info then full re-render the tab
+        sendMP({ type: 'politics_info' });
+        setTimeout(() => showOnlineWorld('politics'), 500);
+    } else {
+        window.ui.toast(`❌ ${message.error}`, 'error');
+    }
+}
+
+function refreshPoliticsTab() {
+    // Called when politics_update is broadcast (e.g. another player changed policy)
+    // Only re-render if the politics tab is currently visible
+    const policiesList = document.getElementById('politics-policies-list');
+    if (!policiesList) return;
+    showOnlineWorld('politics');
 }
 
 // ==================== SERVER STATUS TOOLTIP ====================

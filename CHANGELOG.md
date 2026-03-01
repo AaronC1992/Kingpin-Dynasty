@@ -5,6 +5,23 @@ All notable changes to From Dusk To Don (Mafia Born) will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.1] - 2026-03-01
+
+### Added
+- **Political System** — Top Don (player/alliance with most territories) can set 5 server-wide policies: worldTaxRate, marketFee, crimeBonus, jailTimeMod, heistBonus
+- **Alliance Discipline** — leaders can warn, fine, demote, or kick members with full audit logging
+- **Energy items in mobile navbar** — quick access to energy consumables from bottom nav
+
+### Fixed
+- Gang member dismissal now calls `recalculatePower()` — previously referenced non-existent `recalculateGangPower()`
+- Political worldTaxRate above 10% now works — server computes business tax authoritatively from grossIncome instead of trusting client-sent taxAmount
+- Client business tax display uses server-synced political tax rate instead of hardcoded `BUSINESS_TAX_RATE`
+
+### Removed
+- Dead `const TAX_RATE = 0.10` from server.js (replaced by dynamic political rate)
+- Dead `export const TAX_RATE` from territories.js (never imported)
+- Stale TODO comments about updating TAX_RATE dynamically
+
 ## [1.8.0] - 2026-03-01
 
 ### Added

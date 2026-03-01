@@ -457,6 +457,24 @@ const gameState = {
         endsAt: Date.now() + (30 * 24 * 60 * 60 * 1000), // 30 days
         ratings: new Map()  // playerId -> { elo, tier, wins, losses }
     },
+    // Political system — Top Don controls server-wide policies
+    politics: {
+        topDonName: null,       // player name of the Top Don
+        topDonClientId: null,   // clientId (null if offline)
+        territoryCount: 0,      // how many territories the Top Don controls
+        isAlliance: false,      // true if an alliance leader holds the seat
+        allianceName: null,     // alliance name if applicable
+        allianceTag: null,      // alliance tag if applicable
+        policies: {
+            worldTaxRate: 10,   // % territory tax on resident earnings (5-25)
+            marketFee: 5,       // % fee on vehicle marketplace sales (0-15)
+            crimeBonus: 0,      // % bonus to all job/crime earnings (0-20)
+            jailTimeMod: 0,     // % jail time modification (-30 to +30)
+            heistBonus: 0       // % bonus to heist payouts (0-25)
+        },
+        lastRecalc: Date.now(),
+        policyChangedAt: 0      // cooldown tracking
+    },
     // Weather system — server-authoritative, synced to all players every 30 minutes
     currentWeather: 'clear',
     currentSeason: 'spring',
@@ -476,7 +494,6 @@ const TERRITORY_IDS = [
     'industrial_warehouse', 'industrial_port',
     'entertainment_nightlife'
 ];
-const TAX_RATE = 0.10;
 const MOVE_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
 
 // NPC bosses — every territory starts under rival NPC control
@@ -515,6 +532,12 @@ try {
     persistedLeaderboard = Array.isArray(persisted.leaderboard) ? persisted.leaderboard : [];
     // Load unified territories (fall back to fresh defaults)
     gameState.territories = persisted.territories || buildDefaultTerritories();
+
+    // Load politics (preserve policies across restarts)
+    if (persisted.politics && persisted.politics.policies) {
+        gameState.politics.policies = Object.assign(gameState.politics.policies, persisted.politics.policies);
+        gameState.politics.policyChangedAt = persisted.politics.policyChangedAt || 0;
+    }
 
     // Migration: assign NPC bosses to any territory still unclaimed (owner: null)
     for (const id of TERRITORY_IDS) {
@@ -560,7 +583,8 @@ function scheduleWorldSave() {
                 cityDistricts: gameState.cityDistricts,
                 cityEvents: gameState.cityEvents,
                 leaderboard: persistedLeaderboard,
-                territories: gameState.territories
+                territories: gameState.territories,
+                politics: gameState.politics
             });
         } catch (err) {
             console.error('⚠️ Error during world save:', err.message);
@@ -821,6 +845,18 @@ function handleClientMessage(clientId, message, ws) {
         case 'alliance_deposit':
             handleAllianceDeposit(clientId, message);
             break;
+        case 'alliance_discipline':
+            handleAllianceDiscipline(clientId, message);
+            break;
+
+        // ==================== POLITICAL SYSTEM ====================
+        case 'politics_info':
+            handlePoliticsInfo(clientId);
+            break;
+        case 'politics_set_policy':
+            handlePoliticsSetPolicy(clientId, message);
+            break;
+
         case 'post_bounty':
             handlePostBounty(clientId, message);
             break;
@@ -925,7 +961,8 @@ function handlePlayerConnect(clientId, message, ws) {
         globalChat: gameState.globalChat.slice(-10), // Last 10 messages
         playerStates: Object.fromEntries(gameState.playerStates),
         weather: gameState.currentWeather,
-        season: gameState.currentSeason
+        season: gameState.currentSeason,
+        politics: sanitizePolitics()
     }));
     
     // Send jail roster immediately
@@ -1243,6 +1280,7 @@ function handleTerritoryClaimOwnership(clientId, message) {
     });
 
     addGlobalChatMessage('System', `👑 ${player.name} claimed ownership of ${districtId.replace(/_/g, ' ')}!`, '#d4af37');
+    recalcTopDon();
     broadcastPlayerStates();
     scheduleWorldSave();
 }
@@ -1412,6 +1450,7 @@ function handleTerritoryWar(clientId, message) {
         });
 
         addGlobalChatMessage('System', `${attacker.name} conquered ${districtId.replace(/_/g, ' ')}${oldOwner ? ` from ${oldOwner}` : ''} in a gang war!`, '#8b0000');
+        recalcTopDon();
     } else {
         // Defense holds — territory gets stronger
         terr.defenseRating = Math.min(300, (terr.defenseRating || 100) + 10);
@@ -2298,7 +2337,8 @@ function sendWorldState(clientId, ws) {
         territories: gameState.territories,
         activeBounties: gameState.bounties.length,
         seasonNumber: gameState.season.number,
-        seasonEndsAt: gameState.season.endsAt
+        seasonEndsAt: gameState.season.endsAt,
+        politics: sanitizePolitics()
     }));
 }
 
@@ -2377,16 +2417,23 @@ function handleJobIntent(clientId, message) {
 
     // Compute reward authoritatively
     const variance = 0.5 + Math.random(); // 0.5x - 1.5x
-    const grossEarnings = Math.floor(jobDef.base * variance);
+    let grossEarnings = Math.floor(jobDef.base * variance);
 
-    // ── Phase 2: Territory Tax ──────────────────────────────────
+    // Apply Top Don crime bonus policy
+    const crimeBonus = gameState.politics.policies.crimeBonus || 0;
+    if (crimeBonus > 0) {
+        grossEarnings = Math.floor(grossEarnings * (1 + crimeBonus / 100));
+    }
+
+    // ── Phase 2: Territory Tax (uses Top Don worldTaxRate policy) ──
+    const effectiveTaxRate = (gameState.politics.policies.worldTaxRate || 10) / 100;
     let taxAmount = 0;
     let taxOwnerName = null;
     const playerTerritory = player.currentTerritory;
     if (playerTerritory && gameState.territories[playerTerritory]) {
         const terr = gameState.territories[playerTerritory];
         if (terr.owner && terr.owner !== player.name) {
-            taxAmount = Math.floor(grossEarnings * TAX_RATE);
+            taxAmount = Math.floor(grossEarnings * effectiveTaxRate);
             taxOwnerName = terr.owner;
             terr.taxCollected = (terr.taxCollected || 0) + taxAmount;
 
@@ -2429,7 +2476,7 @@ function handleJobIntent(clientId, message) {
     let jailed = false;
     if (Math.random() * 100 < jobDef.jailChance) {
         ps.inJail = true;
-        ps.jailTime = 15 + Math.floor(Math.random() * 20); // 15-34 seconds
+        ps.jailTime = applyJailTimeMod(15 + Math.floor(Math.random() * 20)); // 15-34 seconds base
         jailed = true;
     }
 
@@ -2479,14 +2526,15 @@ function handleBusinessIncomeTax(clientId, message) {
     const player = gameState.players.get(clientId);
     if (!player) return;
 
-    const { district, grossIncome, taxAmount } = message;
-    if (!district || !taxAmount || taxAmount <= 0) return;
+    const { district, grossIncome } = message;
+    if (!district || !grossIncome || grossIncome <= 0) return;
 
     const terr = gameState.territories[district];
     if (!terr || !terr.owner || terr.owner === player.name) return;
 
-    // Cap tax at TAX_RATE of grossIncome for safety (must stay in sync with BUSINESS_TAX_RATE in territories.js)
-    const safeTax = Math.min(taxAmount, Math.floor((grossIncome || 0) * TAX_RATE));
+    // Server-authoritative: compute tax from grossIncome using political worldTaxRate
+    const politicalTaxRate = (gameState.politics.policies.worldTaxRate || 10) / 100;
+    const safeTax = Math.floor(grossIncome * politicalTaxRate);
     if (safeTax <= 0) return;
 
     terr.taxCollected = (terr.taxCollected || 0) + safeTax;
@@ -2534,6 +2582,7 @@ function broadcastPlayerStates() {
         type: 'world_update',
         playerCount: clients.size,
         playerStates: Object.fromEntries(gameState.playerStates),
+        politics: sanitizePolitics(),
         timestamp: Date.now()
     });
 }
@@ -2556,7 +2605,10 @@ function executeHeist(heist) {
     }).join(', ');
     
     if (success) {
-        const rewardPerPlayer = Math.floor(heist.reward / heist.participants.length);
+        // Apply Top Don heist bonus policy
+        const heistBonusMod = gameState.politics.policies.heistBonus || 0;
+        const effectiveReward = heistBonusMod > 0 ? Math.floor(heist.reward * (1 + heistBonusMod / 100)) : heist.reward;
+        const rewardPerPlayer = Math.floor(effectiveReward / heist.participants.length);
         const repGain = Math.floor(10 + (heist.reward / 100000) * 5);
         
         heist.participants.forEach(participantId => {
@@ -2924,6 +2976,7 @@ function handleAssassinationAttempt(clientId, message) {
                 seized: territoriesSeized,
                 method: 'assassination'
             });
+            recalcTopDon();
             scheduleWorldSave();
         }
 
@@ -3294,6 +3347,338 @@ function handleAllianceKick(clientId, message) {
     });
 
     addGlobalChatMessage('System', `🚫 ${message.targetPlayer} was kicked from [${alliance.tag}] ${alliance.name}.`, '#e74c3c');
+    scheduleWorldSave();
+}
+
+// ==================== ALLIANCE DISCIPLINE ====================
+const DISCIPLINE_TYPES = {
+    warning: {
+        name: 'Formal Warning',
+        icon: '⚠️',
+        color: '#f39c12',
+        broadcastTemplate: (leader, target, alliance, reason) =>
+            `⚠️ ALLIANCE NOTICE — ${leader}, leader of [${alliance.tag}] ${alliance.name}, has issued a FORMAL WARNING to ${target}.${reason ? ` Reason: "${reason}"` : ''} — Watch yourself.`,
+    },
+    humiliation: {
+        name: 'Public Humiliation',
+        icon: '🤡',
+        color: '#e74c3c',
+        broadcastTemplate: (leader, target, alliance, reason) =>
+            `🤡 PUBLIC HUMILIATION — ${target} of [${alliance.tag}] ${alliance.name} has been publicly shamed by ${leader}.${reason ? ` "${reason}"` : ''} — The streets are watching.`,
+    },
+    punishment: {
+        name: 'Serious Punishment',
+        icon: '🩸',
+        color: '#8b0000',
+        broadcastTemplate: (leader, target, alliance, reason) =>
+            `🩸 PUNISHMENT DEALT — ${leader} of [${alliance.tag}] ${alliance.name} has made an example of ${target}.${reason ? ` "${reason}"` : ''} — Let this be a lesson to all.`,
+    }
+};
+
+const disciplineCooldowns = new Map(); // clientId -> timestamp
+const DISCIPLINE_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes between disciplines
+
+function handleAllianceDiscipline(clientId, message) {
+    const player = gameState.players.get(clientId);
+    if (!player) return;
+    const ws = clients.get(clientId);
+    const fail = (err) => { if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'alliance_discipline_result', success: false, error: err })); };
+
+    const alliance = findPlayerAlliance(clientId);
+    if (!alliance) return fail('You are not in an alliance.');
+    if (alliance.leader !== clientId) return fail('Only the alliance leader can discipline members.');
+
+    const disciplineType = DISCIPLINE_TYPES[message.disciplineType];
+    if (!disciplineType) return fail('Invalid discipline type.');
+
+    // Cooldown check
+    const lastDiscipline = disciplineCooldowns.get(clientId) || 0;
+    const now = Date.now();
+    if (now - lastDiscipline < DISCIPLINE_COOLDOWN_MS) {
+        const remaining = Math.ceil((DISCIPLINE_COOLDOWN_MS - (now - lastDiscipline)) / 1000);
+        return fail(`Discipline is on cooldown. Wait ${remaining}s.`);
+    }
+
+    // Find target player
+    const targetName = (message.targetPlayer || '').trim();
+    if (!targetName) return fail('No target specified.');
+    if (targetName === player.name) return fail('You cannot discipline yourself.');
+
+    let targetId = null;
+    for (const [id, p] of gameState.players.entries()) {
+        if (p.name === targetName && id !== clientId) { targetId = id; break; }
+    }
+    if (!targetId || !alliance.members.includes(targetId)) return fail('That player is not in your alliance.');
+
+    // Sanitize reason
+    const reason = (message.reason || '').trim().slice(0, 100);
+
+    // Set cooldown
+    disciplineCooldowns.set(clientId, now);
+
+    // Build broadcast message
+    const broadcastMsg = disciplineType.broadcastTemplate(player.name, targetName, alliance, reason);
+
+    // Blast to global chat for ALL players to see
+    addGlobalChatMessage('System', broadcastMsg, disciplineType.color);
+
+    // Send targeted notification to the victim
+    const tgtWs = clients.get(targetId);
+    if (tgtWs && tgtWs.readyState === 1) {
+        tgtWs.send(JSON.stringify({
+            type: 'alliance_discipline_result',
+            success: true,
+            action: 'received',
+            disciplineType: message.disciplineType,
+            disciplineName: disciplineType.name,
+            icon: disciplineType.icon,
+            leaderName: player.name,
+            allianceName: alliance.name,
+            allianceTag: alliance.tag,
+            reason: reason
+        }));
+    }
+
+    // Confirm to the leader
+    if (ws && ws.readyState === 1) {
+        ws.send(JSON.stringify({
+            type: 'alliance_discipline_result',
+            success: true,
+            action: 'issued',
+            disciplineType: message.disciplineType,
+            disciplineName: disciplineType.name,
+            icon: disciplineType.icon,
+            targetPlayer: targetName,
+            reason: reason
+        }));
+    }
+
+    // Notify other alliance members
+    alliance.members.forEach(mId => {
+        if (mId === clientId || mId === targetId) return;
+        const mWs = clients.get(mId);
+        if (mWs && mWs.readyState === 1) {
+            mWs.send(JSON.stringify({
+                type: 'alliance_discipline_result',
+                success: true,
+                action: 'witnessed',
+                disciplineType: message.disciplineType,
+                disciplineName: disciplineType.name,
+                icon: disciplineType.icon,
+                leaderName: player.name,
+                targetPlayer: targetName,
+                allianceName: alliance.name,
+                reason: reason
+            }));
+        }
+    });
+
+    console.log(`⚖️ Alliance discipline: ${player.name} → ${targetName} (${message.disciplineType}) in [${alliance.tag}]`);
+}
+
+// ==================== POLITICAL SYSTEM — TOP DON ====================
+// The player (or alliance leader) who controls the most territories becomes
+// the "Top Don" and can set server-wide policies that affect all players.
+
+const POLICY_LIMITS = {
+    worldTaxRate: { min: 5, max: 25, label: 'World Tax Rate', unit: '%', icon: '💰' },
+    marketFee:    { min: 0, max: 15, label: 'Market Fee', unit: '%', icon: '🏪' },
+    crimeBonus:   { min: 0, max: 20, label: 'Crime Bonus', unit: '%', icon: '🔫' },
+    jailTimeMod:  { min: -30, max: 30, label: 'Jail Time Modifier', unit: '%', icon: '⛓️' },
+    heistBonus:   { min: 0, max: 25, label: 'Heist Bonus', unit: '%', icon: '💎' }
+};
+const POLICY_CHANGE_COOLDOWN_MS = 10 * 60 * 1000; // 10 minutes between policy changes
+const MIN_TERRITORIES_FOR_TOP_DON = 1; // Need at least 1 territory to qualify
+
+// Sanitize politics for client consumption (no internal IDs)
+function sanitizePolitics() {
+    const p = gameState.politics;
+    return {
+        topDonName: p.topDonName,
+        territoryCount: p.territoryCount,
+        isAlliance: p.isAlliance,
+        allianceName: p.allianceName,
+        allianceTag: p.allianceTag,
+        policies: { ...p.policies },
+        policyLimits: POLICY_LIMITS
+    };
+}
+
+// Apply Top Don jail time modifier to a base jail time
+function applyJailTimeMod(baseTime) {
+    const mod = gameState.politics.policies.jailTimeMod || 0;
+    if (mod === 0) return baseTime;
+    return Math.max(5, Math.round(baseTime * (1 + mod / 100)));
+}
+
+// Recalculate who is the Top Don based on territory ownership
+function recalcTopDon() {
+    const ownerCounts = {}; // playerName -> count of territories owned
+    for (const [, terr] of Object.entries(gameState.territories)) {
+        if (terr.owner && !NPC_OWNER_NAMES.has(terr.owner)) {
+            ownerCounts[terr.owner] = (ownerCounts[terr.owner] || 0) + 1;
+        }
+    }
+
+    // Also count alliance-wide territories (sum all members' territories)
+    const allianceCounts = {}; // allianceId -> { count, leaderName, leaderId, name, tag }
+    for (const [allianceId, alliance] of gameState.alliances) {
+        let total = 0;
+        for (const memberId of alliance.members) {
+            const memberPlayer = gameState.players.get(memberId);
+            if (memberPlayer && ownerCounts[memberPlayer.name]) {
+                total += ownerCounts[memberPlayer.name];
+            }
+        }
+        if (total > 0) {
+            const leaderPlayer = gameState.players.get(alliance.leader);
+            allianceCounts[allianceId] = {
+                count: total,
+                leaderName: leaderPlayer ? leaderPlayer.name : 'Unknown',
+                leaderId: alliance.leader,
+                name: alliance.name,
+                tag: alliance.tag
+            };
+        }
+    }
+
+    // Find the best candidate: individual players first, then alliances
+    let bestName = null;
+    let bestCount = 0;
+    let bestClientId = null;
+    let bestIsAlliance = false;
+    let bestAllianceName = null;
+    let bestAllianceTag = null;
+
+    // Check individual players
+    for (const [playerName, count] of Object.entries(ownerCounts)) {
+        if (count > bestCount) {
+            bestCount = count;
+            bestName = playerName;
+            bestIsAlliance = false;
+            bestAllianceName = null;
+            bestAllianceTag = null;
+            // Find clientId for this player name
+            for (const [cid, p] of gameState.players) {
+                if (p.name === playerName) { bestClientId = cid; break; }
+            }
+        }
+    }
+
+    // Check alliances (alliance total must beat individual to take over)
+    for (const [, adata] of Object.entries(allianceCounts)) {
+        if (adata.count > bestCount) {
+            bestCount = adata.count;
+            bestName = adata.leaderName;
+            bestClientId = adata.leaderId;
+            bestIsAlliance = true;
+            bestAllianceName = adata.name;
+            bestAllianceTag = adata.tag;
+        }
+    }
+
+    const oldTopDon = gameState.politics.topDonName;
+
+    if (bestCount >= MIN_TERRITORIES_FOR_TOP_DON) {
+        gameState.politics.topDonName = bestName;
+        gameState.politics.topDonClientId = bestClientId;
+        gameState.politics.territoryCount = bestCount;
+        gameState.politics.isAlliance = bestIsAlliance;
+        gameState.politics.allianceName = bestAllianceName;
+        gameState.politics.allianceTag = bestAllianceTag;
+    } else {
+        gameState.politics.topDonName = null;
+        gameState.politics.topDonClientId = null;
+        gameState.politics.territoryCount = 0;
+        gameState.politics.isAlliance = false;
+        gameState.politics.allianceName = null;
+        gameState.politics.allianceTag = null;
+    }
+
+    gameState.politics.lastRecalc = Date.now();
+
+    // Announce if Top Don changed
+    if (gameState.politics.topDonName && gameState.politics.topDonName !== oldTopDon) {
+        const allianceStr = gameState.politics.isAlliance ? ` ([${gameState.politics.allianceTag}] ${gameState.politics.allianceName})` : '';
+        addGlobalChatMessage('System', `👑 ${gameState.politics.topDonName}${allianceStr} has risen to Top Don with ${gameState.politics.territoryCount} territories! They now control the city's policies.`, '#ffd700');
+        console.log(`👑 Top Don changed: ${oldTopDon || 'None'} → ${gameState.politics.topDonName}`);
+    } else if (!gameState.politics.topDonName && oldTopDon) {
+        addGlobalChatMessage('System', `👑 The city has no Top Don — all territories are under NPC control. Conquer to rule!`, '#888');
+        console.log(`👑 Top Don vacated (was ${oldTopDon})`);
+    }
+}
+
+function handlePoliticsInfo(clientId) {
+    const ws = clients.get(clientId);
+    if (!ws || ws.readyState !== 1) return;
+
+    ws.send(JSON.stringify({
+        type: 'politics_info_result',
+        politics: sanitizePolitics(),
+        isTopDon: gameState.politics.topDonClientId === clientId,
+        cooldownRemaining: Math.max(0, (gameState.politics.policyChangedAt + POLICY_CHANGE_COOLDOWN_MS) - Date.now())
+    }));
+}
+
+function handlePoliticsSetPolicy(clientId, message) {
+    const player = gameState.players.get(clientId);
+    if (!player) return;
+    const ws = clients.get(clientId);
+    const fail = (err) => { if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'politics_policy_result', success: false, error: err })); };
+
+    // Must be the Top Don
+    if (gameState.politics.topDonClientId !== clientId) {
+        return fail('Only the Top Don can set city policies.');
+    }
+
+    const { policy, value } = message;
+    if (!policy || !POLICY_LIMITS[policy]) return fail('Invalid policy.');
+
+    const limits = POLICY_LIMITS[policy];
+    const numVal = parseInt(value);
+    if (isNaN(numVal) || numVal < limits.min || numVal > limits.max) {
+        return fail(`${limits.label} must be between ${limits.min}${limits.unit} and ${limits.max}${limits.unit}.`);
+    }
+
+    // Cooldown check
+    const now = Date.now();
+    const timeSinceLastChange = now - (gameState.politics.policyChangedAt || 0);
+    if (timeSinceLastChange < POLICY_CHANGE_COOLDOWN_MS) {
+        const remaining = Math.ceil((POLICY_CHANGE_COOLDOWN_MS - timeSinceLastChange) / 60000);
+        return fail(`Policy changes are on cooldown. Wait ${remaining} more minute(s).`);
+    }
+
+    const oldValue = gameState.politics.policies[policy];
+    gameState.politics.policies[policy] = numVal;
+    gameState.politics.policyChangedAt = now;
+
+
+    console.log(`🏛️ Policy changed: ${limits.label} ${oldValue}→${numVal} by ${player.name}`);
+
+    // Notify the Top Don
+    if (ws && ws.readyState === 1) {
+        ws.send(JSON.stringify({
+            type: 'politics_policy_result',
+            success: true,
+            policy: policy,
+            oldValue: oldValue,
+            newValue: numVal,
+            cooldownRemaining: POLICY_CHANGE_COOLDOWN_MS
+        }));
+    }
+
+    // Broadcast to everyone
+    const changeMsg = numVal > oldValue
+        ? `📜 Top Don ${player.name} raised ${limits.label} from ${oldValue}${limits.unit} to ${numVal}${limits.unit}!`
+        : `📜 Top Don ${player.name} lowered ${limits.label} from ${oldValue}${limits.unit} to ${numVal}${limits.unit}!`;
+    addGlobalChatMessage('System', changeMsg, '#ffd700');
+
+    // Broadcast updated politics to all
+    broadcastToAll({
+        type: 'politics_update',
+        politics: sanitizePolitics()
+    });
+
     scheduleWorldSave();
 }
 
@@ -3851,6 +4236,7 @@ function handleSiegeDeclare(clientId, message) {
         });
 
         addGlobalChatMessage('System', `🏰 ${attacker.name} laid siege to ${districtId.replace(/_/g, ' ')} and conquered it from ${oldOwner}!`, '#8b0000');
+        recalcTopDon();
     } else {
         terr.defenseRating = Math.min(300, (terr.defenseRating || 100) + 15);
 
@@ -4018,12 +4404,15 @@ function handleMarketplaceBuy(clientId, message) {
     if ((buyer.money || 0) < listing.price) return fail('Not enough money.');
     
     // Process the transaction
+    const marketFeeRate = (gameState.politics.policies.marketFee || 5) / 100;
+    const feeAmount = Math.floor(listing.price * marketFeeRate);
+    const sellerReceives = listing.price - feeAmount;
     buyer.money -= listing.price;
     
-    // Give money to seller
+    // Give money to seller (minus market fee)
     const sellerPlayer = gameState.players.get(listing.sellerId);
     if (sellerPlayer) {
-        sellerPlayer.money = (sellerPlayer.money || 0) + listing.price;
+        sellerPlayer.money = (sellerPlayer.money || 0) + sellerReceives;
         const sellerState = gameState.playerStates.get(listing.sellerId);
         if (sellerState) { sellerState.money = sellerPlayer.money; sellerState.lastUpdate = Date.now(); }
     }
@@ -4187,6 +4576,11 @@ server.listen(PORT, () => {
     // Initialize jail bots on startup
     updateJailBots();
     console.log(`🔒 Jail bots initialized: ${gameState.jailBots.length} inmates`);
+    // Calculate Top Don on startup based on existing territories
+    recalcTopDon();
+    if (gameState.politics.topDonName) {
+        console.log(`👑 Top Don: ${gameState.politics.topDonName} (${gameState.politics.territoryCount} territories)`);
+    }
 });
 
 // ==================== GRACEFUL SHUTDOWN ====================

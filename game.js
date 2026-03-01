@@ -4,7 +4,7 @@ import { showEmpireOverview } from './empireOverview.js';
 import { player, gainExperience, checkLevelUp, regenerateEnergy, startEnergyRegenTimer, startEnergyRegeneration, SKILL_TREE_DEFS, getTreePointsSpent, canUnlockNode, isNodeAccessible, achievements, CHARACTER_BACKGROUNDS, CHARACTER_PERKS } from './player.js';
 import { jobs, stolenCarTypes } from './jobs.js';
 import { crimeFamilies, factionEffects } from './factions.js';
-import { familyStories, missionProgress, factionMissions } from './missions.js?v=1.8.0';
+import { familyStories, missionProgress, factionMissions } from './missions.js?v=1.8.1';
 import { narrationVariations, getRandomNarration, getFamilyNarration } from './narration.js';
 import { storeItems, realEstateProperties, businessTypes, launderingMethods } from './economy.js';
 import { prisonerNames, recruitNames, availableRecruits, jailPrisoners, jailbreakPrisoners, setJailPrisoners, setJailbreakPrisoners, generateJailPrisoners, generateJailbreakPrisoners, generateAvailableRecruits } from './generators.js';
@@ -2491,7 +2491,7 @@ window.dismissMember = async function(memberId) {
   player.gang.gangMembers = player.gang.gangMembers.filter(m => m.id !== memberId);
   player.gang.members = player.gang.gangMembers.length;
   
-  if (typeof recalculateGangPower === 'function') recalculateGangPower();
+  recalculatePower();
   GameLogging.logEvent(`${member.name} has been dismissed from your gang.`);
   showGangManagementScreen();
   updateUI();
@@ -3582,15 +3582,18 @@ async function collectBusinessIncome(businessIndex) {
   const terrData = tState[bizDistrict];
   const myName = (typeof onlineWorldState !== 'undefined' && onlineWorldState.username) || '';
   if (terrData && terrData.owner && terrData.owner !== myName) {
-    taxAmount = Math.floor(grossIncome * BUSINESS_TAX_RATE);
+    // Use server-synced political tax rate if available, otherwise fallback
+    const effectiveTaxRate = (typeof onlineWorldState !== 'undefined' && onlineWorldState.politics && onlineWorldState.politics.policies)
+      ? (onlineWorldState.politics.policies.worldTaxRate || 10) / 100
+      : BUSINESS_TAX_RATE;
+    taxAmount = Math.floor(grossIncome * effectiveTaxRate);
     taxOwnerName = terrData.owner;
-    // Notify server to credit territory owner
+    // Notify server to credit territory owner (server recomputes authoritatively)
     if (typeof onlineWorldState !== 'undefined' && onlineWorldState.isConnected && onlineWorldState.socket) {
       onlineWorldState.socket.send(JSON.stringify({
         type: 'business_income_tax',
         district: bizDistrict,
-        grossIncome: grossIncome,
-        taxAmount: taxAmount
+        grossIncome: grossIncome
       }));
     }
   }
@@ -3651,13 +3654,15 @@ async function collectAllBusinessIncome() {
     const bizDistrict = business.districtId || player.currentTerritory;
     const terrData = tState[bizDistrict];
     if (terrData && terrData.owner && terrData.owner !== myName) {
-      taxAmount = Math.floor(grossIncome * BUSINESS_TAX_RATE);
+      const effectiveTaxRate = (typeof onlineWorldState !== 'undefined' && onlineWorldState.politics && onlineWorldState.politics.policies)
+        ? (onlineWorldState.politics.policies.worldTaxRate || 10) / 100
+        : BUSINESS_TAX_RATE;
+      taxAmount = Math.floor(grossIncome * effectiveTaxRate);
       if (typeof onlineWorldState !== 'undefined' && onlineWorldState.isConnected && onlineWorldState.socket) {
         onlineWorldState.socket.send(JSON.stringify({
           type: 'business_income_tax',
           district: bizDistrict,
-          grossIncome: grossIncome,
-          taxAmount: taxAmount
+          grossIncome: grossIncome
         }));
       }
     }
@@ -14013,8 +14018,20 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = "1.8.0";
+const CURRENT_VERSION = "1.8.1";
 const VERSION_UPDATES = {
+  "1.8.1": {
+    title: "Political System & Bug Fixes",
+    date: "March 2026",
+    changes: [
+      "Political System — Top Don (player/alliance with most territories) can set server-wide policies: world tax rate, market fees, crime bonus, jail time modifier, heist bonus",
+      "Alliance Discipline — leaders can warn, fine, demote, or kick members with full audit logging",
+      "Energy items added to mobile navbar for quick access",
+      "Fixed gang member dismissal not recalculating player power",
+      "Fixed political tax rate having no effect above 10% — server now computes tax authoritatively",
+      "Removed dead code: stale TAX_RATE constants in server.js and territories.js"
+    ]
+  },
   "1.8.0": {
     title: "Story Expansion & Unified Skill Tree",
     date: "March 2026",
@@ -15990,13 +16007,15 @@ function autoCollectBusinessesAndTribute() {
         const bizDistrict = biz.districtId || player.currentTerritory;
         const terrData = tState[bizDistrict];
         if (terrData && terrData.owner && terrData.owner !== myName) {
-          taxAmount = Math.floor(grossIncome * BUSINESS_TAX_RATE);
+          const effectiveTaxRate = (typeof onlineWorldState !== 'undefined' && onlineWorldState.politics && onlineWorldState.politics.policies)
+            ? (onlineWorldState.politics.policies.worldTaxRate || 10) / 100
+            : BUSINESS_TAX_RATE;
+          taxAmount = Math.floor(grossIncome * effectiveTaxRate);
           if (typeof onlineWorldState !== 'undefined' && onlineWorldState.isConnected && onlineWorldState.socket) {
             onlineWorldState.socket.send(JSON.stringify({
               type: 'business_income_tax',
               district: bizDistrict,
-              grossIncome: grossIncome,
-              taxAmount: taxAmount
+              grossIncome: grossIncome
             }));
           }
         }

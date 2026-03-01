@@ -185,9 +185,6 @@ export const NPC_OWNER_NAMES = new Set(
 // TERRITORY CONSTANTS
 // ────────────────────────────────────────────────────────────────────────
 
-/** Flat tax rate territory owners collect from all residents' income */
-export const TAX_RATE = 0.10;
-
 /** Cooldown between territory moves (ms) — 1 hour */
 export const MOVE_COOLDOWN_MS = 60 * 60 * 1000;
 

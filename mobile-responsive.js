@@ -610,6 +610,9 @@ export const MobileSystem = {
         properties: { label: 'Property',  action: 'showRealEstate()' },
         missions:   { label: 'Missions',  action: 'showMissions()' },
         stats:      { label: 'Stats',     action: 'showPlayerStats()' },
+        coffee:     { label: '☕ Coffee',  action: 'buyCoffee()' },
+        energydrink:{ label: '⚡ Energy',  action: 'buyEnergyDrink()' },
+        steroids:   { label: '💉 Steroids', action: 'buySteroids()' },
     },
     
     // Default tabs (these are used when no customization has been saved)
