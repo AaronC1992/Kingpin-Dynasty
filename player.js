@@ -233,7 +233,6 @@ export const player = {
   },
   businesses: [], // Array to store owned fronts
   dirtyMoney: 0, // Cash that needs to be cleaned
-  suspicionLevel: 0, // 0-100, affects Fed attention
   launderingSetups: [], // Array to store active wash cycles
   activeLaundering: [], // Array of pending laundering ops {id, methodId, methodName, amount, cleanAmount, startedAt, completesAt}
   businessLastCollected: {}, // Object to track last collection time for each front
@@ -336,24 +335,6 @@ export function regenerateEnergy() {
           player.wantedLevel = Math.max(0, player.wantedLevel - 1);
           if (typeof logAction === 'function') {
             logAction(" Your forensics expertise helps eliminate evidence over time. Heat level decreased by 1!");
-          }
-        }
-      }
-      
-      // Suspicion decay: suspicion slowly decreases when not doing dirty jobs
-      // Base 15% chance per energy tick to lose 1 suspicion, boosted by forensics and stealth
-      if (player.suspicionLevel && player.suspicionLevel > 0) {
-        let decayChance = 15; // 15% base chance per energy tick
-        const forensicsLevel = (player.skillTree && player.skillTree.intelligence && player.skillTree.intelligence.forensics) || 0;
-        const stealthLevel = (player.skillTree && player.skillTree.stealth && player.skillTree.stealth.shadow_step) || 0;
-        decayChance += forensicsLevel * 3; // +3% per forensics level
-        decayChance += stealthLevel * 1; // +1% per stealth level
-        
-        if (Math.random() * 100 < decayChance) {
-          const decayAmount = 1 + Math.floor(forensicsLevel / 4); // 1 base, +1 per 4 forensics levels
-          player.suspicionLevel = Math.max(0, player.suspicionLevel - decayAmount);
-          if (typeof logAction === 'function' && decayAmount > 0 && player.suspicionLevel > 0) {
-            logAction(`🕵️ Time passes and the feds lose interest... suspicion decreased by ${decayAmount}.`);
           }
         }
       }

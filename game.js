@@ -3754,7 +3754,7 @@ function showMoneyLaundering() {
       <h3>Current Status</h3>
       <p><strong>Dirty Money:</strong> $${player.dirtyMoney.toLocaleString()}</p>
       <p><strong>Clean Money:</strong> $${player.money.toLocaleString()}</p>
-      <p><strong>Suspicion Level:</strong> ${player.suspicionLevel || 0}%</p>
+      <p><strong>Heat Level:</strong> ${player.wantedLevel || 0} / 100</p>
     </div>
   `;
 
@@ -3822,7 +3822,7 @@ function showMoneyLaundering() {
               <div style="background: rgba(0, 0, 0, 0.3); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
                 <p style="margin: 5px 0;"><strong>Clean Rate:</strong> ${(method.cleanRate * 100).toFixed(0)}%</p>
                 <p style="margin: 5px 0;"><strong>Processing Time:</strong> ${method.timeRequired} min</p>
-                <p style="margin: 5px 0;"><strong>Suspicion Risk:</strong> ${method.suspicionRisk}%</p>
+                <p style="margin: 5px 0;"><strong>Interception Risk:</strong> ${method.suspicionRisk}%</p>
                 <p style="margin: 5px 0;"><strong>Range:</strong> $${method.minAmount.toLocaleString()} - $${method.maxAmount.toLocaleString()}</p>
                 <p style="margin: 5px 0;"><strong>Energy Cost:</strong> ${method.energyCost}</p>
                 ${method.businessRequired ? `<p style="margin: 5px 0; color: #f39c12;"><strong>Requires:</strong> ${businessTypes.find(bt => bt.id === method.businessRequired)?.name || 'Business'}</p>` : ''}
@@ -3849,14 +3849,14 @@ function showMoneyLaundering() {
   launderHTML += `
     <div style="background: rgba(231, 76, 60, 0.2); padding: 20px; border-radius: 10px; border: 1px solid #e74c3c; margin: 20px 0;">
       <h4 style="color: #e74c3c;">NOTICE</h4>
-      <p style="color: #ecf0f1;">Money laundering carries risks. High suspicion levels may attract law enforcement attention. Choose your methods carefully and don't get greedy.</p>
+      <p style="color: #ecf0f1;">Money laundering carries risks. High heat levels may attract law enforcement attention. Choose your methods carefully and don't get greedy.</p>
     </div>
     
     <div style="background: rgba(46, 204, 113, 0.15); padding: 20px; border-radius: 10px; border: 1px solid #2ecc71; margin: 20px 0;">
       <h4 style="color: #2ecc71;">TIPS</h4>
       <p style="color: #ecf0f1;">• The <strong>Money Laundering</strong> job (under Jobs) also converts dirty money to clean money at 80-95% rates.</p>
       <p style="color: #ecf0f1;">• Owning a <strong>Counterfeiting Operation</strong> business gives +3% conversion rate on the Money Laundering job.</p>
-      <p style="color: #ecf0f1;">• Dirty money jobs (Bank Job, Counterfeiting Money) increase your suspicion level — launder regularly!</p>
+      <p style="color: #ecf0f1;">• Dirty money jobs (Bank Job, Counterfeiting Money) increase your heat level — launder regularly!</p>
     </div>
     
     <div class="page-nav" style="justify-content: center;">
@@ -3938,37 +3938,36 @@ function startLaundering(methodId) {
   player.energy -= method.energyCost;
   player.dirtyMoney -= amount;
   
-  // Roll for suspicion (interception check happens NOW)
-  const suspicionRoll = Math.random() * 100;
-  const currentSuspicion = player.suspicionLevel || 0;
-  let adjustedSuspicionRisk = method.suspicionRisk + (currentSuspicion * 0.5);
+  // Roll for interception (heat-based risk)
+  const riskRoll = Math.random() * 100;
+  const currentHeat = player.wantedLevel || 0;
+  let adjustedRisk = method.suspicionRisk + (currentHeat * 0.5);
   
-  // Utility item: Burner Phone reduces suspicion risk by 15%
+  // Utility item: Burner Phone reduces risk by 15%
   if (hasUtilityItem('Burner Phone')) {
-    adjustedSuspicionRisk *= 0.85;
-    logAction(`Your Burner Phone keeps communications untraceable — suspicion risk reduced.`);
+    adjustedRisk *= 0.85;
+    logAction(`Your Burner Phone keeps communications untraceable — interception risk reduced.`);
   }
   
-  if (suspicionRoll < adjustedSuspicionRisk) {
+  if (riskRoll < adjustedRisk) {
     // CAUGHT — Lose 30-70%, return the rest as dirty money
     const lossPercentage = 0.3 + (Math.random() * 0.4);
     const lost = Math.floor(amount * lossPercentage);
     const returned = amount - lost;
-    const suspicionGain = 10 + Math.floor(Math.random() * 15);
+    const heatGain = 5 + Math.floor(Math.random() * 8);
     
     player.dirtyMoney += returned; // Give back the non-confiscated portion
-    player.suspicionLevel = (player.suspicionLevel || 0) + suspicionGain;
-    player.wantedLevel += Math.floor(suspicionGain / 2);
+    player.wantedLevel = Math.min(100, player.wantedLevel + heatGain);
     
-    showToast(`Operation compromised! Lost $${lost.toLocaleString()}, $${returned.toLocaleString()} returned. +${suspicionGain} suspicion.`, 'error');
-    logAction(`The operation goes sideways! Feds intercept the cash. $${lost.toLocaleString()} seized, but $${returned.toLocaleString()} dirty money was recovered. The heat is rising (+${suspicionGain} suspicion).`);
+    showToast(`Operation compromised! Lost $${lost.toLocaleString()}, $${returned.toLocaleString()} returned. +${heatGain} heat.`, 'error');
+    logAction(`The operation goes sideways! Feds intercept the cash. $${lost.toLocaleString()} seized, but $${returned.toLocaleString()} dirty money was recovered. The heat is rising (+${heatGain} heat).`);
   } else {
     // SUCCESS — Queue the laundering operation with a real timer
     const cleanAmount = Math.floor(amount * method.cleanRate);
-    const suspicionGain = Math.floor(method.suspicionRisk * 0.1);
+    const heatGain = Math.floor(method.suspicionRisk * 0.05);
     const processingTimeMs = method.timeRequired * 60 * 1000; // timeRequired is in minutes (real-time)
     
-    player.suspicionLevel = (player.suspicionLevel || 0) + suspicionGain;
+    player.wantedLevel = Math.min(100, player.wantedLevel + heatGain);
     
     const operation = {
       id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
@@ -6595,24 +6594,6 @@ function updateUI() {
     dirtyMoneyDisplay.innerText = `Dirty: $${dirtyAmount.toLocaleString()}`;
   }
   
-  // Update suspicion display in stats bar
-  const suspicionDisplay = document.getElementById("suspicion-display");
-  if (suspicionDisplay) {
-    const suspicion = player.suspicionLevel || 0;
-    suspicionDisplay.innerText = `Suspicion: ${suspicion}%`;
-    // Color-code based on danger thresholds
-    if (suspicion >= 75) {
-      suspicionDisplay.style.color = '#e74c3c'; // Red - critical
-    } else if (suspicion >= 50) {
-      suspicionDisplay.style.color = '#e67e22'; // Orange - high
-    } else if (suspicion >= 25) {
-      suspicionDisplay.style.color = '#f1c40f'; // Yellow - moderate
-    } else {
-      suspicionDisplay.style.color = '#2ecc71'; // Green - safe
-    }
-    suspicionDisplay.style.display = suspicion > 0 ? 'block' : 'none';
-  }
-  
   document.getElementById("power-display").innerText = `Influence: ${player.power}`;
   
   // Add turf display if player has turf
@@ -6825,10 +6806,6 @@ function showAdminPanel() {
           <span>Ammo (${player.ammo || 0})</span>
           <input type="number" id="admin-ammo" value="${player.ammo || 0}" min="0" style="padding:6px; background:#1a1a2e; color:#e0e0e0; border:1px solid #444; border-radius:4px;">
         </label>
-        <label style="display:flex; flex-direction:column; gap:4px;">
-          <span>Suspicion (${player.suspicionLevel || 0})</span>
-          <input type="number" id="admin-suspicion" value="${player.suspicionLevel || 0}" min="0" max="100" style="padding:6px; background:#1a1a2e; color:#e0e0e0; border:1px solid #444; border-radius:4px;">
-        </label>
       </div>
       <div style="margin-top:12px; display:flex; gap:8px;">
         <button onclick="adminApplyStats()" style="border-color:#e74c3c; color:#e74c3c; flex:1;">Apply All Changes</button>
@@ -6894,7 +6871,6 @@ function adminApplyStats() {
   player.wantedLevel = Math.max(0, Math.min(100, getValue('admin-wanted')));
   player.gang.members = Math.max(0, getValue('admin-gang'));
   player.ammo = Math.max(0, getValue('admin-ammo'));
-  player.suspicionLevel = Math.max(0, Math.min(100, getValue('admin-suspicion')));
   showBriefNotification('Admin: Stats updated!', 'success');
   logAction('[Admin] Stats manually set via admin panel');
   updateUI();
@@ -6916,7 +6892,6 @@ function adminResetStats() {
       player.wantedLevel = 0;
       player.gang.members = 0;
       player.ammo = 0;
-      player.suspicionLevel = 0;
       player.equippedWeapon = null;
       player.equippedArmor = null;
       player.equippedVehicle = null;
@@ -6940,9 +6915,8 @@ function adminJailRelease() {
 
 function adminClearWanted() {
   player.wantedLevel = 0;
-  player.suspicionLevel = 0;
   showBriefNotification('Admin: Wanted level cleared!', 'success');
-  logAction('[Admin] Wanted level and suspicion cleared');
+  logAction('[Admin] Wanted level cleared');
   updateUI();
   showAdminPanel();
 }
@@ -7373,7 +7347,7 @@ window.applyUIToggles = applyUIToggles;
 const STAT_BAR_ITEMS = [
   'money-display', 'health-display', 'energy-display',
   'wanted-level-display', 'level-display', 'dirty-money-display',
-  'suspicion-display', 'power-display', 'territory-display',
+  'power-display', 'territory-display',
   'current-territory-display', 'experience-display', 'skill-points-display',
   'season-display', 'weather-display', 'ammo-display', 'gas-display',
   'reputation-display'
@@ -7527,9 +7501,9 @@ function buySteroids() {
     const energyBefore = player.energy;
     player.money -= steroid.price;
     player.energy = Math.min(player.maxEnergy, player.energy + (steroid.energyRestore || 60));
-    // Steroids are risky — small health cost and suspicion bump
+    // Steroids are risky — small health cost and heat bump
     player.health = Math.max(0, player.health - 5);
-    player.suspicionLevel = Math.min(100, player.suspicionLevel + 5);
+    player.wantedLevel = Math.min(100, player.wantedLevel + 3);
 
     const energyGained = player.energy - energyBefore;
     showBriefNotification(`Bought Steroids! +${energyGained} energy (risky). Energy: ${player.energy}/${player.maxEnergy}`, 'warning');
@@ -7575,9 +7549,7 @@ function hideAllScreens() {
   document.getElementById("jobs-screen").style.display = "none";
   document.getElementById("store-screen").style.display = "none";
   document.getElementById("real-estate-screen").style.display = "none";
-  document.getElementById("skills-screen").style.display = "none";
   document.getElementById("gang-screen").style.display = "none";
-  document.getElementById("stolen-cars-screen").style.display = "none";
   document.getElementById("jail-screen").style.display = "none";
   document.getElementById("court-house-screen").style.display = "none";
   document.getElementById("inventory-screen").style.display = "none";
@@ -8144,10 +8116,10 @@ async function startJob(index) {
   // Only Bank Job and Counterfeiting Money pay dirty money; all other jobs pay clean money
   if (job.paysDirty) {
     player.dirtyMoney = (player.dirtyMoney || 0) + earnings;
-    // Dirty money jobs raise suspicion — the feds notice large illegal cash flows
-    const dirtySuspicion = 5 + Math.floor(Math.random() * 11); // 5-15 suspicion
-    player.suspicionLevel = Math.min(100, (player.suspicionLevel || 0) + dirtySuspicion);
-    logAction(`Handling that much dirty cash raises eyebrows... (+${dirtySuspicion} suspicion)`);
+    // Dirty money jobs raise heat — the feds notice large illegal cash flows
+    const dirtyHeat = 3 + Math.floor(Math.random() * 6); // 3-8 heat
+    player.wantedLevel = Math.min(100, player.wantedLevel + dirtyHeat);
+    logAction(`Handling that much dirty cash raises eyebrows... (+${dirtyHeat} heat)`);
   } else {
     player.money += earnings;
   }
@@ -8475,7 +8447,7 @@ function handleLaunderMoneyJob(job, approachLabel) {
     // Caught! Lose the dirty money being laundered and go to jail
     const seized = Math.floor(amountToLaunder * (0.3 + Math.random() * 0.4)); // Feds seize 30-70%
     player.dirtyMoney = Math.max(0, player.dirtyMoney - seized);
-    player.suspicionLevel = Math.min(100, (player.suspicionLevel || 0) + 15);
+    player.wantedLevel = Math.min(100, player.wantedLevel + 8);
     sendToJail(job.wantedLevelGain);
     logAction(`The feds bust your laundering operation! $${seized.toLocaleString()} in dirty money seized as evidence. You're dragged away in cuffs.`);
     return;
@@ -8492,16 +8464,16 @@ function handleLaunderMoneyJob(job, approachLabel) {
   // Approach bonus: each approach has distinct trade-offs
   if (approachLabel === 'Smart') {
     conversionRate += 0.07; // Smart: +7% conversion rate (expert financial maneuvers)
-    // Smart approach also reduces suspicion gain
+    // Smart approach also reduces heat gain
   }
   if (approachLabel === 'Loud') {
     conversionRate -= 0.03; // Loud: -3% conversion (sloppy but fast)
-    player.suspicionLevel = Math.min(100, (player.suspicionLevel || 0) + 8); // +8 suspicion
+    player.wantedLevel = Math.min(100, player.wantedLevel + 4); // +4 heat
     logAction(`Going loud draws attention — the feds notice the large cash movements.`);
   }
   if (approachLabel === 'Stealth') {
     conversionRate += 0.02; // Stealth: +2% conversion (careful handling)
-    // Stealth approach reduces suspicion gain later
+    // Stealth approach reduces heat gain later
   }
 
   // Owning a Counterfeiting Operation improves conversion (mixing fake with real bills)
@@ -8533,15 +8505,15 @@ function handleLaunderMoneyJob(job, approachLabel) {
   }
   player.wantedLevel += wantedLevelGain;
 
-  // Small suspicion gain even on success (modified by approach)
-  let baseSuspicionGain = 2 + Math.floor(Math.random() * 4); // 2-5 suspicion
+  // Small heat gain even on success (modified by approach)
+  let baseHeatGain = 1 + Math.floor(Math.random() * 3); // 1-3 heat
   if (approachLabel === 'Smart') {
-    baseSuspicionGain = Math.max(0, baseSuspicionGain - 2); // Smart: reduced suspicion
+    baseHeatGain = Math.max(0, baseHeatGain - 1); // Smart: reduced heat
   } else if (approachLabel === 'Stealth') {
-    baseSuspicionGain = Math.max(0, Math.floor(baseSuspicionGain * 0.3)); // Stealth: minimal suspicion
+    baseHeatGain = Math.max(0, Math.floor(baseHeatGain * 0.3)); // Stealth: minimal heat
   }
-  // Loud suspicion already added above
-  player.suspicionLevel = Math.min(100, (player.suspicionLevel || 0) + baseSuspicionGain);
+  // Loud heat already added above
+  player.wantedLevel = Math.min(100, player.wantedLevel + baseHeatGain);
 
   // Reputation and XP based on risk level
   player.reputation += 1.5;
@@ -8788,95 +8760,9 @@ function closeCarTheftResult() {
 }
 
 
+// Motor Pool moved into Stash screen as a tab
 function showStolenCars() {
-  if (player.inJail) {
-    showBriefNotification("You can't access your garage while in jail!", 'error');
-    return;
-  }
-
-  let carsHTML = `
-    <h2>Vehicle Garage</h2>
-    <p>Your collection of acquired vehicles. Scrap them for parts or sell through <strong style="color:#8e44ad;">The Fence</strong> for full black market value!</p>
-    <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
-      <button onclick="showFence()" style="background: linear-gradient(45deg, #8e44ad, #6c3483); color: white; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">
-        Sell at The Fence
-      </button>
-      ${(typeof showVehicleMarketplace === 'function' || window.showVehicleMarketplace) ? '<button onclick="showVehicleMarketplace()" style="background: linear-gradient(45deg, #2980b9, #1a5276); color: white; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">Player Marketplace</button>' : ''}
-    </div>
-  `;
-
-  if (player.stolenCars.length === 0) {
-    carsHTML += `
-      <div style="text-align: center; margin: 40px 0; padding: 30px; background: rgba(52, 73, 94, 0.6); border-radius: 15px; border: 2px solid #f39c12;">
-        <h3 style="color: #f39c12; margin-bottom: 15px;">Empty Garage</h3>
-        <p style="color: #ecf0f1; margin-bottom: 20px;">Your garage is currently empty. Start stealing cars through jobs to build your vehicle collection!</p>
-        <div style="background: rgba(243, 156, 18, 0.2); padding: 15px; border-radius: 10px; border: 1px solid #f39c12; margin: 20px 0;">
-          <p style="color: #ecf0f1; margin: 0;"><strong>Tip:</strong> Look for "Car Theft" jobs to acquire vehicles. Cars can be sold for money or used to improve job success rates!</p>
-        </div>
-      </div>
-    `;
-  } else {
-    carsHTML += `
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px; margin: 25px 0;">
-        ${player.stolenCars.map((car, index) => {
-          let conditionText = car.damagePercentage <= 15 ? 'PRISTINE' : 
-                   car.damagePercentage <= 50 ? 'DAMAGED' : 'HEAVILY DAMAGED';
-          let conditionColor = car.damagePercentage <= 15 ? '#2ecc71' : 
-                    car.damagePercentage <= 50 ? '#f39c12' : '#e74c3c';
-          const carImageSrc = car.image || `vehicles/${car.name}.png`;
-          
-          return `
-            <div style="background: rgba(44, 62, 80, 0.8); border-radius: 15px; padding: 25px; border: 2px solid #34495e; box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5); transition: transform 0.3s ease;">
-              <div style="text-align: center; margin-bottom: 20px;">
-                <img src="${carImageSrc}" alt="${car.name}" 
-                   style="width: 220px; height: 165px; border-radius: 12px; object-fit: cover; 
-                      border: 3px solid #ecf0f1; margin-bottom: 15px; transition: transform 0.3s ease;" 
-                   onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjIwIiBoZWlnaHQ9IjE2NSIgdmlld0JveD0iMCAwIDIyMCAxNjUiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjIyMCIgaGVpZ2h0PSIxNjUiIGZpbGw9IiM3ZjhjOGQiLz48dGV4dCB4PSIxMTAiIHk9IjgyLjUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNiIgZmlsbD0iI2VjZjBmMSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSI+VmVoaWNsZSBJbWFnZTwvdGV4dD48L3N2Zz4=';" />
-                <h3 style="color: #ecf0f1; margin: 15px 0; font-size: 1.3em;">${car.name}</h3>
-              </div>
-              
-              <div style="text-align: center; margin: 20px 0;">
-                <div style="background: rgba(0, 0, 0, 0.3); padding: 15px; border-radius: 10px; margin-bottom: 20px;">
-                  <p style="margin: 8px 0; color: ${conditionColor}; font-weight: bold; font-size: 1.1em;">
-                    ${conditionText} (${car.damagePercentage}% damaged)
-                  </p>
-                  <p style="margin: 8px 0; color: #f39c12; font-size: 1.05em;"><strong>Current Value:</strong> $${car.currentValue.toLocaleString()}</p>
-                  <p style="margin: 8px 0; color: #3498db; font-size: 1.05em;"><strong>Base Value:</strong> $${car.baseValue.toLocaleString()}</p>
-                  <p style="margin: 8px 0; color: #95a5a6; font-size: 1.05em;"><strong>Times Used:</strong> ${car.usageCount}</p>
-                </div>
-                
-                <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
-                  <button onclick="scrapStolenCar(${index})" 
-                      style="background: linear-gradient(45deg, #e67e22, #d35400); color: white; padding: 12px 18px; 
-                          border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 15px; 
-                          transition: all 0.3s ease; min-width: 120px;">
-                    Scrap ($${Math.floor(car.currentValue * 0.35).toLocaleString()})
-                  </button>
-                  <button onclick="useCar(${index}, 'job')" ${car.damagePercentage >= 90 ? 'disabled' : ''}
-                      style="background: ${car.damagePercentage >= 90 ? '#7f8c8d' : 'linear-gradient(45deg, #2ecc71, #27ae60)'}; 
-                          color: white; padding: 12px 18px; border: none; border-radius: 10px; 
-                          font-weight: bold; cursor: ${car.damagePercentage >= 90 ? 'not-allowed' : 'pointer'}; font-size: 15px;
-                          transition: all 0.3s ease; min-width: 120px;">
-                    ${car.damagePercentage >= 90 ? '🚫 Too Damaged' : 'Use for Job'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          `;
-        }).join('')}
-      </div>
-    `;
-  }
-
-  carsHTML += `
-    <div class="page-nav" style="justify-content: center;">
-      <button class="nav-btn-back" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
-    </div>
-  `;
-
-  document.getElementById("stolen-cars-content").innerHTML = carsHTML;
-  hideAllScreens();
-  document.getElementById("stolen-cars-screen").style.display = "block";
+  showInventory('motorpool');
 }
 
 // Function to use a car for jobs
@@ -8893,7 +8779,7 @@ function useCar(index, purpose) {
       player.selectedCar = index;
       showBriefNotification(`Selected ${car.name} (${car.damagePercentage}% damaged) for your next job. It will provide bonuses but may take damage.`, 'success');
       logAction(`You pat the hood of your ${car.name} with a grin. This beauty will be your ride for the next job. Time to put it to work.`);
-      showStolenCars(); // Refresh the display
+      showInventory('motorpool'); // Refresh the display
     }
   }
 }
@@ -9112,9 +8998,9 @@ function showSkills() {
     showBriefNotification("You can't access skills while you're in jail!", 'danger');
     return;
   }
-  hideAllScreens();
-  document.getElementById("skills-screen").style.display = "block";
-  renderSkillTreeUI();
+  // Redirect to the Skills tab inside the Stats screen
+  showPlayerStats();
+  setTimeout(() => showPlayerStatsTab('skills'), 50);
 }
 
 function renderSkillTreeUI() {
@@ -9234,7 +9120,13 @@ function renderSkillTreeUI() {
 
 function selectSkillTree(treeId) {
   _activeSkillTree = treeId;
-  renderSkillTreeUI();
+  // If skills tab is active in the Stats screen, re-render via lazy-load
+  const panelSkills = document.getElementById('panel-skills');
+  if (panelSkills && panelSkills.style.display !== 'none') {
+    showPlayerStatsTab('skills');
+  } else {
+    renderSkillTreeUI();
+  }
 }
 
 function upgradeNode(treeName, nodeId) {
@@ -9274,7 +9166,13 @@ function upgradeNode(treeName, nodeId) {
   player.playstyleStats.skillTreeUpgrades = (player.playstyleStats.skillTreeUpgrades || 0) + 1;
 
   updateUI();
-  renderSkillTreeUI();
+  // Re-render skill tree in correct context (stats tab or standalone)
+  const panelSkills = document.getElementById('panel-skills');
+  if (panelSkills && panelSkills.style.display !== 'none') {
+    showPlayerStatsTab('skills');
+  } else {
+    renderSkillTreeUI();
+  }
 
   setTimeout(() => { window.upgradingSkill = false; }, 100);
   setTimeout(() => { window.upgradingSkill = false; }, 1000);
@@ -9755,8 +9653,7 @@ let weatherTimer = null;
 let seasonalEventTimer = null;
 let crackdownTimer = null;
 let cleanupTimer = null;
-let suspicionTimer = null;
-let fbiTimer = null;
+
 let currentWeather = "clear";
 let currentSeason = "spring";
 
@@ -10115,13 +10012,20 @@ const newsEvents = [
   }
 ];
 
-// ==================== SUSPICION CONSEQUENCES SYSTEM ====================
-// Checks player.suspicionLevel thresholds and triggers escalating consequences
-// Called periodically from the energy regeneration loop
+// (Suspicion system removed — using unified Heat/Wanted Level instead)
 
-let lastSuspicionCheck = 0; // Timestamp of last check to throttle frequency
+// Police Crackdown System placeholder — keep crackdown array below
+// Legacy dead functions removed: checkSuspicionConsequences, checkFBIInvestigation,
+// showFBIEventOverlay, handleFBIChoice, executeFBIRaid
 
-function checkSuspicionConsequences() {
+/* eslint-disable no-unused-vars */
+function checkSuspicionConsequences() { /* no-op */ }
+function checkFBIInvestigation() { /* no-op */ }
+function handleFBIChoice() { /* no-op */ }
+/* eslint-enable no-unused-vars */
+
+/* --- REMOVED BLOCK START (suspicion + FBI investigation) ---
+function _removed_checkSuspicionConsequences() {
   const suspicion = player.suspicionLevel || 0;
   const now = Date.now();
   
@@ -10531,6 +10435,7 @@ function executeFBIRaid() {
   sendToJail(25);
   updateUI();
 }
+--- REMOVED BLOCK END --- */
 
 // Police Crackdown System
 const crackdownTypes = [
@@ -11010,15 +10915,13 @@ const menuUnlockConfig = [
   // === ALWAYS AVAILABLE (Level 0) ===
   { id: 'jobs',        fn: 'showJobs()',              label: 'Jobs',           tip: 'Complete tasks for cash & XP',     level: 0 },
   { id: 'store',       fn: 'showStore()',             label: 'Black Market',   tip: 'Buy weapons, armor & supplies',    level: 0 },
-  { id: 'inventory',   fn: 'showInventory()',         label: 'Stash',          tip: 'View & equip your items',          level: 0 },
+  { id: 'inventory',   fn: 'showInventory()',         label: 'Stash',          tip: 'Inventory, equipment & motor pool',  level: 0 },
   { id: 'hospital',    fn: 'showHospital()',          label: 'The Doctor',     tip: 'Heal your injuries',               level: 0 },
   { id: 'options',     fn: 'showOptions()',           label: 'Settings',       tip: 'Save, load & game options',        level: 0 },
 
   // === EARLY GAME (Level 2-3) ===
   { id: 'relocate',   fn: 'showTerritoryRelocation()', label: 'Relocate',     tip: 'Move to a different district',     level: 2 },
-  { id: 'skills',      fn: 'showSkills()',            label: 'Expertise',      tip: 'Spend skill points & upgrade',     level: 2 },
-  { id: 'playerstats', fn: 'showPlayerStats()',       label: 'Stats',           tip: 'Stats, empire rating & overview',   level: 2 },
-  { id: 'cars',        fn: 'showStolenCars()',        label: 'Motor Pool',     tip: 'Manage your stolen vehicles',      level: 2 },
+  { id: 'playerstats', fn: 'showPlayerStats()',       label: 'Stats',           tip: 'Stats, skills, empire & overview',  level: 2 },
   { id: 'realestate',  fn: 'showRealEstate()',        label: 'Properties',     tip: 'Real estate & business fronts',    level: 3 },
   { id: 'missions',    fn: 'showMissions()',          label: 'Operations',     tip: 'Story missions & special ops',     level: 0 },
 
@@ -11234,7 +11137,6 @@ function showPlayerStats() {
     row('Power', player.power || 0, '#e67e22'),
     row('Reputation', player.reputation || 0, '#9b59b6'),
     row('Wanted Level', `${player.wantedLevel || 0} / 100`, '#e74c3c'),
-    row('Suspicion', `${player.suspicionLevel || 0}%`, '#e67e22'),
     row('Skill Points', player.skillPoints || 0, '#d4af37'),
   ].join('');
 
@@ -11332,6 +11234,7 @@ function showPlayerStats() {
       <button id="tab-showcase" onclick="showPlayerStatsTab('showcase')" style="background:rgba(155,89,182,0.3);color:#9b59b6;padding:8px 16px;border:1px solid #9b59b6;border-radius:8px 8px 0 0;cursor:pointer;font-weight:bold;font-size:0.95em;">Character Showcase</button>
       <button id="tab-empire" onclick="showPlayerStatsTab('empire')" style="background:rgba(231,76,60,0.3);color:#e74c3c;padding:8px 16px;border:1px solid #e74c3c;border-radius:8px 8px 0 0;cursor:pointer;font-weight:bold;font-size:0.95em;">⭐ Empire Rating</button>
       <button id="tab-overview" onclick="showPlayerStatsTab('overview')" style="background:rgba(230,126,34,0.3);color:#e67e22;padding:8px 16px;border:1px solid #e67e22;border-radius:8px 8px 0 0;cursor:pointer;font-weight:bold;font-size:0.95em;">🏛️ Empire Overview</button>
+      <button id="tab-skills" onclick="showPlayerStatsTab('skills')" style="background:rgba(46,204,113,0.3);color:#2ecc71;padding:8px 16px;border:1px solid #2ecc71;border-radius:8px 8px 0 0;cursor:pointer;font-weight:bold;font-size:0.95em;">🎯 Expertise</button>
     </div>
     
     <!-- Stats Tab (default) -->
@@ -11357,6 +11260,9 @@ function showPlayerStats() {
 
     <!-- Empire Overview Tab (hidden initially) -->
     <div id="panel-overview" style="display:none;"></div>
+
+    <!-- Skills/Expertise Tab (hidden initially) -->
+    <div id="panel-skills" style="display:none;"></div>
   `;
 }
 window.showPlayerStats = showPlayerStats;
@@ -11368,6 +11274,7 @@ const STATS_TAB_CONFIG = {
   showcase: { inactive: 'rgba(155,89,182,0.3)', color: '#9b59b6', active: '#9b59b6', activeText: '#fff' },
   empire:   { inactive: 'rgba(231,76,60,0.3)',   color: '#e74c3c', active: '#e74c3c', activeText: '#fff' },
   overview: { inactive: 'rgba(230,126,34,0.3)',  color: '#e67e22', active: '#e67e22', activeText: '#fff' },
+  skills:   { inactive: 'rgba(46,204,113,0.3)',  color: '#2ecc71', active: '#2ecc71', activeText: '#fff' },
 };
 const STATS_TAB_IDS = Object.keys(STATS_TAB_CONFIG);
 
@@ -11428,6 +11335,19 @@ function showPlayerStatsTab(tab) {
     const panel = document.getElementById('panel-overview');
     if (panel) {
       panel.innerHTML = buildEmpireOverviewHTML();
+    }
+  }
+  
+  // Lazy-load skills/expertise content (always refresh for current skill points)
+  if (tab === 'skills') {
+    const panel = document.getElementById('panel-skills');
+    if (panel) {
+      // Create the target div that renderSkillTreeUI() writes to
+      panel.innerHTML = '<div id="skills-content"></div>';
+      renderSkillTreeUI();
+      // Remove the "Back to SafeHouse" button since we're already inside the Stats screen
+      const backBtn = panel.querySelector('.nav-btn-back');
+      if (backBtn && backBtn.parentElement) backBtn.parentElement.remove();
     }
   }
 }
@@ -12907,7 +12827,6 @@ function resetPlayerForNewGame() {
     },
     businesses: [],
     dirtyMoney: 0,
-    suspicionLevel: 0,
     launderingSetups: [],
     businessLastCollected: {},
     protectionRackets: [],
@@ -14056,8 +13975,20 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = "1.8.2";
+const CURRENT_VERSION = "1.8.3";
 const VERSION_UPDATES = {
+  "1.8.3": {
+    title: "Suspicion Removed, Motor Pool & Skills Consolidated",
+    date: "March 2026",
+    changes: [
+      "Removed entire Suspicion system — all suspicion gains now route through the existing Heat (Wanted Level) system",
+      "Removed FBI Investigation popups, suspicion timers, and suspicion-based consequences",
+      "Motor Pool moved into the Stash screen as its own tab (Stash & Motor Pool)",
+      "Skills/Expertise moved into the Stats screen as its own tab (6 tabs total)",
+      "Removed Expertise and Motor Pool nav buttons — fewer buttons, less clutter",
+      "Removed 'c' and 'k' keyboard shortcuts (now accessed through Stash and Stats)",
+    ]
+  },
   "1.8.2": {
     title: "UI Consolidation & Popup Events Removed",
     date: "March 2026",
@@ -14894,20 +14825,72 @@ function resetWantedLevelCourtHouse() {
   }
 }
 
-// Function to show the inventory screen
-function showInventory() {
+// Function to show the inventory screen (with Stash + Motor Pool tabs)
+const STASH_TAB_CONFIG = {
+  stash:     { inactive: 'rgba(212,175,55,0.3)', color: '#d4af37', active: '#d4af37', activeText: '#1a1a2e' },
+  motorpool: { inactive: 'rgba(52,152,219,0.3)', color: '#3498db', active: '#3498db', activeText: '#fff' },
+};
+const STASH_TAB_IDS = Object.keys(STASH_TAB_CONFIG);
+
+function showInventory(initialTab) {
   hideAllScreens();
   document.getElementById("inventory-screen").style.display = "block";
-  
+
+  const tab = initialTab || 'stash';
+
+  // Build Stash tab content
+  const stashHTML = buildStashHTML();
+
+  // Build Motor Pool tab content
+  const motorpoolHTML = buildMotorPoolHTML();
+
+  document.getElementById("stash-content").innerHTML = `
+    <!-- Tab Navigation -->
+    <div style="display:flex;justify-content:center;gap:8px;margin-bottom:18px;flex-wrap:wrap;">
+      <button id="stash-tab-stash" onclick="showStashTab('stash')" style="padding:8px 16px;border-radius:8px 8px 0 0;cursor:pointer;font-weight:bold;font-size:0.95em;">📦 Stash</button>
+      <button id="stash-tab-motorpool" onclick="showStashTab('motorpool')" style="padding:8px 16px;border-radius:8px 8px 0 0;cursor:pointer;font-weight:bold;font-size:0.95em;">🚗 Motor Pool</button>
+    </div>
+    <div id="panel-stash">${stashHTML}</div>
+    <div id="panel-motorpool" style="display:none;">${motorpoolHTML}</div>
+  `;
+
+  showStashTab(tab);
+}
+
+function showStashTab(tab) {
+  STASH_TAB_IDS.forEach(t => {
+    const panel = document.getElementById('panel-' + t);
+    const btn = document.getElementById('stash-tab-' + t);
+    const cfg = STASH_TAB_CONFIG[t];
+    if (panel) panel.style.display = 'none';
+    if (btn) {
+      btn.style.background = cfg.inactive;
+      btn.style.color = cfg.color;
+      btn.style.border = '1px solid ' + cfg.color;
+    }
+  });
+  const activePanel = document.getElementById('panel-' + tab);
+  const activeBtn = document.getElementById('stash-tab-' + tab);
+  const activeCfg = STASH_TAB_CONFIG[tab];
+  if (activePanel) activePanel.style.display = 'block';
+  if (activeBtn && activeCfg) {
+    activeBtn.style.background = activeCfg.active;
+    activeBtn.style.color = activeCfg.activeText;
+    activeBtn.style.border = 'none';
+  }
+}
+window.showStashTab = showStashTab;
+
+function buildStashHTML() {
   // Categorize items
   const weapons = player.inventory.filter(i => i.type === 'weapon');
   const armor = player.inventory.filter(i => i.type === 'armor');
   const vehicles = player.inventory.filter(i => i.type === 'vehicle');
   const other = player.inventory.filter(i => !['weapon','armor','vehicle'].includes(i.type));
-  
+
   const totalPower = player.inventory.reduce((sum, i) => sum + (i.power || 0), 0);
   const equippedPower = player.power || 0;
-  
+
   let html = `
     <h2>Inventory</h2>
     <div style="padding: 10px; background: rgba(52,73,94,0.6); border-radius: 10px; margin-bottom: 15px;">
@@ -14917,7 +14900,7 @@ function showInventory() {
       <strong>Ammo:</strong> ${player.ammo} | 
       <strong>Gas:</strong> ${player.gas}
     </div>`;
-  
+
   function renderCategory(title, icon, items) {
     if (items.length === 0) return `<div style="margin-bottom:15px;"><h3 style="color:#95a5a6;">${icon} ${title} <small>(empty)</small></h3></div>`;
     let s = `<div style="margin-bottom:15px;"><h3 style="color:#e67e22;">${icon} ${title}</h3><div style="display:grid;gap:8px;">`;
@@ -14948,12 +14931,12 @@ function showInventory() {
     s += '</div></div>';
     return s;
   }
-  
+
   html += renderCategory('Weapons', '', weapons);
   html += renderCategory('Armor', '¡️', armor);
   html += renderCategory('Vehicles', '', vehicles);
   html += renderCategory('Other Items', '', other);
-  
+
   if (player.stolenCars && player.stolenCars.length > 0) {
     html += `<div style="margin-bottom:15px;"><h3 style="color:#e67e22;">Stolen Cars (${player.stolenCars.length})</h3>
       <p style="color:#bdc3c7;font-size:0.85em;margin:4px 0 10px;">Hot vehicles can't be sold directly. Scrap for parts or sell through <a href="#" onclick="showFence();return false;" style="color:#8e44ad;font-weight:bold;">The Fence</a>.</p>
@@ -14973,8 +14956,90 @@ function showInventory() {
     });
     html += '</div></div>';
   }
-  
-  document.getElementById("stash-content").innerHTML = html;
+
+  return html;
+}
+
+function buildMotorPoolHTML() {
+  if (player.inJail) {
+    return `<div style="text-align:center;padding:30px;"><h3 style="color:#e74c3c;">Can't access your garage while in jail!</h3></div>`;
+  }
+
+  let carsHTML = `
+    <h2>Vehicle Garage</h2>
+    <p>Your collection of acquired vehicles. Scrap them for parts or sell through <strong style="color:#8e44ad;">The Fence</strong> for full black market value!</p>
+    <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+      <button onclick="showFence()" style="background: linear-gradient(45deg, #8e44ad, #6c3483); color: white; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">
+        Sell at The Fence
+      </button>
+      ${(typeof showVehicleMarketplace === 'function' || window.showVehicleMarketplace) ? '<button onclick="showVehicleMarketplace()" style="background: linear-gradient(45deg, #2980b9, #1a5276); color: white; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">Player Marketplace</button>' : ''}
+    </div>
+  `;
+
+  if (player.stolenCars.length === 0) {
+    carsHTML += `
+      <div style="text-align: center; margin: 40px 0; padding: 30px; background: rgba(52, 73, 94, 0.6); border-radius: 15px; border: 2px solid #f39c12;">
+        <h3 style="color: #f39c12; margin-bottom: 15px;">Empty Garage</h3>
+        <p style="color: #ecf0f1; margin-bottom: 20px;">Your garage is currently empty. Start stealing cars through jobs to build your vehicle collection!</p>
+        <div style="background: rgba(243, 156, 18, 0.2); padding: 15px; border-radius: 10px; border: 1px solid #f39c12; margin: 20px 0;">
+          <p style="color: #ecf0f1; margin: 0;"><strong>Tip:</strong> Look for "Car Theft" jobs to acquire vehicles. Cars can be sold for money or used to improve job success rates!</p>
+        </div>
+      </div>
+    `;
+  } else {
+    carsHTML += `
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px; margin: 25px 0;">
+        ${player.stolenCars.map((car, index) => {
+          let conditionText = car.damagePercentage <= 15 ? 'PRISTINE' : 
+                   car.damagePercentage <= 50 ? 'DAMAGED' : 'HEAVILY DAMAGED';
+          let conditionColor = car.damagePercentage <= 15 ? '#2ecc71' : 
+                    car.damagePercentage <= 50 ? '#f39c12' : '#e74c3c';
+          const carImageSrc = car.image || \`vehicles/\${car.name}.png\`;
+          
+          return \`
+            <div style="background: rgba(44, 62, 80, 0.8); border-radius: 15px; padding: 25px; border: 2px solid #34495e; box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5); transition: transform 0.3s ease;">
+              <div style="text-align: center; margin-bottom: 20px;">
+                <img src="\${carImageSrc}" alt="\${car.name}" 
+                   style="width: 220px; height: 165px; border-radius: 12px; object-fit: cover; 
+                      border: 3px solid #ecf0f1; margin-bottom: 15px; transition: transform 0.3s ease;" 
+                   onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjIwIiBoZWlnaHQ9IjE2NSIgdmlld0JveD0iMCAwIDIyMCAxNjUiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjIyMCIgaGVpZ2h0PSIxNjUiIGZpbGw9IiM3ZjhjOGQiLz48dGV4dCB4PSIxMTAiIHk9IjgyLjUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNiIgZmlsbD0iI2VjZjBmMSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSI+VmVoaWNsZSBJbWFnZTwvdGV4dD48L3N2Zz4=';" />
+                <h3 style="color: #ecf0f1; margin: 15px 0; font-size: 1.3em;">\${car.name}</h3>
+              </div>
+              
+              <div style="text-align: center; margin: 20px 0;">
+                <div style="background: rgba(0, 0, 0, 0.3); padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+                  <p style="margin: 8px 0; color: \${conditionColor}; font-weight: bold; font-size: 1.1em;">
+                    \${conditionText} (\${car.damagePercentage}% damaged)
+                  </p>
+                  <p style="margin: 8px 0; color: #f39c12; font-size: 1.05em;"><strong>Current Value:</strong> $\${car.currentValue.toLocaleString()}</p>
+                  <p style="margin: 8px 0; color: #3498db; font-size: 1.05em;"><strong>Base Value:</strong> $\${car.baseValue.toLocaleString()}</p>
+                  <p style="margin: 8px 0; color: #95a5a6; font-size: 1.05em;"><strong>Times Used:</strong> \${car.usageCount}</p>
+                </div>
+                
+                <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                  <button onclick="scrapStolenCar(\${index})" 
+                      style="background: linear-gradient(45deg, #e67e22, #d35400); color: white; padding: 12px 18px; 
+                          border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 15px; 
+                          transition: all 0.3s ease; min-width: 120px;">
+                    Scrap ($\${Math.floor(car.currentValue * 0.35).toLocaleString()})
+                  </button>
+                  <button onclick="useCar(\${index}, 'job')" \${car.damagePercentage >= 90 ? 'disabled' : ''}
+                      style="background: \${car.damagePercentage >= 90 ? '#7f8c8d' : 'linear-gradient(45deg, #2ecc71, #27ae60)'}; 
+                          color: white; padding: 12px 18px; border: none; border-radius: 10px; 
+                          font-weight: bold; cursor: \${car.damagePercentage >= 90 ? 'not-allowed' : 'pointer'}; font-size: 15px;
+                          transition: all 0.3s ease; min-width: 120px;">
+                    \${car.damagePercentage >= 90 ? '🚫 Too Damaged' : 'Use for Job'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          \`;
+        }).join('')}
+      </div>
+    `;
+  }
+
+  return carsHTML;
 }
 
 function equipItem(index) {
@@ -15076,12 +15141,8 @@ function scrapStolenCar(index) {
   
   updateStatistic('carsScrapped');
   updateUI();
-  // Refresh whichever screen is visible
-  if (document.getElementById("stolen-cars-screen")?.style.display === "block") {
-    showStolenCars();
-  } else {
-    showInventory();
-  }
+  // Refresh the stash screen (Motor Pool tab)
+  showInventory('motorpool');
 }
 
 // Legacy alias for any remaining references
@@ -17078,8 +17139,6 @@ function initializeHotkeys() {
       'j': () => showJobs(),
       's': () => showStore(), 
       'g': () => showGang(),
-      'c': () => showStolenCars(),
-      'k': () => showSkills(),
       'b': () => { showRealEstate('fronts'); },
       't': () => showTerritoryControl(),
       'l': () => showCalendar(),
@@ -20122,8 +20181,8 @@ window.unlockAchievement = unlockAchievement;
 window.checkAchievements = checkAchievements;
 window.showAchievements = showAchievements;
 
-// FBI Investigation
-window.handleFBIChoice = handleFBIChoice;
+// FBI Investigation (removed — suspicion system consolidated into heat)
+// window.handleFBIChoice = handleFBIChoice;
 
 // The Fence
 window.showFence = showFence;
