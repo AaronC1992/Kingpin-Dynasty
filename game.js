@@ -8641,89 +8641,61 @@ function showCarTheftChoiceResult(stolenCar, wasHurt = false, healthLoss = 0) {
   const carImageSrc = `vehicles/${stolenCar.name}.png`;
   
   const resultHTML = `
-    <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); 
-          display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; box-sizing: border-box; overflow-y: auto;">
-      <div style="max-width: 550px; width: 100%; max-height: 90vh; background: linear-gradient(135deg, rgba(44, 62, 80, 0.98) 0%, rgba(52, 73, 94, 0.98) 100%); 
-            padding: 30px; border-radius: 20px; border: 2px solid ${wasHurt ? '#e74c3c' : '#2ecc71'}; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8); 
-            text-align: center; color: white; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #3498db rgba(52, 73, 94, 0.5);">
-        <h2 style="color: ${wasHurt ? '#e74c3c' : '#2ecc71'}; margin-bottom: 20px; font-size: 2em;">
+    <div class="popup-card ${wasHurt ? 'popup-danger' : 'popup-success'}" style="max-width:550px;">
+        <h2 class="popup-title">
           ${wasHurt ? '🚗💥 Stolen but Bloodied!' : '🚗✨ Successful Theft!'}
         </h2>
         
-        <div style="margin: 20px 0; padding: 15px; background: rgba(0, 0, 0, 0.3); border-radius: 15px; border: 2px solid #34495e;">
+        <div class="popup-image-frame">
           <img src="${carImageSrc}" alt="${stolenCar.name}" 
-             style="width: 200px; height: 150px; border-radius: 10px; object-fit: cover; 
-                border: 3px solid #ecf0f1; margin-bottom: 15px;" 
-             onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjE1MCIgdmlld0JveD0iMCAwIDIwMCAxNTAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIxNTAiIGZpbGw9IiM3ZjhjOGQiLz48dGV4dCB4PSIxMDAiIHk9Ijc1IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTYiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iMC4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg==';">
-          <h3 style="color: #ecf0f1; margin: 10px 0;">${stolenCar.name}</h3>
+             style="width:200px;height:150px;border-radius:10px;object-fit:cover;border:3px solid #ecf0f1;margin-bottom:15px;" 
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+          <div class="popup-image-fallback" style="display:none;width:200px;height:150px;">🚗 ${stolenCar.name}</div>
+          <h3 style="color:#ecf0f1;margin:10px 0;">${stolenCar.name}</h3>
         </div>
         
-        <div style="text-align: left; margin: 20px 0; padding: 15px; background: rgba(52, 73, 94, 0.6); border-radius: 10px;">
-          <p style="margin: 5px 0;"><strong>💰 Current Value:</strong> $${stolenCar.currentValue.toLocaleString()}</p>
-          <p style="margin: 5px 0;"><strong>🔧 Damage:</strong> ${stolenCar.damagePercentage}%</p>
-          <p style="margin: 5px 0;"><strong>📈 Base Value:</strong> $${stolenCar.baseValue.toLocaleString()}</p>
-          ${wasHurt ? `<p style="margin: 5px 0; color: #e74c3c;"><strong>💔 Health Lost:</strong> ${healthLoss}</p>` : ''}
+        <div class="popup-section" style="text-align:left;">
+          <p style="margin:5px 0;"><strong>💰 Current Value:</strong> $${stolenCar.currentValue.toLocaleString()}</p>
+          <p style="margin:5px 0;"><strong>🔧 Damage:</strong> ${stolenCar.damagePercentage}%</p>
+          <p style="margin:5px 0;"><strong>📈 Base Value:</strong> $${stolenCar.baseValue.toLocaleString()}</p>
+          ${wasHurt ? `<p style="margin:5px 0;color:#e74c3c;"><strong>💔 Health Lost:</strong> ${healthLoss}</p>` : ''}
         </div>
         
-        <div style="margin: 20px 0; padding: 20px; background: rgba(241, 196, 15, 0.2); border-radius: 10px; border: 2px solid #f1c40f;">
-          <h3 style="color: #f1c40f; margin-bottom: 15px;">🤝” What do you want to do with this vehicle?</h3>
-          <p style="margin: 10px 0; color: #ecf0f1; font-size: 1.1em;">
+        <div class="popup-section" style="border-color:rgba(241,196,15,0.3);">
+          <h3 style="color:#f1c40f;margin-bottom:15px;">🤝 What do you want to do with this vehicle?</h3>
+          <p class="popup-quote">
             ${wasHurt ? getRandomNarration('carTheftDamaged') : getRandomNarration('carTheftSuccess')}
           </p>
-          <p style="margin: 8px 0; color: #e74c3c; font-size: 0.9em;">
+          <p style="margin:8px 0;color:#e74c3c;font-size:0.9em;">
             ⚠️ This vehicle is hot — you can't sell it directly. Scrap it for parts or store it.
           </p>
         </div>
         
-        <div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin-top: 25px;">
+        <div class="popup-actions" style="flex-wrap:wrap;">
           <button onclick="handleStolenCarChoice('scrap', '${stolenCar.name}', ${stolenCar.baseValue}, ${stolenCar.currentValue}, ${stolenCar.damagePercentage})" 
-              style="background: linear-gradient(45deg, #e67e22, #d35400); color: white; padding: 15px 25px; border: none; 
-                  border-radius: 12px; font-size: 1.1em; font-weight: bold; cursor: pointer; min-width: 140px;
-                  transition: all 0.3s ease; box-shadow: 0 5px 15px rgba(230, 126, 34, 0.4);">
+              class="popup-btn" style="background:linear-gradient(45deg,#e67e22,#d35400);min-width:140px;">
             🔧 Scrap for Parts<br><small>+$${Math.floor(stolenCar.currentValue * 0.35).toLocaleString()}</small>
           </button>
           <button onclick="handleStolenCarChoice('store', '${stolenCar.name}', ${stolenCar.baseValue}, ${stolenCar.currentValue}, ${stolenCar.damagePercentage})" 
-              style="background: linear-gradient(45deg, #2ecc71, #27ae60); color: white; padding: 15px 25px; border: none; 
-                  border-radius: 12px; font-size: 1.1em; font-weight: bold; cursor: pointer; min-width: 140px;
-                  transition: all 0.3s ease; box-shadow: 0 5px 15px rgba(46, 204, 113, 0.4);">
+              class="popup-btn popup-btn-success" style="min-width:140px;">
             🏠 Store in Garage<br><small>Use for jobs</small>
           </button>
         </div>
         
-        <div style="margin-top: 20px; padding: 15px; background: rgba(52, 73, 94, 0.4); border-radius: 8px;">
-          <p style="margin: 0; color: #bdc3c7; font-size: 0.9em;">
+        <div class="popup-section" style="margin-top:15px;">
+          <p style="margin:0;color:#bdc3c7;font-size:0.9em;">
             <strong>💡 Tip:</strong> Stolen vehicles can't be sold directly — scrap them for quick parts money, or store and sell later through <strong style="color:#8e44ad;">The Fence</strong> for full black market value. Owning a <strong style="color:#e67e22;">Chop Shop</strong> massively boosts scrap profits!
           </p>
         </div>
-      </div>
     </div>
   `;
   
   // Add to document
   const resultScreen = document.createElement('div');
   resultScreen.id = 'car-theft-choice-screen';
+  resultScreen.className = 'popup-overlay';
   resultScreen.innerHTML = resultHTML;
   document.body.appendChild(resultScreen);
-  
-  // Add custom scrollbar styling for webkit browsers
-  const style = document.createElement('style');
-  style.textContent = `
-    #car-theft-choice-screen div::-webkit-scrollbar {
-      width: 8px;
-    }
-    #car-theft-choice-screen div::-webkit-scrollbar-track {
-      background: rgba(52, 73, 94, 0.5);
-      border-radius: 4px;
-    }
-    #car-theft-choice-screen div::-webkit-scrollbar-thumb {
-      background: #3498db;
-      border-radius: 4px;
-    }
-    #car-theft-choice-screen div::-webkit-scrollbar-thumb:hover {
-      background: #2980b9;
-    }
-  `;
-  document.head.appendChild(style);
 }
 
 // Function to handle the player's choice for stolen car (sell or store)
@@ -8780,7 +8752,7 @@ function handleStolenCarChoice(choice, carName, baseValue, currentValue, damageP
     // Track statistics
     updateStatistic('carsStolen');
     
-    alert(`The ${carName} has been stored in your garage! Sell it through The Fence for full black market value.`);
+    showBriefNotification(`${carName} stored in your garage! Sell through The Fence for black market value.`, 'success');
     logAction(`🏠 Smart move! You drive the ${carName} to your garage. Visit The Fence to sell it at premium black market rates, or use it for jobs.`);
   }
   
@@ -8811,14 +8783,6 @@ function closeCarTheftChoiceResult() {
   if (resultScreen) {
     resultScreen.remove();
   }
-  
-  // Remove the added scrollbar styles
-  const styles = document.querySelectorAll('style');
-  styles.forEach(style => {
-    if (style.textContent.includes('#car-theft-choice-screen')) {
-      style.remove();
-    }
-  });
 }
 
 // Function to show car theft result with vehicle photo
@@ -8826,68 +8790,44 @@ function showCarTheftResult(stolenCar, wasHurt = false, healthLoss = 0) {
   const carImageSrc = `vehicles/${stolenCar.name}.png`;
   
   const resultHTML = `
-    <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); 
-          display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; box-sizing: border-box; overflow-y: auto;">
-      <div style="max-width: 500px; width: 100%; max-height: 90vh; background: linear-gradient(135deg, rgba(44, 62, 80, 0.98) 0%, rgba(52, 73, 94, 0.98) 100%); 
-            padding: 30px; border-radius: 20px; border: 2px solid ${wasHurt ? '#e74c3c' : '#2ecc71'}; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8); 
-            text-align: center; color: white; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #3498db rgba(52, 73, 94, 0.5);">
-        <h2 style="color: ${wasHurt ? '#e74c3c' : '#2ecc71'}; margin-bottom: 20px; font-size: 2em;">
+    <div class="popup-card ${wasHurt ? 'popup-danger' : 'popup-success'}" style="max-width:500px;">
+        <h2 class="popup-title">
           ${wasHurt ? '🚗💥 Stolen but Bloodied!' : '🚗✨ Successful Theft!'}
         </h2>
         
-        <div style="margin: 20px 0; padding: 15px; background: rgba(0, 0, 0, 0.3); border-radius: 15px; border: 2px solid #34495e;">
+        <div class="popup-image-frame">
           <img src="${carImageSrc}" alt="${stolenCar.name}" 
-             style="width: 200px; height: 150px; border-radius: 10px; object-fit: cover; 
-                border: 3px solid #ecf0f1; margin-bottom: 15px;" 
-             onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjE1MCIgdmlld0JveD0iMCAwIDIwMCAxNTAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIxNTAiIGZpbGw9IiM3ZjhjOGQiLz48dGV4dCB4PSIxMDAiIHk9Ijc1IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiNlY2YwZjEiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiPlZlaGljbGUgSW1hZ2U8L3RleHQ+PC9zdmc+';" />
-          <h3 style="color: #ecf0f1; margin: 10px 0;">${stolenCar.name}</h3>
+             style="width:200px;height:150px;border-radius:10px;object-fit:cover;border:3px solid #ecf0f1;margin-bottom:15px;" 
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+          <div class="popup-image-fallback" style="display:none;width:200px;height:150px;">🚗 ${stolenCar.name}</div>
+          <h3 style="color:#ecf0f1;margin:10px 0;">${stolenCar.name}</h3>
         </div>
         
-        <div style="text-align: left; margin: 20px 0; padding: 15px; background: rgba(52, 73, 94, 0.6); border-radius: 10px;">
-          <p style="margin: 5px 0;"><strong>💰 Current Value:</strong> $${stolenCar.currentValue.toLocaleString()}</p>
-          <p style="margin: 5px 0;"><strong>🔧 Damage:</strong> ${stolenCar.damagePercentage}%</p>
-          <p style="margin: 5px 0;"><strong>📈 Base Value:</strong> $${stolenCar.baseValue.toLocaleString()}</p>
-          ${wasHurt ? `<p style="margin: 5px 0; color: #e74c3c;"><strong>💔 Health Lost:</strong> ${healthLoss}</p>` : ''}
+        <div class="popup-section" style="text-align:left;">
+          <p style="margin:5px 0;"><strong>💰 Current Value:</strong> $${stolenCar.currentValue.toLocaleString()}</p>
+          <p style="margin:5px 0;"><strong>🔧 Damage:</strong> ${stolenCar.damagePercentage}%</p>
+          <p style="margin:5px 0;"><strong>📈 Base Value:</strong> $${stolenCar.baseValue.toLocaleString()}</p>
+          ${wasHurt ? `<p style="margin:5px 0;color:#e74c3c;"><strong>💔 Health Lost:</strong> ${healthLoss}</p>` : ''}
         </div>
         
-        <p style="margin: 20px 0; font-size: 1.1em; color: #ecf0f1;">
+        <p class="popup-quote">
           ${wasHurt ? getRandomNarration('carTheftDamaged') : getRandomNarration('carTheftSuccess')}
         </p>
         
-        <button onclick="closeCarTheftResult()" 
-            style="background: ${wasHurt ? '#e74c3c' : '#2ecc71'}; color: white; padding: 15px 30px; border: none; 
-                border-radius: 10px; font-size: 1.2em; font-weight: bold; cursor: pointer; margin-top: 15px;">
-          ${wasHurt ? 'Patch Up & Continue' : 'Continue'}
-        </button>
-      </div>
+        <div class="popup-actions">
+          <button onclick="closeCarTheftResult()" class="popup-btn ${wasHurt ? 'popup-btn-danger' : 'popup-btn-success'}">
+            ${wasHurt ? 'Patch Up & Continue' : 'Continue'}
+          </button>
+        </div>
     </div>
   `;
   
   // Add to document
   const resultScreen = document.createElement('div');
   resultScreen.id = 'car-theft-result-screen';
+  resultScreen.className = 'popup-overlay';
   resultScreen.innerHTML = resultHTML;
   document.body.appendChild(resultScreen);
-  
-  // Add custom scrollbar styling for webkit browsers
-  const style = document.createElement('style');
-  style.textContent = `
-    #car-theft-result-screen div::-webkit-scrollbar {
-      width: 8px;
-    }
-    #car-theft-result-screen div::-webkit-scrollbar-track {
-      background: rgba(52, 73, 94, 0.5);
-      border-radius: 4px;
-    }
-    #car-theft-result-screen div::-webkit-scrollbar-thumb {
-      background: #3498db;
-      border-radius: 4px;
-    }
-    #car-theft-result-screen div::-webkit-scrollbar-thumb:hover {
-      background: #2980b9;
-    }
-  `;
-  document.head.appendChild(style);
 }
 
 // Function to close car theft result screen
@@ -8896,20 +8836,12 @@ function closeCarTheftResult() {
   if (resultScreen) {
     resultScreen.remove();
   }
-  
-  // Remove the added scrollbar styles
-  const styles = document.querySelectorAll('style');
-  styles.forEach(style => {
-    if (style.textContent.includes('#car-theft-result-screen')) {
-      style.remove();
-    }
-  });
 }
 
-// Function to show stolen cars
+
 function showStolenCars() {
   if (player.inJail) {
-    alert("You can't access your garage while you're in jail!");
+    showBriefNotification("You can't access your garage while in jail!", 'error');
     return;
   }
 
@@ -11197,7 +11129,7 @@ function showFBIEventOverlay(title, description, choices, stage) {
     if (c.cost && player.money < c.cost) { disabled = 'disabled'; tooltip = `title="Need $${c.cost.toLocaleString()}"`; }
     if (c.energyCost && player.energy < c.energyCost) { disabled = 'disabled'; tooltip = `title="Need ${c.energyCost} energy"`; }
     return `<button onclick="handleFBIChoice('${c.action}', ${c.cost || 0}, ${c.energyCost || 0})" 
-              style="background: ${disabled ? '#7f8c8d' : color}; color: white; padding: 12px 20px; border: none; border-radius: 8px; cursor: ${disabled ? 'not-allowed' : 'pointer'}; font-size: 1em; min-width: 200px;"
+              class="popup-btn ${disabled ? '' : 'popup-btn-danger'}" style="${disabled ? 'background:#7f8c8d;cursor:not-allowed;' : ''} min-width:200px;"
               ${disabled} ${tooltip}>
       ${c.label}
     </button>`;
@@ -11205,22 +11137,20 @@ function showFBIEventOverlay(title, description, choices, stage) {
   
   const overlay = document.createElement('div');
   overlay.id = 'fbi-event-overlay';
+  overlay.className = 'popup-overlay';
   overlay.innerHTML = `
-    <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); 
-          display: flex; align-items: center; justify-content: center; z-index: 2000; padding: 20px; box-sizing: border-box;">
-      <div style="max-width: 550px; width: 100%; background: linear-gradient(135deg, rgba(44, 62, 80, 0.98) 0%, rgba(52, 73, 94, 0.98) 100%); 
-            padding: 30px; border-radius: 20px; border: 3px solid ${color}; box-shadow: 0 0 40px ${color}40; text-align: center; color: white;">
-        <h2 style="color: ${color}; margin-bottom: 15px; font-size: 1.5em;">${title}</h2>
-        <p style="color: #bdc3c7; margin-bottom: 8px; font-size: 0.9em;">Investigation Stage: ${stage}/4</p>
-        <div style="width: 100%; background: rgba(0,0,0,0.3); border-radius: 10px; height: 8px; margin-bottom: 20px;">
-          <div style="width: ${stage * 25}%; background: ${color}; border-radius: 10px; height: 100%; transition: width 0.5s;"></div>
+      <div class="popup-card popup-danger" style="max-width:550px;">
+        <button onclick="handleFBIChoice('ignore', 0, 0)" style="position:absolute;top:12px;right:16px;background:none;border:none;color:#888;font-size:1.5em;cursor:pointer;" title="Dismiss (Ignore)">&times;</button>
+        <h2 class="popup-title" style="color:${color};">${title}</h2>
+        <p class="popup-subtitle">Investigation Stage: ${stage}/4</p>
+        <div style="width:100%;background:rgba(0,0,0,0.3);border-radius:10px;height:8px;margin-bottom:20px;">
+          <div style="width:${stage * 25}%;background:${color};border-radius:10px;height:100%;transition:width 0.5s;"></div>
         </div>
-        <p style="color: #ecf0f1; margin-bottom: 25px; line-height: 1.6;">${description}</p>
-        <div style="display: flex; flex-direction: column; gap: 10px; align-items: center;">
+        <p class="popup-text" style="margin-bottom:25px;line-height:1.6;">${description}</p>
+        <div style="display:flex;flex-direction:column;gap:10px;align-items:center;">
           ${choiceHTML}
         </div>
       </div>
-    </div>
   `;
   document.body.appendChild(overlay);
 }
@@ -12640,16 +12570,16 @@ function showRecruitment() {
   }
 
   let recruitsHTML = `
-    <h2>🕴️ Street Recruitment</h2>
-    <div style="text-align: center; margin-bottom: 20px; padding: 15px; background: rgba(46, 204, 113, 0.2); border-radius: 8px; border: 2px solid #2ecc71;">
-      <h3 style="color: #2ecc71; margin: 0;">📍 Talent Scouting Active</h3>
-      <p style="margin: 10px 0 0 0; font-size: 1.1em;">You're on the hunt for fresh blood to join your criminal organization</p>
+    <h2 style="color: #c0a062; font-family: 'Georgia', serif; letter-spacing: 1px;">🕴️ Street Recruitment</h2>
+    <div style="text-align: center; margin-bottom: 20px; padding: 15px; background: rgba(192, 160, 98, 0.15); border-radius: 8px; border: 1px solid rgba(192, 160, 98, 0.4);">
+      <h3 style="color: #c0a062; margin: 0; font-family: 'Georgia', serif;">📍 Talent Scouting Active</h3>
+      <p style="margin: 10px 0 0 0; font-size: 1.1em; color: #ccc;">You're on the hunt for fresh blood to join your criminal organization</p>
     </div>
     
-    <p style="font-size: 1.1em; text-align: center; margin-bottom: 25px;">Find new talent willing to join your criminal organization. Higher level recruits generate more tribute but cost significantly more.</p>
+    <p style="font-size: 1.05em; text-align: center; margin-bottom: 25px; color: #ccc;">Find new talent willing to join your criminal organization. Higher level recruits generate more tribute but cost significantly more.</p>
     
-    <div style="margin-bottom: 25px; padding: 20px; background: rgba(52, 73, 94, 0.6); border-radius: 8px; border: 1px solid #f39c12;">
-      <h4 style="color: #f39c12; margin-top: 0;">📊 Experience Level Guide:</h4>
+    <div style="margin-bottom: 25px; padding: 20px; background: rgba(0, 0, 0, 0.3); border-radius: 8px; border: 1px solid rgba(192, 160, 98, 0.3);">
+      <h4 style="color: #c0a062; margin-top: 0; font-family: 'Georgia', serif;">📊 Experience Level Guide:</h4>
       <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-top: 15px;">
         <div style="padding: 10px; background: rgba(149, 165, 166, 0.2); border: 1px solid #95a5a6; border-radius: 5px;">
           <strong style="color: #95a5a6;">Levels 1-3: Rookies</strong><br>
@@ -12666,8 +12596,8 @@ function showRecruitment() {
       </div>
     </div>
     
-    <h3 style="text-align: center; color: #ecf0f1; margin-bottom: 20px;">🎯 Available Recruits (${availableRecruits.length} found):</h3>
-    <ul>
+    <h3 style="text-align: center; color: #c0a062; margin-bottom: 20px; font-family: 'Georgia', serif;">🎯 Available Recruits (${availableRecruits.length} found):</h3>
+    <ul style="list-style: none; padding: 0; margin: 0;">
       ${availableRecruits.map((recruit, index) => {
         const canAfford = player.money >= recruit.cost;
         const levelColor = recruit.experienceLevel <= 3 ? '#95a5a6' : 
@@ -12676,10 +12606,10 @@ function showRecruitment() {
                 recruit.experienceLevel <= 6 ? 'Experienced' : 'Veteran';
         
         return `
-          <li style="margin: 15px 0; padding: 20px; background: rgba(44, 62, 80, 0.8); border-radius: 12px; border: 2px solid ${levelColor};">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
-              <div style="flex: 1; min-width: 250px;">
-                <h4 style="color: ${levelColor}; margin: 0 0 10px 0; font-size: 1.3em;">${recruit.name}</h4>
+          <li style="margin: 12px 0; padding: 20px; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border-radius: 12px; border: 1px solid ${levelColor}; box-shadow: 0 2px 10px rgba(0,0,0,0.3);">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+              <div style="flex: 1; min-width: 220px;">
+                <h4 style="color: ${levelColor}; margin: 0 0 10px 0; font-size: 1.2em; font-family: 'Georgia', serif;">${recruit.name}</h4>
                 <div style="margin-bottom: 10px;">
                   <span style="background: ${levelColor}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.9em; font-weight: bold;">
                     Level ${recruit.experienceLevel} ${levelText}
@@ -12699,10 +12629,10 @@ function showRecruitment() {
                 </div>
                 <button onclick="recruitMember(${index})" 
                     ${canAfford ? '' : 'disabled'} 
-                    style="background: ${canAfford ? 'linear-gradient(45deg, #2ecc71, #27ae60)' : '#7f8c8d'}; 
+                    style="background: ${canAfford ? 'linear-gradient(180deg, #27ae60, #1a7a40)' : '#555'}; 
                         color: white; padding: 12px 20px; border: none; border-radius: 8px; 
                         font-weight: bold; cursor: ${canAfford ? 'pointer' : 'not-allowed'}; 
-                        font-size: 16px; transition: all 0.3s ease;">
+                        font-size: 15px; font-family: 'Georgia', serif; transition: all 0.3s ease;">
                   ${canAfford ? '🤝 Recruit' : '💸 Too Expensive'}
                 </button>
               </div>
@@ -12712,11 +12642,11 @@ function showRecruitment() {
       }).join('')}
     </ul>
     
-    <div style="text-align: center; margin-top: 30px; padding: 20px; background: rgba(52, 73, 94, 0.4); border-radius: 8px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+    <div style="text-align: center; margin-top: 30px; padding: 20px; background: rgba(0, 0, 0, 0.3); border-radius: 8px; border: 1px solid rgba(192, 160, 98, 0.2); display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
       <button onclick="refreshRecruits()" 
-          style="background: linear-gradient(45deg, #3498db, #2980b9); color: white; padding: 15px 25px; 
+          style="background: linear-gradient(180deg, #c0a062, #8b7340); color: #1a1a1a; padding: 14px 25px; 
               border: none; border-radius: 8px; font-weight: bold; cursor: pointer; 
-              font-size: 16px; margin: 0 10px; transition: all 0.3s ease;">
+              font-size: 15px; font-family: 'Georgia', serif; transition: all 0.3s ease;">
         🔍 Look for New Recruits ($500)
       </button>
       <button class="nav-btn-back" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
@@ -12731,9 +12661,6 @@ function showRecruitment() {
   
   // Scroll to top to ensure user sees the screen
   window.scrollTo(0, 0);
-  
-  // Add a visual notification to make sure player notices
-  alert("🕴️ Recruitment Screen Opened! Browse available gang members below.");
 }
 
 // Function to recruit a gang member
@@ -12802,7 +12729,7 @@ function recruitMember(index) {
     availableRecruits.splice(index, 1);
 
     const roleInfo = newMember.roleData ? ` as a ${newMember.roleData.icon} ${newMember.roleData.name}` : '';
-    alert(`${getRandomNarration('recruitmentSuccess')} ${recruit.name}${roleInfo} will start generating tribute in the next collection.`);
+    showBriefNotification(`🤝 ${recruit.name}${roleInfo} recruited! They'll generate tribute next collection.`, 'success', 4000);
     logAction(`🤝 ${recruit.name} joins your crew! The ${recruit.specialization} brings level ${recruit.experienceLevel} skills to your organization. Your empire grows stronger.`);
     
     // Update mission progress
@@ -12825,9 +12752,9 @@ function refreshRecruits() {
     updateUI();
     showRecruitment();
     logAction("🔍 You hit the streets looking for fresh talent. Word spreads that you're hiring - new faces emerge from the shadows.");
-    alert("New recruits have been found!");
+    showBriefNotification('🔍 New recruits found! Fresh talent is available.', 'success', 3000);
   } else {
-    alert("You need $500 to scout for new recruits!");
+    showBriefNotification('💸 You need $500 to scout for new recruits!', 'error', 3000);
   }
 }
 
@@ -13243,54 +13170,46 @@ function showVehiclePurchaseResult(item, finalPrice) {
   const vehicleImageSrc = getItemImage(item.name);
   
   const resultHTML = `
-    <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); 
-          display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; box-sizing: border-box;">
-      <div style="max-width: 500px; width: 100%; background: linear-gradient(135deg, rgba(44, 62, 80, 0.98) 0%, rgba(52, 73, 94, 0.98) 100%); 
-            padding: 30px; border-radius: 20px; border: 2px solid #2ecc71; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8); text-align: center; color: white;">
-        <h2 style="color: #2ecc71; margin-bottom: 20px; font-size: 2em;">
-          🏛’💰 Vehicle Purchased!
-        </h2>
+    <div class="popup-card popup-success" style="max-width:500px;">
+        <h2 class="popup-title">💰 Vehicle Purchased!</h2>
         
-        <div style="margin: 20px 0; padding: 15px; background: rgba(0, 0, 0, 0.3); border-radius: 15px; border: 2px solid #34495e;">
+        <div class="popup-image-frame">
           <img src="${vehicleImageSrc}" alt="${item.name}" 
-             style="width: 200px; height: 150px; border-radius: 10px; object-fit: cover; 
-                border: 3px solid #ecf0f1; margin-bottom: 15px;" 
-             onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
-          <div style="display: none; width: 200px; height: 150px; border-radius: 10px; 
-                background: #7f8c8d; margin: 0 auto 15px auto; display: flex; align-items: center; 
-                justify-content: center; font-size: 14px; color: white; border: 3px solid #ecf0f1;">
+             style="width:200px;height:150px;border-radius:10px;object-fit:cover;border:3px solid #ecf0f1;margin-bottom:15px;" 
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
+          <div class="popup-image-fallback" style="display:none;width:200px;height:150px;">
             ${item.name}
           </div>
-          <h3 style="color: #ecf0f1; margin: 10px 0;">${item.name}</h3>
+          <h3 style="color:#ecf0f1;margin:10px 0;">${item.name}</h3>
         </div>
         
-        <div style="text-align: left; margin: 20px 0; padding: 15px; background: rgba(52, 73, 94, 0.6); border-radius: 10px;">
-          <p style="margin: 5px 0;"><strong>💰 Purchase Price:</strong> $${finalPrice.toLocaleString()}</p>
-          <p style="margin: 5px 0;"><strong>⚡ Power Bonus:</strong> +${item.power}</p>
-          <p style="margin: 5px 0;"><strong>📊 Type:</strong> ${item.type === "vehicle" ? "Aircraft" : "Automobile"}</p>
+        <div class="popup-section" style="text-align:left;">
+          <p style="margin:5px 0;"><strong>💰 Purchase Price:</strong> $${finalPrice.toLocaleString()}</p>
+          <p style="margin:5px 0;"><strong>⚡ Power Bonus:</strong> +${item.power}</p>
+          <p style="margin:5px 0;"><strong>📊 Type:</strong> ${item.type === "vehicle" ? "Aircraft" : "Automobile"}</p>
         </div>
         
-        <p style="margin: 20px 0; font-size: 1.1em; color: #ecf0f1;">
+        <p class="popup-quote">
           Congratulations! This vehicle has been added to your inventory and will boost your power for jobs.
         </p>
         
-        <button onclick="closeVehiclePurchaseResult()" 
-            style="background: #2ecc71; color: white; padding: 15px 30px; border: none; 
-                border-radius: 10px; font-size: 1.2em; font-weight: bold; cursor: pointer; margin-top: 15px;">
-          Continue Shopping
-        </button>
-      </div>
+        <div class="popup-actions">
+          <button onclick="closeVehiclePurchaseResult()" class="popup-btn popup-btn-success">
+            Continue Shopping
+          </button>
+        </div>
     </div>
   `;
   
   // Add to document
   const resultScreen = document.createElement('div');
   resultScreen.id = 'vehicle-purchase-result-screen';
+  resultScreen.className = 'popup-overlay';
   resultScreen.innerHTML = resultHTML;
   document.body.appendChild(resultScreen);
   
   // Log the purchase
-  logAction(`🏛’✨ Transaction complete! The ${item.name} is now yours. The keys feel heavy in your hand - this machine will serve you well on the streets (+${item.power} power).`);
+  logAction(`🏛️✨ Transaction complete! The ${item.name} is now yours. The keys feel heavy in your hand - this machine will serve you well on the streets (+${item.power} power).`);
 }
 
 // Function to close vehicle purchase result screen

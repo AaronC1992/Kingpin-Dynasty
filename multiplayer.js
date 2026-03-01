@@ -1,4 +1,4 @@
-// ==================== THE COMMISSION SYSTEM ====================
+﻿// ==================== THE COMMISSION SYSTEM ====================
 
 // Online world configuration
 const onlineWorld = {
@@ -695,43 +695,43 @@ function showHeistResult(result) {
     if (existing) existing.remove();
     
     const isSuccess = result.success;
-    const borderColor = isSuccess ? '#2ecc71' : '#e74c3c';
-    const bgGlow = isSuccess ? 'rgba(46, 204, 113, 0.15)' : 'rgba(231, 76, 60, 0.15)';
     
     const modal = document.createElement('div');
     modal.id = 'heist-result-modal';
-    modal.style.cssText = `position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 10000; display: flex; align-items: center; justify-content: center; font-family: 'Georgia', serif;`;
+    modal.className = 'popup-overlay';
     
     modal.innerHTML = `
-        <div style="background: linear-gradient(135deg, #1a1a2e 0%, #0d0d1a 100%); padding: 40px; border-radius: 15px; border: 3px solid ${borderColor}; max-width: 450px; width: 90%; text-align: center; box-shadow: 0 0 40px ${bgGlow};">
-            <div style="font-size: 4em; margin-bottom: 15px;">${isSuccess ? '💰' : '🚔'}</div>
-            <h2 style="color: ${borderColor}; margin: 0 0 10px 0; font-size: 1.8em;">${isSuccess ? 'HEIST SUCCESSFUL!' : 'HEIST FAILED!'}</h2>
-            <div style="color: #ccc; font-size: 1.1em; margin-bottom: 20px;">Target: ${escapeHTML(result.target || 'Unknown')}</div>
+        <div class="popup-card ${isSuccess ? 'popup-success' : 'popup-danger'}" style="max-width:450px;">
+            <div style="font-size:4em;margin-bottom:15px;text-align:center;">${isSuccess ? '💰' : '🚔'}</div>
+            <h2 class="popup-title">${isSuccess ? 'HEIST SUCCESSFUL!' : 'HEIST FAILED!'}</h2>
+            <p class="popup-subtitle">Target: ${escapeHTML(result.target || 'Unknown')}</p>
             
-            <div style="background: rgba(0,0,0,0.4); padding: 20px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #333;">
+            <div class="popup-section">
                 ${isSuccess ? `
-                    <div style="color: #2ecc71; font-size: 1.3em; font-weight: bold; margin-bottom: 8px;">
+                    <div class="popup-stat-value" style="color:#2ecc71;font-size:1.3em;margin-bottom:8px;">
                         +$${(result.reward || 0).toLocaleString()}
                     </div>
-                    <div style="color: #f39c12; font-size: 1em;">
+                    <div style="color:#f39c12;font-size:1em;">
                         +${result.repGain || 0} Reputation
                     </div>
                 ` : `
-                    <div style="color: #e74c3c; font-size: 1.3em; font-weight: bold; margin-bottom: 8px;">
+                    <div class="popup-stat-value" style="color:#e74c3c;font-size:1.3em;margin-bottom:8px;">
                         No Payout
                     </div>
-                    <div style="color: #e74c3c; font-size: 1em;">
+                    <div style="color:#e74c3c;font-size:1em;">
                         -${result.repLoss || 0} Reputation
                     </div>
                 `}
-                <div style="color: #888; font-size: 0.85em; margin-top: 10px;">
+                <div style="color:#888;font-size:0.85em;margin-top:10px;">
                     Crew size: ${result.crewSize || '?'}
                 </div>
             </div>
             
-            <button onclick="document.getElementById('heist-result-modal').remove()" style="background: linear-gradient(180deg, ${isSuccess ? '#27ae60' : '#c0392b'}, ${isSuccess ? '#1a7a40' : '#7a1a1a'}); color: #fff; padding: 14px 35px; border: none; border-radius: 8px; cursor: pointer; font-family: 'Georgia', serif; font-size: 1.1em; font-weight: bold;">
-                ${isSuccess ? 'Collect & Continue' : 'Walk Away'}
-            </button>
+            <div class="popup-actions">
+                <button onclick="document.getElementById('heist-result-modal').remove()" class="popup-btn ${isSuccess ? 'popup-btn-success' : 'popup-btn-danger'}">
+                    ${isSuccess ? 'Collect & Continue' : 'Walk Away'}
+                </button>
+            </div>
         </div>
     `;
     
@@ -1908,31 +1908,27 @@ function showFreedFromJailPopup(helperName, helperId) {
 
     const overlay = document.createElement('div');
     overlay.id = 'freed-from-jail-popup';
-    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;';
+    overlay.className = 'popup-overlay';
 
     const giftAmounts = [500, 1000, 2500, 5000];
     let giftButtonsHTML = '';
     if (helperId) {
         giftButtonsHTML = `<p style="margin-top:12px;color:#c0a062;font-size:14px;">Want to send them a thank-you gift?</p>
         <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:8px;">
-            ${giftAmounts.map(amt => `<button onclick="sendGiftMoney('${helperId}', ${amt})" 
-                style="padding:8px 14px;background:#2a5e2a;color:#c0a062;border:1px solid #c0a062;border-radius:5px;cursor:pointer;font-family:'Georgia',serif;font-size:13px;"
-                onmouseover="this.style.background='#3a7e3a'" onmouseout="this.style.background='#2a5e2a'"
-                >$${amt.toLocaleString()}</button>`).join('')}
+            ${giftAmounts.map(amt => `<button onclick="sendGiftMoney('${helperId}', ${amt})" class="popup-btn popup-btn-success" style="padding:8px 14px;font-size:13px;">$${amt.toLocaleString()}</button>`).join('')}
         </div>`;
     }
 
     overlay.innerHTML = `
-        <div style="background:linear-gradient(135deg,#1a1a2e,#16213e);border:2px solid #c0a062;border-radius:10px;padding:30px;max-width:420px;width:90%;text-align:center;">
-            <h2 style="color:#2ecc71;margin:0 0 10px 0;font-family:'Georgia',serif;">🔓 You're Free!</h2>
-            <p style="color:#e0d5c1;font-size:16px;line-height:1.5;">
+        <div class="popup-card popup-success" style="max-width:420px;">
+            <h2 class="popup-title" style="color:#2ecc71;">🔓 You're Free!</h2>
+            <p class="popup-text" style="font-size:16px;line-height:1.5;">
                 <strong style="color:#c0a062;">${escapeHTML(helperName || 'A fellow gangster')}</strong> broke you out of jail!
             </p>
             ${giftButtonsHTML}
-            <button onclick="document.getElementById('freed-from-jail-popup').remove()" 
-                style="margin-top:20px;padding:10px 30px;background:#8b0000;color:#e0d5c1;border:1px solid #c0a062;border-radius:5px;cursor:pointer;font-family:'Georgia',serif;font-size:14px;display:block;width:80%;margin-left:auto;margin-right:auto;"
-                onmouseover="this.style.background='#a00000'" onmouseout="this.style.background='#8b0000'"
-                >Close</button>
+            <div class="popup-actions">
+                <button onclick="document.getElementById('freed-from-jail-popup').remove()" class="popup-btn popup-btn-crimson">Close</button>
+            </div>
         </div>
     `;
     document.body.appendChild(overlay);
@@ -1977,95 +1973,89 @@ function showSystemMessage(message, color = '#f39c12') {
 
 // PvP combat result modal
 function showPvpResultModal(message, isWinner) {
-    let modal = document.getElementById('pvp-result-modal');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'pvp-result-modal';
-        modal.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;width:480px;max-width:95%;background:rgba(0,0,0,0.95);border-radius:12px;font-family:Georgia,serif;color:#ecf0f1;padding:25px;';
-        document.body.appendChild(modal);
-    }
+    // Remove existing modal if any
+    const existing = document.getElementById('pvp-result-modal');
+    if (existing) existing.remove();
 
     const repChange = message.repChange || 5;
     const opponent = isWinner ? message.loser : message.winner;
     const myDmg = message.healthDamage ? (isWinner ? message.healthDamage.winner : message.healthDamage.loser) : 0;
 
+    const modal = document.createElement('div');
+    modal.id = 'pvp-result-modal';
+    modal.className = 'popup-overlay';
+
     if (isWinner) {
-        modal.style.border = '2px solid #2ecc71';
-        modal.style.boxShadow = '0 0 30px rgba(46,204,113,0.5)';
         player.reputation = (player.reputation || 0) + repChange;
 
         modal.innerHTML = `
-            <div style="text-align:center;">
-                <div style="font-size:3em;margin-bottom:10px;">🏆</div>
-                <h2 style="color:#2ecc71;margin:0;">VICTORY!</h2>
-                <p style="color:#888;margin:5px 0;">You defeated <strong style="color:#e74c3c;">${escapeHTML(opponent)}</strong></p>
-            </div>
-            <div style="margin:20px 0;padding:15px;background:rgba(46,204,113,0.1);border:1px solid #2ecc71;border-radius:8px;">
-                <div style="display:flex;justify-content:space-around;text-align:center;">
-                    <div>
-                        <div style="color:#2ecc71;font-size:1.5em;font-weight:bold;">+${repChange}</div>
-                        <div style="color:#888;font-size:0.85em;">Don Rep</div>
-                    </div>
-                    ${myDmg ? `<div>
-                        <div style="color:#e67e22;font-size:1.5em;font-weight:bold;">-${myDmg}</div>
-                        <div style="color:#888;font-size:0.85em;">Health</div>
-                    </div>` : ''}
-                    <div>
-                        <div style="color:#f1c40f;font-size:1.5em;font-weight:bold;">👑</div>
-                        <div style="color:#888;font-size:0.85em;">Bragging Rights</div>
+            <div class="popup-card popup-success" style="max-width:480px;">
+                <div style="font-size:3em;margin-bottom:10px;">${[char]::ConvertFromUtf32(0x1F3C6)}</div>
+                <h2 class="popup-title popup-title-success" style="margin:0;">VICTORY!</h2>
+                <p class="popup-subtitle">You defeated <strong style="color:#e74c3c;">${escapeHTML(opponent)}</strong></p>
+                <div class="popup-section" style="border-color:rgba(46,204,113,0.3);">
+                    <div style="display:flex;justify-content:space-around;text-align:center;">
+                        <div>
+                            <div style="color:#2ecc71;font-size:1.5em;font-weight:bold;">+${repChange}</div>
+                            <div class="popup-stat-label">Don Rep</div>
+                        </div>
+                        ${myDmg ? `<div>
+                            <div style="color:#e67e22;font-size:1.5em;font-weight:bold;">-${myDmg}</div>
+                            <div class="popup-stat-label">Health</div>
+                        </div>` : ''}
+                        <div>
+                            <div style="color:#f1c40f;font-size:1.5em;font-weight:bold;">${[char]::ConvertFromUtf32(0x1F451)}</div>
+                            <div class="popup-stat-label">Bragging Rights</div>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div style="background:rgba(255,255,255,0.05);padding:12px;border-radius:6px;text-align:center;color:#888;font-style:italic;">
-                "Word on the street is you're not someone to mess with."
-            </div>
-            <div style="text-align:center;margin-top:15px;">
-                <button onclick="document.getElementById('pvp-result-modal').remove();" style="background:#2ecc71;color:#1a1a1a;padding:12px 35px;border:none;border-radius:6px;cursor:pointer;font-family:Georgia,serif;font-size:1em;font-weight:bold;">Claim Victory</button>
+                <div class="popup-quote">"Word on the street is you're not someone to mess with."</div>
+                <div class="popup-actions">
+                    <button onclick="document.getElementById('pvp-result-modal').remove();" class="popup-btn popup-btn-success">Claim Victory</button>
+                </div>
             </div>
         `;
 
-        logAction(`👑 Victory! Defeated ${opponent} and gained ${repChange} Don Rep!${myDmg ? ` (HP -${myDmg})` : ''}`);
+        logAction(`${[char]::ConvertFromUtf32(0x1F451)} Victory! Defeated ${opponent} and gained ${repChange} Don Rep!${myDmg ? ` (HP -${myDmg})` : ''}`);
     } else {
-        modal.style.border = '2px solid #e74c3c';
-        modal.style.boxShadow = '0 0 30px rgba(231,76,60,0.5)';
         const repLoss = Math.min(player.reputation || 0, 3);
         player.reputation = Math.max(0, (player.reputation || 0) - repLoss);
 
         modal.innerHTML = `
-            <div style="text-align:center;">
-                <div style="font-size:3em;margin-bottom:10px;">💀</div>
-                <h2 style="color:#e74c3c;margin:0;">DEFEATED</h2>
-                <p style="color:#888;margin:5px 0;"><strong style="color:#2ecc71;">${escapeHTML(opponent)}</strong> came out on top</p>
-            </div>
-            <div style="margin:20px 0;padding:15px;background:rgba(231,76,60,0.1);border:1px solid #e74c3c;border-radius:8px;">
-                <div style="display:flex;justify-content:space-around;text-align:center;">
-                    <div>
-                        <div style="color:#e74c3c;font-size:1.5em;font-weight:bold;">-${repLoss}</div>
-                        <div style="color:#888;font-size:0.85em;">Don Rep</div>
-                    </div>
-                    ${myDmg ? `<div>
-                        <div style="color:#e67e22;font-size:1.5em;font-weight:bold;">-${myDmg}</div>
-                        <div style="color:#888;font-size:0.85em;">Health</div>
-                    </div>` : ''}
-                    <div>
-                        <div style="color:#e74c3c;font-size:1.5em;font-weight:bold;">😤</div>
-                        <div style="color:#888;font-size:0.85em;">Bruised Ego</div>
+            <div class="popup-card popup-danger" style="max-width:480px;">
+                <div style="font-size:3em;margin-bottom:10px;">${[char]::ConvertFromUtf32(0x1F480)}</div>
+                <h2 class="popup-title popup-title-danger" style="margin:0;">DEFEATED</h2>
+                <p class="popup-subtitle"><strong style="color:#2ecc71;">${escapeHTML(opponent)}</strong> came out on top</p>
+                <div class="popup-section" style="border-color:rgba(231,76,60,0.3);">
+                    <div style="display:flex;justify-content:space-around;text-align:center;">
+                        <div>
+                            <div style="color:#e74c3c;font-size:1.5em;font-weight:bold;">-${repLoss}</div>
+                            <div class="popup-stat-label">Don Rep</div>
+                        </div>
+                        ${myDmg ? `<div>
+                            <div style="color:#e67e22;font-size:1.5em;font-weight:bold;">-${myDmg}</div>
+                            <div class="popup-stat-label">Health</div>
+                        </div>` : ''}
+                        <div>
+                            <div style="color:#e74c3c;font-size:1.5em;font-weight:bold;">${[char]::ConvertFromUtf32(0x1F624)}</div>
+                            <div class="popup-stat-label">Bruised Ego</div>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div style="background:rgba(255,255,255,0.05);padding:12px;border-radius:6px;text-align:center;color:#888;font-style:italic;">
-                "You'll get them next time. Every Don takes a loss before they rise."
-            </div>
-            <div style="text-align:center;margin-top:15px;">
-                <button onclick="document.getElementById('pvp-result-modal').remove();" style="background:#e74c3c;color:#fff;padding:12px 35px;border:none;border-radius:6px;cursor:pointer;font-family:Georgia,serif;font-size:1em;">Dust Off</button>
+                <div class="popup-quote">"You'll get them next time. Every Don takes a loss before they rise."</div>
+                <div class="popup-actions">
+                    <button onclick="document.getElementById('pvp-result-modal').remove();" class="popup-btn popup-btn-danger">Dust Off</button>
+                </div>
             </div>
         `;
 
-        logAction(`� Defeated by ${opponent}. Lost ${repLoss} Don Rep.${myDmg ? ` (HP -${myDmg})` : ''}`);
+        logAction(`${[char]::ConvertFromUtf32(0x1F480)} Defeated by ${opponent}. Lost ${repLoss} Don Rep.${myDmg ? ` (HP -${myDmg})` : ''}`);
     }
 
+    document.body.appendChild(modal);
     if (typeof updateUI === 'function') updateUI();
 }
+
 
 // Deferred name correction — retries a few times after connect to push the real name to the server
 let _nameCorrectionAttempts = 0;
@@ -3504,12 +3494,11 @@ function doDistrictJob(districtName) {
     const arrested = Math.random() < adjustedJailChance;
 
     let resultModal = document.getElementById('district-job-modal');
-    if (!resultModal) {
-        resultModal = document.createElement('div');
-        resultModal.id = 'district-job-modal';
-        resultModal.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;width:520px;max-width:95%;background:rgba(0,0,0,0.95);border:2px solid #c0a062;border-radius:12px;font-family:Georgia,serif;color:#ecf0f1;box-shadow:0 0 25px rgba(192,160,98,0.4);padding:25px;';
-        document.body.appendChild(resultModal);
-    }
+    if (resultModal) resultModal.remove();
+    resultModal = document.createElement('div');
+    resultModal.id = 'district-job-modal';
+    resultModal.className = 'popup-overlay';
+    document.body.appendChild(resultModal);
 
     if (arrested) {
         const jailTime = 10 + Math.floor(Math.random() * 15);
@@ -3518,17 +3507,17 @@ function doDistrictJob(districtName) {
         player.wantedLevel = Math.min(10, (player.wantedLevel || 0) + 1);
 
         resultModal.innerHTML = `
-            <div style="text-align:center;">
+            <div class="popup-card popup-danger" style="max-width:520px;">
                 <h3 style="color:#c0a062;margin:0 0 5px 0;">🏙️ ${districtName.charAt(0).toUpperCase() + districtName.slice(1)} District Job</h3>
-                <small style="color:#888;">Crime Level: ${crimeLevel}%</small>
-            </div>
-            <div style="margin:15px 0;padding:12px;background:rgba(231,76,60,0.15);border:1px solid #e74c3c;border-radius:8px;">
+                <p class="popup-subtitle">Crime Level: ${crimeLevel}%</p>
+                <div class="popup-section" style="border-color:rgba(231,76,60,0.3);">
                 <p style="color:#e74c3c;font-weight:bold;margin:0 0 8px 0;">🚔 Busted!</p>
                 <p style="margin:0;color:#ccc;">You attempted: <strong>${job.name}</strong></p>
                 <p style="margin:8px 0 0 0;color:#e74c3c;">The cops were tipped off. You've been sentenced to ${jailTime} seconds in jail.</p>
-            </div>
-            <div style="text-align:center;margin-top:15px;">
-                <button onclick="document.getElementById('district-job-modal').remove();if(typeof showJailScreen==='function')showJailScreen();" style="background:#e74c3c;color:white;padding:10px 30px;border:none;border-radius:6px;cursor:pointer;font-family:Georgia,serif;font-size:1em;">Accept Your Fate</button>
+                </div>
+                <div class="popup-actions">
+                    <button onclick="document.getElementById('district-job-modal').remove();if(typeof showJailScreen==='function')showJailScreen();" class="popup-btn popup-btn-danger">Accept Your Fate</button>
+                </div>
             </div>
         `;
 
@@ -3546,30 +3535,30 @@ function doDistrictJob(districtName) {
         }
 
         resultModal.innerHTML = `
-            <div style="text-align:center;">
-                <h3 style="color:#c0a062;margin:0 0 5px 0;">🏙️ ${districtName.charAt(0).toUpperCase() + districtName.slice(1)} District Job</h3>
-                <small style="color:#888;">Crime Level: ${crimeLevel}% (${crimeLevel > 60 ? 'High Risk / High Reward' : crimeLevel > 35 ? 'Moderate Risk' : 'Low Profile'})</small>
-            </div>
-            <div style="margin:15px 0;padding:12px;background:rgba(46,204,113,0.12);border:1px solid #2ecc71;border-radius:8px;">
-                <p style="color:#2ecc71;font-weight:bold;margin:0 0 8px 0;">✅ ${job.name}</p>
-                <p style="margin:0;color:#ccc;font-style:italic;">${job.flavor}</p>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:15px 0;">
-                <div style="text-align:center;padding:10px;background:rgba(255,255,255,0.05);border-radius:6px;">
-                    <div style="color:#2ecc71;font-size:1.2em;font-weight:bold;">+$${earned.toLocaleString()}</div>
-                    <div style="color:#888;font-size:0.8em;">Cash</div>
+            <div class="popup-card popup-success" style="max-width:520px;">
+                <h3 class="popup-title">🏙️ ${districtName.charAt(0).toUpperCase() + districtName.slice(1)} District Job</h3>
+                <p class="popup-subtitle">Crime Level: ${crimeLevel}% (${crimeLevel > 60 ? 'High Risk / High Reward' : crimeLevel > 35 ? 'Moderate Risk' : 'Low Profile'})</p>
+                <div class="popup-section" style="border-color:rgba(46,204,113,0.3);">
+                    <p style="color:#2ecc71;font-weight:bold;margin:0 0 8px 0;">✅ ${job.name}</p>
+                    <p style="margin:0;color:#ccc;font-style:italic;">${job.flavor}</p>
                 </div>
-                <div style="text-align:center;padding:10px;background:rgba(255,255,255,0.05);border-radius:6px;">
-                    <div style="color:#9b59b6;font-size:1.2em;font-weight:bold;">+${adjustedXp} XP</div>
-                    <div style="color:#888;font-size:0.8em;">Experience</div>
+                <div class="popup-stats-grid">
+                    <div class="popup-stat">
+                        <div class="popup-stat-value" style="color:#2ecc71;">+$${earned.toLocaleString()}</div>
+                        <div class="popup-stat-label">Cash</div>
+                    </div>
+                    <div class="popup-stat">
+                        <div class="popup-stat-value" style="color:#9b59b6;">+${adjustedXp} XP</div>
+                        <div class="popup-stat-label">Experience</div>
+                    </div>
+                    <div class="popup-stat">
+                        <div class="popup-stat-value" style="color:#e67e22;">-${energyCost}</div>
+                        <div class="popup-stat-label">Energy</div>
+                    </div>
                 </div>
-                <div style="text-align:center;padding:10px;background:rgba(255,255,255,0.05);border-radius:6px;">
-                    <div style="color:#e67e22;font-size:1.2em;font-weight:bold;">-${energyCost}</div>
-                    <div style="color:#888;font-size:0.8em;">Energy</div>
+                <div class="popup-actions">
+                    <button onclick="document.getElementById('district-job-modal').remove();" class="popup-btn popup-btn-gold">Collect</button>
                 </div>
-            </div>
-            <div style="text-align:center;margin-top:15px;">
-                <button onclick="document.getElementById('district-job-modal').remove();" style="background:#c0a062;color:#1a1a1a;padding:10px 30px;border:none;border-radius:6px;cursor:pointer;font-family:Georgia,serif;font-size:1em;font-weight:bold;">Collect</button>
             </div>
         `;
 
@@ -4097,7 +4086,7 @@ function challengePlayer(playerName) {
     if (!modal) {
         modal = document.createElement('div');
         modal.id = 'pvp-challenge-modal';
-        modal.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;width:450px;max-width:95%;background:rgba(0,0,0,0.95);border:2px solid #8b0000;border-radius:12px;font-family:Georgia,serif;color:#ecf0f1;box-shadow:0 0 30px rgba(139,0,0,0.6);padding:25px;';
+        modal.className = 'popup-overlay';
         document.body.appendChild(modal);
     }
 
@@ -4107,26 +4096,26 @@ function challengePlayer(playerName) {
     const targetRep = targetInfo ? (targetInfo.reputation || '?') : '?';
 
     modal.innerHTML = `
-        <div style="text-align:center;">
-            <h3 style="color:#8b0000;margin:0;">⚔️ Challenge to Combat</h3>
-        </div>
-        <div style="margin:20px 0;display:grid;grid-template-columns:1fr auto 1fr;gap:15px;align-items:center;">
-            <div style="text-align:center;padding:15px;background:rgba(46,204,113,0.1);border:1px solid #2ecc71;border-radius:8px;">
-                <div style="color:#2ecc71;font-weight:bold;font-size:1.1em;">${escapeHTML(player.name || 'You')}</div>
-                <div style="color:#888;font-size:0.85em;margin-top:5px;">Lvl ${player.level || 1}</div>
-                <div style="color:#888;font-size:0.85em;">Rep: ${Math.floor(player.reputation || 0)}</div>
+        <div class="popup-card popup-crimson" style="max-width:480px;">
+            <h3 class="popup-title">⚔️ Challenge to Combat</h3>
+            <div style="margin:20px 0;display:grid;grid-template-columns:1fr auto 1fr;gap:15px;align-items:center;">
+                <div class="popup-section" style="border-color:rgba(46,204,113,0.3);text-align:center;padding:15px;">
+                    <div style="color:#2ecc71;font-weight:bold;font-size:1.1em;">${escapeHTML(player.name || 'You')}</div>
+                    <div style="color:#888;font-size:0.85em;margin-top:5px;">Lvl ${player.level || 1}</div>
+                    <div style="color:#888;font-size:0.85em;">Rep: ${Math.floor(player.reputation || 0)}</div>
+                </div>
+                <div style="color:#8b0000;font-size:1.5em;font-weight:bold;">VS</div>
+                <div class="popup-section" style="border-color:rgba(231,76,60,0.3);text-align:center;padding:15px;">
+                    <div style="color:#e74c3c;font-weight:bold;font-size:1.1em;">${escapeHTML(playerName)}</div>
+                    <div style="color:#888;font-size:0.85em;margin-top:5px;">Lvl ${targetLevel}</div>
+                    <div style="color:#888;font-size:0.85em;">Rep: ${targetRep}</div>
+                </div>
             </div>
-            <div style="color:#8b0000;font-size:1.5em;font-weight:bold;">VS</div>
-            <div style="text-align:center;padding:15px;background:rgba(231,76,60,0.1);border:1px solid #e74c3c;border-radius:8px;">
-                <div style="color:#e74c3c;font-weight:bold;font-size:1.1em;">${escapeHTML(playerName)}</div>
-                <div style="color:#888;font-size:0.85em;margin-top:5px;">Lvl ${targetLevel}</div>
-                <div style="color:#888;font-size:0.85em;">Rep: ${targetRep}</div>
+            <p class="popup-subtitle">Cost: ${energyCost} energy | Winner gains Don Rep</p>
+            <div class="popup-actions">
+                <button onclick="executePvpChallenge('${escapeHTML(playerName)}', ${energyCost})" class="popup-btn popup-btn-crimson">⚔️ Fight</button>
+                <button onclick="document.getElementById('pvp-challenge-modal').remove();" class="popup-btn popup-btn-secondary">Walk Away</button>
             </div>
-        </div>
-        <div style="text-align:center;color:#888;font-size:0.85em;margin-bottom:15px;">Cost: ${energyCost} energy | Winner gains Don Rep</div>
-        <div style="display:flex;gap:10px;justify-content:center;">
-            <button onclick="executePvpChallenge('${escapeHTML(playerName)}', ${energyCost})" style="background:#8b0000;color:#fff;padding:12px 30px;border:none;border-radius:6px;cursor:pointer;font-family:Georgia,serif;font-size:1em;">⚔️ Fight</button>
-            <button onclick="document.getElementById('pvp-challenge-modal').remove();" style="background:#333;color:#c0a062;padding:12px 30px;border:1px solid #c0a062;border-radius:6px;cursor:pointer;font-family:Georgia,serif;font-size:1em;">Walk Away</button>
         </div>
     `;
 }
@@ -4276,7 +4265,7 @@ function participateInEvent(eventType, district) {
     if (!modal) {
         modal = document.createElement('div');
         modal.id = 'event-participation-modal';
-        modal.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;width:550px;max-width:95%;background:rgba(0,0,0,0.95);border:2px solid #9b59b6;border-radius:12px;font-family:Georgia,serif;color:#ecf0f1;box-shadow:0 0 25px rgba(155,89,182,0.5);padding:25px;';
+        modal.className = 'popup-overlay';
         document.body.appendChild(modal);
     }
 
@@ -4291,30 +4280,30 @@ function participateInEvent(eventType, district) {
         }
 
         modal.innerHTML = `
-            <div style="text-align:center;">
-                <h3 style="color:#9b59b6;margin:0 0 5px 0;">${eventData.icon} ${eventData.title}</h3>
-                <small style="color:#888;">District: ${district.charAt(0).toUpperCase() + district.slice(1)}</small>
-            </div>
-            <div style="margin:20px 0;padding:15px;background:rgba(46,204,113,0.15);border:1px solid #2ecc71;border-radius:8px;">
-                <p style="color:#2ecc71;font-weight:bold;margin:0 0 8px 0;">✅ Success!</p>
-                <p style="margin:0;color:#ccc;">${scenario.text}</p>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:15px 0;">
-                <div style="text-align:center;padding:10px;background:rgba(255,255,255,0.05);border-radius:6px;">
-                    <div style="color:#2ecc71;font-size:1.2em;font-weight:bold;">+$${moneyEarned.toLocaleString()}</div>
-                    <div style="color:#888;font-size:0.8em;">Cash</div>
+            <div class="popup-card popup-success" style="max-width:550px;">
+                <h3 class="popup-title">${eventData.icon} ${eventData.title}</h3>
+                <p class="popup-subtitle">District: ${district.charAt(0).toUpperCase() + district.slice(1)}</p>
+                <div class="popup-section" style="border-color:rgba(46,204,113,0.3);">
+                    <p style="color:#2ecc71;font-weight:bold;margin:0 0 8px 0;">✅ Success!</p>
+                    <p style="margin:0;color:#ccc;">${scenario.text}</p>
                 </div>
-                <div style="text-align:center;padding:10px;background:rgba(255,255,255,0.05);border-radius:6px;">
-                    <div style="color:#9b59b6;font-size:1.2em;font-weight:bold;">+${scenario.xp} XP</div>
-                    <div style="color:#888;font-size:0.8em;">Experience</div>
+                <div class="popup-stats-grid">
+                    <div class="popup-stat">
+                        <div class="popup-stat-value" style="color:#2ecc71;">+$${moneyEarned.toLocaleString()}</div>
+                        <div class="popup-stat-label">Cash</div>
+                    </div>
+                    <div class="popup-stat">
+                        <div class="popup-stat-value" style="color:#9b59b6;">+${scenario.xp} XP</div>
+                        <div class="popup-stat-label">Experience</div>
+                    </div>
+                    <div class="popup-stat">
+                        <div class="popup-stat-value" style="color:#f1c40f;">+${scenario.repGain}</div>
+                        <div class="popup-stat-label">Reputation</div>
+                    </div>
                 </div>
-                <div style="text-align:center;padding:10px;background:rgba(255,255,255,0.05);border-radius:6px;">
-                    <div style="color:#f1c40f;font-size:1.2em;font-weight:bold;">+${scenario.repGain}</div>
-                    <div style="color:#888;font-size:0.8em;">Reputation</div>
+                <div class="popup-actions">
+                    <button onclick="document.getElementById('event-participation-modal').remove();" class="popup-btn popup-btn-purple">Collect Rewards</button>
                 </div>
-            </div>
-            <div style="text-align:center;margin-top:15px;">
-                <button onclick="document.getElementById('event-participation-modal').remove();" style="background:#9b59b6;color:white;padding:10px 30px;border:none;border-radius:6px;cursor:pointer;font-family:Georgia,serif;font-size:1em;">Collect Rewards</button>
             </div>
         `;
 
@@ -4328,31 +4317,31 @@ function participateInEvent(eventType, district) {
         player.wantedLevel = Math.min(10, (player.wantedLevel || 0) + scenario.wantedGain);
 
         modal.innerHTML = `
-            <div style="text-align:center;">
-                <h3 style="color:#9b59b6;margin:0 0 5px 0;">${eventData.icon} ${eventData.title}</h3>
-                <small style="color:#888;">District: ${district.charAt(0).toUpperCase() + district.slice(1)}</small>
-            </div>
-            <div style="margin:20px 0;padding:15px;background:rgba(231,76,60,0.15);border:1px solid #e74c3c;border-radius:8px;">
-                <p style="color:#e74c3c;font-weight:bold;margin:0 0 8px 0;">❌ Things went south...</p>
-                <p style="margin:0 0 8px 0;color:#ccc;">${scenario.text.split('.')[0]}... but ${scenario.riskText.toLowerCase()}</p>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr ${scenario.wantedGain > 0 ? '1fr' : ''};gap:10px;margin:15px 0;">
-                <div style="text-align:center;padding:10px;background:rgba(255,255,255,0.05);border-radius:6px;">
-                    <div style="color:#e67e22;font-size:1.2em;font-weight:bold;">+$${partialMoney.toLocaleString()}</div>
-                    <div style="color:#888;font-size:0.8em;">Salvaged</div>
+            <div class="popup-card popup-danger" style="max-width:550px;">
+                <h3 class="popup-title">${eventData.icon} ${eventData.title}</h3>
+                <p class="popup-subtitle">District: ${district.charAt(0).toUpperCase() + district.slice(1)}</p>
+                <div class="popup-section" style="border-color:rgba(231,76,60,0.3);">
+                    <p style="color:#e74c3c;font-weight:bold;margin:0 0 8px 0;">❌ Things went south...</p>
+                    <p style="margin:0 0 8px 0;color:#ccc;">${scenario.text.split('.')[0]}... but ${scenario.riskText.toLowerCase()}</p>
                 </div>
-                <div style="text-align:center;padding:10px;background:rgba(255,255,255,0.05);border-radius:6px;">
-                    <div style="color:#e74c3c;font-size:1.2em;font-weight:bold;">-${scenario.healthLoss} HP</div>
-                    <div style="color:#888;font-size:0.8em;">Health</div>
+                <div class="popup-stats-grid">
+                    <div class="popup-stat">
+                        <div class="popup-stat-value" style="color:#e67e22;">+$${partialMoney.toLocaleString()}</div>
+                        <div class="popup-stat-label">Salvaged</div>
+                    </div>
+                    <div class="popup-stat">
+                        <div class="popup-stat-value" style="color:#e74c3c;">-${scenario.healthLoss} HP</div>
+                        <div class="popup-stat-label">Health</div>
+                    </div>
+                    ${scenario.wantedGain > 0 ? `
+                    <div class="popup-stat">
+                        <div class="popup-stat-value" style="color:#e74c3c;">+${scenario.wantedGain} ⭐</div>
+                        <div class="popup-stat-label">Wanted</div>
+                    </div>` : ''}
                 </div>
-                ${scenario.wantedGain > 0 ? `
-                <div style="text-align:center;padding:10px;background:rgba(255,255,255,0.05);border-radius:6px;">
-                    <div style="color:#e74c3c;font-size:1.2em;font-weight:bold;">+${scenario.wantedGain} ⭐</div>
-                    <div style="color:#888;font-size:0.8em;">Wanted</div>
-                </div>` : ''}
-            </div>
-            <div style="text-align:center;margin-top:15px;">
-                <button onclick="document.getElementById('event-participation-modal').remove();" style="background:#e74c3c;color:white;padding:10px 30px;border:none;border-radius:6px;cursor:pointer;font-family:Georgia,serif;font-size:1em;">Dust Yourself Off</button>
+                <div class="popup-actions">
+                    <button onclick="document.getElementById('event-participation-modal').remove();" class="popup-btn popup-btn-danger">Dust Yourself Off</button>
+                </div>
             </div>
         `;
 
@@ -4688,15 +4677,15 @@ function handleAllianceInviteReceived(message) {
     // Show accept/decline popup
     const modal = document.createElement('div');
     modal.id = 'alliance-invite-modal';
-    modal.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:10000;';
+    modal.className = 'popup-overlay';
     modal.innerHTML = `
-        <div style="background:#1a1a1a;padding:30px;border-radius:12px;border:2px solid #c0a062;max-width:400px;text-align:center;">
-            <h3 style="color:#c0a062;margin:0 0 10px;">🤝 Alliance Invite</h3>
-            <p style="color:#ccc;">${escapeHTML(message.inviterName)} invited you to join:</p>
-            <h2 style="color:#ffd700;margin:10px 0;">[${escapeHTML(message.allianceTag)}] ${escapeHTML(message.allianceName)}</h2>
-            <div style="display:flex;gap:15px;justify-content:center;margin-top:20px;">
-                <button onclick="sendMP({type:'alliance_join',allianceId:'${message.allianceId}'});document.getElementById('alliance-invite-modal').remove();" style="background:#2ecc71;color:#000;padding:12px 25px;border:none;border-radius:8px;cursor:pointer;font-weight:bold;">✅ Accept</button>
-                <button onclick="document.getElementById('alliance-invite-modal').remove();" style="background:#e74c3c;color:#fff;padding:12px 25px;border:none;border-radius:8px;cursor:pointer;">❌ Decline</button>
+        <div class="popup-card" style="max-width:400px;">
+            <h3 class="popup-title">🤝 Alliance Invite</h3>
+            <p class="popup-text">${escapeHTML(message.inviterName)} invited you to join:</p>
+            <h2 style="color:#ffd700;margin:10px 0;text-align:center;font-family:'Georgia',serif;">[${escapeHTML(message.allianceTag)}] ${escapeHTML(message.allianceName)}</h2>
+            <div class="popup-actions">
+                <button onclick="sendMP({type:'alliance_join',allianceId:'${message.allianceId}'});document.getElementById('alliance-invite-modal').remove();" class="popup-btn popup-btn-success">Accept</button>
+                <button onclick="document.getElementById('alliance-invite-modal').remove();" class="popup-btn popup-btn-danger">Decline</button>
             </div>
         </div>
     `;
