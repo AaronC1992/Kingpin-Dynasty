@@ -14781,46 +14781,46 @@ function buildMotorPoolHTML() {
                    car.damagePercentage <= 50 ? 'DAMAGED' : 'HEAVILY DAMAGED';
           let conditionColor = car.damagePercentage <= 15 ? '#2ecc71' : 
                     car.damagePercentage <= 50 ? '#f39c12' : '#e74c3c';
-          const carImageSrc = car.image || \`vehicles/\${car.name}.png\`;
+          const carImageSrc = car.image || `vehicles/${car.name}.png`;
           
-          return \`
+          return `
             <div style="background: rgba(44, 62, 80, 0.8); border-radius: 15px; padding: 25px; border: 2px solid #34495e; box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5); transition: transform 0.3s ease;">
               <div style="text-align: center; margin-bottom: 20px;">
-                <img src="\${carImageSrc}" alt="\${car.name}" 
+                <img src="${carImageSrc}" alt="${car.name}" 
                    style="width: 220px; height: 165px; border-radius: 12px; object-fit: cover; 
                       border: 3px solid #ecf0f1; margin-bottom: 15px; transition: transform 0.3s ease;" 
                    onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjIwIiBoZWlnaHQ9IjE2NSIgdmlld0JveD0iMCAwIDIyMCAxNjUiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjIyMCIgaGVpZ2h0PSIxNjUiIGZpbGw9IiM3ZjhjOGQiLz48dGV4dCB4PSIxMTAiIHk9IjgyLjUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNiIgZmlsbD0iI2VjZjBmMSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSI+VmVoaWNsZSBJbWFnZTwvdGV4dD48L3N2Zz4=';" />
-                <h3 style="color: #ecf0f1; margin: 15px 0; font-size: 1.3em;">\${car.name}</h3>
+                <h3 style="color: #ecf0f1; margin: 15px 0; font-size: 1.3em;">${car.name}</h3>
               </div>
               
               <div style="text-align: center; margin: 20px 0;">
                 <div style="background: rgba(0, 0, 0, 0.3); padding: 15px; border-radius: 10px; margin-bottom: 20px;">
-                  <p style="margin: 8px 0; color: \${conditionColor}; font-weight: bold; font-size: 1.1em;">
-                    \${conditionText} (\${car.damagePercentage}% damaged)
+                  <p style="margin: 8px 0; color: ${conditionColor}; font-weight: bold; font-size: 1.1em;">
+                    ${conditionText} (${car.damagePercentage}% damaged)
                   </p>
-                  <p style="margin: 8px 0; color: #f39c12; font-size: 1.05em;"><strong>Current Value:</strong> $\${car.currentValue.toLocaleString()}</p>
-                  <p style="margin: 8px 0; color: #3498db; font-size: 1.05em;"><strong>Base Value:</strong> $\${car.baseValue.toLocaleString()}</p>
-                  <p style="margin: 8px 0; color: #95a5a6; font-size: 1.05em;"><strong>Times Used:</strong> \${car.usageCount}</p>
+                  <p style="margin: 8px 0; color: #f39c12; font-size: 1.05em;"><strong>Current Value:</strong> $${car.currentValue.toLocaleString()}</p>
+                  <p style="margin: 8px 0; color: #3498db; font-size: 1.05em;"><strong>Base Value:</strong> $${car.baseValue.toLocaleString()}</p>
+                  <p style="margin: 8px 0; color: #95a5a6; font-size: 1.05em;"><strong>Times Used:</strong> ${car.usageCount}</p>
                 </div>
                 
                 <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
-                  <button onclick="scrapStolenCar(\${index})" 
+                  <button onclick="scrapStolenCar(${index})" 
                       style="background: linear-gradient(45deg, #e67e22, #d35400); color: white; padding: 12px 18px; 
                           border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 15px; 
                           transition: all 0.3s ease; min-width: 120px;">
-                    Scrap ($\${Math.floor(car.currentValue * 0.35).toLocaleString()})
+                    Scrap ($${Math.floor(car.currentValue * 0.35).toLocaleString()})
                   </button>
-                  <button onclick="useCar(\${index}, 'job')" \${car.damagePercentage >= 90 ? 'disabled' : ''}
-                      style="background: \${car.damagePercentage >= 90 ? '#7f8c8d' : 'linear-gradient(45deg, #2ecc71, #27ae60)'}; 
+                  <button onclick="useCar(${index}, 'job')" ${car.damagePercentage >= 90 ? 'disabled' : ''}
+                      style="background: ${car.damagePercentage >= 90 ? '#7f8c8d' : 'linear-gradient(45deg, #2ecc71, #27ae60)'}; 
                           color: white; padding: 12px 18px; border: none; border-radius: 10px; 
-                          font-weight: bold; cursor: \${car.damagePercentage >= 90 ? 'not-allowed' : 'pointer'}; font-size: 15px;
+                          font-weight: bold; cursor: ${car.damagePercentage >= 90 ? 'not-allowed' : 'pointer'}; font-size: 15px;
                           transition: all 0.3s ease; min-width: 120px;">
-                    \${car.damagePercentage >= 90 ? '🚫 Too Damaged' : 'Use for Job'}
+                    ${car.damagePercentage >= 90 ? '🚫 Too Damaged' : 'Use for Job'}
                   </button>
                 </div>
               </div>
             </div>
-          \`;
+          `;
         }).join('')}
       </div>
     `;
