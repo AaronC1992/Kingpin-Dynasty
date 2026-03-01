@@ -8668,14 +8668,17 @@ function showCarTheftChoiceResult(stolenCar, wasHurt = false, healthLoss = 0) {
           <p style="margin: 10px 0; color: #ecf0f1; font-size: 1.1em;">
             ${wasHurt ? getRandomNarration('carTheftDamaged') : getRandomNarration('carTheftSuccess')}
           </p>
+          <p style="margin: 8px 0; color: #e74c3c; font-size: 0.9em;">
+            ⚠️ This vehicle is hot — you can't sell it directly. Scrap it for parts or store it.
+          </p>
         </div>
         
         <div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin-top: 25px;">
-          <button onclick="handleStolenCarChoice('sell', '${stolenCar.name}', ${stolenCar.baseValue}, ${stolenCar.currentValue}, ${stolenCar.damagePercentage})" 
-              style="background: linear-gradient(45deg, #e74c3c, #c0392b); color: white; padding: 15px 25px; border: none; 
+          <button onclick="handleStolenCarChoice('scrap', '${stolenCar.name}', ${stolenCar.baseValue}, ${stolenCar.currentValue}, ${stolenCar.damagePercentage})" 
+              style="background: linear-gradient(45deg, #e67e22, #d35400); color: white; padding: 15px 25px; border: none; 
                   border-radius: 12px; font-size: 1.1em; font-weight: bold; cursor: pointer; min-width: 140px;
-                  transition: all 0.3s ease; box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);">
-            💵 Sell Now<br><small>+$${stolenCar.currentValue.toLocaleString()}</small>
+                  transition: all 0.3s ease; box-shadow: 0 5px 15px rgba(230, 126, 34, 0.4);">
+            🔧 Scrap for Parts<br><small>+$${Math.floor(stolenCar.currentValue * 0.35).toLocaleString()}</small>
           </button>
           <button onclick="handleStolenCarChoice('store', '${stolenCar.name}', ${stolenCar.baseValue}, ${stolenCar.currentValue}, ${stolenCar.damagePercentage})" 
               style="background: linear-gradient(45deg, #2ecc71, #27ae60); color: white; padding: 15px 25px; border: none; 
@@ -8687,7 +8690,7 @@ function showCarTheftChoiceResult(stolenCar, wasHurt = false, healthLoss = 0) {
         
         <div style="margin-top: 20px; padding: 15px; background: rgba(52, 73, 94, 0.4); border-radius: 8px;">
           <p style="margin: 0; color: #bdc3c7; font-size: 0.9em;">
-            <strong>💡 Tip:</strong> Selling gives instant cash, storing lets you use the vehicle for job bonuses (but it may get damaged over time).
+            <strong>💡 Tip:</strong> Stolen vehicles can't be sold directly — scrap them for quick parts money, or store and sell later through <strong style="color:#8e44ad;">The Fence</strong> for full black market value. Owning a <strong style="color:#e67e22;">Chop Shop</strong> massively boosts scrap profits!
           </p>
         </div>
       </div>
@@ -8736,31 +8739,37 @@ function handleStolenCarChoice(choice, carName, baseValue, currentValue, damageP
     image: carType ? carType.image : `vehicles/${carName}.png`
   };
   
-  if (choice === 'sell') {
-    // Chop Shop synergy: owning a Chop Shop gives +35% sell price for stolen cars
-    let sellPrice = currentValue;
+  if (choice === 'scrap') {
+    // Scrap the stolen car for parts — base 35% of current value
+    // Chop Shop ownership gives a massive boost to scrap profits
+    let scrapPrice = Math.floor(currentValue * 0.35);
     let chopShopBonus = 0;
     if (player.businesses && player.businesses.some(b => b.type === 'chopshop')) {
       const chopShop = player.businesses.find(b => b.type === 'chopshop');
-      const bonusPercent = 0.25 + (chopShop.level * 0.05); // 30% at Lv1, up to 50% at Lv5
-      chopShopBonus = Math.floor(sellPrice * bonusPercent);
-      sellPrice += chopShopBonus;
+      // Chop Shop gives huge scrap boost: +40% at Lv1, +50% at Lv2, +60% at Lv3, +70% at Lv4, +80% at Lv5
+      const bonusPercent = 0.30 + (chopShop.level * 0.10);
+      chopShopBonus = Math.floor(currentValue * bonusPercent);
+      scrapPrice += chopShopBonus;
     }
     
-    // Sell the car immediately
-    player.money += sellPrice;
+    // Minimum scrap floor — even a totaled car has some metal
+    const scrapFloor = Math.floor(baseValue * 0.08);
+    scrapPrice = Math.max(scrapPrice, scrapFloor);
+    
+    // Scrap the car immediately
+    player.money += scrapPrice;
     
     // Track statistics
     updateStatistic('carsStolen');
-    updateStatistic('carsSold');
-    updateStatistic('totalMoneyEarned', sellPrice);
+    updateStatistic('carsScrapped');
+    updateStatistic('totalMoneyEarned', scrapPrice);
     
     if (chopShopBonus > 0) {
-      alert(`You sold the ${carName} for $${sellPrice.toLocaleString()}! (Chop Shop bonus: +$${chopShopBonus.toLocaleString()})`);
-      logAction(`💸🔧 Your Chop Shop strips the ${carName} for premium parts before the sale. Black market buyers pay top dollar (+$${sellPrice.toLocaleString()}, Chop Shop bonus: +$${chopShopBonus.toLocaleString()}).`);
+      showBriefNotification(`Scrapped ${carName} for $${scrapPrice.toLocaleString()}! (Chop Shop bonus: +$${chopShopBonus.toLocaleString()})`, 'success');
+      logAction(`🔧💰 Your Chop Shop crew strips the ${carName} down to the frame. Premium parts sold to underground buyers (+$${scrapPrice.toLocaleString()}, Chop Shop bonus: +$${chopShopBonus.toLocaleString()}).`);
     } else {
-      alert(`You sold the ${carName} immediately for $${sellPrice.toLocaleString()}!`);
-      logAction(`💸 Quick cash! You find a buyer in the shadows and hand over the keys on the spot. The ${carName} disappears into the black market (+$${sellPrice.toLocaleString()}).`);
+      showBriefNotification(`Scrapped ${carName} for parts — $${scrapPrice.toLocaleString()}`, 'success');
+      logAction(`🔧 You strip the ${carName} for parts in a back-alley chop job. Not the best price, but it's quick and untraceable (+$${scrapPrice.toLocaleString()}).`);
     }
   } else if (choice === 'store') {
     // Store the car in garage
@@ -8769,8 +8778,8 @@ function handleStolenCarChoice(choice, carName, baseValue, currentValue, damageP
     // Track statistics
     updateStatistic('carsStolen');
     
-    alert(`The ${carName} has been stored in your garage!`);
-    logAction(`🏠 Smart move! You drive the ${carName} to your garage, adding another ride to your growing collection. It's ready for future jobs.`);
+    alert(`The ${carName} has been stored in your garage! Sell it through The Fence for full black market value.`);
+    logAction(`🏠 Smart move! You drive the ${carName} to your garage. Visit The Fence to sell it at premium black market rates, or use it for jobs.`);
   }
   
   // Close the choice screen
@@ -8904,7 +8913,13 @@ function showStolenCars() {
 
   let carsHTML = `
     <h2>🏠 Vehicle Garage</h2>
-    <p>Your collection of acquired vehicles. Sell them for cash or use them for jobs!</p>
+    <p>Your collection of acquired vehicles. Scrap them for parts or sell through <strong style="color:#8e44ad;">The Fence</strong> for full black market value!</p>
+    <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+      <button onclick="showFence()" style="background: linear-gradient(45deg, #8e44ad, #6c3483); color: white; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">
+        🤝 Sell at The Fence
+      </button>
+      ${(typeof showVehicleMarketplace === 'function' || window.showVehicleMarketplace) ? '<button onclick="showVehicleMarketplace()" style="background: linear-gradient(45deg, #2980b9, #1a5276); color: white; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">🏪 Player Marketplace</button>' : ''}
+    </div>
   `;
 
   if (player.stolenCars.length === 0) {
@@ -8948,11 +8963,11 @@ function showStolenCars() {
                 </div>
                 
                 <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
-                  <button onclick="sellStolenCar(${index})" 
-                      style="background: linear-gradient(45deg, #e74c3c, #c0392b); color: white; padding: 12px 18px; 
+                  <button onclick="scrapStolenCar(${index})" 
+                      style="background: linear-gradient(45deg, #e67e22, #d35400); color: white; padding: 12px 18px; 
                           border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 15px; 
                           transition: all 0.3s ease; min-width: 120px;">
-                    💵 Sell ($${car.currentValue.toLocaleString()})
+                    🔧 Scrap ($${Math.floor(car.currentValue * 0.35).toLocaleString()})
                   </button>
                   <button onclick="useCar(${index}, 'job')" ${car.damagePercentage >= 90 ? 'disabled' : ''}
                       style="background: ${car.damagePercentage >= 90 ? '#7f8c8d' : 'linear-gradient(45deg, #2ecc71, #27ae60)'}; 
@@ -12277,7 +12292,8 @@ function buildCareerStatisticsHTML() {
       <div class="stat-category">
         <h3>🚗 Criminal Assets</h3>
         <div class="stat-item"><span class="stat-label">Cars Stolen:</span><span class="stat-value">${stats.carsStolen}</span></div>
-        <div class="stat-item"><span class="stat-label">Cars Sold:</span><span class="stat-value">${stats.carsSold}</span></div>
+        <div class="stat-item"><span class="stat-label">Cars Scrapped:</span><span class="stat-value">${stats.carsScrapped || 0}</span></div>
+        <div class="stat-item"><span class="stat-label">Cars Sold (Fence):</span><span class="stat-value">${stats.carsSold}</span></div>
         <div class="stat-item"><span class="stat-label">Current Garage Size:</span><span class="stat-value">${player.stolenCars.length}</span></div>
         <div class="stat-item"><span class="stat-label">Gang Members:</span><span class="stat-value">${player.gang && player.gang.gangMembers ? player.gang.gangMembers.length : 0}</span></div>
         <div class="stat-item"><span class="stat-label">Members Recruited:</span><span class="stat-value">${stats.gangMembersRecruited}</span></div>
@@ -15231,7 +15247,9 @@ function showInventory() {
   html += renderCategory('Other Items', '📦', other);
   
   if (player.stolenCars && player.stolenCars.length > 0) {
-    html += `<div style="margin-bottom:15px;"><h3 style="color:#e67e22;">🏎️ Stolen Cars (${player.stolenCars.length})</h3><div style="display:grid;gap:8px;">`;
+    html += `<div style="margin-bottom:15px;"><h3 style="color:#e67e22;">🏎️ Stolen Cars (${player.stolenCars.length})</h3>
+      <p style="color:#bdc3c7;font-size:0.85em;margin:4px 0 10px;">⚠️ Hot vehicles can't be sold directly. Scrap for parts or sell through <a href="#" onclick="showFence();return false;" style="color:#8e44ad;font-weight:bold;">The Fence</a>.</p>
+      <div style="display:grid;gap:8px;">`;
     player.stolenCars.forEach((car, idx) => {
       const selected = player.selectedCar === idx;
       html += `<div style="padding:10px;background:rgba(0,0,0,0.4);border-radius:8px;border:2px solid ${selected ? '#2ecc71' : '#34495e'};display:flex;justify-content:space-between;align-items:center;">
@@ -15241,7 +15259,7 @@ function showInventory() {
         </div>
         <div style="display:flex;gap:8px;">
           ${!selected ? `<button onclick="selectCar(${idx})" style="background:#3498db;color:white;border:none;padding:6px 12px;border-radius:5px;cursor:pointer;">Select</button>` : ''}
-          <button onclick="sellStolenCar(${idx})" style="background:#e74c3c;color:white;border:none;padding:6px 12px;border-radius:5px;cursor:pointer;">Sell</button>
+          <button onclick="scrapStolenCar(${idx})" style="background:#e67e22;color:white;border:none;padding:6px 12px;border-radius:5px;cursor:pointer;">🔧 Scrap</button>
         </div>
       </div>`;
     });
@@ -15311,21 +15329,52 @@ function selectCar(index) {
   showInventory();
 }
 
-function sellStolenCar(index) {
+function scrapStolenCar(index) {
   const car = player.stolenCars[index];
   if (!car) return;
-  // Minimum scrap value of 5-15% even if totaled
-  const rawValue = Math.floor(car.baseValue * ((100 - car.damagePercentage) / 100) * 0.6);
-  const scrapValue = Math.floor(car.baseValue * (0.05 + Math.random() * 0.10) * 0.6);
-  const sellPrice = Math.max(rawValue, scrapValue);
-  player.money += sellPrice;
+  
+  // Base scrap value: 35% of condition-adjusted value
+  const conditionMultiplier = (100 - car.damagePercentage) / 100;
+  let scrapPrice = Math.floor(car.baseValue * conditionMultiplier * 0.35);
+  
+  // Chop Shop gives massive scrap bonus
+  let chopShopBonus = 0;
+  if (player.businesses && player.businesses.some(b => b.type === 'chopshop')) {
+    const chopShop = player.businesses.find(b => b.type === 'chopshop');
+    const bonusPercent = 0.30 + (chopShop.level * 0.10); // 40% at Lv1 up to 80% at Lv5
+    chopShopBonus = Math.floor(car.baseValue * conditionMultiplier * bonusPercent);
+    scrapPrice += chopShopBonus;
+  }
+  
+  // Minimum scrap floor — even a totaled car has metal
+  const scrapFloor = Math.floor(car.baseValue * 0.08);
+  scrapPrice = Math.max(scrapPrice, scrapFloor);
+  
+  player.money += scrapPrice;
   if (player.selectedCar === index) player.selectedCar = null;
   else if (player.selectedCar > index) player.selectedCar--;
   player.stolenCars.splice(index, 1);
-  logAction(`🏎️ Sold ${car.name} for $${sellPrice.toLocaleString()}.`);
+  
+  if (chopShopBonus > 0) {
+    logAction(`🔧💰 Scrapped ${car.name} for $${scrapPrice.toLocaleString()} (Chop Shop bonus: +$${chopShopBonus.toLocaleString()}).`);
+    showBriefNotification(`Scrapped ${car.name} — $${scrapPrice.toLocaleString()} (Chop Shop +$${chopShopBonus.toLocaleString()})`, 'success');
+  } else {
+    logAction(`🔧 Scrapped ${car.name} for parts — $${scrapPrice.toLocaleString()}.`);
+    showBriefNotification(`Scrapped ${car.name} for $${scrapPrice.toLocaleString()}`, 'success');
+  }
+  
+  updateStatistic('carsScrapped');
   updateUI();
-  showInventory();
+  // Refresh whichever screen is visible
+  if (document.getElementById("stolen-cars-screen")?.style.display === "block") {
+    showStolenCars();
+  } else {
+    showInventory();
+  }
 }
+
+// Legacy alias for any remaining references
+function sellStolenCar(index) { scrapStolenCar(index); }
 
 // ==================== THE FENCE — BLACK MARKET SELL SCREEN ====================
 // Dedicated screen for selling stolen goods, contraband, and inventory at premium rates
@@ -15396,10 +15445,11 @@ function showFence() {
       ${rates.chopBonus > 0 ? `<p style="color: #2ecc71; font-size: 0.85em; margin-top: 4px;">🔧 Chop Shop connection: +${Math.round(rates.chopBonus * 100)}% on vehicle sales</p>` : ''}
     </div>`;
   
-  // === STOLEN CARS SECTION ===
+  // === STOLEN CARS SECTION — BLACK MARKET VEHICLE SALES ===
   const stolenCars = player.stolenCars || [];
   html += `<div style="margin-bottom: 20px;">
-    <h3 style="color: #e67e22; margin-bottom: 10px;">🏎️ Hot Wheels (${stolenCars.length})</h3>`;
+    <h3 style="color: #e67e22; margin-bottom: 10px;">🏎️ Black Market Vehicles (${stolenCars.length})</h3>
+    <p style="color: #bdc3c7; font-size: 0.85em; margin: 0 0 10px;">💰 The only way to properly sell stolen cars — full black market value through The Fence's underground network.</p>`;
   
   if (stolenCars.length === 0) {
     html += `<div style="padding: 15px; background: rgba(0,0,0,0.3); border-radius: 10px; text-align: center; color: #7f8c8d;">
@@ -17563,6 +17613,7 @@ function initializePlayerStatistics() {
     timesEscaped: 0,
     carsStolen: 0,
     carsSold: 0,
+    carsScrapped: 0,
     businessesOwned: 0,
     territoriesControlled: 0,
     gangMembersRecruited: 0,
@@ -17700,7 +17751,11 @@ function showStatistics() {
           <span class="stat-value">${stats.carsStolen}</span>
         </div>
         <div class="stat-item">
-          <span class="stat-label">Cars Sold:</span>
+          <span class="stat-label">Cars Scrapped:</span>
+          <span class="stat-value">${stats.carsScrapped || 0}</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Cars Sold (Fence):</span>
           <span class="stat-value">${stats.carsSold}</span>
         </div>
         <div class="stat-item">
@@ -20267,6 +20322,7 @@ window.handleStolenCarChoice = handleStolenCarChoice;
 window.closeCarTheftChoiceResult = closeCarTheftChoiceResult;
 window.showCarTheftResult = showCarTheftResult;
 window.closeCarTheftResult = closeCarTheftResult;
+window.scrapStolenCar = scrapStolenCar;
 window.sellStolenCar = sellStolenCar;
 window.showStolenCars = showStolenCars;
 window.useCar = useCar;
@@ -20422,6 +20478,7 @@ window.unequipItem = unequipItem;
 window.sellItem = sellItem;
 window.selectCar = selectCar;
 window.sellStolenCar = sellStolenCar;
+window.scrapStolenCar = scrapStolenCar;
 window.showEmpireRating = showEmpireRating;
 window.showEmpireOverview = showEmpireOverview;
 window.showMap = showMap;

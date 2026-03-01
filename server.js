@@ -446,6 +446,8 @@ const gameState = {
     jailBots: [], // Server-managed bot inmates (max 3, 0 if 3+ real players in jail)
     // Unified territory system — 8 districts, server-authoritative
     territories: {},
+    // Vehicle Marketplace — player-to-player vehicle trading
+    marketplace: [], // { id, sellerId, sellerName, vehicleName, baseValue, currentValue, damagePercentage, image, usageCount, price, listedAt }
     // Phase C: Competitive Features
     alliances: new Map(),   // id -> { id, name, tag, leader, members[], createdAt, treasury, motto }
     bounties: [],           // { id, posterId, posterName, targetId, targetName, reward, reason, postedAt, expiresAt }
@@ -836,6 +838,20 @@ function handleClientMessage(clientId, message, ws) {
             break;
         case 'siege_fortify':
             handleSiegeFortify(clientId, message);
+            break;
+
+        // ==================== VEHICLE MARKETPLACE ====================
+        case 'marketplace_list_vehicle':
+            handleMarketplaceList(clientId, message);
+            break;
+        case 'marketplace_buy_vehicle':
+            handleMarketplaceBuy(clientId, message);
+            break;
+        case 'marketplace_cancel_listing':
+            handleMarketplaceCancel(clientId, message);
+            break;
+        case 'marketplace_get_listings':
+            handleMarketplaceGetListings(clientId);
             break;
 
         default:
@@ -3904,6 +3920,187 @@ function handleSiegeFortify(clientId, message) {
     }
 
     scheduleWorldSave();
+}
+
+// ==================== VEHICLE MARKETPLACE HANDLERS ====================
+
+function handleMarketplaceList(clientId, message) {
+    const seller = gameState.players.get(clientId);
+    const ws = clients.get(clientId);
+    if (!seller || !ws) return;
+    
+    const fail = (err) => {
+        if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'marketplace_error', error: err }));
+        }
+    };
+    
+    const vehicleName = message.vehicleName;
+    const price = parseInt(message.price);
+    if (!vehicleName || !price || price < 100) return fail('Invalid listing. Set a price of at least $100.');
+    if (price > (message.baseValue || 500000) * 3) return fail('Price too high. Max 3x base value.');
+    
+    // Limit active listings per player to 5
+    const existingListings = gameState.marketplace.filter(l => l.sellerId === clientId);
+    if (existingListings.length >= 5) return fail('Max 5 active listings at a time.');
+    
+    const listing = {
+        id: `mkt_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        sellerId: clientId,
+        sellerName: seller.name,
+        vehicleName: vehicleName,
+        baseValue: message.baseValue || 0,
+        currentValue: message.currentValue || 0,
+        damagePercentage: message.damagePercentage || 0,
+        image: message.image || `vehicles/${vehicleName}.png`,
+        usageCount: message.usageCount || 0,
+        vehicleIndex: message.vehicleIndex,
+        price: price,
+        listedAt: Date.now()
+    };
+    
+    gameState.marketplace.push(listing);
+    
+    console.log(`🏪 ${seller.name} listed ${vehicleName} for $${price.toLocaleString()}`);
+    
+    // Confirm to seller
+    if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+            type: 'marketplace_listed',
+            vehicleName: vehicleName,
+            price: price,
+            listings: gameState.marketplace
+        }));
+    }
+    
+    // Broadcast to all connected players
+    addGlobalChatMessage('System', `🏪 ${seller.name} listed a ${vehicleName} for $${price.toLocaleString()} on the marketplace!`, '#2980b9');
+}
+
+function handleMarketplaceBuy(clientId, message) {
+    const buyer = gameState.players.get(clientId);
+    const ws = clients.get(clientId);
+    if (!buyer || !ws) return;
+    
+    const fail = (err) => {
+        if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'marketplace_error', error: err }));
+        }
+    };
+    
+    const listingId = message.listingId;
+    const listingIdx = gameState.marketplace.findIndex(l => l.id === listingId);
+    if (listingIdx === -1) return fail('Listing no longer available.');
+    
+    const listing = gameState.marketplace[listingIdx];
+    
+    if (listing.sellerId === clientId) return fail('You can\'t buy your own listing!');
+    if ((buyer.money || 0) < listing.price) return fail('Not enough money.');
+    
+    // Process the transaction
+    buyer.money -= listing.price;
+    
+    // Give money to seller
+    const sellerPlayer = gameState.players.get(listing.sellerId);
+    if (sellerPlayer) {
+        sellerPlayer.money = (sellerPlayer.money || 0) + listing.price;
+        const sellerState = gameState.playerStates.get(listing.sellerId);
+        if (sellerState) { sellerState.money = sellerPlayer.money; sellerState.lastUpdate = Date.now(); }
+    }
+    
+    // Update buyer state
+    const buyerState = gameState.playerStates.get(clientId);
+    if (buyerState) { buyerState.money = buyer.money; buyerState.lastUpdate = Date.now(); }
+    
+    // Remove the listing
+    gameState.marketplace.splice(listingIdx, 1);
+    
+    console.log(`🏪 ${buyer.name} bought ${listing.vehicleName} from ${listing.sellerName} for $${listing.price.toLocaleString()}`);
+    
+    // Notify buyer — vehicle transfer
+    if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+            type: 'marketplace_purchased',
+            vehicle: {
+                vehicleName: listing.vehicleName,
+                baseValue: listing.baseValue,
+                currentValue: listing.currentValue,
+                damagePercentage: listing.damagePercentage,
+                image: listing.image,
+                usageCount: listing.usageCount
+            },
+            sellerName: listing.sellerName,
+            amount: listing.price,
+            listings: gameState.marketplace
+        }));
+    }
+    
+    // Notify seller
+    const sellerWs = clients.get(listing.sellerId);
+    if (sellerWs && sellerWs.readyState === WebSocket.OPEN) {
+        sellerWs.send(JSON.stringify({
+            type: 'marketplace_sold',
+            vehicleName: listing.vehicleName,
+            buyerName: buyer.name,
+            amount: listing.price,
+            listings: gameState.marketplace
+        }));
+    }
+    
+    addGlobalChatMessage('System', `🏪 ${buyer.name} bought ${listing.vehicleName} from ${listing.sellerName} for $${listing.price.toLocaleString()}!`, '#27ae60');
+    scheduleWorldSave();
+}
+
+function handleMarketplaceCancel(clientId, message) {
+    const player = gameState.players.get(clientId);
+    const ws = clients.get(clientId);
+    if (!player || !ws) return;
+    
+    const fail = (err) => {
+        if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'marketplace_error', error: err }));
+        }
+    };
+    
+    const listingId = message.listingId;
+    const listingIdx = gameState.marketplace.findIndex(l => l.id === listingId && l.sellerId === clientId);
+    if (listingIdx === -1) return fail('Listing not found or not yours.');
+    
+    const listing = gameState.marketplace[listingIdx];
+    gameState.marketplace.splice(listingIdx, 1);
+    
+    console.log(`🏪 ${player.name} cancelled listing for ${listing.vehicleName}`);
+    
+    // Return vehicle to seller
+    if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+            type: 'marketplace_cancelled',
+            vehicle: {
+                vehicleName: listing.vehicleName,
+                baseValue: listing.baseValue,
+                currentValue: listing.currentValue,
+                damagePercentage: listing.damagePercentage,
+                image: listing.image,
+                usageCount: listing.usageCount
+            },
+            listings: gameState.marketplace
+        }));
+    }
+}
+
+function handleMarketplaceGetListings(clientId) {
+    const ws = clients.get(clientId);
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    
+    // Clean up expired listings (older than 24 hours)
+    const now = Date.now();
+    const expiry = 24 * 60 * 60 * 1000; // 24 hours
+    gameState.marketplace = gameState.marketplace.filter(l => (now - l.listedAt) < expiry);
+    
+    ws.send(JSON.stringify({
+        type: 'marketplace_listings',
+        listings: gameState.marketplace
+    }));
 }
 
 function generateLeaderboard() {

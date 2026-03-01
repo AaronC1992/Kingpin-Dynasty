@@ -1690,8 +1690,91 @@ async function handleServerMessage(message) {
             }
             break;
 
+        // ── Vehicle Marketplace messages ──
+        case 'marketplace_listings':
+        case 'marketplace_listed':
+        case 'marketplace_sold':
+        case 'marketplace_purchased':
+        case 'marketplace_cancelled':
+        case 'marketplace_error':
+            handleMarketplaceMessage(message);
+            break;
+
         default:
             console.log('Unknown message type:', message.type);
+    }
+}
+
+// ── Marketplace message sub-handler ──
+function handleMarketplaceMessage(message) {
+    switch (message.type) {
+        case 'marketplace_listings':
+            marketplaceListings = message.listings || [];
+            // If we're on the market tab, refresh it
+            if (document.querySelector('[onclick="showOnlineWorld(\'market\')"]')?.style?.background?.includes('#c0a062')) {
+                showOnlineWorld('market');
+            }
+            break;
+            
+        case 'marketplace_listed':
+            if (typeof showBriefNotification === 'function') showBriefNotification(`${message.vehicleName} is now listed on the marketplace!`, 'success');
+            marketplaceListings = message.listings || marketplaceListings;
+            break;
+            
+        case 'marketplace_sold':
+            // We sold a vehicle — we receive the money
+            player.money += message.amount;
+            if (typeof showBriefNotification === 'function') showBriefNotification(`💰 ${message.buyerName} bought your ${message.vehicleName} for $${message.amount.toLocaleString()}!`, 'success');
+            if (typeof logAction === 'function') logAction(`🏪💰 ${message.buyerName} purchased your ${message.vehicleName} from the marketplace for $${message.amount.toLocaleString()}!`);
+            if (typeof playNotificationSound === 'function') playNotificationSound('cash');
+            marketplaceListings = message.listings || marketplaceListings;
+            if (typeof updateUI === 'function') updateUI();
+            break;
+            
+        case 'marketplace_purchased':
+            // We bought a vehicle — add it to our garage
+            player.money -= message.amount;
+            const newCar = {
+                name: message.vehicle.vehicleName,
+                baseValue: message.vehicle.baseValue,
+                currentValue: message.vehicle.currentValue,
+                damagePercentage: message.vehicle.damagePercentage,
+                usageCount: message.vehicle.usageCount || 0,
+                image: message.vehicle.image || `vehicles/${message.vehicle.vehicleName}.png`
+            };
+            player.stolenCars.push(newCar);
+            if (typeof showBriefNotification === 'function') showBriefNotification(`🚗 Bought ${message.vehicle.vehicleName} from ${message.sellerName} for $${message.amount.toLocaleString()}!`, 'success');
+            if (typeof logAction === 'function') logAction(`🏪🚗 Purchased ${message.vehicle.vehicleName} from ${message.sellerName} for $${message.amount.toLocaleString()}. Vehicle added to your garage.`);
+            if (typeof playNotificationSound === 'function') playNotificationSound('cash');
+            marketplaceListings = message.listings || marketplaceListings;
+            if (typeof updateUI === 'function') updateUI();
+            showOnlineWorld('market');
+            break;
+            
+        case 'marketplace_cancelled':
+            // Our listing was cancelled — car returns to garage
+            if (message.vehicle) {
+                const returnedCar = {
+                    name: message.vehicle.vehicleName,
+                    baseValue: message.vehicle.baseValue,
+                    currentValue: message.vehicle.currentValue,
+                    damagePercentage: message.vehicle.damagePercentage,
+                    usageCount: message.vehicle.usageCount || 0,
+                    image: message.vehicle.image || `vehicles/${message.vehicle.vehicleName}.png`
+                };
+                player.stolenCars.push(returnedCar);
+            }
+            if (typeof showBriefNotification === 'function') showBriefNotification('Listing cancelled. Vehicle returned to your garage.', 'success');
+            marketplaceListings = message.listings || marketplaceListings;
+            if (typeof updateUI === 'function') updateUI();
+            showOnlineWorld('market');
+            break;
+            
+        case 'marketplace_error':
+            if (typeof showBriefNotification === 'function') showBriefNotification(message.error || 'Marketplace error!', 'error');
+            // If a buy failed, refresh listings
+            requestMarketplaceListings();
+            break;
     }
 }
 
@@ -1845,6 +1928,13 @@ async function attemptBotJailbreak(botId, botName) {
 }
 window.attemptPlayerJailbreak = attemptPlayerJailbreak;
 window.attemptBotJailbreak = attemptBotJailbreak;
+
+// Vehicle Marketplace exports
+window.listVehicleForSale = listVehicleForSale;
+window.buyMarketplaceVehicle = buyMarketplaceVehicle;
+window.cancelMarketplaceListing = cancelMarketplaceListing;
+window.requestMarketplaceListings = requestMarketplaceListings;
+window.showVehicleMarketplace = showVehicleMarketplace;
 
 // Show "You've been freed!" popup with option to send a gift
 function showFreedFromJailPopup(helperName, helperId) {
@@ -2469,6 +2559,7 @@ function showOnlineWorld(activeTab) {
             <button onclick="showOnlineWorld('pvp')" style="${tabStyle('pvp')}">⚔️ PVP</button>
             <button onclick="showOnlineWorld('territories')" style="${tabStyle('territories')}">🗺️ Territories</button>
             <button onclick="showOnlineWorld('activities')" style="${tabStyle('activities')}">📋 Activities</button>
+            <button onclick="showOnlineWorld('market')" style="${tabStyle('market')}">🏪 Market</button>
             <button onclick="showOnlineWorld('chat')" style="${tabStyle('chat')}">💬 Chat</button>
         </div>
         
@@ -2693,6 +2784,11 @@ function showOnlineWorld(activeTab) {
         `;
     }
     
+    // ── MARKETPLACE TAB ──
+    if (tab === 'market') {
+        worldHTML += renderMarketplaceTab();
+    }
+    
     // ── CHAT TAB ──
     if (tab === 'chat') {
         worldHTML += `
@@ -2763,6 +2859,9 @@ function showOnlineWorld(activeTab) {
     if (tab === 'chat') {
         loadWorldActivityFeed();
     }
+    if (tab === 'market') {
+        requestMarketplaceListings();
+    }
     
     // Request updated world state from server
     if (onlineWorldState.socket && onlineWorldState.socket.readyState === WebSocket.OPEN) {
@@ -2770,6 +2869,235 @@ function showOnlineWorld(activeTab) {
             type: 'request_world_state'
         }));
     }
+}
+
+// ==================== VEHICLE MARKETPLACE ====================
+// Player-to-player vehicle trading through The Commission
+
+// In-memory cache of marketplace listings
+let marketplaceListings = [];
+
+function renderMarketplaceTab() {
+    const myListings = marketplaceListings.filter(l => l.sellerId === onlineWorldState.playerId);
+    const otherListings = marketplaceListings.filter(l => l.sellerId !== onlineWorldState.playerId);
+    const playerCars = (typeof player !== 'undefined' && player.stolenCars) ? player.stolenCars : [];
+    
+    let html = `
+        <h3 style="color: #2980b9; text-align: center; font-family: 'Georgia', serif; margin-top: 0;">🏪 Vehicle Marketplace</h3>
+        <p style="color: #ccc; text-align: center; margin: 0 0 20px 0;">List your vehicles for sale or buy from other players. All sales are final.</p>
+    `;
+    
+    // === LIST A VEHICLE SECTION ===
+    html += `
+        <div style="background: rgba(41, 128, 185, 0.15); padding: 15px; border-radius: 12px; border: 1px solid #2980b9; margin-bottom: 20px;">
+            <h4 style="color: #2980b9; margin: 0 0 10px 0;">📋 List a Vehicle for Sale</h4>
+    `;
+    
+    if (playerCars.length === 0) {
+        html += `<p style="color: #7f8c8d; text-align: center;">You don't have any vehicles to list. Steal some cars first!</p>`;
+    } else {
+        html += `<div style="display: grid; gap: 8px;">`;
+        playerCars.forEach((car, idx) => {
+            const condition = 100 - car.damagePercentage;
+            const condColor = condition > 70 ? '#2ecc71' : condition > 40 ? '#f39c12' : '#e74c3c';
+            const suggestedPrice = Math.floor(car.baseValue * (condition / 100) * 0.8);
+            const alreadyListed = myListings.some(l => l.vehicleName === car.name && l.vehicleIndex === idx);
+            
+            html += `<div style="padding: 10px; background: rgba(0,0,0,0.4); border-radius: 8px; border: 1px solid #34495e; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                <div>
+                    <strong style="color: #ecf0f1;">${car.name}</strong><br>
+                    <small style="color: #bdc3c7;">Base: $${car.baseValue.toLocaleString()} | Condition: <span style="color: ${condColor};">${condition.toFixed(0)}%</span></small>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    ${alreadyListed ? '<span style="color: #f39c12; font-size: 0.9em;">Already Listed</span>' : `
+                    <input type="number" id="market-price-${idx}" placeholder="$${suggestedPrice.toLocaleString()}" 
+                           value="${suggestedPrice}" min="100" max="${car.baseValue * 2}"
+                           style="width: 100px; padding: 6px; border-radius: 5px; border: 1px solid #c0a062; background: #222; color: #ecf0f1; font-size: 0.9em;">
+                    <button onclick="listVehicleForSale(${idx})" 
+                            style="background: #2980b9; color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: bold; white-space: nowrap;">
+                        📤 List
+                    </button>`}
+                </div>
+            </div>`;
+        });
+        html += `</div>`;
+    }
+    html += `</div>`;
+    
+    // === YOUR ACTIVE LISTINGS ===
+    if (myListings.length > 0) {
+        html += `
+            <div style="background: rgba(230, 126, 34, 0.15); padding: 15px; border-radius: 12px; border: 1px solid #e67e22; margin-bottom: 20px;">
+                <h4 style="color: #e67e22; margin: 0 0 10px 0;">📦 Your Active Listings (${myListings.length})</h4>
+                <div style="display: grid; gap: 8px;">
+        `;
+        myListings.forEach(listing => {
+            html += `<div style="padding: 10px; background: rgba(0,0,0,0.4); border-radius: 8px; border: 1px solid #e67e22; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                <div>
+                    <strong style="color: #ecf0f1;">${listing.vehicleName}</strong><br>
+                    <small style="color: #bdc3c7;">Asking: <span style="color: #2ecc71; font-weight: bold;">$${listing.price.toLocaleString()}</span> | Condition: ${(100 - listing.damagePercentage).toFixed(0)}%</small>
+                </div>
+                <button onclick="cancelMarketplaceListing('${listing.id}')" 
+                        style="background: #c0392b; color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: bold;">
+                    ❌ Cancel
+                </button>
+            </div>`;
+        });
+        html += `</div></div>`;
+    }
+    
+    // === AVAILABLE LISTINGS FROM OTHER PLAYERS ===
+    html += `
+        <div style="background: rgba(46, 204, 113, 0.1); padding: 15px; border-radius: 12px; border: 1px solid #2ecc71; margin-bottom: 20px;">
+            <h4 style="color: #2ecc71; margin: 0 0 10px 0;">🛒 Available Vehicles (${otherListings.length})</h4>
+    `;
+    
+    if (otherListings.length === 0) {
+        html += `<p style="color: #7f8c8d; text-align: center;">No vehicles listed by other players right now. Check back later!</p>`;
+    } else {
+        html += `<div style="display: grid; gap: 8px;">`;
+        otherListings.forEach(listing => {
+            const condition = 100 - listing.damagePercentage;
+            const condColor = condition > 70 ? '#2ecc71' : condition > 40 ? '#f39c12' : '#e74c3c';
+            const canAfford = (typeof player !== 'undefined') && player.money >= listing.price;
+            
+            html += `<div style="padding: 12px; background: rgba(0,0,0,0.4); border-radius: 10px; border: 1px solid ${canAfford ? '#2ecc71' : '#7f8c8d'}; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                <div>
+                    <strong style="color: #ecf0f1;">${listing.vehicleName}</strong>
+                    <span style="color: #7f8c8d; font-size: 0.85em;"> — sold by ${escapeHTML(listing.sellerName)}</span><br>
+                    <small style="color: #bdc3c7;">
+                        Base Value: $${listing.baseValue.toLocaleString()} | Condition: <span style="color: ${condColor};">${condition.toFixed(0)}%</span>
+                    </small><br>
+                    <small style="color: #2ecc71; font-weight: bold; font-size: 1.05em;">Price: $${listing.price.toLocaleString()}</small>
+                </div>
+                <button onclick="buyMarketplaceVehicle('${listing.id}')" 
+                        ${!canAfford ? 'disabled' : ''}
+                        style="background: ${canAfford ? '#27ae60' : '#7f8c8d'}; color: white; border: none; padding: 10px 18px; border-radius: 8px; 
+                               cursor: ${canAfford ? 'pointer' : 'not-allowed'}; font-weight: bold; white-space: nowrap; font-size: 1em;">
+                    ${canAfford ? '💰 Buy' : '💸 Can\'t Afford'}
+                </button>
+            </div>`;
+        });
+        html += `</div>`;
+    }
+    html += `</div>`;
+    
+    // Refresh button
+    html += `
+        <div style="text-align: center; margin-top: 10px;">
+            <button onclick="requestMarketplaceListings()" 
+                    style="background: rgba(52, 152, 219, 0.3); color: #3498db; border: 1px solid #3498db; padding: 8px 20px; border-radius: 6px; cursor: pointer;">
+                🔄 Refresh Listings
+            </button>
+        </div>
+    `;
+    
+    return html;
+}
+
+function listVehicleForSale(carIndex) {
+    if (!onlineWorldState.isConnected || !onlineWorldState.socket || onlineWorldState.socket.readyState !== WebSocket.OPEN) {
+        if (typeof showBriefNotification === 'function') showBriefNotification('Not connected to server!', 'error');
+        return;
+    }
+    
+    const car = player.stolenCars[carIndex];
+    if (!car) return;
+    
+    const priceInput = document.getElementById(`market-price-${carIndex}`);
+    const askingPrice = priceInput ? parseInt(priceInput.value) : 0;
+    
+    if (!askingPrice || askingPrice < 100) {
+        if (typeof showBriefNotification === 'function') showBriefNotification('Set a price of at least $100!', 'error');
+        return;
+    }
+    
+    if (askingPrice > car.baseValue * 3) {
+        if (typeof showBriefNotification === 'function') showBriefNotification('Price too high! Max 3x base value.', 'error');
+        return;
+    }
+    
+    onlineWorldState.socket.send(JSON.stringify({
+        type: 'marketplace_list_vehicle',
+        vehicleIndex: carIndex,
+        vehicleName: car.name,
+        baseValue: car.baseValue,
+        currentValue: car.currentValue,
+        damagePercentage: car.damagePercentage,
+        image: car.image || `vehicles/${car.name}.png`,
+        usageCount: car.usageCount || 0,
+        price: askingPrice
+    }));
+    
+    // Remove the car from local inventory immediately (server will confirm)
+    if (player.selectedCar === carIndex) player.selectedCar = null;
+    else if (player.selectedCar > carIndex) player.selectedCar--;
+    player.stolenCars.splice(carIndex, 1);
+    
+    if (typeof showBriefNotification === 'function') showBriefNotification(`Listed ${car.name} for $${askingPrice.toLocaleString()}!`, 'success');
+    if (typeof logAction === 'function') logAction(`🏪 Listed ${car.name} on the marketplace for $${askingPrice.toLocaleString()}.`);
+    if (typeof updateUI === 'function') updateUI();
+    
+    // Refresh the tab after a short delay for server response
+    setTimeout(() => showOnlineWorld('market'), 500);
+}
+
+function buyMarketplaceVehicle(listingId) {
+    if (!onlineWorldState.isConnected || !onlineWorldState.socket || onlineWorldState.socket.readyState !== WebSocket.OPEN) {
+        if (typeof showBriefNotification === 'function') showBriefNotification('Not connected to server!', 'error');
+        return;
+    }
+    
+    const listing = marketplaceListings.find(l => l.id === listingId);
+    if (!listing) {
+        if (typeof showBriefNotification === 'function') showBriefNotification('Listing no longer available!', 'error');
+        return;
+    }
+    
+    if (player.money < listing.price) {
+        if (typeof showBriefNotification === 'function') showBriefNotification('Not enough money!', 'error');
+        return;
+    }
+    
+    onlineWorldState.socket.send(JSON.stringify({
+        type: 'marketplace_buy_vehicle',
+        listingId: listingId
+    }));
+    
+    if (typeof showBriefNotification === 'function') showBriefNotification(`Purchasing ${listing.vehicleName}...`, 'info');
+}
+
+function cancelMarketplaceListing(listingId) {
+    if (!onlineWorldState.isConnected || !onlineWorldState.socket || onlineWorldState.socket.readyState !== WebSocket.OPEN) {
+        if (typeof showBriefNotification === 'function') showBriefNotification('Not connected to server!', 'error');
+        return;
+    }
+    
+    onlineWorldState.socket.send(JSON.stringify({
+        type: 'marketplace_cancel_listing',
+        listingId: listingId
+    }));
+    
+    if (typeof showBriefNotification === 'function') showBriefNotification('Cancelling listing...', 'info');
+}
+
+function requestMarketplaceListings() {
+    if (!onlineWorldState.isConnected || !onlineWorldState.socket || onlineWorldState.socket.readyState !== WebSocket.OPEN) {
+        return;
+    }
+    
+    onlineWorldState.socket.send(JSON.stringify({
+        type: 'marketplace_get_listings'
+    }));
+}
+
+// Standalone page version for use from the Garage
+function showVehicleMarketplace() {
+    if (!onlineWorldState.isConnected) {
+        if (typeof showBriefNotification === 'function') showBriefNotification('Connect to The Commission first!', 'error');
+        return;
+    }
+    showOnlineWorld('market');
 }
 
 // ==================== ONLINE WORLD FUNCTIONS ====================
