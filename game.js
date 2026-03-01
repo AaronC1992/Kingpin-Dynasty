@@ -11897,7 +11897,19 @@ const menuUnlockConfig = [
   { id: 'onlineworld', fn: 'showOnlineWorld()',         label: 'The Commission', tip: 'Enter the online underworld',     level: 5 },
 ];
 
+let testerModeActive = false;
+
+function toggleTesterMode() {
+  testerModeActive = !testerModeActive;
+  logAction(testerModeActive 
+    ? '🧪 TESTER MODE ON — All SafeHouse features unlocked (simulating Level 15).'
+    : '🧪 TESTER MODE OFF — Level restrictions restored.');
+  showCommandCenter();
+}
+window.toggleTesterMode = toggleTesterMode;
+
 function isMenuItemUnlocked(item) {
+  if (testerModeActive) return true;
   return (player.level || 1) >= item.level;
 }
 
@@ -11995,6 +12007,25 @@ function showCommandCenter() {
   
   let html = '';
   
+  // Tester Mode toggle button
+  html += `<div style="text-align:center;margin-bottom:12px;">
+    <button onclick="toggleTesterMode()" style="
+      background: ${testerModeActive ? 'linear-gradient(135deg, #e74c3c, #c0392b)' : 'linear-gradient(135deg, #2c3e50, #34495e)'};
+      color: ${testerModeActive ? '#fff' : '#95a5a6'};
+      border: 1px solid ${testerModeActive ? '#e74c3c' : '#4a6278'};
+      padding: 6px 16px; border-radius: 6px; cursor: pointer;
+      font-size: 0.8em; font-weight: bold;">
+      ${testerModeActive ? '🧪 TESTER MODE ON (Click to Disable)' : '🧪 Tester Mode'}
+    </button>
+  </div>`;
+  
+  // Tester mode banner
+  if (testerModeActive) {
+    html += `<div style="background:rgba(231,76,60,0.15);border:1px solid #e74c3c;border-radius:8px;padding:8px 14px;margin-bottom:12px;text-align:center;">
+      <span style="color:#e74c3c;font-weight:bold;font-size:0.9em;">🧪 All features unlocked (simulating Level 15) — your real level is ${player.level || 1}</span>
+    </div>`;
+  }
+  
   // Render unlocked buttons with tooltips
   unlocked.forEach(item => {
     html += `<button class="menu-btn-unlocked" onclick="${item.fn}">
@@ -12003,8 +12034,8 @@ function showCommandCenter() {
     </button>`;
   });
   
-  // Show next unlock preview (teaser for locked items)
-  if (nextUnlocks.length > 0) {
+  // Show next unlock preview (teaser for locked items) — hidden in tester mode
+  if (!testerModeActive && nextUnlocks.length > 0) {
     const nextLevel = nextUnlocks[0].level;
     html += `<div class="menu-locked-section">
       <div class="menu-locked-header">🔒 Unlocks at Level ${nextLevel} (${nextUnlocks.length} feature${nextUnlocks.length > 1 ? 's' : ''})</div>`;
@@ -12017,12 +12048,14 @@ function showCommandCenter() {
     html += `</div>`;
   }
   
-  // Show remaining locked count
-  const remainingLocked = locked.length - nextUnlocks.length;
-  if (remainingLocked > 0) {
-    html += `<div class="menu-locked-remaining">
-      +${remainingLocked} more feature${remainingLocked > 1 ? 's' : ''} to discover as you level up
-    </div>`;
+  // Show remaining locked count — hidden in tester mode
+  if (!testerModeActive) {
+    const remainingLocked = locked.length - nextUnlocks.length;
+    if (remainingLocked > 0) {
+      html += `<div class="menu-locked-remaining">
+        +${remainingLocked} more feature${remainingLocked > 1 ? 's' : ''} to discover as you level up
+      </div>`;
+    }
   }
   
   grid.innerHTML = html;
