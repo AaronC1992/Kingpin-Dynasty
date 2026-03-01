@@ -12007,21 +12007,21 @@ function showCommandCenter() {
   
   let html = '';
   
-  // Tester Mode toggle button
-  html += `<div style="text-align:center;margin-bottom:12px;">
+  // Tester Mode toggle button — spans full grid width
+  html += `<div style="grid-column: 1 / -1; text-align:center; margin-bottom:4px;">
     <button onclick="toggleTesterMode()" style="
       background: ${testerModeActive ? 'linear-gradient(135deg, #e74c3c, #c0392b)' : 'linear-gradient(135deg, #2c3e50, #34495e)'};
       color: ${testerModeActive ? '#fff' : '#95a5a6'};
       border: 1px solid ${testerModeActive ? '#e74c3c' : '#4a6278'};
-      padding: 6px 16px; border-radius: 6px; cursor: pointer;
-      font-size: 0.8em; font-weight: bold;">
+      padding: 8px 20px; border-radius: 6px; cursor: pointer;
+      font-size: 0.85em; font-weight: bold;">
       ${testerModeActive ? '🧪 TESTER MODE ON (Click to Disable)' : '🧪 Tester Mode'}
     </button>
   </div>`;
   
   // Tester mode banner
   if (testerModeActive) {
-    html += `<div style="background:rgba(231,76,60,0.15);border:1px solid #e74c3c;border-radius:8px;padding:8px 14px;margin-bottom:12px;text-align:center;">
+    html += `<div style="grid-column: 1 / -1; background:rgba(231,76,60,0.15);border:1px solid #e74c3c;border-radius:8px;padding:10px 14px;margin-bottom:4px;text-align:center;">
       <span style="color:#e74c3c;font-weight:bold;font-size:0.9em;">🧪 All features unlocked (simulating Level 15) — your real level is ${player.level || 1}</span>
     </div>`;
   }
