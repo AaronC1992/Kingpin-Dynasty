@@ -259,10 +259,10 @@ body.season-winter {
 /* â”€â”€ Full SafeHouse Grid â”€â”€ */
 .menu-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
-    padding: 20px;
-    max-width: 800px; /* Increased from 600px to fit more buttons */
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 18px;
+    padding: 24px;
+    max-width: 860px;
     margin: 0 auto;
     max-height: calc(100vh - 200px); /* Adjust height to account for margins and padding */
     overflow-y: auto; /* Add vertical scroll */
@@ -331,61 +331,194 @@ button:disabled {
 
 /* ==================== COMMAND CENTER PROGRESSIVE UNLOCK STYLES ==================== */
 
-/* Unlocked menu button with tooltip subtitle */
+/* Unlocked menu button — ornate RPG frame style */
 .menu-btn-unlocked {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 4px;
-    padding: 14px 12px;
-    min-height: 68px;
+    padding: 16px 24px;
+    min-height: 72px;
     text-transform: uppercase;
+    position: relative;
+    background: linear-gradient(170deg, #2a3a5c 0%, #1a2744 40%, #162040 60%, #111b36 100%) !important;
+    border: 2px solid #b8973a !important;
+    border-radius: 3px !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.08),
+        inset 0 0 20px rgba(26, 39, 68, 0.5),
+        0 4px 12px rgba(0, 0, 0, 0.6),
+        0 0 0 1px rgba(0, 0, 0, 0.4) !important;
+    overflow: visible;
+    transition: all 0.25s ease;
+}
+
+/* Inner border frame */
+.menu-btn-unlocked::before {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    border: 1px solid rgba(184, 151, 58, 0.45);
+    border-radius: 2px;
+    pointer-events: none;
+    transition: border-color 0.25s ease;
+}
+
+/* Diamond corner accents */
+.menu-btn-unlocked::after {
+    content: '';
+    position: absolute;
+    inset: -6px;
+    pointer-events: none;
+    background:
+        /* Top-left diamond */
+        radial-gradient(circle at 0% 0%, transparent 3px, transparent 3px) no-repeat,
+        /* Top-right diamond */
+        radial-gradient(circle at 100% 0%, transparent 3px, transparent 3px) no-repeat,
+        /* Bottom-left diamond */
+        radial-gradient(circle at 0% 100%, transparent 3px, transparent 3px) no-repeat,
+        /* Bottom-right diamond */
+        radial-gradient(circle at 100% 100%, transparent 3px, transparent 3px) no-repeat;
+}
+/* Left diamond accent */
+.menu-btn-unlocked .menu-btn-label::before {
+    content: '\u25C7';
+    position: absolute;
+    left: -5px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 10px;
+    color: #b8973a;
+    text-shadow: 0 0 4px rgba(184, 151, 58, 0.4);
+    transition: color 0.25s ease, text-shadow 0.25s ease;
+}
+/* Right diamond accent */
+.menu-btn-unlocked .menu-btn-tip::after {
+    content: '\u25C7';
+    position: absolute;
+    right: -5px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 10px;
+    color: #b8973a;
+    text-shadow: 0 0 4px rgba(184, 151, 58, 0.4);
+    transition: color 0.25s ease, text-shadow 0.25s ease;
+}
+
+/* Top sheen highlight */
+.menu-btn-unlocked .menu-btn-label::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 4px;
+    right: 4px;
+    height: 40%;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, transparent 100%);
+    border-radius: 2px 2px 0 0;
+    pointer-events: none;
+}
+
+.menu-btn-unlocked:hover {
+    background: linear-gradient(170deg, #334a70 0%, #223358 40%, #1c2a50 60%, #162242 100%) !important;
+    border-color: #d4b44a !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.12),
+        inset 0 0 25px rgba(30, 50, 90, 0.5),
+        0 6px 20px rgba(0, 0, 0, 0.7),
+        0 0 15px rgba(184, 151, 58, 0.15),
+        0 0 0 1px rgba(0, 0, 0, 0.5) !important;
+    transform: translateY(-2px);
+}
+.menu-btn-unlocked:hover::before {
+    border-color: rgba(212, 180, 74, 0.6);
+}
+.menu-btn-unlocked:hover .menu-btn-label::before,
+.menu-btn-unlocked:hover .menu-btn-tip::after {
+    color: #d4b44a;
+    text-shadow: 0 0 8px rgba(212, 175, 55, 0.6);
+}
+
+.menu-btn-unlocked:active {
+    transform: translateY(0px) !important;
+    box-shadow:
+        inset 0 2px 6px rgba(0, 0, 0, 0.4),
+        inset 0 0 20px rgba(17, 27, 54, 0.8),
+        0 2px 4px rgba(0, 0, 0, 0.5) !important;
 }
 
 .menu-btn-unlocked .menu-btn-label {
-    font-size: 15px;
+    font-size: 14px;
     font-weight: bold;
-    letter-spacing: 1px;
+    letter-spacing: 2px;
     color: #d4af37;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+    z-index: 1;
+    position: relative;
+    transition: color 0.25s ease, text-shadow 0.25s ease;
+}
+
+.menu-btn-unlocked:hover .menu-btn-label {
+    color: #e8c84a;
+    text-shadow: 0 0 8px rgba(212, 175, 55, 0.4), 0 1px 3px rgba(0, 0, 0, 0.6);
 }
 
 .menu-btn-unlocked .menu-btn-tip {
     font-size: 10px;
     font-weight: normal;
-    color: #95a5a6;
+    color: #7a8ba8;
     text-transform: none;
-    letter-spacing: 0;
+    letter-spacing: 0.5px;
     line-height: 1.2;
-    opacity: 0.85;
+    opacity: 0.9;
+    z-index: 1;
+    position: relative;
+    transition: color 0.25s ease;
 }
 
 .menu-btn-unlocked:hover .menu-btn-tip {
-    color: #bdc3c7;
+    color: #9aabca;
     opacity: 1;
 }
 
-/* Locked menu button */
+/* Locked menu button — silver/disabled variant */
 .menu-btn-locked {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 4px;
-    padding: 14px 12px;
-    min-height: 68px;
-    background: linear-gradient(to bottom, #1a1a1a, #111) !important;
-    border-color: #444 !important;
+    padding: 16px 24px;
+    min-height: 72px;
+    position: relative;
+    background: linear-gradient(170deg, #2a2a30 0%, #1e1e24 40%, #1a1a20 60%, #151518 100%) !important;
+    border: 2px solid #555 !important;
+    border-radius: 3px !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.04),
+        inset 0 0 20px rgba(20, 20, 26, 0.5),
+        0 4px 12px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(0, 0, 0, 0.3) !important;
     opacity: 0.5;
     cursor: not-allowed !important;
     text-transform: uppercase;
+    overflow: visible;
+}
+.menu-btn-locked::before {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    border: 1px solid rgba(120, 120, 130, 0.3);
+    border-radius: 2px;
+    pointer-events: none;
 }
 
 .menu-btn-locked .menu-btn-label {
     font-size: 14px;
     font-weight: bold;
-    color: #666;
-    letter-spacing: 1px;
+    color: #777;
+    letter-spacing: 2px;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
 .menu-btn-locked .menu-btn-tip {
