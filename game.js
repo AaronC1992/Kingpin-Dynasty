@@ -6790,7 +6790,7 @@ function updateUI() {
     document.getElementById("level-display").innerText = `Rank: ${player.level}`;
   }
   if (document.getElementById("experience-display")) {
-    const xpNeeded = Math.floor(player.level * 500 + Math.pow(player.level, 2) * 80 + Math.pow(player.level, 3) * 5);
+    const xpNeeded = Math.floor(player.level * 600 + Math.pow(player.level, 2) * 120 + Math.pow(player.level, 3) * 8);
     document.getElementById("experience-display").innerText = `XP: ${player.experience}/${xpNeeded}`;
   }
   if (document.getElementById("skill-points-display")) {
@@ -11714,7 +11714,7 @@ function showPlayerStats() {
   const maxEnergy = 100 + ((st.endurance?.vitality || 0) * 2) + ((st.endurance?.conditioning || 0) * 3);
   const coreHTML = [
     row('Level', player.level, '#d4af37'),
-    row('XP', `${player.experience} / ${player.level * 500 + Math.pow(player.level, 2) * 80 + Math.pow(player.level, 3) * 5}`, '#3498db'),
+    row('XP', `${player.experience} / ${player.level * 600 + Math.pow(player.level, 2) * 120 + Math.pow(player.level, 3) * 8}`, '#3498db'),
     row('Health', `${player.health !== undefined ? player.health : 100} / 100`, '#e74c3c'),
     row('Energy', `${player.energy !== undefined ? player.energy : maxEnergy} / ${maxEnergy}`, '#2ecc71'),
     row('Cash', `$${(player.money || 0).toLocaleString()}`, '#27ae60'),
@@ -13945,7 +13945,7 @@ function createCharacter() {
   saveSaveSystemPrefs();
   
   // Hide character creation screen
-  const charScreen = document.getElementById('character-creation');
+  const charScreen = document.getElementById('character-creation-screen');
   if (charScreen) {
     charScreen.style.display = 'none';
   }
@@ -16775,7 +16775,7 @@ function gangRecruitment() {
   if (player.reputation >= 20 && Math.random() < 0.3) {
     // Clear any existing recruitment event
     if (activeRecruitment) {
-      clearTimeout(recruitmentTimer);
+      clearInterval(recruitmentTimer);
       activeRecruitment = null;
     }
     
@@ -16825,7 +16825,7 @@ function gangRecruitment() {
       }
       
       if (timeLeft <= 0) {
-        clearTimeout(recruitmentTimer);
+        clearInterval(recruitmentTimer);
         activeRecruitment = null;
         
         // Disable button and show expired message
@@ -16888,7 +16888,7 @@ async function hireRandomRecruit(buttonId) {
   recalculatePower();
   
   // Clear the recruitment event
-  clearTimeout(recruitmentTimer);
+  clearInterval(recruitmentTimer);
   activeRecruitment = null;
   
   // Update button to show hired
@@ -19173,9 +19173,10 @@ function validateSaveData(saveData) {
   if (!saveData || typeof saveData !== 'object') return false;
   if (!saveData.player || typeof saveData.player !== 'object') return false;
   if (!saveData.player.name || typeof saveData.player.name !== 'string') return false;
-  if (typeof saveData.player.money !== 'number' || saveData.player.money < 0) return false;
-  if (typeof saveData.player.level !== 'number' || saveData.player.level < 1) return false;
-  if (typeof saveData.player.health !== 'number') return false;
+  if (typeof saveData.player.money !== 'number' || isNaN(saveData.player.money) || saveData.player.money < 0) return false;
+  if (typeof saveData.player.level !== 'number' || isNaN(saveData.player.level) || saveData.player.level < 1) return false;
+  if (typeof saveData.player.health !== 'number' || isNaN(saveData.player.health)) return false;
+  if (saveData.player.experience !== undefined && (typeof saveData.player.experience !== 'number' || isNaN(saveData.player.experience))) return false;
   if (!Array.isArray(saveData.player.inventory)) return false;
   if (!saveData.player.gang || typeof saveData.player.gang !== 'object') return false;
   if (!saveData.player.skillTree || typeof saveData.player.skillTree !== 'object') return false;

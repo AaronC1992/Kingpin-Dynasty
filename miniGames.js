@@ -79,7 +79,7 @@ const tttContexts = {
     onStart: () => {},
     onWin: () => {
       player.money += 100;
-      gainExperience('intelligence', 50);
+      gainExperience(50);
       _updateStatistic('miniGamesWon');
       _updateStatistic('totalMoneyEarned', 100);
       _updateUI();
@@ -440,7 +440,7 @@ export function makeGuess() {
     const attemptBonus = Math.max(0, (10 - numberGuessingAttempts) * Math.floor(baseReward * 0.1));
     const totalReward = baseReward + attemptBonus;
     player.money += totalReward;
-    gainExperience('luck', 50);
+    gainExperience(50);
 
     _updateStatistic('miniGamesWon');
     _updateStatistic('totalMoneyEarned', totalReward);
@@ -554,7 +554,7 @@ export function playRPS(playerChoice) {
     if (rpsPlayerScore >= 3) {
       const rpsReward = 100 + (player.level * 50);
       player.money += rpsReward;
-      gainExperience('charisma', 50);
+      gainExperience(50);
       _updateUI();
       _logAction(`Rock Paper Scissors champion! Your tactical mind proves superior in this classic game of psychology and earned $${rpsReward.toLocaleString()}. (Charisma +50 XP)`);
     } else if (rpsAIScore >= 3) {
@@ -670,9 +670,9 @@ export function flipMemoryCard(index) {
             player.money += memoryBaseReward;
           }
 
-          gainExperience('stealth', totalTime <= 40 ? 60 : (totalTime <= 60 ? 40 : 20));
-          gainExperience('intelligence', totalTime <= 40 ? 60 : (totalTime <= 60 ? 40 : 20));
-          gainExperience('intelligence', 50);
+          gainExperience(totalTime <= 40 ? 60 : (totalTime <= 60 ? 40 : 20));
+          gainExperience(totalTime <= 40 ? 60 : (totalTime <= 60 ? 40 : 20));
+          gainExperience(50);
 
           if (totalEarned > 0) {
             _updateUI();
@@ -922,7 +922,7 @@ export function gameOverSnake() {
 
   const enduranceXP = Math.floor(snakeGame.score * 2);
   if (enduranceXP > 0) {
-    gainExperience('endurance', enduranceXP);
+    gainExperience(enduranceXP);
   }
 
   if (snakeGame.score > 0) {
@@ -1070,7 +1070,7 @@ export function handleReactionClick() {
   player.combatReflexBonus = Math.min(20, player.combatReflexBonus + reflexBonus);
 
   if (reactionTime < 500) {
-    gainExperience('violence', 50);
+    gainExperience(50);
   }
 
   if (totalEarned > 0) {
