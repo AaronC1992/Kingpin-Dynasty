@@ -1,4 +1,4 @@
-// onboarding removed — tutorial system fully stripped
+// onboarding removed Ã¢â‚¬â€ tutorial system fully stripped
 import { applyDailyPassives, getDrugIncomeMultiplier, getViolenceHeatMultiplier, getWeaponPriceMultiplier } from './passiveManager.js';
 import { showEmpireOverview } from './empireOverview.js';
 import { player, gainExperience, checkLevelUp, regenerateEnergy, startEnergyRegenTimer, startEnergyRegeneration, SKILL_TREE_DEFS, getTreePointsSpent, canUnlockNode, isNodeAccessible, achievements, CHARACTER_BACKGROUNDS, CHARACTER_PERKS } from './player.js';
@@ -100,7 +100,7 @@ function recalculatePower() {
   if (player.realEstate && player.realEstate.ownedProperties) {
     player.realEstate.ownedProperties.forEach(p => { total += p.power || 0; });
   }
-  // Gang member power — use explicit .power if set, otherwise derive from experience level
+  // Gang member power Ã¢â‚¬â€ use explicit .power if set, otherwise derive from experience level
   if (player.gang && player.gang.gangMembers) {
     player.gang.gangMembers.forEach(m => {
       total += m.power || (Math.floor((m.experienceLevel || 1) * 2) + 5);
@@ -108,7 +108,7 @@ function recalculatePower() {
   }
   player.power = total;
 
-  // Sync turf power — base 100 + total from equipment and gang
+  // Sync turf power Ã¢â‚¬â€ base 100 + total from equipment and gang
   if (player.turf) {
     player.turf.power = 100 + total;
   }
@@ -290,7 +290,7 @@ function updateMissionProgress(actionType, value = 1) {
 }
 
 // Function to update mission availability based on player progress
-// (factionMissions and bossBattles arrays are empty — loops removed)
+// (factionMissions and bossBattles arrays are empty Ã¢â‚¬â€ loops removed)
 function updateMissionAvailability() {
 }
 
@@ -304,20 +304,20 @@ async function showMissions() {
   let missionsHTML;
 
   // Story-driven flow:
-  // 1. No family chosen → family story picker
-  // 2. Family chosen, story in progress → current chapter
-  // 3. Don achieved → empire dashboard (with turf/rackets access)
+  // 1. No family chosen Ã¢â€ â€™ family story picker
+  // 2. Family chosen, story in progress Ã¢â€ â€™ current chapter
+  // 3. Don achieved Ã¢â€ â€™ empire dashboard (with turf/rackets access)
   const sp = player.storyProgress;
   const hasFamilyStory = player.chosenFamily && familyStories[player.chosenFamily];
 
   if (!hasFamilyStory) {
-    // No family yet — show cinematic family picker
+    // No family yet Ã¢â‚¬â€ show cinematic family picker
     missionsHTML = renderStoryFamilyPicker();
   } else if (sp && sp.isDon) {
-    // Don achieved — show empire epilogue
+    // Don achieved Ã¢â‚¬â€ show empire epilogue
     missionsHTML = renderStoryEpilogue(player.chosenFamily, familyStories[player.chosenFamily]);
   } else {
-    // Story in progress — show current chapter
+    // Story in progress Ã¢â‚¬â€ show current chapter
     missionsHTML = renderStoryChapter();
   }
 
@@ -384,7 +384,7 @@ function renderStoryFamilyPicker() {
     <div class="story-screen">
       <div class="story-title-block">
         <h1 class="story-main-title">Choose Your Destiny</h1>
-        <p class="story-subtitle">Every family has a story. Every story has a price. Choose wisely — this decision shapes your entire journey.</p>
+        <p class="story-subtitle">Every family has a story. Every story has a price. Choose wisely Ã¢â‚¬â€ this decision shapes your entire journey.</p>
       </div>
       <div class="story-family-grid">`;
 
@@ -405,7 +405,7 @@ function renderStoryFamilyPicker() {
   });
 
   html += `</div>
-    <button class="story-back-btn" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
+    <button class="story-back-btn" onclick="goBackToMainMenu()">Ã¢â€ Â Back to SafeHouse</button>
   </div>`;
   return html;
 }
@@ -429,6 +429,7 @@ async function beginFamilyStory(familyKey) {
   player.familyRank = 'associate';
   if (!player.turf) player.turf = { owned: [], power: 100, income: 0, reputation: 0 };
   player.turf.reputation = (player.turf.reputation || 0) + 10;
+  player.territoryReputation = (player.territoryReputation || 0) + 10;
 
   // Init story progress
   player.storyProgress = {
@@ -490,7 +491,7 @@ function renderStoryChapter() {
     const met = current >= obj.target;
     return `
       <div class="story-objective ${met ? 'obj-met' : ''}">
-        <span class="obj-icon">${met ? '✅' : '⬜'}</span>
+        <span class="obj-icon">${met ? 'Ã¢Å“â€¦' : 'Ã¢Â¬Å“'}</span>
         <span class="obj-label">${obj.text}</span>
         <span class="obj-val">${current.toLocaleString()} / ${obj.target.toLocaleString()}</span>
       </div>`;
@@ -502,7 +503,7 @@ function renderStoryChapter() {
     ${rw.money ? `<span class="story-reward-tag">$${rw.money.toLocaleString()}</span>` : ''}
     ${rw.experience ? `<span class="story-reward-tag">${rw.experience} XP</span>` : ''}
     ${rw.reputation ? `<span class="story-reward-tag">+${rw.reputation} Rep</span>` : ''}
-    ${chapter.rankOnComplete ? `<span class="story-reward-tag rank-up">→ ${chapter.rankOnComplete.charAt(0).toUpperCase() + chapter.rankOnComplete.slice(1)}</span>` : ''}
+    ${chapter.rankOnComplete ? `<span class="story-reward-tag rank-up">Ã¢â€ â€™ ${chapter.rankOnComplete.charAt(0).toUpperCase() + chapter.rankOnComplete.slice(1)}</span>` : ''}
   </div>`;
 
   // Choice UI (if this chapter has a choice and player hasn't chosen yet)
@@ -524,7 +525,7 @@ function renderStoryChapter() {
     choiceHTML = `
       <div class="story-choice-block chosen">
         <div class="story-choice-prompt">${chapter.choice.prompt}</div>
-        <div class="story-choice-result">✓ ${chosenOpt ? chosenOpt.text : 'Choice made'}</div>
+        <div class="story-choice-result">Ã¢Å“â€œ ${chosenOpt ? chosenOpt.text : 'Choice made'}</div>
       </div>`;
   }
 
@@ -544,7 +545,7 @@ function renderStoryChapter() {
           <span>Guards: ${chapter.boss.gangSize}</span>
         </div>
         <button class="story-boss-btn" onclick="startStoryBossFight('${chapter.id}')" ${allObjectivesMet ? '' : 'disabled'}>
-          ${allObjectivesMet ? 'Face the Boss' : '🔒 Complete objectives first'}
+          ${allObjectivesMet ? 'Face the Boss' : 'Ã°Å¸â€â€™ Complete objectives first'}
         </button>
       </div>`;
   } else if (chapter.boss && bossDefeated) {
@@ -552,7 +553,7 @@ function renderStoryChapter() {
       <div class="story-boss-block defeated">
         <div class="story-boss-header">
           <span class="boss-icon"></span>
-          <span class="boss-name">${chapter.boss.name} — Defeated</span>
+          <span class="boss-name">${chapter.boss.name} Ã¢â‚¬â€ Defeated</span>
         </div>
         <div class="story-boss-victory">${chapter.boss.dialogue.victory}</div>
       </div>`;
@@ -576,7 +577,7 @@ function renderStoryChapter() {
     advanceHTML = `
       ${completionNarrHTML}
       <button class="story-advance-btn" onclick="advanceStoryChapter()">
-        ${chapterNum < totalChapters ? 'Continue to Next Chapter →' : 'Claim Your Destiny'}
+        ${chapterNum < totalChapters ? 'Continue to Next Chapter Ã¢â€ â€™' : 'Claim Your Destiny'}
       </button>`;
   }
 
@@ -632,7 +633,7 @@ function renderStoryChapter() {
       <button class="story-action-btn" style="margin-bottom:10px;" onclick="showTerritoryControl();">View Turf Map</button>
 
       <!-- Back Button -->
-      <button class="story-back-btn" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
+      <button class="story-back-btn" onclick="goBackToMainMenu()">Ã¢â€ Â Back to SafeHouse</button>
     </div>`;
 }
 
@@ -670,7 +671,7 @@ function renderStoryEpilogue(famKey, fam) {
           `).join('')}
           ${lockedArcs.map(arc => `
             <div style="background:#111;border:1px solid #33333355;border-radius:12px;padding:15px;opacity:0.5;">
-              <div style="font-size:2em;text-align:center;">🔒</div>
+              <div style="font-size:2em;text-align:center;">Ã°Å¸â€â€™</div>
               <h4 style="color:#666;text-align:center;margin:8px 0 4px;">${arc.title}</h4>
               <p style="color:#555;font-size:0.8em;text-align:center;">Requires ${arc.conditions.minRespect || '?'} Rep</p>
             </div>
@@ -684,7 +685,7 @@ function renderStoryEpilogue(famKey, fam) {
       <div class="story-header" style="--fam-color:${fam.color}">
         <div class="story-header-top">
           <div class="story-header-info">
-            <h1 class="story-header-title">${rivalFam?.name || fam.icon} — Don</h1>
+            <h1 class="story-header-title">${rivalFam?.name || fam.icon} Ã¢â‚¬â€ Don</h1>
             <div class="story-header-meta">Story Complete &middot; Empire Unlocked</div>
           </div>
         </div>
@@ -692,7 +693,7 @@ function renderStoryEpilogue(famKey, fam) {
 
       <div class="story-epilogue-text">
         <p>You've completed <strong>"${fam.storyTitle}"</strong> and claimed leadership of the ${rivalFam?.name || famKey}.</p>
-        <p style="color:#aaa;margin-top:10px;font-style:italic;">The crown is heavy. Every family in the city watches your next move. Rivals circle like sharks. The feds build their case. And somewhere in the shadows, the next you is rising — hungry, angry, and willing to do whatever it takes.</p>
+        <p style="color:#aaa;margin-top:10px;font-style:italic;">The crown is heavy. Every family in the city watches your next move. Rivals circle like sharks. The feds build their case. And somewhere in the shadows, the next you is rising Ã¢â‚¬â€ hungry, angry, and willing to do whatever it takes.</p>
         <p style="color:#ccc;margin-top:8px;">The streets are yours. Now defend them.</p>
       </div>
 
@@ -713,7 +714,7 @@ function renderStoryEpilogue(famKey, fam) {
         <button class="story-action-btn" onclick="showCorruption();">Corruption Network</button>
       </div>
 
-      <button class="story-back-btn" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
+      <button class="story-back-btn" onclick="goBackToMainMenu()">Ã¢â€ Â Back to SafeHouse</button>
     </div>`;
 }
 
@@ -846,7 +847,7 @@ function advanceStoryChapter() {
   player.reputation += chapter.rewards.reputation || 0;
   sp.respect = (sp.respect || 0) + (chapter.respectGain || 0);
 
-  logAction(`Chapter Complete: "${chapter.title}" — +$${(chapter.rewards.money||0).toLocaleString()}, +${chapter.rewards.experience||0} XP, +${chapter.rewards.reputation||0} Rep`);
+  logAction(`Chapter Complete: "${chapter.title}" Ã¢â‚¬â€ +$${(chapter.rewards.money||0).toLocaleString()}, +${chapter.rewards.experience||0} XP, +${chapter.rewards.reputation||0} Rep`);
 
   // Rank promotion
   if (chapter.rankOnComplete) {
@@ -874,6 +875,7 @@ function advanceStoryChapter() {
             zone.defendingMembers = [];
             player.turf.owned.push(zone.id);
             player.turf.reputation = (player.turf.reputation || 0) + 10;
+            player.territoryReputation = (player.territoryReputation || 0) + 10;
             logAction(`<strong>${zone.name}</strong> is now under your direct control.`);
           }
         });
@@ -889,7 +891,7 @@ function advanceStoryChapter() {
   if (chapterIdx + 1 < fam.chapters.length && !sp.isDon) {
     sp.currentChapter = chapterIdx + 1;
     const nextCh = fam.chapters[sp.currentChapter];
-    logAction(`New Chapter: "${nextCh.title}" — Act ${nextCh.act}: ${nextCh.actTitle}`);
+    logAction(`New Chapter: "${nextCh.title}" Ã¢â‚¬â€ Act ${nextCh.act}: ${nextCh.actTitle}`);
   }
 
   updateUI();
@@ -937,6 +939,9 @@ async function startFactionMission(familyKey, missionId) {
     player.missions.completedMissions.push(missionId);
     updateMissionProgress('faction_mission_completed');
     updateMissionProgress('reputation_changed');
+    
+    // Rival respect: completing missions for a faction earns their respect
+    updateFactionRivalRespect(familyKey, +5);
     
     logAction(`Mission "${mission.name}" completed for ${crimeFamilies[familyKey].name}! +$${earnings}, +${mission.factionRep} family reputation.`);
     logAction(mission.story);
@@ -1026,7 +1031,7 @@ function startSignatureJob(familyKey) {
     const jailRoll = Math.random() * 100;
     if (jailRoll < 25) {
       sendToJail(3);
-      logAction(`Signature job "${sigJob.name}" went sideways — you got pinched!`);
+      logAction(`Signature job "${sigJob.name}" went sideways Ã¢â‚¬â€ you got pinched!`);
       return;
     }
     logAction(`Signature job "${sigJob.name}" failed. ${family.name} is disappointed but willing to give you another shot.`);
@@ -1040,8 +1045,8 @@ function startSignatureJob(familyKey) {
   showMissions();
 }
 
-// startTurfMission removed — turfMissions was always empty; turf is handled by attackTurfZone()
-// startBossBattle removed — bossBattles array was always empty
+// startTurfMission removed Ã¢â‚¬â€ turfMissions was always empty; turf is handled by attackTurfZone()
+// startBossBattle removed Ã¢â‚¬â€ bossBattles array was always empty
 
 // ==================== GANG MANAGEMENT OVERHAUL ====================
 
@@ -1049,7 +1054,7 @@ function startSignatureJob(familyKey) {
 // GANG_MEMBER_ROLES is the canonical role definition (merged from former expanded-systems.js).
 // specialistRoles below maps those roles to operation/training mechanics.
 // Members store BOTH: .role (expanded key) and .specialization (operations key).
-// The mapping keeps them consistent — no more conflicting role assignments.
+// The mapping keeps them consistent Ã¢â‚¬â€ no more conflicting role assignments.
 
 const EXPANDED_TO_SPECIALIZATION = {
   bruiser:    'muscle',
@@ -1057,8 +1062,8 @@ const EXPANDED_TO_SPECIALIZATION = {
   hacker:     'technician',  // Tech specialist
   enforcer:   'enforcer',
   driver:     'driver',
-  scout:      'thief',       // Stealth/surveillance ←’ theft ops
-  accountant: 'technician'   // Numbers/money ←’ tech ops
+  scout:      'thief',       // Stealth/surveillance Ã¢â€ ÂÃ¢â‚¬â„¢ theft ops
+  accountant: 'technician'   // Numbers/money Ã¢â€ ÂÃ¢â‚¬â„¢ tech ops
 };
 
 const SPECIALIZATION_TO_EXPANDED = {
@@ -1074,14 +1079,14 @@ const SPECIALIZATION_TO_EXPANDED = {
 // These systems were consolidated from separate files into the main game module.
 // Contains: Gang roles/stats/traits, Expanded territory wars, Interactive events,
 //           Rival AI kingpins, Respect system, and all related UI screens.
-// Original files deleted — this is now the canonical source.
+// Original files deleted Ã¢â‚¬â€ this is now the canonical source.
 
 // ==================== CONFIGURATION ====================
 
 const EXPANDED_SYSTEMS_CONFIG = {
     gangRolesEnabled: true,
     territoryWarsEnabled: true,
-    interactiveEventsEnabled: false, // Disabled — popup events removed
+    interactiveEventsEnabled: false, // Disabled Ã¢â‚¬â€ popup events removed
     rivalKingpinsEnabled: true,
     // Balance settings
     rivalGrowthInterval: 120000, // 2 minutes between rival actions
@@ -1279,21 +1284,21 @@ function calculateMemberEffectiveness(member, taskType) {
     return Math.floor(baseScore);
 }
 
-// Gang loyalty system removed — updateMemberLoyalty is now a no-op kept for API compat
+// Gang loyalty system removed Ã¢â‚¬â€ updateMemberLoyalty is now a no-op kept for API compat
 function updateMemberLoyalty(member, change, reason = "") {
     return { betrayed: false, loyaltyChange: 0 };
 }
 
 // ==================== 2. SINGLEPLAYER TURF SYSTEM ====================
 
-// Turf zones — the SP gang-war map. Each zone starts controlled by a rival family.
+// Turf zones Ã¢â‚¬â€ the SP gang-war map. Each zone starts controlled by a rival family.
 // These are DISTINCT from multiplayer territories (multiplayer.js cityDistricts /
 // territories.js DISTRICTS which handle online PvP area control).
 const TURF_ZONES = [
     {
         id: "little_italy",
         name: "Little Italy",
-        icon: "🍝",
+        icon: "Ã°Å¸ÂÂ",
         description: "Old-world streets lined with trattorias and back-room card games. The Torrino Family's ancestral stronghold.",
         baseIncome: 4000,
         defenseRequired: 180,
@@ -1308,7 +1313,7 @@ const TURF_ZONES = [
     {
         id: "redlight_district",
         name: "Redlight District",
-        icon: "🔴",
+        icon: "Ã°Å¸â€Â´",
         description: "Neon-soaked blocks of vice parlors, strip clubs, and underground dens. Morales Cartel territory.",
         baseIncome: 5500,
         defenseRequired: 200,
@@ -1323,7 +1328,7 @@ const TURF_ZONES = [
     {
         id: "chinatown",
         name: "Chinatown",
-        icon: "🏮",
+        icon: "Ã°Å¸ÂÂ®",
         description: "A labyrinth of narrow alleys, tea houses, and hidden parlors. The Chen Triad rules from the shadows.",
         baseIncome: 4500,
         defenseRequired: 190,
@@ -1338,7 +1343,7 @@ const TURF_ZONES = [
     {
         id: "harbor_row",
         name: "Harbor Row",
-        icon: "🚢",
+        icon: "Ã°Å¸Å¡Â¢",
         description: "Fog-cloaked wharves where containers vanish overnight. The Kozlov Bratva's smuggling nerve center.",
         baseIncome: 5000,
         defenseRequired: 210,
@@ -1353,8 +1358,8 @@ const TURF_ZONES = [
     {
         id: "the_slums",
         name: "The Slums",
-        icon: "🏚️",
-        description: "Crumbling tenements and burned-out lots. No single family controls it — gangs fight for every block.",
+        icon: "Ã°Å¸ÂÅ¡Ã¯Â¸Â",
+        description: "Crumbling tenements and burned-out lots. No single family controls it Ã¢â‚¬â€ gangs fight for every block.",
         baseIncome: 1500,
         defenseRequired: 120,
         riskLevel: "low",
@@ -1368,7 +1373,7 @@ const TURF_ZONES = [
     {
         id: "midtown_heights",
         name: "Midtown Heights",
-        icon: "🏙️",
+        icon: "Ã°Å¸Ââ„¢Ã¯Â¸Â",
         description: "Glass towers and penthouse suites. White-collar crime thrives behind boardroom doors.",
         baseIncome: 6000,
         defenseRequired: 250,
@@ -1383,7 +1388,7 @@ const TURF_ZONES = [
     {
         id: "old_quarter",
         name: "The Old Quarter",
-        icon: "🏛️",
+        icon: "Ã°Å¸Ââ€ºÃ¯Â¸Â",
         description: "Historic cobblestone streets with speakeasies and antique shops hiding contraband.",
         baseIncome: 3000,
         defenseRequired: 140,
@@ -1398,7 +1403,7 @@ const TURF_ZONES = [
     {
         id: "the_sprawl",
         name: "The Sprawl",
-        icon: "🌆",
+        icon: "Ã°Å¸Å’â€ ",
         description: "Endless suburban strip malls and quiet cul-de-sacs. Prescription drugs and suburban rackets.",
         baseIncome: 2500,
         defenseRequired: 120,
@@ -1412,9 +1417,9 @@ const TURF_ZONES = [
     }
 ];
 
-// ── Rival Family Definitions (SP Turf) ──────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬ Rival Family Definitions (SP Turf) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 // Each family has a Don (final boss), an Underboss, Capos, and a player buff.
-// The player sides with ONE family — that family's turf is shared, the rest are enemies.
+// The player sides with ONE family Ã¢â‚¬â€ that family's turf is shared, the rest are enemies.
 const RIVAL_FAMILIES = {
     torrino: {
         name: "Torrino Family",
@@ -1437,13 +1442,13 @@ const RIVAL_FAMILIES = {
         ],
         buff: {
             id: "family_loyalty",
-            name: "Omertà",
-            description: "+15% income from all turf, −20% heat from jobs",
+            name: "OmertÃƒÂ ",
+            description: "+15% income from all turf, Ã¢Ë†â€™20% heat from jobs",
             incomeMultiplier: 1.15,
             heatReduction: 0.20
         },
         turfZones: ["little_italy", "old_quarter"],
-        storyIntro: "The Torrino Family took you in when you had nothing. Don Salvatore sees potential in you — prove you're worth the family name."
+        storyIntro: "The Torrino Family took you in when you had nothing. Don Salvatore sees potential in you Ã¢â‚¬â€ prove you're worth the family name."
     },
     kozlov: {
         name: "Kozlov Bratva",
@@ -1459,7 +1464,7 @@ const RIVAL_FAMILIES = {
         underboss: {
             id: "kozlov_underboss", name: "Nadia Kozlova",
             power: 200, health: 320, reward: 28000,
-            description: "Dimitri's daughter. Colder and smarter than her father — some say more dangerous."
+            description: "Dimitri's daughter. Colder and smarter than her father Ã¢â‚¬â€ some say more dangerous."
         },
         capos: [],
         buff: {
@@ -1481,7 +1486,7 @@ const RIVAL_FAMILIES = {
         don: {
             id: "chen_don", name: "Master Chen Wei",
             power: 280, health: 400, reward: 48000,
-            description: "Ancient traditions, modern empire. Chen Wei plays the long game — and always wins."
+            description: "Ancient traditions, modern empire. Chen Wei plays the long game Ã¢â‚¬â€ and always wins."
         },
         underboss: {
             id: "chen_underboss", name: "Liang 'Ghost' Zhao",
@@ -1497,7 +1502,7 @@ const RIVAL_FAMILIES = {
             intelBonus: 0.20
         },
         turfZones: ["chinatown"],
-        storyIntro: "The Triad tested your mind before your fists. Master Chen Wei invited you to Chinatown — not as muscle, but as a strategist."
+        storyIntro: "The Triad tested your mind before your fists. Master Chen Wei invited you to Chinatown Ã¢â‚¬â€ not as muscle, but as a strategist."
     },
     morales: {
         name: "Morales Cartel",
@@ -1526,7 +1531,7 @@ const RIVAL_FAMILIES = {
             violentHeatReduction: 0.25
         },
         turfZones: ["redlight_district", "the_sprawl"],
-        storyIntro: "The Cartel doesn't recruit — they conscript. But Morales saw a fire in you, and offered a choice: serve willingly, or be buried with the rest."
+        storyIntro: "The Cartel doesn't recruit Ã¢â‚¬â€ they conscript. But Morales saw a fire in you, and offered a choice: serve willingly, or be buried with the rest."
     }
 };
 
@@ -1553,10 +1558,10 @@ const FAMILY_RANK_REQUIREMENTS = {
 // ==================== TURF MILESTONES ====================
 // Passive bonuses unlocked at zone-count thresholds.
 const TURF_MILESTONES = [
-  { zones: 2, label: 'Street Presence',  icon: '🏘️', description: '+10% passive XP from all sources',    perk: 'xp_boost',      value: 0.10 },
-  { zones: 4, label: 'Neighbourhood Boss', icon: '🏙️', description: '-20% heat from all jobs',             perk: 'heat_reduction', value: 0.20 },
-  { zones: 6, label: 'District Kingpin',  icon: '👑', description: '+15% store sell prices & gang recruit quality', perk: 'trade_boost',  value: 0.15 },
-  { zones: 8, label: 'City Overlord',     icon: '🌆', description: 'Exclusive Overlord weapon & +25% turf income', perk: 'overlord',     value: 0.25 },
+  { zones: 2, label: 'Street Presence',  icon: 'Ã°Å¸ÂËœÃ¯Â¸Â', description: '+10% passive XP from all sources',    perk: 'xp_boost',      value: 0.10 },
+  { zones: 4, label: 'Neighbourhood Boss', icon: 'Ã°Å¸Ââ„¢Ã¯Â¸Â', description: '-20% heat from all jobs',             perk: 'heat_reduction', value: 0.20 },
+  { zones: 6, label: 'District Kingpin',  icon: 'Ã°Å¸â€˜â€˜', description: '+15% store sell prices & gang recruit quality', perk: 'trade_boost',  value: 0.15 },
+  { zones: 8, label: 'City Overlord',     icon: 'Ã°Å¸Å’â€ ', description: 'Exclusive Overlord weapon & +25% turf income', perk: 'overlord',     value: 0.25 },
 ];
 
 // Returns array of milestone objects the player has currently unlocked
@@ -1591,9 +1596,10 @@ function checkTurfDominance(justTakenZoneId) {
     player.reputation += repReward;
     player.turf.power = (player.turf.power || 100) + powerReward;
     player.turf.reputation = (player.turf.reputation || 0) + 30;
+    player.territoryReputation = (player.territoryReputation || 0) + 30;
 
     showBriefNotification(`DOMINANCE! You control all ${fam.name} territory! +$${cashReward.toLocaleString()}, +${repReward} Rep, +${powerReward} Power`, 'success');
-    logAction(`<strong>${fam.name} ELIMINATED.</strong> Every block, every alley — yours. The streets will remember this. +$${cashReward.toLocaleString()}, +${repReward} Reputation, +${powerReward} permanent Turf Power.`);
+    logAction(`<strong>${fam.name} ELIMINATED.</strong> Every block, every alley Ã¢â‚¬â€ yours. The streets will remember this. +$${cashReward.toLocaleString()}, +${repReward} Reputation, +${powerReward} permanent Turf Power.`);
   });
 }
 
@@ -1605,15 +1611,15 @@ function checkTurfMilestoneUnlocks() {
   TURF_MILESTONES.forEach(m => {
     if (count >= m.zones && !player.turf.milestonesNotified.includes(m.perk)) {
       player.turf.milestonesNotified.push(m.perk);
-      showBriefNotification(`${m.icon} MILESTONE: ${m.label} — ${m.description}`, 'success');
-      logAction(`<strong>Turf Milestone Unlocked:</strong> ${m.icon} ${m.label} — ${m.description}`);
+      showBriefNotification(`${m.icon} MILESTONE: ${m.label} Ã¢â‚¬â€ ${m.description}`, 'success');
+      logAction(`<strong>Turf Milestone Unlocked:</strong> ${m.icon} ${m.label} Ã¢â‚¬â€ ${m.description}`);
 
       // Grant the Overlord weapon once
       if (m.perk === 'overlord' && !player.inventory.some(i => i.name === 'Overlord\'s Scepter')) {
         const scepter = { name: 'Overlord\'s Scepter', type: 'weapon', power: 60, price: 0, durability: 200, maxDurability: 200, description: 'A golden cane concealing a razor blade. Earned by controlling all 8 turf zones.' };
         player.inventory.push(scepter);
-        showBriefNotification('🗡️ You received the Overlord\'s Scepter! Equip it for +60 power.', 'success');
-        logAction('A golden cane arrives in a velvet case. The <strong>Overlord\'s Scepter</strong> — proof of total dominion.');
+        showBriefNotification('Ã°Å¸â€”Â¡Ã¯Â¸Â You received the Overlord\'s Scepter! Equip it for +60 power.', 'success');
+        logAction('A golden cane arrives in a velvet case. The <strong>Overlord\'s Scepter</strong> Ã¢â‚¬â€ proof of total dominion.');
       }
     }
   });
@@ -1671,7 +1677,7 @@ function initTurfZones() {
 // Calculate total defense strength of a turf zone
 // Now includes fortification from player.turf.fortifications AND player turf-power scaling.
 function calculateTurfDefense(zone, player) {
-    // Use the per-zone fortification the player upgrades (fortifyTurf) — stored in player.turf.fortifications
+    // Use the per-zone fortification the player upgrades (fortifyTurf) Ã¢â‚¬â€ stored in player.turf.fortifications
     const fortLevel = (player.turf?.fortifications || {})[zone.id] || zone.fortificationLevel || 0;
     let totalDefense = fortLevel * 25;  // Each fort level = 25 defense (was 10)
     
@@ -1690,6 +1696,12 @@ function calculateTurfDefense(zone, player) {
     const powerBonus = Math.floor((player.turf?.power || 100) * 0.10);
     totalDefense += powerBonus;
     
+    // Turf reputation bonus: up to +20% defense at 100 reputation
+    const turfRepDef = (player.turf && player.turf.reputation) || 0;
+    if (turfRepDef > 0) {
+      totalDefense = Math.floor(totalDefense * (1 + Math.min(turfRepDef, 100) * 0.002));
+    }
+    
     return Math.floor(totalDefense);
 }
 
@@ -1703,7 +1715,7 @@ function getChosenFamilyBuff() {
 // Check and auto-promote the player's family rank (only fires post-story to avoid conflicting with chapter rank assignments)
 function checkFamilyRankUp() {
     if (!player.chosenFamily) return;
-    // During the story, ranks are assigned by chapter completion (rankOnComplete) — skip auto-promote
+    // During the story, ranks are assigned by chapter completion (rankOnComplete) Ã¢â‚¬â€ skip auto-promote
     if (player.storyProgress && !player.storyProgress.isDon) return;
     const currentIdx = FAMILY_RANKS.indexOf(player.familyRank || 'associate');
     const nextRank = FAMILY_RANKS[currentIdx + 1];
@@ -2040,7 +2052,7 @@ const INTERACTIVE_EVENTS = [
 
 // Trigger an interactive event
 function triggerInteractiveEvent(player) {
-    // Classic random events only — Street Stories are now quest-linked (v1.9)
+    // Classic random events only Ã¢â‚¬â€ Street Stories are now quest-linked (v1.9)
     const allEvents = [...INTERACTIVE_EVENTS];
 
     // Filter events based on player status
@@ -2191,7 +2203,7 @@ function applyEventOutcomes(outcome, player) {
     return changes;
 }
 
-// ==================== 4. RIVAL AI KINGPINS (LEGACY — data now in RIVAL_FAMILIES / INDEPENDENT_BOSSES) ====================
+// ==================== 4. RIVAL AI KINGPINS (LEGACY Ã¢â‚¬â€ data now in RIVAL_FAMILIES / INDEPENDENT_BOSSES) ====================
 // Kept as a lightweight lookup for any code that still references RIVAL_KINGPINS by array.
 const RIVAL_KINGPINS = Object.values(RIVAL_FAMILIES).flatMap(f => {
     const list = [];
@@ -2201,9 +2213,9 @@ const RIVAL_KINGPINS = Object.values(RIVAL_FAMILIES).flatMap(f => {
     return list;
 }).concat(Object.values(INDEPENDENT_BOSSES).map(b => ({ id: b.id, name: b.name, faction: "independent", personality: "opportunistic", territories: [b.zone], gangSize: 6, powerRating: b.power, wealth: b.reward, aggressiveness: 0.9, respectTowardPlayer: 0, specialAbility: "guerrilla_warfare" })));
 
-// processRivalTurn removed — dead code (never called)
+// processRivalTurn removed Ã¢â‚¬â€ dead code (never called)
 
-// ==================== SIDE QUEST SYSTEM (v1.9 — Timers + Linked Street Stories) ====================
+// ==================== SIDE QUEST SYSTEM (v1.9 Ã¢â‚¬â€ Timers + Linked Street Stories) ====================
 
 function initSideQuests() {
   if (!player.sideQuests) {
@@ -2236,7 +2248,7 @@ function canStartSideQuest(quest) {
   return player.level >= (quest.minLevel || 1);
 }
 
-// ── Timer helpers ────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬ Timer helpers Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 function startStepTimer(questId, step) {
   const minutes = step.timerMinutes || 1;
   player.sideQuests.timers[questId] = {
@@ -2264,7 +2276,7 @@ function formatTimeRemaining(ms) {
   return m > 0 ? `${m}m ${s.toString().padStart(2, '0')}s` : `${s}s`;
 }
 
-// ── Linked street story trigger ──────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬ Linked street story trigger Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 function triggerLinkedStories(step, triggerType) {
   if (!step.linkedStories || step.linkedStories.length === 0) return;
 
@@ -2306,7 +2318,7 @@ function triggerLinkedStories(step, triggerType) {
     player.interactiveEvents.eventsTriggered.push(event.id);
     player.interactiveEvents.lastEventTime = Date.now();
 
-    // Show the event — when dismissed, show next queued story
+    // Show the event Ã¢â‚¬â€ when dismissed, show next queued story
     currentEvent = event;
     showInteractiveEvent(event);
     // After the player makes a choice (or closes), showNext will be called by the patched close handler
@@ -2315,7 +2327,7 @@ function triggerLinkedStories(step, triggerType) {
   showNext();
 }
 
-// ── Start a side quest ──────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬ Start a side quest Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 function startSideQuest(questId) {
   initSideQuests();
   const quest = SIDE_QUESTS.find(q => q.id === questId);
@@ -2340,7 +2352,7 @@ function startSideQuest(questId) {
 }
 window.startSideQuest = startSideQuest;
 
-// ── Complete a side quest step ──────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬ Complete a side quest step Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 function completeSideQuestStep(questId) {
   initSideQuests();
   const quest = SIDE_QUESTS.find(q => q.id === questId);
@@ -2351,7 +2363,7 @@ function completeSideQuestStep(questId) {
   // Check timer
   if (!isStepTimerComplete(questId)) {
     const remaining = formatTimeRemaining(getStepTimeRemaining(questId));
-    showBriefNotification(`Operation still in progress — ${remaining} remaining`, 'danger');
+    showBriefNotification(`Operation still in progress Ã¢â‚¬â€ ${remaining} remaining`, 'danger');
     return;
   }
 
@@ -2389,7 +2401,7 @@ function completeSideQuestStep(questId) {
     // Fire 'start' linked stories for the next step
     setTimeout(() => triggerLinkedStories(nextStep, 'start'), 1200);
   } else {
-    // Quest complete — clean up timer
+    // Quest complete Ã¢â‚¬â€ clean up timer
     player.sideQuests.active = player.sideQuests.active.filter(id => id !== questId);
     player.sideQuests.completed.push(questId);
     delete player.sideQuests.stepProgress[questId];
@@ -2404,7 +2416,7 @@ function completeSideQuestStep(questId) {
     }
 
     logAction(`Side quest COMPLETE: <strong>${quest.title}</strong>!`);
-    showNarrativeOverlay(quest.title + ' — Complete', quest.completionNarrative, 'Continue');
+    showNarrativeOverlay(quest.title + ' Ã¢â‚¬â€ Complete', quest.completionNarrative, 'Continue');
   }
 
   updateUI();
@@ -2412,7 +2424,7 @@ function completeSideQuestStep(questId) {
 }
 window.completeSideQuestStep = completeSideQuestStep;
 
-// ── Quest timer tick — updates the quest screen countdown every second ──
+// Ã¢â€â‚¬Ã¢â€â‚¬ Quest timer tick Ã¢â‚¬â€ updates the quest screen countdown every second Ã¢â€â‚¬Ã¢â€â‚¬
 let _questTimerInterval = null;
 function startQuestTimerTick() {
   if (_questTimerInterval) return; // already running
@@ -2424,20 +2436,20 @@ function startQuestTimerTick() {
       const qid = el.getAttribute('data-quest-timer');
       const remaining = getStepTimeRemaining(qid);
       if (remaining <= 0) {
-        el.textContent = '✅ Ready!';
+        el.textContent = 'Ã¢Å“â€¦ Ready!';
         el.style.color = '#8a9a6a';
         // Also show/enable the complete button if objective met
         const btn = document.querySelector(`[data-complete-btn="${qid}"]`);
         if (btn) btn.style.display = '';
       } else {
-        el.textContent = '⏳ ' + formatTimeRemaining(remaining);
+        el.textContent = 'Ã¢ÂÂ³ ' + formatTimeRemaining(remaining);
         el.style.color = '#c0a040';
       }
     });
   }, 1000);
 }
 
-// ── Show side quest screen with timer display ────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬ Show side quest screen with timer display Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 function showSideQuestScreen() {
   initSideQuests();
   const sq = player.sideQuests;
@@ -2446,7 +2458,7 @@ function showSideQuestScreen() {
     <div class="story-screen">
       <div class="story-title-block">
         <h1 class="story-main-title">Side Operations</h1>
-        <p class="story-subtitle">Multi-step operations that build your empire. Each step takes time — and triggers events on the streets.</p>
+        <p class="story-subtitle">Multi-step operations that build your empire. Each step takes time Ã¢â‚¬â€ and triggers events on the streets.</p>
       </div>`;
 
   // Active quests first
@@ -2479,19 +2491,19 @@ function showSideQuestScreen() {
 
           <div style="display:flex;gap:15px;flex-wrap:wrap;margin:10px 0;">
             <div class="story-objective ${objMet ? 'obj-met' : ''}">
-              <span class="obj-icon">${objMet ? '✅' : '⬜'}</span>
+              <span class="obj-icon">${objMet ? 'Ã¢Å“â€¦' : 'Ã¢Â¬Å“'}</span>
               <span class="obj-label">${obj.text}</span>
               <span class="obj-val">${currentVal.toLocaleString()} / ${obj.target.toLocaleString()}</span>
             </div>
             <div style="background:#14120a;border:1px solid #c0a04044;border-radius:8px;padding:8px 14px;font-size:0.95em;">
-              <span data-quest-timer="${quest.id}" style="color:${timerDone ? '#8a9a6a' : '#c0a040'};">${timerDone ? '✅ Ready!' : '⏳ ' + formatTimeRemaining(remaining)}</span>
+              <span data-quest-timer="${quest.id}" style="color:${timerDone ? '#8a9a6a' : '#c0a040'};">${timerDone ? 'Ã¢Å“â€¦ Ready!' : 'Ã¢ÂÂ³ ' + formatTimeRemaining(remaining)}</span>
               <span style="color:#888;margin-left:6px;font-size:0.85em;">(${step.timerMinutes || '?'}m operation)</span>
             </div>
           </div>
 
           ${canComplete
-            ? `<button class="story-advance-btn" data-complete-btn="${quest.id}" onclick="completeSideQuestStep('${quest.id}')">Complete Step →</button>`
-            : `<button class="story-advance-btn" data-complete-btn="${quest.id}" style="display:${objMet && !timerDone ? '' : 'none'};opacity:0.5;cursor:not-allowed;" disabled>Waiting for operation…</button>`
+            ? `<button class="story-advance-btn" data-complete-btn="${quest.id}" onclick="completeSideQuestStep('${quest.id}')">Complete Step Ã¢â€ â€™</button>`
+            : `<button class="story-advance-btn" data-complete-btn="${quest.id}" style="display:${objMet && !timerDone ? '' : 'none'};opacity:0.5;cursor:not-allowed;" disabled>Waiting for operationÃ¢â‚¬Â¦</button>`
           }
         </div>`;
     });
@@ -2527,7 +2539,7 @@ function showSideQuestScreen() {
           <div class="story-family-icon">${quest.icon}</div>
           <h2 class="story-family-name">${quest.title}</h2>
           <p style="color:#888;">${quest.description}</p>
-          <div style="color:#8b3a3a;font-size:0.9em;">🔒 Requires Level ${quest.minLevel}</div>
+          <div style="color:#8b3a3a;font-size:0.9em;">Ã°Å¸â€â€™ Requires Level ${quest.minLevel}</div>
         </div>`;
     });
   }
@@ -2547,8 +2559,8 @@ function showSideQuestScreen() {
   }
 
   html += `
-      <button class="story-back-btn" onclick="showMissions()">← Back to Story</button>
-      <button class="story-back-btn" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
+      <button class="story-back-btn" onclick="showMissions()">Ã¢â€ Â Back to Story</button>
+      <button class="story-back-btn" onclick="goBackToMainMenu()">Ã¢â€ Â Back to SafeHouse</button>
     </div>`;
 
   document.getElementById("missions-content").innerHTML = html;
@@ -2579,7 +2591,7 @@ function showPostDonArc(arcId) {
   if (arc.candidates) {
     // Show current chosen successor if already selected
     const currentChoice = player.storyProgress?.chosenSuccessor;
-    candidatesHTML = `<h3 style="color:#c0a040;text-align:center;margin:20px 0 10px;">${currentChoice ? '✅ Your Chosen Successor' : '👑 Choose Your Successor'}</h3>`;
+    candidatesHTML = `<h3 style="color:#c0a040;text-align:center;margin:20px 0 10px;">${currentChoice ? 'Ã¢Å“â€¦ Your Chosen Successor' : 'Ã°Å¸â€˜â€˜ Choose Your Successor'}</h3>`;
     candidatesHTML += `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;margin:0 0 20px;">` +
       arc.candidates.map(c => {
         const isChosen = currentChoice === c.name;
@@ -2592,7 +2604,7 @@ function showPostDonArc(arcId) {
           <div style="color:#8b3a3a;font-size:0.8em;margin-top:4px;">Risk: ${c.risk}</div>
           <button onclick="selectSuccessor('${c.name}', '${c.trait}')"
             style="margin-top:12px;width:100%;padding:8px;background:${isChosen ? 'linear-gradient(135deg,#c0a040,#a08830)' : 'linear-gradient(135deg,#7a8a5a,#8a9a6a)'};border:none;border-radius:8px;color:white;font-weight:bold;cursor:pointer;font-size:0.9em;">
-            ${isChosen ? '✅ Chosen' : '👑 Choose'}
+            ${isChosen ? 'Ã¢Å“â€¦ Chosen' : 'Ã°Å¸â€˜â€˜ Choose'}
           </button>
         </div>`}).join('') +
       `</div>`;
@@ -2607,7 +2619,7 @@ function showPostDonArc(arcId) {
       <p style="color:#aaa;line-height:1.5;margin-bottom:15px;">${arc.description}</p>
       <div class="story-narrative">${narrativeHTML}</div>
       ${candidatesHTML}
-      <button class="story-back-btn" onclick="showMissions()">← Back</button>
+      <button class="story-back-btn" onclick="showMissions()">Ã¢â€ Â Back</button>
     </div>`;
 
   document.getElementById("missions-content").innerHTML = html;
@@ -2639,7 +2651,7 @@ function checkMilestoneNarration(newLevel) {
   }
 }
 
-// Hook into the world narration system — periodic atmospheric text
+// Hook into the world narration system Ã¢â‚¬â€ periodic atmospheric text
 let lastWorldNarrationTime = 0;
 function maybeShowWorldNarration() {
   const now = Date.now();
@@ -2663,7 +2675,7 @@ function initializeExpandedSystems(player) {
         player.gang.gangMembers = [];
     }
     
-    // Territories — now handled by turf system (initTurfZones)
+    // Territories Ã¢â‚¬â€ now handled by turf system (initTurfZones)
     // player.territoriesEx is legacy; turf data lives in player.turf
     if (!player.turf) {
         player.turf = { owned: [], bossesDefeated: [], donsDefeated: [], income: 0, heat: {}, power: 100, reputation: 0, events: [], fortifications: {}, lastTributeCollection: 0 };
@@ -2674,7 +2686,16 @@ function initializeExpandedSystems(player) {
         player.rivalKingpins = JSON.parse(JSON.stringify(RIVAL_KINGPINS));
     }
     
-    // Respect system removed — factions use streetReputation in player.js
+    // Rival respect tracking Ã¢â‚¬â€ syncs rivalKingpins.respectTowardPlayer to this map
+    if (!player.relationships) {
+        player.relationships = {};
+        // Seed from any existing rivalKingpins data
+        (player.rivalKingpins || []).forEach(r => {
+            if (r.respectTowardPlayer) player.relationships[r.id] = r.respectTowardPlayer;
+        });
+    }
+    
+    // Respect system removed Ã¢â‚¬â€ factions use streetReputation in player.js
     // initializeRespectSystem(player);
     
     // Event tracking
@@ -2713,7 +2734,7 @@ export default {
     generateGangMember: generateExpandedGangMember,
     calculateMemberEffectiveness,
     
-    // Territory functions — now use turf system
+    // Territory functions Ã¢â‚¬â€ now use turf system
     assignMembersToTerritory: assignMembersToTurf,
     calculateTerritoryDefense: calculateTurfDefense,
     processTerritoryAttack: processTurfAttack,
@@ -2760,7 +2781,7 @@ window.dismissMember = async function(memberId) {
   
   // Remove from turf assignments if assigned
   if (member.assignedTo && player.turf) {
-    // Legacy cleanup — turf system uses zone IDs
+    // Legacy cleanup Ã¢â‚¬â€ turf system uses zone IDs
     member.assignedTo = null;
   }
   
@@ -2930,7 +2951,7 @@ function showRivalActivityScreen() {
         ${rivals.map(rival => renderRival(rival)).join('')}
       </div>
       
-      <button onclick="closeScreen()">← Back</button>
+      <button onclick="closeScreen()">Ã¢â€ Â Back</button>
     </div>
   `;
   
@@ -2966,7 +2987,7 @@ function renderRival(rival) {
   `;
 }
 
-// formatSpecialAbility — already defined in main game.js code
+// formatSpecialAbility Ã¢â‚¬â€ already defined in main game.js code
 
 // ==================== UTILITY FUNCTIONS ====================
 
@@ -3287,7 +3308,7 @@ const betrayalEvents = [
     detectionChance: 40
   }
 ];
-// districtTypes array removed — Map now uses TURF_ZONES; businesses use DISTRICTS from territories.js
+// districtTypes array removed Ã¢â‚¬â€ Map now uses TURF_ZONES; businesses use DISTRICTS from territories.js
 
 // Protection Racket Businesses
 const protectionBusinesses = [
@@ -3381,7 +3402,7 @@ const protectionBusinesses = [
   }
 ];
 
-// rivalGangs removed — 5 gangs were defined but never referenced anywhere
+// rivalGangs removed Ã¢â‚¬â€ 5 gangs were defined but never referenced anywhere
 
 // Corruption Targets
 const corruptionTargets = [
@@ -3715,7 +3736,7 @@ function refreshFrontsPanel() {
 }
 window.refreshFrontsPanel = refreshFrontsPanel;
 
-// showBusinesses now redirects to Properties screen → Fronts tab
+// showBusinesses now redirects to Properties screen Ã¢â€ â€™ Fronts tab
 async function showBusinesses() {
   if (player.inJail) {
     showBriefNotification("Can't manage businesses while in jail!", 'danger');
@@ -3811,7 +3832,7 @@ async function upgradeBusiness(businessIndex) {
   // Unique upgrade narration for illegal businesses
   const upgradeNarrations = {
     counterfeiting: [
-      'New printing plates installed — the bills look even more authentic now.',
+      'New printing plates installed Ã¢â‚¬â€ the bills look even more authentic now.',
       'UV-resistant ink sourced from overseas. These fakes will pass any scanner.',
       'You expand the distribution network. More channels, more money.',
       'A master engraver joins your operation. The counterfeits are indistinguishable from the real thing.',
@@ -3820,15 +3841,15 @@ async function upgradeBusiness(businessIndex) {
     druglab: [
       'Better cooking equipment means purer product and higher margins.',
       'A chemistry PhD dropout joins your team. Product quality skyrockets.',
-      'Hidden ventilation installed — no more suspicious chemical smells.',
+      'Hidden ventilation installed Ã¢â‚¬â€ no more suspicious chemical smells.',
       'Industrial-scale production begins. You\'re now a major supplier.',
       'Your Drug Lab is a state-of-the-art production facility. The cartel is impressed.'
     ],
     chopshop: [
       'Professional-grade tools speed up the dismantling process.',
-      'An expert mechanic joins — parts are now stripped with surgical precision.',
+      'An expert mechanic joins Ã¢â‚¬â€ parts are now stripped with surgical precision.',
       'Advanced VIN removal technology makes every car untraceable.',
-      'International buyer network established — premium prices for premium parts.',
+      'International buyer network established Ã¢â‚¬â€ premium prices for premium parts.',
       'Your Chop Shop is the most efficient in the city. Cars disappear without a trace.'
     ]
   };
@@ -3884,7 +3905,7 @@ async function collectBusinessIncome(businessIndex) {
     grossIncome = Math.floor(grossIncome * (1 + corruptContractBonus));
   }
 
-  // Phase 3: Territory tax — if business is in an owned district and owner isn't the player
+  // Phase 3: Territory tax Ã¢â‚¬â€ if business is in an owned district and owner isn't the player
   let taxAmount = 0;
   let taxOwnerName = null;
   const bizDistrict = business.districtId || player.currentTerritory;
@@ -4059,7 +4080,7 @@ function showMoneyLaundering() {
     </div>
   `;
 
-  // ── Active Laundering Operations ──
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Active Laundering Operations Ã¢â€â‚¬Ã¢â€â‚¬
   if (player.activeLaundering.length > 0) {
     launderHTML += `
       <div style="background: rgba(138, 154, 106, 0.15); border-radius: 10px; padding: 20px; margin: 20px 0; border: 2px solid #8a9a6a;">
@@ -4079,7 +4100,7 @@ function showMoneyLaundering() {
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                   <strong style="color: #f5e6c8;">${op.methodName}</strong>
                   <span style="color: ${isDone ? '#8a9a6a' : '#c0a040'}; font-weight: bold;" data-launder-timer="${op.id}">
-                    ${isDone ? '✅ READY TO COLLECT' : `${mins}m ${secs}s remaining`}
+                    ${isDone ? 'Ã¢Å“â€¦ READY TO COLLECT' : `${mins}m ${secs}s remaining`}
                   </span>
                 </div>
                 <div style="margin: 8px 0;">
@@ -4155,13 +4176,13 @@ function showMoneyLaundering() {
     
     <div style="background: rgba(138, 154, 106, 0.15); padding: 20px; border-radius: 10px; border: 1px solid #8a9a6a; margin: 20px 0;">
       <h4 style="color: #8a9a6a;">TIPS</h4>
-      <p style="color: #f5e6c8;">• The <strong>Money Laundering</strong> job (under Jobs) also converts dirty money to clean money at 80-95% rates.</p>
-      <p style="color: #f5e6c8;">• Owning a <strong>Counterfeiting Operation</strong> business gives +3% conversion rate on the Money Laundering job.</p>
-      <p style="color: #f5e6c8;">• Dirty money jobs (Bank Job, Counterfeiting Money) increase your heat level — launder regularly!</p>
+      <p style="color: #f5e6c8;">Ã¢â‚¬Â¢ The <strong>Money Laundering</strong> job (under Jobs) also converts dirty money to clean money at 80-95% rates.</p>
+      <p style="color: #f5e6c8;">Ã¢â‚¬Â¢ Owning a <strong>Counterfeiting Operation</strong> business gives +3% conversion rate on the Money Laundering job.</p>
+      <p style="color: #f5e6c8;">Ã¢â‚¬Â¢ Dirty money jobs (Bank Job, Counterfeiting Money) increase your heat level Ã¢â‚¬â€ launder regularly!</p>
     </div>
     
     <div class="page-nav" style="justify-content: center;">
-      <button class="nav-btn-back" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
+      <button class="nav-btn-back" onclick="goBackToMainMenu()">Ã¢â€ Â Back to SafeHouse</button>
     </div>
   `;
   
@@ -4249,7 +4270,7 @@ function startLaundering(methodId) {
   // Utility item: Burner Phone reduces risk by 15%
   if (hasUtilityItem('Burner Phone')) {
     adjustedRisk *= 0.85;
-    logAction(`Your Burner Phone keeps communications untraceable — interception risk reduced.`);
+    logAction(`Your Burner Phone keeps communications untraceable Ã¢â‚¬â€ interception risk reduced.`);
   }
 
   // International district benefit: offshore connections reduce interception risk
@@ -4260,7 +4281,7 @@ function startLaundering(methodId) {
   }
   
   if (riskRoll < adjustedRisk) {
-    // CAUGHT — Lose 30-70%, return the rest as dirty money
+    // CAUGHT Ã¢â‚¬â€ Lose 30-70%, return the rest as dirty money
     const lossPercentage = 0.3 + (Math.random() * 0.4);
     const lost = Math.floor(amount * lossPercentage);
     const returned = amount - lost;
@@ -4272,7 +4293,7 @@ function startLaundering(methodId) {
     showToast(`Operation compromised! Lost $${lost.toLocaleString()}, $${returned.toLocaleString()} returned. +${heatGain} heat.`, 'error');
     logAction(`The operation goes sideways! Feds intercept the cash. $${lost.toLocaleString()} seized, but $${returned.toLocaleString()} dirty money was recovered. The heat is rising (+${heatGain} heat).`);
   } else {
-    // SUCCESS — Queue the laundering operation with a real timer
+    // SUCCESS Ã¢â‚¬â€ Queue the laundering operation with a real timer
     const cleanAmount = Math.floor(amount * method.cleanRate);
     const heatGain = Math.floor(method.suspicionRisk * 0.05);
     const processingTimeMs = method.timeRequired * 60 * 1000; // timeRequired is in minutes (real-time)
@@ -4295,8 +4316,8 @@ function startLaundering(methodId) {
     const secs = Math.floor((processingTimeMs % 60000) / 1000);
     const timeStr = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
     
-    showToast(`Laundering started! $${amount.toLocaleString()} → $${cleanAmount.toLocaleString()} clean in ${timeStr}.`, 'success');
-    logAction(`${method.name} operation initiated. $${amount.toLocaleString()} of dirty cash is being cleaned — expect $${cleanAmount.toLocaleString()} back in ${timeStr}.`);
+    showToast(`Laundering started! $${amount.toLocaleString()} Ã¢â€ â€™ $${cleanAmount.toLocaleString()} clean in ${timeStr}.`, 'success');
+    logAction(`${method.name} operation initiated. $${amount.toLocaleString()} of dirty cash is being cleaned Ã¢â‚¬â€ expect $${cleanAmount.toLocaleString()} back in ${timeStr}.`);
   }
   
   updateUI();
@@ -4322,6 +4343,11 @@ function collectLaundering(opId) {
   player.money += op.cleanAmount;
   player.activeLaundering.splice(opIndex, 1);
   
+  // Collecting laundered money boosts underground reputation
+  if (player.streetReputation) {
+    player.streetReputation.underground = Math.min(100, (player.streetReputation.underground || 0) + 2);
+  }
+  
   showToast(`Collected $${op.cleanAmount.toLocaleString()} clean money from ${op.methodName}!`, 'success');
   logAction(`The ${op.methodName} laundering operation is complete. $${op.cleanAmount.toLocaleString()} of squeaky-clean cash has been added to your wallet.`);
   
@@ -4336,7 +4362,7 @@ function checkLaunderingCompletions() {
   const now = Date.now();
   const completed = player.activeLaundering.filter(op => now >= op.completesAt);
   
-  // Auto-collect is NOT done here — player must manually collect via the Collect button
+  // Auto-collect is NOT done here Ã¢â‚¬â€ player must manually collect via the Collect button
   // But we do notify when something finishes
   completed.forEach(op => {
     if (!op.notified) {
@@ -4378,7 +4404,7 @@ function startLaunderingCountdown() {
       const progress = totalDuration > 0 ? Math.min(100, ((totalDuration - remaining) / totalDuration) * 100) : 100;
       
       if (remaining <= 0) {
-        timerEl.textContent = '✅ READY TO COLLECT';
+        timerEl.textContent = 'Ã¢Å“â€¦ READY TO COLLECT';
         timerEl.style.color = '#8a9a6a';
         if (barEl) {
           barEl.style.width = '100%';
@@ -4497,7 +4523,7 @@ function showGang() {
     </div>
     
     <div class="page-nav" style="justify-content: center;">
-      <button class="nav-btn-back" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
+      <button class="nav-btn-back" onclick="goBackToMainMenu()">Ã¢â€ Â Back to SafeHouse</button>
     </div>
   `;
   
@@ -4594,10 +4620,10 @@ function showGangManagementScreen() {
   crewHTML += `
     <div class="page-nav" style="gap: 10px;">
       <button class="nav-btn-back" onclick="showGang()">
-        ← Back to The Family
+        Ã¢â€ Â Back to The Family
       </button>
       <button class="nav-btn-back" onclick="goBackToMainMenu()">
-        ← Back to SafeHouse
+        Ã¢â€ Â Back to SafeHouse
       </button>
     </div>
   `;
@@ -4607,13 +4633,13 @@ function showGangManagementScreen() {
   document.getElementById("gang-screen").style.display = "block";
 }
 
-// boostMemberLoyalty removed — loyalty system no longer active
+// boostMemberLoyalty removed Ã¢â‚¬â€ loyalty system no longer active
 function boostMemberLoyalty(memberIndex) {
   // No-op: loyalty system removed
   return;
 }
 
-// getAverageLoyalty removed — loyalty system no longer active
+// getAverageLoyalty removed Ã¢â‚¬â€ loyalty system no longer active
 function getAverageLoyalty() {
   return 100; // Stub: always returns 100 for backward compat
 }
@@ -4714,7 +4740,7 @@ function generateGangMembersHTML() {
     // Prefer expanded role name (richer info) over legacy specialization name
     const expandedRole = member.role ? GANG_MEMBER_ROLES[member.role] : null;
     const roleName = expandedRole ? `${expandedRole.icon || ''} ${expandedRole.name}`.trim() : (role ? role.name : 'Unassigned');
-    const perkText = expandedRole && expandedRole.perk ? `<br><strong>Perk:</strong> <em>${expandedRole.perk.name}</em> — ${expandedRole.perk.effect}` : '';
+    const perkText = expandedRole && expandedRole.perk ? `<br><strong>Perk:</strong> <em>${expandedRole.perk.name}</em> Ã¢â‚¬â€ ${expandedRole.perk.effect}` : '';
     const statusText = member.arrested ? 'Arrested' :
              member.onOperation ? 'On Operation' : 
              member.inTraining ? 'In Training' : 
@@ -4858,7 +4884,7 @@ function completeGangOperation(operationData) {
   const betrayalRoll = Math.random() * 100;
   const arrestRoll = Math.random() * 100;
   
-  // Check for death — operations are dangerous
+  // Check for death Ã¢â‚¬â€ operations are dangerous
   if (Math.random() < 0.08) {
     const memberIndex = player.gang.gangMembers.indexOf(member);
     if (memberIndex !== -1) {
@@ -4963,7 +4989,7 @@ async function assignRole(memberIndex) {
   if (EXPANDED_SYSTEMS_CONFIG.gangRolesEnabled) {
     const roles = GANG_MEMBER_ROLES;
     const roleKeys = Object.keys(roles);
-    promptText = `Assign ${member.name} to a role:<br><br>Available roles:<br>${roleKeys.map(k => `<strong>${k}</strong>: ${roles[k].name} — ${roles[k].description}${roles[k].perk ? ` (${roles[k].perk.effect})` : ''}`).join('<br>')}<br><br>Enter role ID (${roleKeys.join(', ')}):`;
+    promptText = `Assign ${member.name} to a role:<br><br>Available roles:<br>${roleKeys.map(k => `<strong>${k}</strong>: ${roles[k].name} Ã¢â‚¬â€ ${roles[k].description}${roles[k].perk ? ` (${roles[k].perk.effect})` : ''}`).join('<br>')}<br><br>Enter role ID (${roleKeys.join(', ')}):`;
     
     const selectedRole = await ui.prompt(promptText);
     if (selectedRole && roles[selectedRole]) {
@@ -5125,7 +5151,7 @@ function enrollInTraining(programId) {
   showGang();
 }
 
-// dealWithDisloyalty removed — loyalty system no longer active
+// dealWithDisloyalty removed Ã¢â‚¬â€ loyalty system no longer active
 async function dealWithDisloyalty(memberIndex) {
   // No-op: loyalty system removed
   return;
@@ -5422,7 +5448,7 @@ function showTerritoryControl() {
   
   html += `
     <div class="page-nav" style="justify-content: center;">
-      <button class="nav-btn-back" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
+      <button class="nav-btn-back" onclick="goBackToMainMenu()">Ã¢â€ Â Back to SafeHouse</button>
     </div>`;
   
   document.getElementById("territory-control-content").innerHTML = html;
@@ -5430,7 +5456,7 @@ function showTerritoryControl() {
   document.getElementById("territory-control-screen").style.display = "block";
 }
 
-// Show Turf Map — all zones with ownership and actions
+// Show Turf Map Ã¢â‚¬â€ all zones with ownership and actions
 function showTurfMap() {
   initTurfZones();
   const zones = player.turf._zones || [];
@@ -5497,7 +5523,7 @@ function showTurfMap() {
       html += `
         <div style="margin-bottom:8px;font-size:0.8em;text-align:center;">
           <div style="color:#8b6a4a;">Defense: ${zone.defenseRequired}</div>
-          <div style="font-size:0.75em;color:#d4c4a0;">(Attack power: ${atkPower}${activeGang.length ? ' ⚔️' + activeGang.length + ' crew' : ' ⚠️ solo'})</div>
+          <div style="font-size:0.75em;color:#d4c4a0;">(Attack power: ${atkPower}${activeGang.length ? ' Ã¢Å¡â€Ã¯Â¸Â' + activeGang.length + ' crew' : ' Ã¢Å¡Â Ã¯Â¸Â solo'})</div>
         </div>
         <button onclick="attackTurfZone('${zone.id}')" 
           style="width:100%;padding:10px;background:linear-gradient(135deg,#8b3a3a,#7a2a2a);border:none;border-radius:8px;color:white;font-weight:bold;cursor:pointer;font-size:0.9em;${!canAttack?'opacity:0.6;cursor:not-allowed;':''}">
@@ -5510,7 +5536,7 @@ function showTurfMap() {
   
   html += `</div>
     <div style="text-align:center; margin-top:25px;">
-      <button onclick="showTerritoryControl();" style="padding:12px 30px;background:linear-gradient(135deg,#8a7a5a,#6a5a3a);border:none;border-radius:10px;color:white;font-weight:bold;cursor:pointer;">← Back to Turf</button>
+      <button onclick="showTerritoryControl();" style="padding:12px 30px;background:linear-gradient(135deg,#8a7a5a,#6a5a3a);border:none;border-radius:10px;color:white;font-weight:bold;cursor:pointer;">Ã¢â€ Â Back to Turf</button>
     </div>`;
   
   document.getElementById("territory-control-content").innerHTML = html;
@@ -5531,7 +5557,7 @@ function findBossById(bossId) {
   return INDEPENDENT_BOSSES[bossId] || null;
 }
 
-// ── Calculate total offensive power for a turf attack ──
+// Ã¢â€â‚¬Ã¢â€â‚¬ Calculate total offensive power for a turf attack Ã¢â€â‚¬Ã¢â€â‚¬
 // Gang members contribute significantly; solo attacks are possible but much harder.
 function calculateTurfAttackPower() {
   let power = player.turf.power || 100;
@@ -5544,7 +5570,7 @@ function calculateTurfAttackPower() {
   if (player.equippedWeapon) power += 10;
   if (player.equippedArmor) power += 8;
   
-  // Gang member offensive contribution — the key to winning turf
+  // Gang member offensive contribution Ã¢â‚¬â€ the key to winning turf
   const active = (player.gang?.gangMembers || []).filter(m => m.status === 'active');
   active.forEach(m => {
     let contrib = calculateMemberEffectiveness(m, 'violence');
@@ -5558,7 +5584,7 @@ function calculateTurfAttackPower() {
   return Math.floor(power);
 }
 
-// ── Process casualties among gang members after a turf fight ──
+// Ã¢â€â‚¬Ã¢â€â‚¬ Process casualties among gang members after a turf fight Ã¢â€â‚¬Ã¢â€â‚¬
 // deathChance / injuryChance are base rates; actual chance per member is randomised.
 function processTurfAttackCasualties(won, gangMembers, zoneName) {
   const casualties = [];
@@ -5604,7 +5630,7 @@ async function attackTurfZone(zoneId) {
   // Calculate full attack strength (player power + gang members + gear)
   const attackPower = calculateTurfAttackPower();
   const activeGang = (player.gang?.gangMembers || []).filter(m => m.status === 'active');
-  const gangStr = activeGang.length > 0 ? `\nGang Backup: ${activeGang.length} member${activeGang.length > 1 ? 's' : ''}` : '\n⚠️ No gang backup — this will be much harder solo!';
+  const gangStr = activeGang.length > 0 ? `\nGang Backup: ${activeGang.length} member${activeGang.length > 1 ? 's' : ''}` : '\nÃ¢Å¡Â Ã¯Â¸Â No gang backup Ã¢â‚¬â€ this will be much harder solo!';
   
   // Check if there's a boss guarding this zone
   const bossId = zone.boss;
@@ -5612,9 +5638,9 @@ async function attackTurfZone(zoneId) {
   const bossAlive = bossInfo && !(player.turf.bossesDefeated || []).includes(bossInfo.id);
   
   let confirmMsg = `Attack ${zone.name}?`;
-  if (bossAlive) confirmMsg += `\n\n⚔️ ${bossInfo.name} guards this zone! (Power: ${bossInfo.power})`;
+  if (bossAlive) confirmMsg += `\n\nÃ¢Å¡â€Ã¯Â¸Â ${bossInfo.name} guards this zone! (Power: ${bossInfo.power})`;
   confirmMsg += `\n\nYour Attack Power: ${attackPower} vs Zone Defense: ${powerNeeded}${gangStr}`;
-  if (activeGang.length > 0) confirmMsg += `\n\n⚠️ Warning: Gang members may be killed or injured in the assault.`;
+  if (activeGang.length > 0) confirmMsg += `\n\nÃ¢Å¡Â Ã¯Â¸Â Warning: Gang members may be killed or injured in the assault.`;
   
   if (await ui.confirm(confirmMsg)) {
     // Boss fight if boss is alive
@@ -5630,7 +5656,7 @@ async function attackTurfZone(zoneId) {
         if (injured.length) lossMsg += ` Injured: ${injured.join(', ')}.`;
         showBriefNotification(lossMsg, 'danger');
         logAction(`You attacked ${zone.name} but ${bossInfo.name} crushed your assault. Regroup and try again.`);
-        if (casualties.length) logAction(`💀 Lost in the fight: ${casualties.join(', ')}`);
+        if (casualties.length) logAction(`Ã°Å¸â€™â‚¬ Lost in the fight: ${casualties.join(', ')}`);
         updateUI();
         return;
       }
@@ -5639,7 +5665,16 @@ async function attackTurfZone(zoneId) {
       player.turf.bossesDefeated.push(bossInfo.id);
       player.money += bossInfo.reward;
       player.turf.reputation = (player.turf.reputation || 0) + 25;
+      player.territoryReputation = (player.territoryReputation || 0) + 25;
       logAction(`<strong>${bossInfo.name}</strong> has been eliminated! +$${bossInfo.reward.toLocaleString()} and +25 reputation.`);
+      
+      // Update rival respect: defeating a boss lowers their faction's respect for you
+      updateRivalRespect(bossInfo.id, -25);
+      // Find which faction this boss belongs to
+      const bossRival = (player.rivalKingpins || RIVAL_KINGPINS).find(r => r.id === bossInfo.id);
+      if (bossRival && bossRival.faction && bossRival.faction !== 'independent') {
+        updateFactionRivalRespect(bossRival.faction, -10);
+      }
       
       // Check if this was a Don
       const isDon = Object.values(RIVAL_FAMILIES).some(f => f.don.id === bossInfo.id);
@@ -5650,10 +5685,10 @@ async function attackTurfZone(zoneId) {
       }
     }
     
-    // ── TURF COMBAT ROLL ──
+    // Ã¢â€â‚¬Ã¢â€â‚¬ TURF COMBAT ROLL Ã¢â€â‚¬Ã¢â€â‚¬
     // Even without a boss, taking turf requires winning a fight against the zone's garrison.
     // Attack power includes gang members; defense is the zone's defenseRequired with variance.
-    const attackRoll = attackPower + Math.floor(Math.random() * 60) - 30;  // ±30 variance
+    const attackRoll = attackPower + Math.floor(Math.random() * 60) - 30;  // Ã‚Â±30 variance
     const defenseRoll = powerNeeded + Math.floor(Math.random() * 40) - 10; // slightly favours defense
     
     // Solo penalty: without gang members, player takes a 25% attack penalty
@@ -5663,7 +5698,7 @@ async function attackTurfZone(zoneId) {
     const finalAttack = Math.floor(attackRoll * soloPenalty * zonePermitBonus);
     
     if (finalAttack <= defenseRoll) {
-      // Attack FAILED — zone not taken
+      // Attack FAILED Ã¢â‚¬â€ zone not taken
       player.health = Math.max(1, player.health - Math.floor(Math.random() * 15 + 10));
       player.turf.power = Math.max(10, (player.turf.power || 100) - 10);
       const { casualties, injured } = processTurfAttackCasualties(false, player.gang?.gangMembers || [], zone.name);
@@ -5672,13 +5707,13 @@ async function attackTurfZone(zoneId) {
       if (injured.length) failMsg += ` Injured: ${injured.join(', ')}.`;
       showBriefNotification(failMsg, 'danger');
       logAction(`Your assault on <strong>${zone.name}</strong> was repelled. The garrison held firm.`);
-      if (casualties.length) logAction(`💀 Lost in the fight: ${casualties.join(', ')}`);
-      if (injured.length) logAction(`🩹 Injured: ${injured.join(', ')}`);
+      if (casualties.length) logAction(`Ã°Å¸â€™â‚¬ Lost in the fight: ${casualties.join(', ')}`);
+      if (injured.length) logAction(`Ã°Å¸Â©Â¹ Injured: ${injured.join(', ')}`);
       updateUI();
       return;
     }
     
-    // Attack SUCCEEDED — process gang casualties (lighter on victory)
+    // Attack SUCCEEDED Ã¢â‚¬â€ process gang casualties (lighter on victory)
     const { casualties, injured } = processTurfAttackCasualties(true, player.gang?.gangMembers || [], zone.name);
     
     // Take the zone
@@ -5689,29 +5724,38 @@ async function attackTurfZone(zoneId) {
     player.turf.heat = player.turf.heat || {};
     player.turf.heat[zone.id] = 0.3;
     player.turf.reputation = (player.turf.reputation || 0) + 15;
+    player.territoryReputation = (player.territoryReputation || 0) + 15;
     recalcTurfIncome();
     checkFamilyRankUp();
     checkTurfMilestoneUnlocks();
     checkTurfDominance(zone.id);
+    
+    // Rival respect: the faction that owned this zone loses respect for you
+    const zoneRivals = (player.rivalKingpins || RIVAL_KINGPINS).filter(r => r.territories && r.territories.includes(zone.id));
+    if (zoneRivals.length > 0) {
+      const faction = zoneRivals[0].faction;
+      if (faction && faction !== 'independent') updateFactionRivalRespect(faction, -5);
+      zoneRivals.forEach(r => updateRivalRespect(r.id, -5));
+    }
     
     let successMsg = `${zone.name} is now your turf!`;
     if (casualties.length) successMsg += ` But you lost: ${casualties.join(', ')}.`;
     if (injured.length) successMsg += ` Injured: ${injured.join(', ')}.`;
     showBriefNotification(successMsg, casualties.length ? 'warning' : 'success');
     logAction(`You seized control of <strong>${zone.name}</strong>. The streets know your name.`);
-    if (casualties.length) logAction(`💀 Fallen in the assault: ${casualties.join(', ')}`);
-    if (injured.length) logAction(`🩹 Wounded: ${injured.join(', ')}`);
+    if (casualties.length) logAction(`Ã°Å¸â€™â‚¬ Fallen in the assault: ${casualties.join(', ')}`);
+    if (injured.length) logAction(`Ã°Å¸Â©Â¹ Wounded: ${injured.join(', ')}`);
     updateUI();
     showTurfMap();
   }
 }
 window.attackTurfZone = attackTurfZone;
 
-// Boss fight resolution — playerPower already includes gang, gear, and skill bonuses via calculateTurfAttackPower
+// Boss fight resolution Ã¢â‚¬â€ playerPower already includes gang, gear, and skill bonuses via calculateTurfAttackPower
 function resolveBossFight(bossInfo, playerPower) {
   const reflexBonus = player.combatReflexBonus || 0;
   const bossStrength = bossInfo.power + Math.floor(Math.random() * 40) - 20;
-  // Don't re-add brawler/reflex — they're already in playerPower from calculateTurfAttackPower
+  // Don't re-add brawler/reflex Ã¢â‚¬â€ they're already in playerPower from calculateTurfAttackPower
   const playerStrength = playerPower + Math.floor(Math.random() * 50) - 25;
   const won = playerStrength > bossStrength;
   // Reflex bonus reduces damage taken (each point = ~1 less damage)
@@ -5737,6 +5781,11 @@ function calculateTurfZoneIncome(zone) {
   if (typeof hasTurfPerk === 'function') {
     if (hasTurfPerk('trade_boost')) income *= 1.15;
     if (hasTurfPerk('overlord')) income *= 1.25;
+  }
+  // Turf reputation bonus: up to +25% income at 100 reputation
+  const turfRep = (player.turf && player.turf.reputation) || 0;
+  if (turfRep > 0) {
+    income *= (1 + Math.min(turfRep, 100) * 0.0025);
   }
   return Math.floor(income);
 }
@@ -5784,8 +5833,8 @@ function manageTurfDetails(zoneId) {
   // Chen Triad intel: show precise attack info instead of ranges
   const isChenTriad = player.chosenFamily === 'chen';
   const attackPowerDisplay = isChenTriad
-    ? `<span style="color:#2e8b57;">${minPower} – ${maxPower} (exact)</span>`
-    : `<span style="color:#e74c3c;">${minPower} – ${maxPower}</span>`;
+    ? `<span style="color:#2e8b57;">${minPower} Ã¢â‚¬â€œ ${maxPower} (exact)</span>`
+    : `<span style="color:#e74c3c;">${minPower} Ã¢â‚¬â€œ ${maxPower}</span>`;
   const chenIntelRow = isChenTriad
     ? `<div style="display:flex;justify-content:space-between;"><span style="color:#2e8b57;">Intel Foil Chance</span><span style="color:#2e8b57;font-weight:bold;">20%</span></div>`
     : '';
@@ -5837,7 +5886,7 @@ function manageTurfDetails(zoneId) {
       <button onclick="collectTurfTribute('${zone.id}')" style="padding:10px 20px;background:linear-gradient(135deg,#7a8a5a,#229954);border:none;border-radius:8px;color:white;cursor:pointer;font-weight:bold;">Collect Tribute</button>
     </div>
     <div style="text-align:center;">
-      <button onclick="showTerritoryControl();" style="padding:12px 30px;background:linear-gradient(135deg,#8a7a5a,#6a5a3a);border:none;border-radius:10px;color:white;font-weight:bold;cursor:pointer;">← Back to Turf</button>
+      <button onclick="showTerritoryControl();" style="padding:12px 30px;background:linear-gradient(135deg,#8a7a5a,#6a5a3a);border:none;border-radius:10px;color:white;font-weight:bold;cursor:pointer;">Ã¢â€ Â Back to Turf</button>
     </div>`;
   
   document.getElementById("territory-control-content").innerHTML = html;
@@ -5916,8 +5965,8 @@ function processTurfOperations() {
   
   // Rival retaliation - ESCALATES with turf control
   const escalationTier = Math.min(owned.length, 8);
-  const baseAttackChance = 0.05 + escalationTier * 0.025; // 7.5% at 1 zone → 25% at 8
-  const baseAttackPower = 40 + escalationTier * 15;        // 55 at 1 → 160 at 8
+  const baseAttackChance = 0.05 + escalationTier * 0.025; // 7.5% at 1 zone Ã¢â€ â€™ 25% at 8
+  const baseAttackPower = 40 + escalationTier * 15;        // 55 at 1 Ã¢â€ â€™ 160 at 8
   const attackVariance = 30 + escalationTier * 10;          // bigger swings at more zones
   
   // Chen Triad intel bonus: 20% chance to foil rival attacks before they happen
@@ -5933,7 +5982,7 @@ function processTurfOperations() {
       if (hasChenIntel && Math.random() < chenIntelChance) {
         logAction(`Your Triad informants intercepted a rival attack on <strong>${zone.name}</strong> before it began!`);
         showBriefNotification(`Turf attack on ${zone.name} foiled! Chen Triad intel network intercepted the operation.`, 'success');
-        return; // attack foiled — skip combat
+        return; // attack foiled Ã¢â‚¬â€ skip combat
       }
 
       const attackStrength = baseAttackPower + Math.floor(Math.random() * attackVariance);
@@ -5997,7 +6046,7 @@ function showFamilyChoice() {
   
   html += `</div>
     <div style="text-align:center; margin-top:25px;">
-      <button onclick="showTerritoryControl();" style="padding:12px 30px;background:linear-gradient(135deg,#8a7a5a,#6a5a3a);border:none;border-radius:10px;color:white;font-weight:bold;cursor:pointer;">← Back to Turf</button>
+      <button onclick="showTerritoryControl();" style="padding:12px 30px;background:linear-gradient(135deg,#8a7a5a,#6a5a3a);border:none;border-radius:10px;color:white;font-weight:bold;cursor:pointer;">Ã¢â€ Â Back to Turf</button>
     </div>`;
   
   document.getElementById("territory-control-content").innerHTML = html;
@@ -6013,7 +6062,7 @@ async function pledgeToFamily(familyId) {
   
   const confirmed = await ui.confirm(
     `Pledge your loyalty to the ${fam.name}?\n\n` +
-    `Buff: ${fam.buff.name} — ${fam.buff.description}\n` +
+    `Buff: ${fam.buff.name} Ã¢â‚¬â€ ${fam.buff.description}\n` +
     `This is permanent! The other families will become your enemies.`
   );
   
@@ -6021,6 +6070,7 @@ async function pledgeToFamily(familyId) {
     player.chosenFamily = familyId;
     player.familyRank = 'associate';
     player.turf.reputation = (player.turf.reputation || 0) + 10;
+    player.territoryReputation = (player.territoryReputation || 0) + 10;
     
     showBriefNotification(`You've joined the ${fam.name}!`, 'success');
     logAction(`You pledged your loyalty to <strong>the ${fam.name}</strong>. ${fam.storyIntro}`);
@@ -6131,7 +6181,7 @@ function showProtectionRackets() {
               <button onclick="approachBusiness('${business.id}', '${business.territoryId}')" 
                   style="margin-top: 10px; padding: 8px 15px; background: linear-gradient(135deg, #7a8a5a, #8a9a6a); 
                       border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer;">
-                 Approach
+                Ã‚Â Approach
               </button>
             </div>
           </div>
@@ -6153,7 +6203,7 @@ function showProtectionRackets() {
       <button onclick="window._opsActiveTab='rackets'; showMissions();" 
           style="padding: 12px 30px; background: linear-gradient(135deg, #8a7a5a, #6a5a3a); 
               border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer;">
-        ← Back to Operations
+        Ã¢â€ ÂÃ‚Â Back to Operations
       </button>
     </div>`;
   
@@ -6166,7 +6216,7 @@ function showProtectionRackets() {
 function getAvailableBusinessesForProtection() {
   const availableBusinesses = [];
   
-  // Use turf system — owned zones generate businesses
+  // Use turf system Ã¢â‚¬â€ owned zones generate businesses
   initTurfZones();
   const ownedZones = (player.turf._zones || []).filter(z => (player.turf.owned || []).includes(z.id));
   
@@ -6215,7 +6265,7 @@ function showCorruption() {
   if (player.corruptedOfficials.length > 0) {
     html += `
       <div style="background: rgba(0, 0, 0, 0.3); padding: 20px; border-radius: 10px; margin-bottom: 20px;">
-        <h3 style="color: #8b6a4a; margin-bottom: 15px;"> Active Corruption</h3>
+        <h3 style="color: #8b6a4a; margin-bottom: 15px;">Ã‚Â Active Corruption</h3>
         <div style="display: grid; gap: 15px;">`;
     
     player.corruptedOfficials.forEach(official => {
@@ -6323,7 +6373,7 @@ function showCorruption() {
       <button onclick="window._opsActiveTab='rackets'; showMissions();" 
           style="padding: 12px 30px; background: linear-gradient(135deg, #8a7a5a, #6a5a3a); 
               border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer;">
-        ← Back to Operations
+        Ã¢â€ ÂÃ‚Â Back to Operations
       </button>
     </div>`;
   
@@ -6352,7 +6402,7 @@ function getRiskColor(riskLevel) {
 
 // ==================== UNIFIED OPERATIONS PANEL GENERATORS ====================
 
-// Generate Turf Overview HTML — combines family banner, stats, turf map, owned zones, and turf missions
+// Generate Turf Overview HTML Ã¢â‚¬â€ combines family banner, stats, turf map, owned zones, and turf missions
 function generateTurfOverviewHTML() {
   initTurfZones();
   const zones = player.turf._zones || [];
@@ -6363,7 +6413,7 @@ function generateTurfOverviewHTML() {
 
   let html = '<div style="display:flex; flex-direction:column; gap:20px;">';
 
-  // ── 1. Family allegiance banner ──
+  // Ã¢â€â‚¬Ã¢â€â‚¬ 1. Family allegiance banner Ã¢â€â‚¬Ã¢â€â‚¬
   if (fam) {
     html += `
     <div style="background:linear-gradient(135deg, ${fam.color}33, ${fam.color}11); padding:15px; border-radius:10px; border-left:4px solid ${fam.color};">
@@ -6387,7 +6437,7 @@ function generateTurfOverviewHTML() {
     </div>`;
   }
 
-  // ── 2. Stats bar ──
+  // Ã¢â€â‚¬Ã¢â€â‚¬ 2. Stats bar Ã¢â€â‚¬Ã¢â€â‚¬
   html += `
     <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:15px;">
       <div style="flex:1; min-width:120px; background:rgba(52,152,219,0.2); padding:15px; border-radius:10px; text-align:center;">
@@ -6407,7 +6457,7 @@ function generateTurfOverviewHTML() {
       </div>
     </div>`;
 
-  // ── 3. Turf Map — grid of all zones ──
+  // Ã¢â€â‚¬Ã¢â€â‚¬ 3. Turf Map Ã¢â‚¬â€ grid of all zones Ã¢â€â‚¬Ã¢â€â‚¬
   html += `
     <div style="background:rgba(0,0,0,0.3); padding:20px; border-radius:10px;">
       <div style="color:#7a8a5a; font-weight:bold; font-size:1.1em; margin-bottom:10px;">Turf Map</div>
@@ -6466,7 +6516,7 @@ function generateTurfOverviewHTML() {
       html += `
         <div style="margin-bottom:8px; font-size:0.8em; text-align:center;">
           <div style="color:#8b6a4a;">Defense: ${zone.defenseRequired}</div>
-          <div style="font-size:0.75em; color:#d4c4a0;">(Attack power: ${atkPower}${activeGang.length ? ' ⚔️' + activeGang.length + ' crew' : ' ⚠️ solo'})</div>
+          <div style="font-size:0.75em; color:#d4c4a0;">(Attack power: ${atkPower}${activeGang.length ? ' Ã¢Å¡â€Ã¯Â¸Â' + activeGang.length + ' crew' : ' Ã¢Å¡Â Ã¯Â¸Â solo'})</div>
         </div>
         <button onclick="attackTurfZone('${zone.id}')" 
           style="width:100%;padding:10px;background:linear-gradient(135deg,#8b3a3a,#7a2a2a);border:none;border-radius:8px;color:white;font-weight:bold;cursor:pointer;font-size:0.9em;${!canAttack ? 'opacity:0.6;cursor:not-allowed;' : ''}">
@@ -6479,7 +6529,7 @@ function generateTurfOverviewHTML() {
 
   html += `</div></div>`;
 
-  // ── 4. Your Turf — owned zones with Manage/Fortify ──
+  // Ã¢â€â‚¬Ã¢â€â‚¬ 4. Your Turf Ã¢â‚¬â€ owned zones with Manage/Fortify Ã¢â€â‚¬Ã¢â€â‚¬
   if (ownedZones.length > 0) {
     html += `
     <div style="background:rgba(0,0,0,0.3); padding:20px; border-radius:10px;">
@@ -6522,11 +6572,11 @@ function generateTurfOverviewHTML() {
   return html;
 }
 
-// Generate Rackets HTML — combines Protection Rackets + Corruption Network
+// Generate Rackets HTML Ã¢â‚¬â€ combines Protection Rackets + Corruption Network
 function generateRacketsHTML() {
   let html = '<div style="display:flex; flex-direction:column; gap:20px;">';
 
-  // ══════════ Protection Rackets ══════════
+  // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â Protection Rackets Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
   html += `
   <div style="background:rgba(0,0,0,0.3); padding:20px; border-radius:10px;">
     <div style="color:#c0a040; font-weight:bold; font-size:1.1em; margin-bottom:15px;">Protection Rackets</div>`;
@@ -6611,7 +6661,7 @@ function generateRacketsHTML() {
 
   html += `</div>`;
 
-  // ══════════ Corruption Network ══════════
+  // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â Corruption Network Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
   html += `
   <div style="background:rgba(0,0,0,0.3); padding:20px; border-radius:10px;">
     <div style="color:#8b6a4a; font-weight:bold; font-size:1.1em; margin-bottom:15px;">Corruption Network</div>`;
@@ -6713,7 +6763,7 @@ function generateRacketsHTML() {
   return html;
 }
 
-// Generate Relocate HTML — district picker with MP ownership info
+// Generate Relocate HTML Ã¢â‚¬â€ district picker with MP ownership info
 function generateRelocateHTML() {
   const now = Date.now();
   const cooldownEnd = (player.lastTerritoryMove || 0) + MOVE_COOLDOWN_MS;
@@ -6844,7 +6894,7 @@ async function renewCorruption(officialId) {
       logAction(`${target.name}'s loyalty renewed, but whispers travel fast in the shadows.`);
     } else {
       showBriefNotification(`${target.name}'s corruption renewed for ${target.benefits.duration} days!`, 'success');
-      logAction(`${target.name} remains loyal — for the right price. The machine keeps turning.`);
+      logAction(`${target.name} remains loyal Ã¢â‚¬â€ for the right price. The machine keeps turning.`);
     }
 
     updateUI();
@@ -6874,6 +6924,12 @@ async function corruptOfficial(targetId) {
     
     player.corruptedOfficials.push(corruption);
     
+    // Corrupting officials improves police & underground reputation
+    if (player.streetReputation) {
+      player.streetReputation.police = Math.min(100, (player.streetReputation.police || 0) + 3);
+      player.streetReputation.underground = Math.min(100, (player.streetReputation.underground || 0) + 2);
+    }
+    
     // Risk of getting caught
     if (Math.random() < (target.riskLevel === 'extreme' ? 0.3 : target.riskLevel === 'high' ? 0.2 : 0.1)) {
       player.wantedLevel += Math.floor(Math.random() * 20) + 10;
@@ -6898,7 +6954,11 @@ function approachBusiness(businessId, territoryId) {
   if (!business) return;
   
   // Success chance based on gang reputation and territory power
-  const successChance = Math.min(0.9, 0.4 + (player.territoryReputation / 100) + (player.territoryPower / 1000));
+  let successChance = 0.4 + (player.territoryReputation / 100) + (player.territoryPower / 1000);
+  // Civilians streetRep: positive = locals cooperate, negative = locals resist
+  const civRepMod = getStreetRepBonus('civilians', 0.05, 0.10, 0.15, 0.25);
+  successChance += civRepMod;
+  successChance = Math.min(0.9, Math.max(0.1, successChance));
   
   if (Math.random() < successChance) {
     const racket = {
@@ -6913,6 +6973,11 @@ function approachBusiness(businessId, territoryId) {
     
     player.protectionRackets.push(racket);
     player.territoryReputation += 5;
+    
+    // Protection rackets hurt civilian relations (intimidation)
+    if (player.streetReputation) {
+      player.streetReputation.civilians = Math.max(-100, (player.streetReputation.civilians || 0) - 2);
+    }
     
     showBriefNotification(`${business.name} pays $${business.basePayment.toLocaleString()}/week for protection`, 'success');
     logAction(`${business.name} now pays tribute. Fear is the foundation of respect, and respect is the currency of power.`);
@@ -6945,9 +7010,17 @@ function collectProtection(racketId) {
     return;
   }
   
-  const totalPayment = racket.weeklyPayment * weeksElapsed;
+  let totalPayment = racket.weeklyPayment * weeksElapsed;
+  // Civilians streetRep: positive = locals pay more willingly, negative = less
+  const civPayMod = getStreetRepBonus('civilians', 0.05, 0.10, 0.20, 0.30);
+  if (civPayMod !== 0) totalPayment = Math.max(1, Math.floor(totalPayment * (1 + civPayMod)));
   player.money += totalPayment;
   racket.lastCollection = Date.now();
+  
+  // Collecting protection money slightly hurts civilian reputation
+  if (player.streetReputation) {
+    player.streetReputation.civilians = Math.max(-100, (player.streetReputation.civilians || 0) - 1);
+  }
   
   // Maintain fear level
   racket.fearLevel = Math.min(10, racket.fearLevel + 0.5);
@@ -7002,9 +7075,9 @@ async function dropProtection(racketId) {
   }
 }
 
-// Legacy territory stubs — redirect to new Turf system
+// Legacy territory stubs Ã¢â‚¬â€ redirect to new Turf system
 function manageTerritoryDetails(territoryId) {
-  // Legacy stub — redirect to new turf manage screen
+  // Legacy stub Ã¢â‚¬â€ redirect to new turf manage screen
   manageTurfDetails(territoryId);
 }
 
@@ -7012,7 +7085,7 @@ async function fortifyTerritory(territoryId) {
   fortifyTurf(territoryId);
 }
 
-// ── Corruption Benefit Helper ──────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬ Corruption Benefit Helper Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 // Returns the best (highest) value for a given corruption benefit type
 // among all currently active (non-expired) corrupted officials.
 function getCorruptionBenefit(benefitType) {
@@ -7027,9 +7100,68 @@ function getCorruptionBenefit(benefitType) {
   return best;
 }
 
-// Process Territory Events and Income (called periodically) — now delegates to turf
+// Ã¢â€â‚¬Ã¢â€â‚¬ Faction Effects Helper Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// Returns the highest-tier effect description for the given faction based on
+// the player's current streetReputation. Returns null if no threshold is met.
+function getActiveFactionEffect(factionKey) {
+  const effects = factionEffects[factionKey];
+  if (!effects) return null;
+  const rep = (player.streetReputation && player.streetReputation[factionKey]) || 0;
+  if (rep >= 0) {
+    // Scan positive effects from highest threshold down
+    for (let i = effects.positiveEffects.length - 1; i >= 0; i--) {
+      if (rep >= effects.positiveEffects[i].level) return { tier: effects.positiveEffects[i].level, effect: effects.positiveEffects[i].effect, positive: true };
+    }
+  } else {
+    // Scan negative effects from lowest (most negative) threshold up
+    for (let i = effects.negativeEffects.length - 1; i >= 0; i--) {
+      if (rep <= effects.negativeEffects[i].level) return { tier: effects.negativeEffects[i].level, effect: effects.negativeEffects[i].effect, positive: false };
+    }
+  }
+  return null;
+}
+
+// Returns a numeric multiplier/modifier based on a faction's streetReputation.
+// tier25 = value at Ã‚Â±25, tier50 = value at Ã‚Â±50, tier75 = value at Ã‚Â±75, tier100 = value at Ã‚Â±100.
+// Positive rep returns positive modifier, negative rep returns negative modifier.
+function getStreetRepBonus(factionKey, tier25, tier50, tier75, tier100) {
+  const rep = (player.streetReputation && player.streetReputation[factionKey]) || 0;
+  const absRep = Math.abs(rep);
+  const sign = rep >= 0 ? 1 : -1;
+  if (absRep >= 100) return sign * tier100;
+  if (absRep >= 75) return sign * tier75;
+  if (absRep >= 50) return sign * tier50;
+  if (absRep >= 25) return sign * tier25;
+  return 0;
+}
+
+// Ã¢â€â‚¬Ã¢â€â‚¬ Rival Respect Helper Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// Updates respect toward the player for a specific rival (by ID).
+// Also syncs to player.relationships for UI display.
+function updateRivalRespect(rivalId, amount) {
+  if (!player.relationships) player.relationships = {};
+  player.relationships[rivalId] = Math.max(-100, Math.min(100,
+    (player.relationships[rivalId] || 0) + amount));
+  // Sync back to rivalKingpins array
+  const rivals = player.rivalKingpins || RIVAL_KINGPINS;
+  const rival = rivals.find(r => r.id === rivalId);
+  if (rival) rival.respectTowardPlayer = player.relationships[rivalId];
+}
+
+// Updates respect toward the player for ALL rivals in a given faction.
+function updateFactionRivalRespect(factionKey, amount) {
+  const rivals = player.rivalKingpins || RIVAL_KINGPINS;
+  rivals.filter(r => r.faction === factionKey).forEach(r => updateRivalRespect(r.id, amount));
+}
+
+// Process Territory Events and Income (called periodically) Ã¢â‚¬â€ now delegates to turf
 function processTerritoryOperations() {
   processTurfOperations();
+  
+  // Generate random territory events (30% chance each cycle)
+  if ((player.turf?.owned || []).length > 0 && Math.random() < 0.30) {
+    generateTerritoryEvent();
+  }
   
   // Expire corrupted officials (kept from original)
   const currentTime = Date.now();
@@ -7044,38 +7176,68 @@ function processTerritoryOperations() {
 }
 
 function generateTerritoryEvent() {
-  // Generate events using turf system
+  // Generate events using the richer territoryEvents array (probability-weighted)
   initTurfZones();
   const owned = player.turf.owned || [];
   if (owned.length === 0) return;
   
-  const turfEvents = [
-    { name: 'Rival Skirmish', description: 'A rival family sent soldiers to test your defenses.', heatIncrease: 0.1 },
-    { name: 'Police Crackdown', description: 'Cops are sweeping the area. Keep your head down.', heatIncrease: 0.2 },
-    { name: 'Business Boom', description: 'Local businesses are thriving under your protection.', incomeBoost: 500 },
-    { name: 'Street Celebration', description: 'The neighborhood respects your rule. Reputation grows.', repBoost: 10 },
-    { name: 'Informant Spotted', description: 'Someone is talking to the feds about your operations.', heatIncrease: 0.15 },
-    { name: 'Underground Deal', description: 'A lucrative underground deal came through your turf.', cashBonus: 2000 }
-  ];
+  // Weighted random selection based on probability
+  const totalProb = territoryEvents.reduce((sum, e) => sum + e.probability, 0);
+  let roll = Math.random() * totalProb;
+  let evt = territoryEvents[0];
+  for (const te of territoryEvents) {
+    roll -= te.probability;
+    if (roll <= 0) { evt = te; break; }
+  }
   
-  const evt = turfEvents[Math.floor(Math.random() * turfEvents.length)];
   const randomZoneId = owned[Math.floor(Math.random() * owned.length)];
   const zone = (player.turf._zones || []).find(z => z.id === randomZoneId);
   
-  if (evt.heatIncrease) {
+  // Apply effects from the richer schema
+  if (evt.effects.heatIncrease) {
     player.turf.heat = player.turf.heat || {};
-    player.turf.heat[randomZoneId] = ((player.turf.heat[randomZoneId]) || 0) + evt.heatIncrease;
+    player.turf.heat[randomZoneId] = ((player.turf.heat[randomZoneId]) || 0) + evt.effects.heatIncrease;
   }
-  if (evt.repBoost) player.turf.reputation = (player.turf.reputation || 0) + evt.repBoost;
-  if (evt.cashBonus) player.dirtyMoney = (player.dirtyMoney || 0) + evt.cashBonus;
+  if (evt.effects.incomeReduction) {
+    // Temporarily reduce income from the zone for event duration (stored on event)
+    player.dirtyMoney = Math.max(0, (player.dirtyMoney || 0) - Math.floor((player.turf.income || 0) * evt.effects.incomeReduction));
+    logAction(`Income reduced by ${Math.floor(evt.effects.incomeReduction * 100)}% due to ${evt.name}.`);
+  }
+  if (evt.effects.incomeIncrease) {
+    const bonus = Math.floor((player.turf.income || 500) * evt.effects.incomeIncrease);
+    player.dirtyMoney = (player.dirtyMoney || 0) + bonus;
+    logAction(`Bonus income: +$${bonus.toLocaleString()} from ${evt.name}.`);
+  }
+  if (evt.effects.recruitmentPenalty && player.gang) {
+    // Reduce gang morale briefly Ã¢â‚¬â€ lower max recruitable
+    logAction(`Community resistance makes recruiting harder in ${zone?.name || 'your territory'}.`);
+  }
+  if (evt.effects.businessOpportunity) {
+    player.territoryReputation = (player.territoryReputation || 0) + 5;
+    logAction(`New business opportunities give you +5 territory reputation.`);
+  }
+  if (evt.effects.conflictRisk && Math.random() < evt.effects.conflictRisk) {
+    // Trigger a bonus rival attack on this zone
+    const attackStrength = 50 + Math.floor(Math.random() * 60);
+    const result = processTurfAttack(zone, 'Encroaching Gang', attackStrength, player);
+    if (result?.lostTurf) {
+      logAction(`Encroaching gang seized <strong>${zone?.name || 'a zone'}</strong> during territorial unrest!`);
+    } else {
+      logAction(`You repelled the encroaching gang at <strong>${zone?.name || 'a zone'}</strong>.`);
+    }
+  }
+  
+  // Merge turf.reputation into territoryReputation
+  player.turf.reputation = (player.turf.reputation || 0) + (evt.category === 'opportunity' ? 10 : 0);
+  player.territoryReputation = (player.territoryReputation || 0) + (evt.category === 'opportunity' ? 10 : 0);
   
   player.turf.events = player.turf.events || [];
-  player.turf.events.push({ name: evt.name, description: evt.description, duration: 3, zone: randomZoneId });
+  player.turf.events.push({ id: evt.id, name: evt.name, description: evt.description, duration: evt.effects.duration || 3, zone: randomZoneId, category: evt.category });
   
   // Trim old events
   if (player.turf.events.length > 5) player.turf.events = player.turf.events.slice(-5);
   
-  logAction(`Turf Event in <strong>${zone?.name || 'your turf'}</strong>: ${evt.name} — ${evt.description}`);
+  logAction(`Turf Event in <strong>${zone?.name || 'your turf'}</strong>: ${evt.name} Ã¢â‚¬â€ ${evt.description}`);
 }
 function updateUI() {
   // Synchronize gang member counts to prevent drift
@@ -7207,9 +7369,9 @@ function updateUI() {
   if (player.energy < player.maxEnergy && !player.inJail) {
     energyText += ` (${player.energyRegenTimer}s)`;
   } else if (player.energy >= player.maxEnergy) {
-    energyText += ` ✓`;
+    energyText += ` Ã¢Å“â€œ`;
   } else if (player.inJail) {
-    energyText += ` ❌`;
+    energyText += ` Ã¢ÂÅ’`;
   }
   document.getElementById("energy-display").innerText = energyText;
   
@@ -7531,7 +7693,7 @@ function adminSetAllSkills(level) {
   showAdminPanel();
 }
 
-// ── Admin Kill Player ──────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬ Admin Kill Player Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 function buildAdminKillPlayerList() {
   const isOnline = typeof onlineWorldState !== 'undefined' && onlineWorldState.isConnected;
   if (!isOnline) {
@@ -7606,10 +7768,10 @@ function executeAdminKill(targetPlayerId, targetName) {
 
 // Function to refresh the currently active screen
 // IMPORTANT: This runs every ~1 second via the energy regen loop.
-// Never do a full innerHTML rebuild here — only patch individual elements
+// Never do a full innerHTML rebuild here Ã¢â‚¬â€ only patch individual elements
 // to avoid destroying hover/focus states and causing visible flicker.
 function refreshCurrentScreen() {
-  // Check if jobs screen is visible — patch buttons only
+  // Check if jobs screen is visible Ã¢â‚¬â€ patch buttons only
   const jobsScreen = document.getElementById("jobs-screen");
   if (jobsScreen && jobsScreen.style.display !== "none") {
     refreshJobsButtons();
@@ -7625,9 +7787,9 @@ function refreshCurrentScreen() {
     return;
   }
   
-  // Skills — no per-second refresh needed (points update in HUD bar)
-  // Gang — no per-second refresh needed
-  // Business — no per-second refresh needed
+  // Skills Ã¢â‚¬â€ no per-second refresh needed (points update in HUD bar)
+  // Gang Ã¢â‚¬â€ no per-second refresh needed
+  // Business Ã¢â‚¬â€ no per-second refresh needed
 }
 
 // Lightweight per-second refresh: only patch job button text / color / disabled
@@ -7678,7 +7840,7 @@ function refreshJobsButtons() {
   });
 }
 
-// Full job-list rebuild — called by showJobs() and energy-purchase helpers.
+// Full job-list rebuild Ã¢â‚¬â€ called by showJobs() and energy-purchase helpers.
 // NOT called on the per-second timer.
 function refreshJobsList() {
   const jobListElement = document.getElementById("job-list");
@@ -7767,7 +7929,7 @@ function updateRightPanel() {
   }
 }
 
-// Quick Actions panel — respects the progressive unlock system
+// Quick Actions panel Ã¢â‚¬â€ respects the progressive unlock system
 // Default shortcuts shown before the player customizes
 const DEFAULT_QUICK_ACTIONS = ['jobs', 'store', 'missions', 'gang', 'businesses', 'territory', 'casino', 'skills'];
 
@@ -7818,9 +7980,9 @@ function showQuickActionCustomizer() {
       <h1><span class="icon"></span> Quick Actions</h1>
       <div class="breadcrumb">
         <a href="#" onclick="goBackToMainMenu(); return false;">SafeHouse</a>
-        <span class="separator">›</span>
+        <span class="separator">Ã¢â‚¬Âº</span>
         <a href="#" onclick="showOptions(); return false;">Settings</a>
-        <span class="separator">›</span>
+        <span class="separator">Ã¢â‚¬Âº</span>
         <span class="current">Quick Actions</span>
       </div>
     </div>
@@ -7835,14 +7997,14 @@ function showQuickActionCustomizer() {
             style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:10px;cursor:pointer;transition:all 0.2s;
             background:${active ? 'rgba(138, 154, 106,0.15)' : 'rgba(20, 18, 10,0.5)'};
             border:2px solid ${active ? '#8a9a6a' : '#555'};">
-            <span style="font-size:1.4em;">${active ? '✅' : '⬜'}</span>
+            <span style="font-size:1.4em;">${active ? 'Ã¢Å“â€¦' : 'Ã¢Â¬Å“'}</span>
             <span style="color:#f5e6c8;font-weight:bold;">${item.label}</span>
           </label>`;
         }).join('')}
       </div>
 
       <div style="text-align:center;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
-        <button onclick="resetQuickActionPrefs()" style="background:#8a7a5a;color:#fff;padding:12px 24px;border:none;border-radius:8px;cursor:pointer;font-size:1em;">←© Reset to Default</button>
+        <button onclick="resetQuickActionPrefs()" style="background:#8a7a5a;color:#fff;padding:12px 24px;border:none;border-radius:8px;cursor:pointer;font-size:1em;">Ã¢â€ ÂÃ‚Â© Reset to Default</button>
         <button onclick="showOptions()" style="background:linear-gradient(135deg,#d4af37,#b8962e);color:#14120a;padding:12px 24px;border:none;border-radius:8px;cursor:pointer;font-weight:bold;font-size:1em;">Done</button>
       </div>
     </div>`;
@@ -7896,9 +8058,9 @@ function showMobileNavCustomizer() {
       <h1><span class="icon"></span> Mobile Nav Bar</h1>
       <div class="breadcrumb">
         <a href="#" onclick="goBackToMainMenu(); return false;">SafeHouse</a>
-        <span class="separator">›</span>
+        <span class="separator">Ã¢â‚¬Âº</span>
         <a href="#" onclick="showOptions(); return false;">Settings</a>
-        <span class="separator">›</span>
+        <span class="separator">Ã¢â‚¬Âº</span>
         <span class="current">Mobile Nav</span>
       </div>
     </div>
@@ -7919,7 +8081,7 @@ function showMobileNavCustomizer() {
             cursor:${locked ? 'not-allowed' : 'pointer'};transition:all 0.2s;
             background:${active ? 'rgba(138, 154, 106,0.15)' : locked ? 'rgba(139,0,0,0.2)' : 'rgba(20, 18, 10,0.5)'};
             border:2px solid ${locked ? '#ff0000' : active ? '#8a9a6a' : '#555'};">
-            <span style="font-size:1.4em;">${locked ? '🔒' : active ? '✅' : '⬜'}</span>
+            <span style="font-size:1.4em;">${locked ? 'Ã°Å¸â€â€™' : active ? 'Ã¢Å“â€¦' : 'Ã¢Â¬Å“'}</span>
             <div>
               <span style="color:${locked ? '#ff6b6b' : '#f5e6c8'};font-weight:bold;">${def.label}</span>
               ${locked ? '<br><small style="color:#ff6b6b;">Always shown</small>' : ''}
@@ -7933,7 +8095,7 @@ function showMobileNavCustomizer() {
       </div>
 
       <div style="text-align:center;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
-        <button onclick="resetMobileNavTabs()" style="background:#8a7a5a;color:#fff;padding:12px 24px;border:none;border-radius:8px;cursor:pointer;font-size:1em;">↺ Reset to Default</button>
+        <button onclick="resetMobileNavTabs()" style="background:#8a7a5a;color:#fff;padding:12px 24px;border:none;border-radius:8px;cursor:pointer;font-size:1em;">Ã¢â€ Âº Reset to Default</button>
         <button onclick="showOptions()" style="background:linear-gradient(135deg,#d4af37,#b8962e);color:#14120a;padding:12px 24px;border:none;border-radius:8px;cursor:pointer;font-weight:bold;font-size:1em;">Done</button>
       </div>
 
@@ -8027,7 +8189,7 @@ function applyUIToggles() {
 }
 window.applyUIToggles = applyUIToggles;
 
-// ── Status-bar customisation ──────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬ Status-bar customisation Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 // List of every toggleable stat-bar element id and its localStorage key
 const STAT_BAR_ITEMS = [
   'money-display', 'health-display', 'energy-display',
@@ -8061,7 +8223,7 @@ function applyStatBarPrefs() {
     if (!visible) {
       el.style.display = 'none';
     } else {
-      // Restore visibility — reset inline hide so the element reappears
+      // Restore visibility Ã¢â‚¬â€ reset inline hide so the element reappears
       if (el.style.display === 'none') {
         el.style.display = '';
       }
@@ -8147,7 +8309,7 @@ function buyEnergyDrink() {
     
     showBriefNotification(`Bought Energy Drink! Restored ${energyGained} energy but ${getRandomNarration('healthLoss')}\n\nNew Energy: ${player.energy}/${player.maxEnergy}`, 'success');
     logAction(`${getRandomNarration('healthLoss')} The chemical rush comes with a price, but the energy boost might be worth it.`);
-    logAction("¤ You chug down the energy drink. The caffeine hits your bloodstream like liquid lightning, but your body pays the price (+30 energy, -1 health).");
+    logAction("Ã‚Â¤ You chug down the energy drink. The caffeine hits your bloodstream like liquid lightning, but your body pays the price (+30 energy, -1 health).");
     
     if (player.health <= 0) {
       showDeathScreen('Overdosed on energy drinks');
@@ -8186,7 +8348,7 @@ function buySteroids() {
     const energyBefore = player.energy;
     player.money -= steroid.price;
     player.energy = Math.min(player.maxEnergy, player.energy + (steroid.energyRestore || 60));
-    // Steroids are risky — small health cost and heat bump
+    // Steroids are risky Ã¢â‚¬â€ small health cost and heat bump
     player.health = Math.max(0, player.health - 5);
     player.wantedLevel = Math.min(100, player.wantedLevel + 3);
 
@@ -8250,7 +8412,7 @@ function hideAllScreens() {
   const loanSharkScreen = document.getElementById("loan-shark-screen");
   if (loanSharkScreen) loanSharkScreen.style.display = "none";
   document.getElementById("money-laundering-screen").style.display = "none";
-  // Fence merged into Black Market — no separate screen
+  // Fence merged into Black Market Ã¢â‚¬â€ no separate screen
   document.getElementById("territory-control-screen").style.display = "none";
   const territoriesScreen = document.getElementById("territories-screen");
   if (territoriesScreen) territoriesScreen.style.display = "none";
@@ -8276,11 +8438,11 @@ const TUTORIAL_CONTENT = {
   safehouse: {
     title: 'Welcome to Mafia Born',
     sections: [
-      { heading: 'Your SafeHouse', text: 'This is your base of operations — the hub of your criminal empire. Every journey into the city starts from here. As you level up, new locations and features will unlock on the navigation buttons below.' },
-      { heading: 'The Status Bar (Top)', text: 'The bar running across the top of the screen shows your vital stats at a glance:<br><b>Cash</b> — your spending money.<br><b>Health</b> — drops from fights and failed jobs; if it hits 0, you black out.<br><b>Energy</b> — most actions cost energy; it regenerates over time or can be restored with items.<br><b>Heat</b> — your wanted level; rises from crime, attracts police attention, and decays over time.<br><b>Rank</b> — your current level in the underworld; level up to unlock new content.<br>You can customise which stats are shown in Settings > UI Toggles.' },
-      { heading: 'The Ledger (Activity Log)', text: 'Below the status bar is The Ledger — a scrolling log that records everything you do: jobs, fights, purchases, story events, and more. Keep an eye on it for confirmation of your actions and narrative flavour.' },
+      { heading: 'Your SafeHouse', text: 'This is your base of operations Ã¢â‚¬â€ the hub of your criminal empire. Every journey into the city starts from here. As you level up, new locations and features will unlock on the navigation buttons below.' },
+      { heading: 'The Status Bar (Top)', text: 'The bar running across the top of the screen shows your vital stats at a glance:<br><b>Cash</b> Ã¢â‚¬â€ your spending money.<br><b>Health</b> Ã¢â‚¬â€ drops from fights and failed jobs; if it hits 0, you black out.<br><b>Energy</b> Ã¢â‚¬â€ most actions cost energy; it regenerates over time or can be restored with items.<br><b>Heat</b> Ã¢â‚¬â€ your wanted level; rises from crime, attracts police attention, and decays over time.<br><b>Rank</b> Ã¢â‚¬â€ your current level in the underworld; level up to unlock new content.<br>You can customise which stats are shown in Settings > UI Toggles.' },
+      { heading: 'The Ledger (Activity Log)', text: 'Below the status bar is The Ledger Ã¢â‚¬â€ a scrolling log that records everything you do: jobs, fights, purchases, story events, and more. Keep an eye on it for confirmation of your actions and narrative flavour.' },
       { heading: 'Quick Actions Bar (Right Panel)', text: 'On the right (desktop) or accessible via the mobile menu, the Quick Actions bar provides one-tap shortcuts to your most-used screens. It also has a Save button, Help button, and a Skip Tutorials option. You can customise which shortcuts appear in Settings.' },
-      { heading: 'Navigation Buttons', text: 'The main buttons in the SafeHouse let you visit Jobs, the Black Market, Missions, the Casino, Hospital, and more. Buttons are locked until you reach the required level — keep grinding!' },
+      { heading: 'Navigation Buttons', text: 'The main buttons in the SafeHouse let you visit Jobs, the Black Market, Missions, the Casino, Hospital, and more. Buttons are locked until you reach the required level Ã¢â‚¬â€ keep grinding!' },
       { heading: 'Getting Started Tips', text: 'Start by doing <b>Jobs</b> to earn cash and XP. Visit the <b>Black Market</b> to buy weapons and armour. Check <b>Missions</b> when you\'re ready for the story. Visit the <b>Hospital</b> when your health is low. Head to <b>Settings > Help</b> at any time for a full game guide.' },
     ]
   },
@@ -8297,7 +8459,7 @@ const TUTORIAL_CONTENT = {
     title: 'The Black Market',
     sections: [
       { heading: 'Buy Tab', text: 'Browse weapons, armour, and consumables. Equipping better gear directly increases your Attack and Defence stats in combat.' },
-      { heading: 'The Fence', text: 'Sell stolen goods from heists and jobs at premium rates. Fence prices fluctuate based on your Heat level — riskier sales can be more profitable.' },
+      { heading: 'The Fence', text: 'Sell stolen goods from heists and jobs at premium rates. Fence prices fluctuate based on your Heat level Ã¢â‚¬â€ riskier sales can be more profitable.' },
       { heading: 'Player Market', text: 'Buy and sell vehicles with other real players. List your rides for sale or snap up someone else\'s wheels.' },
       { heading: 'Consumables', text: 'Coffee, Energy Drinks, and Steroids restore your energy. Medkits restore health. Stock up before long grinding sessions.' },
     ]
@@ -8315,7 +8477,7 @@ const TUTORIAL_CONTENT = {
     title: 'The Family',
     sections: [
       { heading: 'Create or Join', text: 'Start your own crime family (costs cash) or join an existing one. Families share territory, resources, and bonuses.' },
-      { heading: 'Members & Roles', text: 'Recruit AI crew members or invite real players. Assign roles: Boss, Underboss, Capo, Soldier — each with different authority levels.' },
+      { heading: 'Members & Roles', text: 'Recruit AI crew members or invite real players. Assign roles: Boss, Underboss, Capo, Soldier Ã¢â‚¬â€ each with different authority levels.' },
       { heading: 'Family Wars', text: 'Clash with rival families for territory and dominance. Coordinate attacks with your crew to win turf.' },
       { heading: 'Benefits', text: 'Being in a family gives stat bonuses, shared defence of territory, and access to family-only missions and features.' },
     ]
@@ -8325,15 +8487,15 @@ const TUTORIAL_CONTENT = {
     sections: [
       { heading: 'Properties Tab', text: 'Buy real estate (apartments, shops, warehouses) across the city. Each property generates passive income every game cycle automatically.' },
       { heading: 'Fronts Tab', text: 'Business fronts (laundromats, restaurants, etc.) launder your Dirty Money into clean Cash. Higher-tier fronts process larger amounts per cycle.' },
-      { heading: 'Dirty Money', text: 'Dirty Money is earned from heists and illegal activities. It cannot be spent directly — you must launder it through Fronts to convert it into usable Cash.' },
+      { heading: 'Dirty Money', text: 'Dirty Money is earned from heists and illegal activities. It cannot be spent directly Ã¢â‚¬â€ you must launder it through Fronts to convert it into usable Cash.' },
     ]
   },
   casino: {
     title: 'Casino & Mini Games',
     sections: [
-      { heading: 'Gambling', text: 'Try your luck at Poker, Blackjack, Slots, Roulette, and more. Wager cash for big wins — or big losses.' },
+      { heading: 'Gambling', text: 'Try your luck at Poker, Blackjack, Slots, Roulette, and more. Wager cash for big wins Ã¢â‚¬â€ or big losses.' },
       { heading: 'Mini Games', text: 'Quick pastimes like Lockpicking and Number Cracking. Fun distractions with consistent, smaller rewards.' },
-      { heading: 'Risk Warning', text: 'The Casino uses your real in-game Cash. There is no guaranteed win — gamble responsibly to protect your bankroll!' },
+      { heading: 'Risk Warning', text: 'The Casino uses your real in-game Cash. There is no guaranteed win Ã¢â‚¬â€ gamble responsibly to protect your bankroll!' },
     ]
   },
   stash: {
@@ -8347,7 +8509,7 @@ const TUTORIAL_CONTENT = {
     title: 'The Doctor',
     sections: [
       { heading: 'Full Treatment', text: 'Pay the back-alley doctor to restore health to 100%. Expensive but worth it when you\'re critically low.' },
-      { heading: 'Patch Job', text: 'Cheaper partial heal — restores up to 25 HP. Good for a quick fix between jobs.' },
+      { heading: 'Patch Job', text: 'Cheaper partial heal Ã¢â‚¬â€ restores up to 25 HP. Good for a quick fix between jobs.' },
       { heading: 'Rest', text: 'Spend energy instead of cash to heal a small amount. Useful when you\'re broke but have energy to spare.' },
       { heading: 'Why Heal?', text: 'If your health drops to 0 during a fight or failed job, you\'ll black out and lose time and money. Keep your health topped up!' },
     ]
@@ -8356,7 +8518,7 @@ const TUTORIAL_CONTENT = {
     title: 'Talents & Skills',
     sections: [
       { heading: 'Six Skill Trees', text: 'Spend skill points in: <b>Combat</b> (attack, crit), <b>Stealth</b> (dodge, heat reduction), <b>Business</b> (income, prices), <b>Endurance</b> (HP, energy), <b>Street Smarts</b> (XP, loot), <b>Leadership</b> (crew, territory).' },
-      { heading: 'Skill Points', text: 'You earn skill points when you level up. Spend them wisely — each node gives permanent passive bonuses to your character.' },
+      { heading: 'Skill Points', text: 'You earn skill points when you level up. Spend them wisely Ã¢â‚¬â€ each node gives permanent passive bonuses to your character.' },
       { heading: 'Passive Bonuses', text: 'Examples: extra damage per hit, higher income from jobs, cheaper hospital visits, faster energy regen, better loot drops, and stronger crew defence.' },
     ]
   },
@@ -8364,7 +8526,7 @@ const TUTORIAL_CONTENT = {
     title: 'Player Stats',
     sections: [
       { heading: 'Overview', text: 'Full breakdown of your character: level, cash, dirty money, health, energy, attack, defence, influence, reputation, and more.' },
-      { heading: 'Empire Rating', text: 'A composite score measuring your overall power — based on territory controlled, income streams, crew size, properties, and story progress.' },
+      { heading: 'Empire Rating', text: 'A composite score measuring your overall power Ã¢â‚¬â€ based on territory controlled, income streams, crew size, properties, and story progress.' },
       { heading: 'Empire Overview', text: 'A visual dashboard showing all your assets, income sources, crew members, and territory at a glance. Great for tracking your empire\'s growth.' },
     ]
   },
@@ -8381,7 +8543,7 @@ const TUTORIAL_CONTENT = {
     title: 'Settings',
     sections: [
       { heading: 'Save & Load', text: 'Save your game to multiple slots. Auto-save runs periodically. Sign in for Cloud Save to sync across devices.' },
-      { heading: 'Customize', text: 'Customise your Quick Actions bar and mobile nav bar — choose which screen shortcuts appear for fast access.' },
+      { heading: 'Customize', text: 'Customise your Quick Actions bar and mobile nav bar Ã¢â‚¬â€ choose which screen shortcuts appear for fast access.' },
       { heading: 'UI Toggles', text: 'Show or hide the Quick Actions panel, mobile nav bar, and individual stats on the Status Bar. Tailor the HUD to your preference.' },
       { heading: 'Help & Tutorials', text: 'Tap the Help button for a full guide covering every game system, status, and mechanic. You can also re-enable or disable screen tutorials from here.' },
     ]
@@ -8514,7 +8676,7 @@ const SCREEN_TUTORIAL_MAP = {
   'options-screen': 'settings',
 };
 
-// Hook into screen transitions — show tutorial on first visit
+// Hook into screen transitions Ã¢â‚¬â€ show tutorial on first visit
 (function setupTutorialHooks() {
   const originalHideAllScreens = hideAllScreens;
   
@@ -8553,16 +8715,16 @@ const SCREEN_TUTORIAL_MAP = {
 
 const HELP_TOPICS = [
   { id: 'getting-started', icon: '', title: 'Getting Started', content: `
-    <p>Welcome to <strong>Mafia-Born</strong> — a browser-based crime RPG where you rise from street thug to Don of your own criminal empire.</p>
+    <p>Welcome to <strong>Mafia-Born</strong> Ã¢â‚¬â€ a browser-based crime RPG where you rise from street thug to Don of your own criminal empire.</p>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Core Concepts</h4>
     <ul>
-      <li><strong>Energy</strong> — Most actions (jobs, heists, fights) cost energy. It regenerates over time (~1 per minute), or you can restore it instantly with Coffee, Energy Drinks, or Steroids from the Black Market.</li>
-      <li><strong>Cash</strong> — Your main currency. Earned from jobs, businesses, missions, and the casino. Spend it on gear, properties, heals, and more.</li>
-      <li><strong>Dirty Money</strong> — Earned from heists and illegal activities. Cannot be spent directly — you must launder it through Business Fronts (Properties screen) to convert it into clean Cash.</li>
-      <li><strong>Health</strong> — Drops from combat, failed jobs, and random events. If it hits 0, you black out and lose time/money. Heal at the Hospital or use Medkits.</li>
-      <li><strong>Heat (Wanted Level)</strong> — Rises when you commit crimes. Higher heat means more police encounters, bigger fines, and possible arrest. Heat decays slowly over time, or you can reduce it via skills and bribes.</li>
-      <li><strong>XP & Rank</strong> — Earn XP from jobs, missions, side ops, and combat. Level up ("Rank up") to unlock new screens, gear, story chapters, and features.</li>
-      <li><strong>Influence</strong> — A measure of your power in the underworld. Used to claim territory and affects your Empire Rating.</li>
+      <li><strong>Energy</strong> Ã¢â‚¬â€ Most actions (jobs, heists, fights) cost energy. It regenerates over time (~1 per minute), or you can restore it instantly with Coffee, Energy Drinks, or Steroids from the Black Market.</li>
+      <li><strong>Cash</strong> Ã¢â‚¬â€ Your main currency. Earned from jobs, businesses, missions, and the casino. Spend it on gear, properties, heals, and more.</li>
+      <li><strong>Dirty Money</strong> Ã¢â‚¬â€ Earned from heists and illegal activities. Cannot be spent directly Ã¢â‚¬â€ you must launder it through Business Fronts (Properties screen) to convert it into clean Cash.</li>
+      <li><strong>Health</strong> Ã¢â‚¬â€ Drops from combat, failed jobs, and random events. If it hits 0, you black out and lose time/money. Heal at the Hospital or use Medkits.</li>
+      <li><strong>Heat (Wanted Level)</strong> Ã¢â‚¬â€ Rises when you commit crimes. Higher heat means more police encounters, bigger fines, and possible arrest. Heat decays slowly over time, or you can reduce it via skills and bribes.</li>
+      <li><strong>XP & Rank</strong> Ã¢â‚¬â€ Earn XP from jobs, missions, side ops, and combat. Level up ("Rank up") to unlock new screens, gear, story chapters, and features.</li>
+      <li><strong>Influence</strong> Ã¢â‚¬â€ A measure of your power in the underworld. Used to claim territory and affects your Empire Rating.</li>
     </ul>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Your First Steps</h4>
     <ol style="color:#d4c4a0; line-height:1.7;">
@@ -8578,31 +8740,31 @@ const HELP_TOPICS = [
     <h4 style="color:#c0a062; margin:14px 0 6px;">Status Bar (Top of Screen)</h4>
     <p>The bar at the very top displays your vital stats in real time:</p>
     <ul>
-      <li><strong>Cash</strong> — Your clean, spendable money.</li>
-      <li><strong>Health</strong> — Your current HP. If it reaches 0, you black out.</li>
-      <li><strong>Energy</strong> — Shows current/max energy. Regenerates over time. Most actions cost energy.</li>
-      <li><strong>Heat</strong> — Your wanted level (0-100). Higher = more police attention.</li>
-      <li><strong>Rank</strong> — Your character level. Level up to unlock content.</li>
-      <li><strong>Dirty Money</strong> — Cash from illegal activities that needs laundering.</li>
-      <li><strong>Influence</strong> — Your underworld power / reputation score.</li>
-      <li><strong>Turf / Tribute</strong> — Number of territories held and income earned from them.</li>
-      <li><strong>XP</strong> — Current experience and how much you need for the next level.</li>
-      <li><strong>Skill Points</strong> — Unspent points available for the Skills screen.</li>
-      <li><strong>Season / Weather</strong> — The current in-game season and weather, which can affect events.</li>
-      <li><strong>Bullets / Gas / Respect</strong> — Resource counters shown when you have relevant items or features unlocked.</li>
+      <li><strong>Cash</strong> Ã¢â‚¬â€ Your clean, spendable money.</li>
+      <li><strong>Health</strong> Ã¢â‚¬â€ Your current HP. If it reaches 0, you black out.</li>
+      <li><strong>Energy</strong> Ã¢â‚¬â€ Shows current/max energy. Regenerates over time. Most actions cost energy.</li>
+      <li><strong>Heat</strong> Ã¢â‚¬â€ Your wanted level (0-100). Higher = more police attention.</li>
+      <li><strong>Rank</strong> Ã¢â‚¬â€ Your character level. Level up to unlock content.</li>
+      <li><strong>Dirty Money</strong> Ã¢â‚¬â€ Cash from illegal activities that needs laundering.</li>
+      <li><strong>Influence</strong> Ã¢â‚¬â€ Your underworld power / reputation score.</li>
+      <li><strong>Turf / Tribute</strong> Ã¢â‚¬â€ Number of territories held and income earned from them.</li>
+      <li><strong>XP</strong> Ã¢â‚¬â€ Current experience and how much you need for the next level.</li>
+      <li><strong>Skill Points</strong> Ã¢â‚¬â€ Unspent points available for the Skills screen.</li>
+      <li><strong>Season / Weather</strong> Ã¢â‚¬â€ The current in-game season and weather, which can affect events.</li>
+      <li><strong>Bullets / Gas / Respect</strong> Ã¢â‚¬â€ Resource counters shown when you have relevant items or features unlocked.</li>
     </ul>
     <p style="color:#8a7a5a; font-style:italic;">Tip: You can customise which stats appear on the Status Bar in Settings > UI Toggles.</p>
     <h4 style="color:#c0a062; margin:14px 0 6px;">The Ledger (Activity Log)</h4>
-    <p>Located below the status bar, The Ledger is a scrolling log that records everything you do — jobs completed, items bought, fights won or lost, story events, and atmospheric narration. It's your running history of actions and events.</p>
+    <p>Located below the status bar, The Ledger is a scrolling log that records everything you do Ã¢â‚¬â€ jobs completed, items bought, fights won or lost, story events, and atmospheric narration. It's your running history of actions and events.</p>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Quick Actions Bar (Right Panel / Mobile Menu)</h4>
     <p>On desktop, the right-side panel provides one-tap shortcuts to your favourite screens. It includes:</p>
     <ul>
-      <li><strong>SafeHouse</strong> — Return to your home base.</li>
-      <li><strong>Screen Shortcuts</strong> — Quick links to Jobs, Market, Missions, etc. (customisable in Settings).</li>
-      <li><strong>Save Records</strong> — Quick-save your game.</li>
-      <li><strong>Skip Tutorials</strong> — Disable all tutorial pop-ups (if tutorials are active).</li>
-      <li><strong>Help</strong> — Open this guide.</li>
-      <li><strong>Energy Quick-Buy</strong> — Buy Coffee, Energy Drinks, or Steroids directly.</li>
+      <li><strong>SafeHouse</strong> Ã¢â‚¬â€ Return to your home base.</li>
+      <li><strong>Screen Shortcuts</strong> Ã¢â‚¬â€ Quick links to Jobs, Market, Missions, etc. (customisable in Settings).</li>
+      <li><strong>Save Records</strong> Ã¢â‚¬â€ Quick-save your game.</li>
+      <li><strong>Skip Tutorials</strong> Ã¢â‚¬â€ Disable all tutorial pop-ups (if tutorials are active).</li>
+      <li><strong>Help</strong> Ã¢â‚¬â€ Open this guide.</li>
+      <li><strong>Energy Quick-Buy</strong> Ã¢â‚¬â€ Buy Coffee, Energy Drinks, or Steroids directly.</li>
     </ul>
     <p style="color:#8a7a5a; font-style:italic;">Tip: On mobile, access quick actions from the hamburger menu or swipe panel.</p>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Navigation Buttons</h4>
@@ -8611,11 +8773,11 @@ const HELP_TOPICS = [
   { id: 'safehouse-help', icon: '', title: 'SafeHouse', content: `
     <p>Your home base and central hub. All navigation starts here.</p>
     <ul>
-      <li><strong>Navigation</strong> — Tap any unlocked button to visit that area. Buttons unlock as you level up through Jobs and Missions.</li>
-      <li><strong>Quick Actions</strong> — The right panel (desktop) or mobile menu provides fast shortcuts to your favourite screens, a save button, and help.</li>
-      <li><strong>Status Bar</strong> — The top bar shows your cash, health, energy, heat, rank, and more at all times. Customise it in Settings > UI Toggles.</li>
-      <li><strong>The Ledger</strong> — The scrolling activity log below the status bar records all your actions, purchases, fights, and story events.</li>
-      <li><strong>Portrait</strong> — Your character portrait is shown in the top-left. You can change it from Settings.</li>
+      <li><strong>Navigation</strong> Ã¢â‚¬â€ Tap any unlocked button to visit that area. Buttons unlock as you level up through Jobs and Missions.</li>
+      <li><strong>Quick Actions</strong> Ã¢â‚¬â€ The right panel (desktop) or mobile menu provides fast shortcuts to your favourite screens, a save button, and help.</li>
+      <li><strong>Status Bar</strong> Ã¢â‚¬â€ The top bar shows your cash, health, energy, heat, rank, and more at all times. Customise it in Settings > UI Toggles.</li>
+      <li><strong>The Ledger</strong> Ã¢â‚¬â€ The scrolling activity log below the status bar records all your actions, purchases, fights, and story events.</li>
+      <li><strong>Portrait</strong> Ã¢â‚¬â€ Your character portrait is shown in the top-left. You can change it from Settings.</li>
     </ul>
   `},
   { id: 'jobs-help', icon: '', title: 'Jobs', content: `
@@ -8631,7 +8793,7 @@ const HELP_TOPICS = [
     <h4 style="color:#c0a062; margin:14px 0 6px;">Tips</h4>
     <ul>
       <li>Grind low-energy jobs early to build a cash reserve before buying gear.</li>
-      <li>Watch your heat — if it gets too high, lay low for a while.</li>
+      <li>Watch your heat Ã¢â‚¬â€ if it gets too high, lay low for a while.</li>
       <li>Buy Coffee or Energy Drinks from the quick-buy panel to keep grinding without waiting.</li>
     </ul>
   `},
@@ -8655,7 +8817,7 @@ const HELP_TOPICS = [
     </ul>
   `},
   { id: 'missions-help', icon: '', title: 'Missions & Story', content: `
-    <p>The narrative heart of the game — follow your crime family's story from street-level nobody to untouchable Don.</p>
+    <p>The narrative heart of the game Ã¢â‚¬â€ follow your crime family's story from street-level nobody to untouchable Don.</p>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Family Story</h4>
     <ul>
       <li>Choose a crime family (Corleone, Moretti, etc.) and play through their <strong>cinematic storyline</strong>.</li>
@@ -8664,7 +8826,7 @@ const HELP_TOPICS = [
     <h4 style="color:#c0a062; margin:14px 0 6px;">Side Operations</h4>
     <ul>
       <li>Optional quest chains that run in parallel with the main story.</li>
-      <li>Each step has a <strong>countdown timer</strong> (3–20 minutes). You must wait for the timer AND complete the objective to advance.</li>
+      <li>Each step has a <strong>countdown timer</strong> (3Ã¢â‚¬â€œ20 minutes). You must wait for the timer AND complete the objective to advance.</li>
       <li>Great source of extra XP, cash, influence, and sometimes unique rewards.</li>
     </ul>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Street Stories</h4>
@@ -8682,10 +8844,10 @@ const HELP_TOPICS = [
     </ul>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Roles & Hierarchy</h4>
     <ul>
-      <li><strong>Boss</strong> — Full control over the family. Can promote, demote, and kick members.</li>
-      <li><strong>Underboss</strong> — Second in command. Can manage members and initiate wars.</li>
-      <li><strong>Capo</strong> — Squad leader. Can recruit and manage soldiers.</li>
-      <li><strong>Soldier</strong> — The backbone. Contributes to wars and earns from family operations.</li>
+      <li><strong>Boss</strong> Ã¢â‚¬â€ Full control over the family. Can promote, demote, and kick members.</li>
+      <li><strong>Underboss</strong> Ã¢â‚¬â€ Second in command. Can manage members and initiate wars.</li>
+      <li><strong>Capo</strong> Ã¢â‚¬â€ Squad leader. Can recruit and manage soldiers.</li>
+      <li><strong>Soldier</strong> Ã¢â‚¬â€ The backbone. Contributes to wars and earns from family operations.</li>
     </ul>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Family Wars</h4>
     <ul>
@@ -8699,35 +8861,35 @@ const HELP_TOPICS = [
     </ul>
   `},
   { id: 'properties-help', icon: '', title: 'Properties & Fronts', content: `
-    <p>Two tabs: <strong>Properties</strong> and <strong>Fronts</strong> — your path to passive income and money laundering.</p>
+    <p>Two tabs: <strong>Properties</strong> and <strong>Fronts</strong> Ã¢â‚¬â€ your path to passive income and money laundering.</p>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Properties</h4>
     <ul>
       <li>Buy apartments, shops, and warehouses across the city.</li>
-      <li>Each property generates <strong>passive income</strong> every game cycle automatically — no action needed.</li>
+      <li>Each property generates <strong>passive income</strong> every game cycle automatically Ã¢â‚¬â€ no action needed.</li>
       <li>More expensive properties yield higher income returns.</li>
     </ul>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Business Fronts</h4>
     <ul>
       <li>Fronts (laundromats, restaurants, etc.) automatically launder your <strong>Dirty Money</strong> into clean <strong>Cash</strong>.</li>
       <li>Higher-tier fronts process larger amounts per cycle.</li>
-      <li>You <em>must</em> have fronts to convert dirty money — it's useless otherwise.</li>
+      <li>You <em>must</em> have fronts to convert dirty money Ã¢â‚¬â€ it's useless otherwise.</li>
     </ul>
   `},
   { id: 'casino-help', icon: '', title: 'Casino & Mini Games', content: `
     <p>High risk, high reward entertainment with your hard-earned cash.</p>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Casino Games</h4>
     <ul>
-      <li><strong>Poker</strong> — Classic card game. Try to beat the dealer's hand.</li>
-      <li><strong>Blackjack</strong> — Hit 21 or get closer than the dealer without going bust.</li>
-      <li><strong>Slots</strong> — Spin the reels and hope for matching symbols. Quick and luck-based.</li>
-      <li><strong>Roulette</strong> — Bet on numbers, colours, or ranges. Wide variety of bet types.</li>
+      <li><strong>Poker</strong> Ã¢â‚¬â€ Classic card game. Try to beat the dealer's hand.</li>
+      <li><strong>Blackjack</strong> Ã¢â‚¬â€ Hit 21 or get closer than the dealer without going bust.</li>
+      <li><strong>Slots</strong> Ã¢â‚¬â€ Spin the reels and hope for matching symbols. Quick and luck-based.</li>
+      <li><strong>Roulette</strong> Ã¢â‚¬â€ Bet on numbers, colours, or ranges. Wide variety of bet types.</li>
     </ul>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Mini Games</h4>
     <ul>
-      <li><strong>Lockpicking</strong> — Test your timing skills for small but consistent rewards.</li>
-      <li><strong>Number Cracking</strong> — Guess the code for a payout.</li>
+      <li><strong>Lockpicking</strong> Ã¢â‚¬â€ Test your timing skills for small but consistent rewards.</li>
+      <li><strong>Number Cracking</strong> Ã¢â‚¬â€ Guess the code for a payout.</li>
     </ul>
-    <p style="color:#8b3a3a; font-style:italic;">Warning: The Casino uses your real in-game Cash. There is no guaranteed win — gamble responsibly!</p>
+    <p style="color:#8b3a3a; font-style:italic;">Warning: The Casino uses your real in-game Cash. There is no guaranteed win Ã¢â‚¬â€ gamble responsibly!</p>
   `},
   { id: 'stash-help', icon: '', title: 'Stash & Motor Pool', content: `
     <p>Your inventory and vehicle garage.</p>
@@ -8745,16 +8907,16 @@ const HELP_TOPICS = [
     </ul>
   `},
   { id: 'hospital-help', icon: '', title: 'Hospital', content: `
-    <p>The underground doctor keeps you patched up — for a price.</p>
+    <p>The underground doctor keeps you patched up Ã¢â‚¬â€ for a price.</p>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Healing Options</h4>
     <ul>
-      <li><strong>Full Treatment</strong> — Restores health to 100%. Expensive, but the most thorough option.</li>
-      <li><strong>Patch Job</strong> — Cheaper partial heal (restores up to ~25 HP). Good for a quick fix between jobs.</li>
-      <li><strong>Rest</strong> — Costs energy instead of cash. Heals a small amount. Useful when you're broke.</li>
+      <li><strong>Full Treatment</strong> Ã¢â‚¬â€ Restores health to 100%. Expensive, but the most thorough option.</li>
+      <li><strong>Patch Job</strong> Ã¢â‚¬â€ Cheaper partial heal (restores up to ~25 HP). Good for a quick fix between jobs.</li>
+      <li><strong>Rest</strong> Ã¢â‚¬â€ Costs energy instead of cash. Heals a small amount. Useful when you're broke.</li>
     </ul>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Why Healing Matters</h4>
     <ul>
-      <li>If your health drops to 0 during a fight or failed job, you <strong>black out</strong> — losing time and cash.</li>
+      <li>If your health drops to 0 during a fight or failed job, you <strong>black out</strong> Ã¢â‚¬â€ losing time and cash.</li>
       <li>Keep your health above 50% before doing risky jobs or entering combat.</li>
       <li>Medkits (from the Black Market) can restore health outside the Hospital.</li>
     </ul>
@@ -8763,12 +8925,12 @@ const HELP_TOPICS = [
     <p>Invest skill points into 6 permanent talent trees to customise your playstyle.</p>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Skill Trees</h4>
     <ul>
-      <li><strong>Combat</strong> — Increase attack power, critical hit chance, and armour penetration. Best for fighters.</li>
-      <li><strong>Stealth</strong> — Boost dodge chance, theft success rate, and reduce heat gained from crimes. Best for sneaky players.</li>
-      <li><strong>Business</strong> — Increase income from jobs and properties, reduce purchase prices, and improve front efficiency. Best for empire builders.</li>
-      <li><strong>Endurance</strong> — Raise max energy, speed up energy regen, and gain bonus HP. Best for grinders.</li>
-      <li><strong>Street Smarts</strong> — Boost XP gains, reduce jail time, and improve loot quality. Best for fast levellers.</li>
-      <li><strong>Leadership</strong> — Strengthen crew bonuses, family buffs, and territory defence. Best for gang leaders.</li>
+      <li><strong>Combat</strong> Ã¢â‚¬â€ Increase attack power, critical hit chance, and armour penetration. Best for fighters.</li>
+      <li><strong>Stealth</strong> Ã¢â‚¬â€ Boost dodge chance, theft success rate, and reduce heat gained from crimes. Best for sneaky players.</li>
+      <li><strong>Business</strong> Ã¢â‚¬â€ Increase income from jobs and properties, reduce purchase prices, and improve front efficiency. Best for empire builders.</li>
+      <li><strong>Endurance</strong> Ã¢â‚¬â€ Raise max energy, speed up energy regen, and gain bonus HP. Best for grinders.</li>
+      <li><strong>Street Smarts</strong> Ã¢â‚¬â€ Boost XP gains, reduce jail time, and improve loot quality. Best for fast levellers.</li>
+      <li><strong>Leadership</strong> Ã¢â‚¬â€ Strengthen crew bonuses, family buffs, and territory defence. Best for gang leaders.</li>
     </ul>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Earning Skill Points</h4>
     <ul>
@@ -8777,17 +8939,17 @@ const HELP_TOPICS = [
     </ul>
   `},
   { id: 'territory-help', icon: '', title: 'Territory Control', content: `
-    <p>Dominate the city district by district. The turf system is your path to real power — but expanding your empire paints a bigger target on your back.</p>
+    <p>Dominate the city district by district. The turf system is your path to real power Ã¢â‚¬â€ but expanding your empire paints a bigger target on your back.</p>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Claiming Territory</h4>
     <ul>
-      <li>The city has <strong>8 turf zones</strong> — each controlled by a rival family or independent crew. Attack from the Turf Map to seize control.</li>
+      <li>The city has <strong>8 turf zones</strong> Ã¢â‚¬â€ each controlled by a rival family or independent crew. Attack from the Turf Map to seize control.</li>
       <li>Each zone you control generates <strong>weekly Tribute</strong> (dirty money) based on its base income, your fortification level, and active perks.</li>
       <li>Some zones have a <strong>boss</strong> you must defeat before claiming the zone.</li>
     </ul>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Defending & Fortifying</h4>
     <ul>
       <li><strong>Fortify</strong> a zone to increase its defense (25 defense per level). Costs cash, but makes it much harder for rivals to take.</li>
-      <li>Assign <strong>crew members</strong> as defenders — each member adds 20 defense.</li>
+      <li>Assign <strong>crew members</strong> as defenders Ã¢â‚¬â€ each member adds 20 defense.</li>
       <li>Your total <strong>Turf Power</strong> gives a passive 10% bonus to every zone's defense.</li>
       <li>Click <strong>Manage</strong> on any zone to see a full Defense Breakdown and your Vulnerability Status.</li>
     </ul>
@@ -8799,10 +8961,10 @@ const HELP_TOPICS = [
     </ul>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Turf Milestones</h4>
     <ul>
-      <li><strong>2 zones — Street Presence:</strong> +10% XP from all sources.</li>
-      <li><strong>4 zones — Neighbourhood Boss:</strong> Turf heat decays twice as fast.</li>
-      <li><strong>6 zones — District Kingpin:</strong> +15% turf income.</li>
-      <li><strong>8 zones — City Overlord:</strong> +25% turf income + the exclusive Overlord's Scepter weapon (60 power).</li>
+      <li><strong>2 zones Ã¢â‚¬â€ Street Presence:</strong> +10% XP from all sources.</li>
+      <li><strong>4 zones Ã¢â‚¬â€ Neighbourhood Boss:</strong> Turf heat decays twice as fast.</li>
+      <li><strong>6 zones Ã¢â‚¬â€ District Kingpin:</strong> +15% turf income.</li>
+      <li><strong>8 zones Ã¢â‚¬â€ City Overlord:</strong> +25% turf income + the exclusive Overlord's Scepter weapon (60 power).</li>
     </ul>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Family Dominance</h4>
     <ul>
@@ -8811,9 +8973,9 @@ const HELP_TOPICS = [
     </ul>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Tips</h4>
     <ul>
-      <li>Don't over-expand without fortifying — more zones means stronger rival attacks.</li>
+      <li>Don't over-expand without fortifying Ã¢â‚¬â€ more zones means stronger rival attacks.</li>
       <li>Use the <strong>Manage</strong> panel to check if your zone is <span style="color:#2ecc71;">Well Defended</span>, <span style="color:#f39c12;">At Risk</span>, or <span style="color:#e74c3c;">Vulnerable</span>.</li>
-      <li>Reduce turf heat to maximize your weekly income — high heat cuts income by up to 70%.</li>
+      <li>Reduce turf heat to maximize your weekly income Ã¢â‚¬â€ high heat cuts income by up to 70%.</li>
     </ul>
   `},
   { id: 'stats-help', icon: '', title: 'Stats & Empire', content: `
@@ -8836,14 +8998,14 @@ const HELP_TOPICS = [
     </ul>
   `},
   { id: 'heat-help', icon: '', title: 'Heat (Wanted Level)', content: `
-    <p><strong>Heat</strong> is your wanted level — a number from 0 to 100 representing how much the police are watching you.</p>
+    <p><strong>Heat</strong> is your wanted level Ã¢â‚¬â€ a number from 0 to 100 representing how much the police are watching you.</p>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Heat Levels</h4>
     <ul>
-      <li><strong>0-15 (Cool)</strong> — You're under the radar. Almost no police encounters.</li>
-      <li><strong>16-30 (Warm)</strong> — Occasional police attention. Minor fines possible.</li>
-      <li><strong>31-50 (Hot)</strong> — Regular police encounters. Risk of being stopped, fined, or arrested.</li>
-      <li><strong>51-75 (Scorching)</strong> — Frequent raids and patrols. Higher bail if arrested. Jobs and heists become riskier.</li>
-      <li><strong>76-100 (Inferno)</strong> — Maximum police pressure. Very high arrest chance. Severe penalties. Lay low immediately!</li>
+      <li><strong>0-15 (Cool)</strong> Ã¢â‚¬â€ You're under the radar. Almost no police encounters.</li>
+      <li><strong>16-30 (Warm)</strong> Ã¢â‚¬â€ Occasional police attention. Minor fines possible.</li>
+      <li><strong>31-50 (Hot)</strong> Ã¢â‚¬â€ Regular police encounters. Risk of being stopped, fined, or arrested.</li>
+      <li><strong>51-75 (Scorching)</strong> Ã¢â‚¬â€ Frequent raids and patrols. Higher bail if arrested. Jobs and heists become riskier.</li>
+      <li><strong>76-100 (Inferno)</strong> Ã¢â‚¬â€ Maximum police pressure. Very high arrest chance. Severe penalties. Lay low immediately!</li>
     </ul>
     <h4 style="color:#c0a062; margin:14px 0 6px;">What Causes Heat?</h4>
     <ul>
@@ -8854,10 +9016,10 @@ const HELP_TOPICS = [
     </ul>
     <h4 style="color:#c0a062; margin:14px 0 6px;">How to Reduce Heat</h4>
     <ul>
-      <li><strong>Wait</strong> — Heat decays slowly over real time.</li>
-      <li><strong>Lay Low</strong> — Avoid committing crimes to let it drop faster.</li>
-      <li><strong>Bribe Officials</strong> — Spend cash to reduce heat quickly.</li>
-      <li><strong>Stealth Skills</strong> — The Stealth skill tree has nodes that reduce heat gain and increase decay speed.</li>
+      <li><strong>Wait</strong> Ã¢â‚¬â€ Heat decays slowly over real time.</li>
+      <li><strong>Lay Low</strong> Ã¢â‚¬â€ Avoid committing crimes to let it drop faster.</li>
+      <li><strong>Bribe Officials</strong> Ã¢â‚¬â€ Spend cash to reduce heat quickly.</li>
+      <li><strong>Stealth Skills</strong> Ã¢â‚¬â€ The Stealth skill tree has nodes that reduce heat gain and increase decay speed.</li>
     </ul>
   `},
   { id: 'energy-help', icon: '', title: 'Energy System', content: `
@@ -8865,18 +9027,18 @@ const HELP_TOPICS = [
     <h4 style="color:#c0a062; margin:14px 0 6px;">How Energy Works</h4>
     <ul>
       <li>You start with a maximum energy pool (default: 100). This can be increased via the <strong>Endurance</strong> skill tree.</li>
-      <li>Most actions — jobs, heists, side ops, combat — cost energy.</li>
+      <li>Most actions Ã¢â‚¬â€ jobs, heists, side ops, combat Ã¢â‚¬â€ cost energy.</li>
       <li>Energy regenerates slowly over real time (approximately 1 point per minute).</li>
     </ul>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Restoring Energy</h4>
     <ul>
-      <li><strong>Coffee</strong> — Cheap. Restores a small amount of energy. Available from Black Market or quick-buy.</li>
-      <li><strong>Energy Drink</strong> — Moderate cost and restore. Good mid-game option.</li>
-      <li><strong>Steroids</strong> — Expensive. Restores a large amount. Use for long grinding sessions.</li>
+      <li><strong>Coffee</strong> Ã¢â‚¬â€ Cheap. Restores a small amount of energy. Available from Black Market or quick-buy.</li>
+      <li><strong>Energy Drink</strong> Ã¢â‚¬â€ Moderate cost and restore. Good mid-game option.</li>
+      <li><strong>Steroids</strong> Ã¢â‚¬â€ Expensive. Restores a large amount. Use for long grinding sessions.</li>
     </ul>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Energy Tips</h4>
     <ul>
-      <li>Plan your sessions — do the most expensive jobs first, then switch to cheaper ones as energy runs low.</li>
+      <li>Plan your sessions Ã¢â‚¬â€ do the most expensive jobs first, then switch to cheaper ones as energy runs low.</li>
       <li>Invest in the <strong>Endurance</strong> skill tree to raise your max energy and regen rate.</li>
       <li>The quick-buy buttons on the Quick Actions bar let you buy energy items without visiting the store.</li>
     </ul>
@@ -8885,13 +9047,13 @@ const HELP_TOPICS = [
     <p>Understanding how fights work and how to gear up for them.</p>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Attack & Defence</h4>
     <ul>
-      <li><strong>Attack</strong> — Determines how much damage you deal. Increased by equipping weapons and investing in the Combat skill tree.</li>
-      <li><strong>Defence</strong> — Determines how much damage you resist. Increased by equipping armour and investing in skills.</li>
+      <li><strong>Attack</strong> Ã¢â‚¬â€ Determines how much damage you deal. Increased by equipping weapons and investing in the Combat skill tree.</li>
+      <li><strong>Defence</strong> Ã¢â‚¬â€ Determines how much damage you resist. Increased by equipping armour and investing in skills.</li>
     </ul>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Equipment</h4>
     <ul>
       <li>Buy weapons and armour from the <strong>Black Market</strong>.</li>
-      <li>Equip them from your <strong>Stash</strong> — tap an item and select Equip.</li>
+      <li>Equip them from your <strong>Stash</strong> Ã¢â‚¬â€ tap an item and select Equip.</li>
       <li>You can have one weapon and one armour equipped at a time.</li>
       <li>Higher-tier, more expensive gear provides significantly better stats.</li>
     </ul>
@@ -8903,7 +9065,7 @@ const HELP_TOPICS = [
     </ul>
   `},
   { id: 'dirty-money-help', icon: '', title: 'Dirty Money & Laundering', content: `
-    <p>Not all money is created equal — dirty money needs to be cleaned before you can spend it.</p>
+    <p>Not all money is created equal Ã¢â‚¬â€ dirty money needs to be cleaned before you can spend it.</p>
     <h4 style="color:#c0a062; margin:14px 0 6px;">What is Dirty Money?</h4>
     <ul>
       <li>Earned from high-risk activities: heists, certain jobs, and illegal operations.</li>
@@ -8914,14 +9076,14 @@ const HELP_TOPICS = [
     <ul>
       <li>Buy <strong>Business Fronts</strong> from the Properties screen.</li>
       <li>Fronts automatically convert dirty money into clean cash every game cycle.</li>
-      <li>Better fronts launder more per cycle — invest in upgrades when you can.</li>
+      <li>Better fronts launder more per cycle Ã¢â‚¬â€ invest in upgrades when you can.</li>
     </ul>
   `},
   { id: 'seasons-help', icon: '', title: 'Seasons & Weather', content: `
     <p>The game world has dynamic seasons and weather that affect gameplay.</p>
     <ul>
-      <li><strong>Seasons</strong> — Cycle through Spring, Summer, Autumn, and Winter. Each season can influence events, job availability, and NPC behaviour.</li>
-      <li><strong>Weather</strong> — Changes between Clear, Rain, Fog, Storm, and more. Some weather conditions affect job success rates or trigger unique events.</li>
+      <li><strong>Seasons</strong> Ã¢â‚¬â€ Cycle through Spring, Summer, Autumn, and Winter. Each season can influence events, job availability, and NPC behaviour.</li>
+      <li><strong>Weather</strong> Ã¢â‚¬â€ Changes between Clear, Rain, Fog, Storm, and more. Some weather conditions affect job success rates or trigger unique events.</li>
       <li>Both are shown on the Status Bar and update automatically during gameplay.</li>
     </ul>
   `},
@@ -8929,11 +9091,11 @@ const HELP_TOPICS = [
     <p>Play with others and sync your progress across devices.</p>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Online Features</h4>
     <ul>
-      <li><strong>Cloud Save</strong> — Sign in from Settings to sync your save across browsers and devices.</li>
-      <li><strong>World Chat</strong> — Chat with other players in real time. Coordinate, trade tips, or talk trash.</li>
-      <li><strong>Player Market</strong> — Buy and sell vehicles with other real players via the Black Market.</li>
-      <li><strong>PvP Combat</strong> — Attack other players, steal their cash, and climb the leaderboard.</li>
-      <li><strong>Families</strong> — Create or join a crime family (gang) for group play, territory wars, and shared bonuses.</li>
+      <li><strong>Cloud Save</strong> Ã¢â‚¬â€ Sign in from Settings to sync your save across browsers and devices.</li>
+      <li><strong>World Chat</strong> Ã¢â‚¬â€ Chat with other players in real time. Coordinate, trade tips, or talk trash.</li>
+      <li><strong>Player Market</strong> Ã¢â‚¬â€ Buy and sell vehicles with other real players via the Black Market.</li>
+      <li><strong>PvP Combat</strong> Ã¢â‚¬â€ Attack other players, steal their cash, and climb the leaderboard.</li>
+      <li><strong>Families</strong> Ã¢â‚¬â€ Create or join a crime family (gang) for group play, territory wars, and shared bonuses.</li>
     </ul>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Offline Play</h4>
     <ul>
@@ -8942,12 +9104,12 @@ const HELP_TOPICS = [
     </ul>
   `},
   { id: 'saving-help', icon: '', title: 'Saving & Loading', content: `
-    <p>Never lose your progress — multiple save options keep you covered.</p>
+    <p>Never lose your progress Ã¢â‚¬â€ multiple save options keep you covered.</p>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Save Options</h4>
     <ul>
-      <li><strong>Auto-Save</strong> — The game automatically saves to Slot 0 at regular intervals.</li>
-      <li><strong>Manual Save</strong> — Save to any slot from Settings > Save Game, or use the "Save Records" button in Quick Actions.</li>
-      <li><strong>Cloud Save</strong> — Sign in for cloud saves that persist across browsers and devices.</li>
+      <li><strong>Auto-Save</strong> Ã¢â‚¬â€ The game automatically saves to Slot 0 at regular intervals.</li>
+      <li><strong>Manual Save</strong> Ã¢â‚¬â€ Save to any slot from Settings > Save Game, or use the "Save Records" button in Quick Actions.</li>
+      <li><strong>Cloud Save</strong> Ã¢â‚¬â€ Sign in for cloud saves that persist across browsers and devices.</li>
     </ul>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Loading</h4>
     <ul>
@@ -8973,9 +9135,9 @@ function showHelpScreen(topicId) {
       <h1><span class="icon"></span> Help & Guide</h1>
       <div class="breadcrumb">
         <a href="#" onclick="goBackToMainMenu(); return false;">SafeHouse</a>
-        <span class="separator">›</span>
+        <span class="separator">Ã¢â‚¬Âº</span>
         <a href="#" onclick="showOptions(); return false;">Settings</a>
-        <span class="separator">›</span>
+        <span class="separator">Ã¢â‚¬Âº</span>
         <span class="current">Help</span>
       </div>
     </div>
@@ -8999,7 +9161,7 @@ function showHelpScreen(topicId) {
           <div style="text-align: center; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
             <button onclick="showHelpScreen()" style="background: linear-gradient(135deg, #d4af37, #b8962e); color: #14120a;
               padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">
-              ← All Topics
+              Ã¢â€ Â All Topics
             </button>
             <button onclick="showOptions()" style="background: #1a1610; color: #f5e6c8;
               padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer;">
@@ -9045,7 +9207,7 @@ function showHelpScreen(topicId) {
         </div>
 
         <div class="page-nav" style="justify-content: center;">
-          <button class="nav-btn-back" onclick="showOptions()">← Back to Settings</button>
+          <button class="nav-btn-back" onclick="showOptions()">Ã¢â€ Â Back to Settings</button>
         </div>
       </div>
     `;
@@ -9368,7 +9530,7 @@ function updateFactionReputation(job, success) {
     reputationChanges.police = -1; // High-profile crimes hurt police relations
   }
   
-  // Apply reputation changes — keep both streetReputation and missions.factionReputation in sync
+  // Apply reputation changes Ã¢â‚¬â€ keep both streetReputation and missions.factionReputation in sync
   Object.entries(reputationChanges).forEach(([faction, change]) => {
     if (player.streetReputation[faction] !== undefined) {
       player.streetReputation[faction] = Math.max(-100, Math.min(100, 
@@ -9382,7 +9544,7 @@ function updateFactionReputation(job, success) {
   });
 }
 
-// checkForNewPerks removed — Phase 31
+// checkForNewPerks removed Ã¢â‚¬â€ Phase 31
 
 function getReputationPriceModifier(faction) {
   const reputation = player.streetReputation[faction] || 0;
@@ -9413,10 +9575,10 @@ async function startJob(index) {
   // Calculate actual energy cost with endurance skill reduction
   let actualEnergyCost = Math.max(1, job.energyCost - player.skillTree.endurance.vitality); // Minimum 1 energy
   
-  // Light Feet: −1 energy cost per rank
+  // Light Feet: Ã¢Ë†â€™1 energy cost per rank
   actualEnergyCost = Math.max(1, actualEnergyCost - (player.skillTree.stealth.light_feet || 0));
   
-  // Unstoppable: −20% energy cost per rank (multiplicative)
+  // Unstoppable: Ã¢Ë†â€™20% energy cost per rank (multiplicative)
   const unstoppableLevel = player.skillTree.endurance.unstoppable || 0;
   if (unstoppableLevel > 0) {
     actualEnergyCost = Math.max(1, Math.floor(actualEnergyCost * (1 - unstoppableLevel * 0.08)));
@@ -9460,13 +9622,13 @@ async function startJob(index) {
   let approachLabel = '';
   
   if (job.risk === 'high' || job.risk === 'very high') {
-    // Mid-tier: choose approach — "Go Loud" or "Stay Quiet"
+    // Mid-tier: choose approach Ã¢â‚¬â€ "Go Loud" or "Stay Quiet"
     const modal = new ModalSystem();
     const choice = await modal.show(
       `Plan the ${job.name}`,
       `<p>This is a <strong>${job.risk.toUpperCase()}</strong> risk job. How do you want to play it?</p>
-       <p style="color:#8b3a3a;"><strong>Go Loud</strong> — Brute force. Higher success using <em>violence</em>, but more heat & injury risk.</p>
-       <p style="color:#c0a062;"><strong>Stay Quiet</strong> — Stealth approach. Higher success using <em>stealth</em>, but lower payout if things go sideways.</p>`,
+       <p style="color:#8b3a3a;"><strong>Go Loud</strong> Ã¢â‚¬â€ Brute force. Higher success using <em>violence</em>, but more heat & injury risk.</p>
+       <p style="color:#c0a062;"><strong>Stay Quiet</strong> Ã¢â‚¬â€ Stealth approach. Higher success using <em>stealth</em>, but lower payout if things go sideways.</p>`,
       [
         { text: 'Go Loud', class: 'modal-btn-primary', value: 'loud', callback: () => true },
         { text: 'Stay Quiet', class: 'modal-btn-secondary', value: 'quiet', callback: () => true },
@@ -9483,7 +9645,7 @@ async function startJob(index) {
     } else {
       approachBonus = player.skillTree.stealth.shadow_step * 3;
       approachLabel = 'Quiet';
-      logAction(`« You plan a stealthy approach for the ${job.name}. Patience is key.`);
+      logAction(`Ã‚Â« You plan a stealthy approach for the ${job.name}. Patience is key.`);
     }
   } else if (job.risk === 'extreme' || job.risk === 'legendary') {
     // Elite-tier: briefing panel with crew & vehicle readiness
@@ -9519,7 +9681,7 @@ async function startJob(index) {
     // Crew bonus for elite jobs
     if (gangReady) {
       approachBonus = Math.min(player.gang.members * 2, 20); // Up to +20% from crew
-      logAction(`Your crew of ${player.gang.members} rolls out with you — strength in numbers.`);
+      logAction(`Your crew of ${player.gang.members} rolls out with you Ã¢â‚¬â€ strength in numbers.`);
     }
     approachLabel = 'Briefed';
   }
@@ -9628,7 +9790,7 @@ async function startJob(index) {
     return;
   }
 
-  // Handle special money laundering job — converts dirty money to clean money
+  // Handle special money laundering job Ã¢â‚¬â€ converts dirty money to clean money
   if (job.special === "launder_money") {
     // Check dirty money BEFORE deducting energy (already deducted above)
     if (!player.dirtyMoney || player.dirtyMoney <= 0) {
@@ -9670,7 +9832,7 @@ async function startJob(index) {
       const boostPercent = 0.08 + (drugLab.level * 0.035); // 11.5% at Lv1, up to 25.5% at Lv5
       const drugLabBonus = Math.floor(earnings * boostPercent);
       earnings += drugLabBonus;
-      logAction(`ª Your Drug Lab provides better product for distribution — payout boosted by $${drugLabBonus.toLocaleString()}.`);
+      logAction(`Ã‚Âª Your Drug Lab provides better product for distribution Ã¢â‚¬â€ payout boosted by $${drugLabBonus.toLocaleString()}.`);
     }
   }
 
@@ -9679,7 +9841,7 @@ async function startJob(index) {
   if (kingpinAuraLevel > 0) {
     const auraBonus = Math.floor(earnings * kingpinAuraLevel * 0.05);
     earnings += auraBonus;
-    if (auraBonus > 0) logAction(`Your kingpin aura commands respect — your cut is $${auraBonus.toLocaleString()} larger.`);
+    if (auraBonus > 0) logAction(`Your kingpin aura commands respect Ã¢â‚¬â€ your cut is $${auraBonus.toLocaleString()} larger.`);
   }
 
   // Scavenger skill: +3% bonus loot per rank
@@ -9690,7 +9852,7 @@ async function startJob(index) {
     if (scavengerBonus > 0) logAction(`Your scavenger instincts find extra valuables worth $${scavengerBonus.toLocaleString()}.`);
   }
 
-  // ── District Benefits applied to job earnings ──
+  // Ã¢â€â‚¬Ã¢â€â‚¬ District Benefits applied to job earnings Ã¢â€â‚¬Ã¢â€â‚¬
   const curDistrict = player.currentTerritory || null;
   if (curDistrict) {
     // drugSales: boost drug-related job payout
@@ -9745,6 +9907,12 @@ async function startJob(index) {
   if (hasPlayerPerk('street_smarts')) {
     adjustedJailChance = Math.max(1, Math.floor(adjustedJailChance * 0.85));
   }
+
+  // Police streetReputation: positive = reduced arrest chance, negative = increased
+  const policeRepMod = getStreetRepBonus('police', 0.10, 0.20, 0.30, 0.40);
+  if (policeRepMod !== 0) {
+    adjustedJailChance = Math.max(1, Math.floor(adjustedJailChance * (1 - policeRepMod)));
+  }
   
   let jailChance = Math.random() * 100;
 
@@ -9764,7 +9932,7 @@ async function startJob(index) {
   // Only Bank Job and Counterfeiting Money pay dirty money; all other jobs pay clean money
   if (job.paysDirty) {
     player.dirtyMoney = (player.dirtyMoney || 0) + earnings;
-    // Dirty money jobs raise heat — the feds notice large illegal cash flows
+    // Dirty money jobs raise heat Ã¢â‚¬â€ the feds notice large illegal cash flows
     const dirtyHeat = 3 + Math.floor(Math.random() * 6); // 3-8 heat
     player.wantedLevel = Math.min(100, player.wantedLevel + dirtyHeat);
     logAction(`Handling that much dirty cash raises eyebrows... (+${dirtyHeat} heat)`);
@@ -9783,7 +9951,7 @@ async function startJob(index) {
   let intimidationReduction = player.skillTree.combat.intimidation * 0.1; // 10% reduction per level
   wantedLevelGain = Math.max(1, Math.floor(wantedLevelGain * (1 - intimidationReduction)));
   
-  // Ghost Protocol: −4% heat gain per rank
+  // Ghost Protocol: Ã¢Ë†â€™4% heat gain per rank
   const ghostLevel = player.skillTree.stealth.ghost_protocol || 0;
   if (ghostLevel > 0) {
     wantedLevelGain = Math.max(1, Math.floor(wantedLevelGain * (1 - ghostLevel * 0.04)));
@@ -9792,7 +9960,7 @@ async function startJob(index) {
   // Utility item: Police Scanner reduces wanted level gain by 20%
   if (hasUtilityItem('Police Scanner')) {
     wantedLevelGain = Math.max(1, Math.floor(wantedLevelGain * 0.8));
-    logAction(`Your Police Scanner intercepts radio chatter — you dodge the heat (+20% wanted reduction).`);
+    logAction(`Your Police Scanner intercepts radio chatter Ã¢â‚¬â€ you dodge the heat (+20% wanted reduction).`);
   }
   
   // Morales Cartel passive: violent crimes generate 20% less heat
@@ -9837,7 +10005,7 @@ async function startJob(index) {
   
   // Log intimidation effect if it reduced wanted level
   if (intimidationReduction > 0 && wantedLevelGain < job.wantedLevelGain) {
-    logAction(`¨ Your intimidating presence makes witnesses think twice about reporting the crime!`);
+    logAction(`Ã‚Â¨ Your intimidating presence makes witnesses think twice about reporting the crime!`);
   }
   
   // Apply forensics skill for evidence cleanup
@@ -9853,7 +10021,7 @@ async function startJob(index) {
     if (forensicsSuccess < forensicsChance) {
       let evidenceReduction = Math.min(2, Math.floor(player.skillTree.intelligence.forensics / 3)); // 1-2 wanted level reduction
       player.wantedLevel = Math.max(0, player.wantedLevel - evidenceReduction);
-      logAction(`¹ Your forensics expertise helps you clean up evidence, reducing heat by ${evidenceReduction}!`);
+      logAction(`Ã‚Â¹ Your forensics expertise helps you clean up evidence, reducing heat by ${evidenceReduction}!`);
     }
   }
   
@@ -9874,7 +10042,7 @@ async function startJob(index) {
   // Calculate chance of getting hurt based on job risk and player's power
   let hurtChance;
   let maxHealthLoss;
-  // v1.11.0 Rebalance: XP and reputation gains reduced — Omerta-style slow grind
+  // v1.11.0 Rebalance: XP and reputation gains reduced Ã¢â‚¬â€ Omerta-style slow grind
   if (job.risk === "low") {
     hurtChance = Math.max(0, 1 - player.power * 0.01 - player.skillTree.combat.brawler * 0.5);
     maxHealthLoss = 5;
@@ -9958,8 +10126,8 @@ async function startJob(index) {
   if (hasPlayerPerk('lucky_devil') && Math.random() < 0.10) {
     const bonusCash = Math.floor(earnings * 0.25); // 25% of base earnings as bonus
     player.money += bonusCash;
-    logAction(`🍀 Lucky Devil! You found an extra $${bonusCash.toLocaleString()} while on the job!`);
-    showBriefNotification(`🍀 Lucky bonus: +$${bonusCash.toLocaleString()}!`, 'success');
+    logAction(`Ã°Å¸Ââ‚¬ Lucky Devil! You found an extra $${bonusCash.toLocaleString()} while on the job!`);
+    showBriefNotification(`Ã°Å¸Ââ‚¬ Lucky bonus: +$${bonusCash.toLocaleString()}!`, 'success');
   }
 
   // Jackpot skill: +4% critical success chance per rank (double payout on crit)
@@ -9971,8 +10139,8 @@ async function startJob(index) {
     } else {
       player.money += critBonus;
     }
-    logAction(`🎰 JACKPOT! Critical success — you scored an extra $${critBonus.toLocaleString()}!`);
-    showBriefNotification(`🎰 JACKPOT! +$${critBonus.toLocaleString()}!`, 'success');
+    logAction(`Ã°Å¸Å½Â° JACKPOT! Critical success Ã¢â‚¬â€ you scored an extra $${critBonus.toLocaleString()}!`);
+    showBriefNotification(`Ã°Å¸Å½Â° JACKPOT! +$${critBonus.toLocaleString()}!`, 'success');
   }
 
   // Serendipity skill: +1% rare event chance per rank (bonus discovery)
@@ -9980,8 +10148,8 @@ async function startJob(index) {
   if (serendipityLevel > 0 && Math.random() * 100 < serendipityLevel) {
     const rareLoot = Math.floor(earnings * 0.5 + Math.random() * earnings * 0.5);
     player.money += rareLoot;
-    logAction(`✨ Serendipity! You stumble upon a hidden stash worth $${rareLoot.toLocaleString()}!`);
-    showBriefNotification(`✨ Rare find: +$${rareLoot.toLocaleString()}!`, 'success');
+    logAction(`Ã¢Å“Â¨ Serendipity! You stumble upon a hidden stash worth $${rareLoot.toLocaleString()}!`);
+    showBriefNotification(`Ã¢Å“Â¨ Rare find: +$${rareLoot.toLocaleString()}!`, 'success');
   }
 
   // Deduct ammo and gas if used
@@ -10010,7 +10178,7 @@ async function startJob(index) {
   }
 
   if (!carCatastrophe) { // Only show success message if car didn't explode/break down
-    const moneyType = job.paysDirty ? ' (dirty money — must be laundered!)' : '';
+    const moneyType = job.paysDirty ? ' (dirty money Ã¢â‚¬â€ must be laundered!)' : '';
     flashSuccessScreen();
     showBriefNotification(`You completed the job as a ${job.name} (${job.risk} risk) and earned $${earnings.toLocaleString()}${moneyType}!`, 'success');
     logAction(`${getFamilyNarration('jobSuccess')} (+$${earnings.toLocaleString()}${moneyType}).`);
@@ -10044,7 +10212,7 @@ function handleCarTheft(job, actualEnergyCost) {
     return;
   }
 
-  // Check if player actually finds a car to steal (15% base chance — very hard)
+  // Check if player actually finds a car to steal (15% base chance Ã¢â‚¬â€ very hard)
   let findCarChance = 15 + (player.skillTree.luck.fortune * 2); // Luck skill helps find cars
   if (Math.random() * 100 > findCarChance) {
     showBriefNotification(`${getRandomNarration('carTheftFailure')} Lost ${actualEnergyCost} energy.`, 'danger');
@@ -10074,7 +10242,7 @@ function handleCarTheft(job, actualEnergyCost) {
   }
 
   // Calculate initial damage percentage based on vehicle type
-  // Most stolen vehicles are in terrible shape — finding one in decent condition is very rare
+  // Most stolen vehicles are in terrible shape Ã¢â‚¬â€ finding one in decent condition is very rare
   let damagePercentage = 0;
   
   // Broken vehicles: 95-100% damage (0-5% health left)
@@ -10087,7 +10255,7 @@ function handleCarTheft(job, actualEnergyCost) {
   }
   // All other vehicles: heavily weighted toward high damage
   else {
-    // Roll a weighted chance — most vehicles come badly damaged
+    // Roll a weighted chance Ã¢â‚¬â€ most vehicles come badly damaged
     let conditionRoll = Math.random() * 100;
     if (conditionRoll < 45) {
       // 45% chance: severe damage 70-95%
@@ -10140,7 +10308,7 @@ function handleCarTheft(job, actualEnergyCost) {
   // Note: updateUI, achievement check, showJobs, and health check are now handled in handleStolenCarChoice
 }
 
-// Function to handle money laundering job — converts dirty money to clean money
+// Function to handle money laundering job Ã¢â‚¬â€ converts dirty money to clean money
 function handleLaunderMoneyJob(job, approachLabel, actualEnergyCost) {
   // Energy was already deducted and dirty-money check done in startJob()
   // actualEnergyCost is passed in with all skill/perk reductions already applied
@@ -10165,7 +10333,7 @@ function handleLaunderMoneyJob(job, approachLabel, actualEnergyCost) {
   // Can't launder more than you have
   const amountToLaunder = Math.min(launderCapacity, player.dirtyMoney);
 
-  // Jail check — stealth skills reduce the chance
+  // Jail check Ã¢â‚¬â€ stealth skills reduce the chance
   let stealthBonus = player.skillTree.stealth.shadow_step * 2;
   stealthBonus += player.skillTree.stealth.escape_artist * 3;
   stealthBonus += player.skillTree.stealth.infiltration * 2;
@@ -10200,7 +10368,7 @@ function handleLaunderMoneyJob(job, approachLabel, actualEnergyCost) {
   if (approachLabel === 'Loud') {
     conversionRate -= 0.03; // Loud: -3% conversion (sloppy but fast)
     player.wantedLevel = Math.min(100, player.wantedLevel + 4); // +4 heat
-    logAction(`Going loud draws attention — the feds notice the large cash movements.`);
+    logAction(`Going loud draws attention Ã¢â‚¬â€ the feds notice the large cash movements.`);
   } else if (approachLabel === 'Quiet') {
     conversionRate += 0.05; // Quiet: +5% conversion (careful, stealthy handling)
     // Quiet approach also reduces heat gain later
@@ -10209,7 +10377,7 @@ function handleLaunderMoneyJob(job, approachLabel, actualEnergyCost) {
   // Owning a Counterfeiting Operation improves conversion (mixing fake with real bills)
   if (player.businesses && player.businesses.some(b => b.id === 'counterfeiting')) {
     conversionRate += 0.03; // +3% if you own the Counterfeiting Operation
-    logAction(`Your Counterfeiting Operation helps mix the bills — improved conversion rate.`);
+    logAction(`Your Counterfeiting Operation helps mix the bills Ã¢â‚¬â€ improved conversion rate.`);
   }
 
   // Cap at 95%
@@ -10231,7 +10399,7 @@ function handleLaunderMoneyJob(job, approachLabel, actualEnergyCost) {
   wantedLevelGain = Math.max(1, Math.floor(wantedLevelGain * (1 - intimidationReduction)));
   if (hasUtilityItem('Police Scanner')) {
     wantedLevelGain = Math.max(1, Math.floor(wantedLevelGain * 0.8));
-    logAction(`Your Police Scanner intercepts radio chatter — you dodge the heat.`);
+    logAction(`Your Police Scanner intercepts radio chatter Ã¢â‚¬â€ you dodge the heat.`);
   }
   player.wantedLevel += wantedLevelGain;
 
@@ -10246,6 +10414,11 @@ function handleLaunderMoneyJob(job, approachLabel, actualEnergyCost) {
   // Reputation and XP based on risk level
   player.reputation += 1.5;
   gainExperience(30);
+
+  // Successful laundering boosts underground reputation
+  if (player.streetReputation) {
+    player.streetReputation.underground = Math.min(100, (player.streetReputation.underground || 0) + 1);
+  }
 
   // Track statistics
   updateStatistic('jobsCompleted');
@@ -10266,14 +10439,14 @@ function handleLaunderMoneyJob(job, approachLabel, actualEnergyCost) {
     if (Math.random() * 100 < forensicsChance) {
       let evidenceReduction = Math.min(2, Math.floor(player.skillTree.intelligence.forensics / 3));
       player.wantedLevel = Math.max(0, player.wantedLevel - evidenceReduction);
-      logAction(`¹ Your forensics expertise helps you cover the paper trail, reducing heat by ${evidenceReduction}!`);
+      logAction(`Ã‚Â¹ Your forensics expertise helps you cover the paper trail, reducing heat by ${evidenceReduction}!`);
     }
   }
 
   const ratePercent = Math.round(conversionRate * 100);
   flashSuccessScreen();
   showBriefNotification(`Laundering successful! Cleaned $${cleanAmount.toLocaleString()} from $${amountToLaunder.toLocaleString()} dirty money (${ratePercent}% rate, $${fee.toLocaleString()} in fees).`, 'success');
-  logAction(`The dirty bills flow through shell companies and emerge squeaky clean. $${amountToLaunder.toLocaleString()} dirty ←’ $${cleanAmount.toLocaleString()} clean (${ratePercent}% rate). The laundering fee of $${fee.toLocaleString()} vanishes into the ether.`);
+  logAction(`The dirty bills flow through shell companies and emerge squeaky clean. $${amountToLaunder.toLocaleString()} dirty Ã¢â€ ÂÃ¢â‚¬â„¢ $${cleanAmount.toLocaleString()} clean (${ratePercent}% rate). The laundering fee of $${fee.toLocaleString()} vanishes into the ether.`);
 
   // Refresh jobs UI if visible
   if (document.getElementById("jobs-screen").style.display === "block") {
@@ -10316,7 +10489,7 @@ function showCarTheftChoiceResult(stolenCar, wasHurt = false, healthLoss = 0) {
             ${wasHurt ? getRandomNarration('carTheftDamaged') : getRandomNarration('carTheftSuccess')}
           </p>
           <p style="margin:8px 0;color:#8b3a3a;font-size:0.9em;">
-            This vehicle is hot — you can't sell it directly. Scrap it for parts or store it.
+            This vehicle is hot Ã¢â‚¬â€ you can't sell it directly. Scrap it for parts or store it.
           </p>
         </div>
         
@@ -10333,7 +10506,7 @@ function showCarTheftChoiceResult(stolenCar, wasHurt = false, healthLoss = 0) {
         
         <div class="popup-section" style="margin-top:15px;">
           <p style="margin:0;color:#d4c4a0;font-size:0.9em;">
-            <strong>Tip:</strong> Stolen vehicles can't be sold directly — scrap them for quick parts money, or store and sell later through <strong style="color:#7a5a3a;">The Fence</strong> for full black market value. Owning a <strong style="color:#e67e22;">Chop Shop</strong> massively boosts scrap profits!
+            <strong>Tip:</strong> Stolen vehicles can't be sold directly Ã¢â‚¬â€ scrap them for quick parts money, or store and sell later through <strong style="color:#7a5a3a;">The Fence</strong> for full black market value. Owning a <strong style="color:#e67e22;">Chop Shop</strong> massively boosts scrap profits!
           </p>
         </div>
     </div>
@@ -10363,7 +10536,7 @@ function handleStolenCarChoice(choice, carName, baseValue, currentValue, damageP
   };
   
   if (choice === 'scrap') {
-    // Scrap the stolen car for parts — base 35% of current value
+    // Scrap the stolen car for parts Ã¢â‚¬â€ base 35% of current value
     // Chop Shop ownership gives a massive boost to scrap profits
     let scrapPrice = Math.floor(currentValue * 0.35);
     let chopShopBonus = 0;
@@ -10375,7 +10548,7 @@ function handleStolenCarChoice(choice, carName, baseValue, currentValue, damageP
       scrapPrice += chopShopBonus;
     }
     
-    // Minimum scrap floor — even a totaled car has some metal
+    // Minimum scrap floor Ã¢â‚¬â€ even a totaled car has some metal
     const scrapFloor = Math.floor(baseValue * 0.08);
     scrapPrice = Math.max(scrapPrice, scrapFloor);
     
@@ -10391,7 +10564,7 @@ function handleStolenCarChoice(choice, carName, baseValue, currentValue, damageP
       showBriefNotification(`Scrapped ${carName} for $${scrapPrice.toLocaleString()}! (Chop Shop bonus: +$${chopShopBonus.toLocaleString()})`, 'success');
       logAction(`Your Chop Shop crew strips the ${carName} down to the frame. Premium parts sold to underground buyers (+$${scrapPrice.toLocaleString()}, Chop Shop bonus: +$${chopShopBonus.toLocaleString()}).`);
     } else {
-      showBriefNotification(`Scrapped ${carName} for parts — $${scrapPrice.toLocaleString()}`, 'success');
+      showBriefNotification(`Scrapped ${carName} for parts Ã¢â‚¬â€ $${scrapPrice.toLocaleString()}`, 'success');
       logAction(`You strip the ${carName} for parts in a back-alley chop job. Not the best price, but it's quick and untraceable (+$${scrapPrice.toLocaleString()}).`);
     }
   } else if (choice === 'store') {
@@ -10582,6 +10755,12 @@ function sendToJail(wantedLevelLoss) {
   
   player.inJail = true;
   _jobsWithoutArrest = 0; // Reset consecutive clean jobs on arrest
+  
+  // Getting arrested hurts police reputation (you're a known criminal)
+  if (player.streetReputation) {
+    player.streetReputation.police = Math.max(-100, (player.streetReputation.police || 0) - 3);
+  }
+  
   // Jail time scales with wanted level but caps at 90 seconds. Escape skill reduces time.
   const escapeReduction = (player.skillTree.stealth.escape_artist || 0) * 2; // -2s per escape level
   const baseJailTime = Math.min(90, 15 + Math.floor(player.wantedLevel * 0.8));
@@ -10592,20 +10771,33 @@ function sendToJail(wantedLevelLoss) {
   if (corruptSentenceReduction > 0) {
     const reduced = Math.floor(calculatedJailTime * corruptSentenceReduction);
     calculatedJailTime = Math.max(5, calculatedJailTime - reduced);
-    logAction(`Your judge on the payroll pulls strings — sentence reduced by ${reduced}s.`);
+    logAction(`Your judge on the payroll pulls strings Ã¢â‚¬â€ sentence reduced by ${reduced}s.`);
   }
   
   // Iron Will perk: -25% jail time
   if (hasPlayerPerk('iron_will')) {
     const reduced = Math.floor(calculatedJailTime * 0.25);
     calculatedJailTime = Math.max(5, calculatedJailTime - reduced);
-    logAction(`Iron Will kicks in — your jail sentence is shortened by ${reduced}s.`);
+    logAction(`Iron Will kicks in Ã¢â‚¬â€ your jail sentence is shortened by ${reduced}s.`);
+  }
+
+  // Police streetReputation: positive = shorter sentences, negative = longer
+  const policeJailMod = getStreetRepBonus('police', 0.05, 0.15, 0.25, 0.40);
+  if (policeJailMod !== 0) {
+    const change = Math.floor(calculatedJailTime * Math.abs(policeJailMod));
+    if (policeJailMod > 0) {
+      calculatedJailTime = Math.max(5, calculatedJailTime - change);
+      logAction(`Your police contacts pull strings Ã¢â‚¬â€ sentence reduced by ${change}s.`);
+    } else {
+      calculatedJailTime += change;
+      logAction(`Law enforcement has it out for you Ã¢â‚¬â€ sentence increased by ${change}s.`);
+    }
   }
   
   // Utility item: Fake ID Kit reduces jail time by 5 seconds
   if (hasUtilityItem('Fake ID Kit')) {
     calculatedJailTime = Math.max(5, calculatedJailTime - 5);
-    logAction(`ª Your Fake ID Kit confuses the booking officers — shorter sentence!`);
+    logAction(`Ã‚Âª Your Fake ID Kit confuses the booking officers Ã¢â‚¬â€ shorter sentence!`);
   }
   
   player.jailTime = calculatedJailTime;
@@ -10653,6 +10845,12 @@ function bribeGuard() {
   player.inJail = false;
   player.jailTime = 0;
   player.breakoutAttempts = 3;
+  
+  
+  // Bribing guards improves police relations (you know how to play the game)
+  if (player.streetReputation) {
+    player.streetReputation.police = Math.min(100, (player.streetReputation.police || 0) + 2);
+  }
   
   stopJailTimer();
   
@@ -10722,9 +10920,9 @@ function attemptBreakout() {
   }
 }
 
-// ══════════════════════════════════════════════════════════════
+// Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
 // UNIFIED RPG SKILL TREE SYSTEM
-// ══════════════════════════════════════════════════════════════
+// Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
 
 // Currently selected tree in the skill UI
 let _activeSkillTree = 'stealth';
@@ -10772,8 +10970,8 @@ function renderSkillTreeUI() {
     treeNodesHTML += `
       <div class="rpg-tier-section">
         <div class="rpg-tier-header">
-          <span class="rpg-tier-label">${tierLabels[ti]} — Tier ${tier}</span>
-          <span class="rpg-tier-req ${tierUnlocked ? 'rpg-tier-unlocked' : ''}">${tierReqs[ti] > 0 ? (tierUnlocked ? '✓ Unlocked' : `Requires ${tierReqs[ti]} pts in tree (${ptsInTree}/${tierReqs[ti]})`) : 'Always Available'}</span>
+          <span class="rpg-tier-label">${tierLabels[ti]} Ã¢â‚¬â€ Tier ${tier}</span>
+          <span class="rpg-tier-req ${tierUnlocked ? 'rpg-tier-unlocked' : ''}">${tierReqs[ti] > 0 ? (tierUnlocked ? 'Ã¢Å“â€œ Unlocked' : `Requires ${tierReqs[ti]} pts in tree (${ptsInTree}/${tierReqs[ti]})`) : 'Always Available'}</span>
         </div>
         ${tier > 1 ? '<div class="rpg-tier-connector"><div class="rpg-connector-line"></div></div>' : ''}
         <div class="rpg-tier-nodes">
@@ -10794,7 +10992,7 @@ function renderSkillTreeUI() {
         prereqText = nodeDef.prereqs.map(req => {
           const reqDef = treeDef.nodes[req.node];
           const reqMet = (treeData[req.node] || 0) >= req.rank;
-          return `<span style="color:${reqMet ? '#8a9a6a' : '#8b3a3a'}">${reqMet ? '✓' : '✗'} ${reqDef.name} Rank ${req.rank}</span>`;
+          return `<span style="color:${reqMet ? '#8a9a6a' : '#8b3a3a'}">${reqMet ? 'Ã¢Å“â€œ' : 'Ã¢Å“â€”'} ${reqDef.name} Rank ${req.rank}</span>`;
         }).join(' ');
       }
 
@@ -10814,7 +11012,7 @@ function renderSkillTreeUI() {
           <p class="rpg-node-effect">${nodeDef.effect}</p>
           ${prereqText ? `<div class="rpg-node-prereqs">Requires: ${prereqText}</div>` : ''}
           <button onclick="upgradeNode('${_activeSkillTree}', '${nodeId}')" class="rpg-node-btn ${canUpgrade ? 'rpg-node-btn-active' : ''}" ${!canUpgrade ? 'disabled' : ''}>
-            ${isMaxed ? '★ MAXED' : isLocked ? '🔒 Locked' : canUpgrade ? 'Upgrade (1 pt)' : 'No Points'}
+            ${isMaxed ? 'Ã¢Ëœâ€¦ MAXED' : isLocked ? 'Ã°Å¸â€â€™ Locked' : canUpgrade ? 'Upgrade (1 pt)' : 'No Points'}
           </button>
         </div>
       `;
@@ -10848,7 +11046,7 @@ function renderSkillTreeUI() {
       </div>
 
       <div style="text-align:center;margin-top:20px;">
-        <button class="nav-btn-back" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
+        <button class="nav-btn-back" onclick="goBackToMainMenu()">Ã¢â€ Â Back to SafeHouse</button>
       </div>
     </div>
   `;
@@ -10892,8 +11090,8 @@ function upgradeNode(treeName, nodeId) {
   const newRank = player.skillTree[treeName][nodeId];
 
   if (newRank >= nodeDef.maxRank) {
-    showBriefNotification(`★ MASTERED: ${nodeDef.name}! Maximum rank reached.`, 'success');
-    logAction(`${nodeDef.name} MASTERED! You've reached rank ${newRank} — the pinnacle of this discipline.`);
+    showBriefNotification(`Ã¢Ëœâ€¦ MASTERED: ${nodeDef.name}! Maximum rank reached.`, 'success');
+    logAction(`${nodeDef.name} MASTERED! You've reached rank ${newRank} Ã¢â‚¬â€ the pinnacle of this discipline.`);
   } else {
     logAction(`Training complete! ${nodeDef.name} improved to rank ${newRank}. ${nodeDef.effect}`);
   }
@@ -11079,6 +11277,20 @@ function gangWar() {
     showBriefNotification(`Gang war victory! Earned $${winnings.toLocaleString()} (dirty) and gained turf rep!`, 'success');
     logAction(`Victorious in gang warfare! The streets echo with your name as you claim $${winnings.toLocaleString()} (dirty) and expand your domain.`);
     if (player.turf) player.turf.reputation = (player.turf.reputation || 0) + 10;
+    player.territoryReputation = (player.territoryReputation || 0) + 10;
+    
+    // Rival respect: gang war victory intimidates all rivals
+    const allRivals = player.rivalKingpins || RIVAL_KINGPINS;
+    allRivals.forEach(r => updateRivalRespect(r.id, -5));
+    
+    // Underground reputation boost Ã¢â‚¬â€ you're a force on the streets
+    if (player.streetReputation) {
+      player.streetReputation.underground = Math.min(100, (player.streetReputation.underground || 0) + 3);
+    }
+    // Civilians fear you after gang warfare
+    if (player.streetReputation) {
+      player.streetReputation.civilians = Math.max(-100, (player.streetReputation.civilians || 0) - 2);
+    }
     
     // Track violent playstyle
     player.playstyleStats.violentJobs = (player.playstyleStats.violentJobs || 0) + 1;
@@ -11109,6 +11321,10 @@ function gangWar() {
     showBriefNotification(`Gang war defeat! Lost ${losses} members.`, 'warning');
     logAction(`Lost gang war, lost ${losses} members.`);
     
+    // Rival respect: rivals gain confidence from your defeat
+    const defeatRivals = player.rivalKingpins || RIVAL_KINGPINS;
+    defeatRivals.forEach(r => updateRivalRespect(r.id, 3));
+    
     // Car takes extreme damage in defeat
     if (player.selectedCar !== null) {
       let damageAmount = Math.floor(Math.random() * 35) + 25; // 25-60% damage
@@ -11133,7 +11349,7 @@ async function fireGangMember(memberIndex) {
   const member = player.gang.gangMembers[memberIndex];
   
   // Confirm firing
-  if (!await ui.confirm(`Are you sure you want to fire ${member.name}?<br><br>You will lose:<br>• ${member.power || 5} power<br>• Their tribute generation<br><br>This action cannot be undone.`)) {
+  if (!await ui.confirm(`Are you sure you want to fire ${member.name}?<br><br>You will lose:<br>Ã¢â‚¬Â¢ ${member.power || 5} power<br>Ã¢â‚¬Â¢ Their tribute generation<br><br>This action cannot be undone.`)) {
     return;
   }
   
@@ -11278,7 +11494,7 @@ function updatePrisonerList() {
       prisonerHTML += `
         <div style="background: rgba(139, 0, 0, 0.2); padding: 12px; margin: 8px 0; border-radius: 6px; border-left: 4px solid #8b0000;">
           <strong style="color: #8b0000;">${p.name}</strong> - Time Left: ${Math.max(0, Math.ceil(p.jailTime))}s
-          <br><small style="color: #8b3a3a;">Online Player • Level ${p.level || 1}</small>
+          <br><small style="color: #8b3a3a;">Online Player Ã¢â‚¬Â¢ Level ${p.level || 1}</small>
           ${isMe ? '<br><span style="color: #8a7a5a; font-style: italic;">That\'s you!</span>' :
             (player.inJail ? '<br><span style="color: #8a7a5a; font-size: 0.85em;">Cannot help others while imprisoned yourself</span>' :
             `<br><button onclick="attemptPlayerJailbreak('${p.playerId}', '${p.name}')" style="margin-top: 8px; background: #c0a040; color: white; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer;">Break Out</button>`)}
@@ -11340,7 +11556,7 @@ function breakoutPrisoner(prisonerIndex) {
     checkLevelUp();
     
     showBriefNotification(`${getRandomNarration('prisonerBreakoutSuccess')} You helped ${prisoner.name} escape! Gained ${expReward} XP.`, 'success');
-    logAction(` You slip ${prisoner.name} the keys and watch them disappear into the night. Honor among thieves - your reputation on the streets grows (+${expReward} XP).`);
+    logAction(`Ã‚Â You slip ${prisoner.name} the keys and watch them disappear into the night. Honor among thieves - your reputation on the streets grows (+${expReward} XP).`);
     
     // Remove prisoner from list
     jailPrisoners.splice(prisonerIndex, 1);
@@ -11368,7 +11584,7 @@ function breakoutPrisoner(prisonerIndex) {
       return; // Exit early since player is now in jail
     } else {
       showBriefNotification(`${getRandomNarration('prisonerBreakoutFailure')} But you weren't caught.`, 'danger');
-      logAction(`” The plan falls apart. ${prisoner.name} stays locked up, but at least you kept your head down. Sometimes discretion is the better part of valor.`);
+      logAction(`Ã¢â‚¬Â The plan falls apart. ${prisoner.name} stays locked up, but at least you kept your head down. Sometimes discretion is the better part of valor.`);
     }
     updateUI();
   }
@@ -11406,7 +11622,7 @@ const seasonalEvents = {
         duration: 3 * 24 * 60 * 60 * 1000 // 3 days
       },
       probability: 0.3,
-      icon: "🌸"
+      icon: "Ã°Å¸Å’Â¸"
     },
     {
       id: "tax_season",
@@ -11418,7 +11634,7 @@ const seasonalEvents = {
         duration: 7 * 24 * 60 * 60 * 1000 // 1 week
       },
       probability: 0.4,
-      icon: "💸"
+      icon: "Ã°Å¸â€™Â¸"
     }
   ],
   summer: [
@@ -11432,7 +11648,7 @@ const seasonalEvents = {
         duration: 2 * 7 * 24 * 60 * 60 * 1000 // 2 weeks
       },
       probability: 0.5,
-      icon: "🏖️"
+      icon: "Ã°Å¸Ââ€“Ã¯Â¸Â"
     },
     {
       id: "heat_wave",
@@ -11445,7 +11661,7 @@ const seasonalEvents = {
         duration: 5 * 24 * 60 * 60 * 1000 // 5 days
       },
       probability: 0.3,
-      icon: "🌡️"
+      icon: "Ã°Å¸Å’Â¡Ã¯Â¸Â"
     }
   ],
   autumn: [
@@ -11459,7 +11675,7 @@ const seasonalEvents = {
         duration: 4 * 24 * 60 * 60 * 1000 // 4 days
       },
       probability: 0.35,
-      icon: "🍂"
+      icon: "Ã°Å¸Ââ€š"
     },
     {
       id: "back_to_school",
@@ -11471,7 +11687,7 @@ const seasonalEvents = {
         duration: 2 * 7 * 24 * 60 * 60 * 1000 // 2 weeks
       },
       probability: 0.4,
-      icon: "🎓"
+      icon: "Ã°Å¸Å½â€œ"
     }
   ],
   winter: [
@@ -11486,7 +11702,7 @@ const seasonalEvents = {
         duration: 3 * 7 * 24 * 60 * 60 * 1000 // 3 weeks
       },
       probability: 0.6,
-      icon: "🎄"
+      icon: "Ã°Å¸Å½â€ž"
     },
     {
       id: "cold_snap",
@@ -11499,7 +11715,7 @@ const seasonalEvents = {
         duration: 1 * 7 * 24 * 60 * 60 * 1000 // 1 week
       },
       probability: 0.25,
-      icon: "❄️"
+      icon: "Ã¢Ââ€žÃ¯Â¸Â"
     }
   ]
 };
@@ -11510,16 +11726,16 @@ const weatherEffects = {
     name: "Clear Skies",
     description: "Perfect conditions for operations",
     effects: {},
-    icon: "☀️"
+    icon: "Ã¢Ëœâ‚¬Ã¯Â¸Â"
   },
   overcast: {
     name: "Overcast",
-    description: "Grey skies keep people indoors — fewer witnesses on the streets",
+    description: "Grey skies keep people indoors Ã¢â‚¬â€ fewer witnesses on the streets",
     effects: {
       witnessReduction: 0.1,
       stealthBonus: 0.05
     },
-    icon: "☁️"
+    icon: "Ã¢ËœÂÃ¯Â¸Â"
   },
   rain: {
     name: "Rain",
@@ -11530,16 +11746,16 @@ const weatherEffects = {
       witnessReduction: 0.2,
       energyCost: 1.1
     },
-    icon: "🌧️"
+    icon: "Ã°Å¸Å’Â§Ã¯Â¸Â"
   },
   drizzle: {
     name: "Light Drizzle",
-    description: "A light rain dampens the streets — slight cover for shady dealings",
+    description: "A light rain dampens the streets Ã¢â‚¬â€ slight cover for shady dealings",
     effects: {
       stealthBonus: 0.08,
       witnessReduction: 0.1
     },
-    icon: "🌦️"
+    icon: "Ã°Å¸Å’Â¦Ã¯Â¸Â"
   },
   snow: {
     name: "Snow",
@@ -11550,11 +11766,11 @@ const weatherEffects = {
       heatingCosts: 1.3,
       carDamage: 1.2
     },
-    icon: "🌨️"
+    icon: "Ã°Å¸Å’Â¨Ã¯Â¸Â"
   },
   blizzard: {
     name: "Blizzard",
-    description: "A brutal blizzard — the city grinds to a halt, police can barely patrol",
+    description: "A brutal blizzard Ã¢â‚¬â€ the city grinds to a halt, police can barely patrol",
     effects: {
       policeResponse: -0.4,
       stealthBonus: 0.3,
@@ -11563,7 +11779,7 @@ const weatherEffects = {
       businessDisruption: 0.5,
       movementSpeed: -0.35
     },
-    icon: "❄️"
+    icon: "Ã¢Ââ€žÃ¯Â¸Â"
   },
   sleet: {
     name: "Sleet",
@@ -11574,7 +11790,7 @@ const weatherEffects = {
       witnessReduction: 0.25,
       energyCost: 1.2
     },
-    icon: "🧊"
+    icon: "Ã°Å¸Â§Å "
   },
   fog: {
     name: "Fog",
@@ -11585,7 +11801,7 @@ const weatherEffects = {
       carAccidents: 0.15,
       jobSuccessBonus: 0.1
     },
-    icon: "🌫️"
+    icon: "Ã°Å¸Å’Â«Ã¯Â¸Â"
   },
   storm: {
     name: "Storm",
@@ -11597,26 +11813,26 @@ const weatherEffects = {
       energyCost: 1.3,
       businessDisruption: 0.4
     },
-    icon: "⛈️"
+    icon: "Ã¢â€ºË†Ã¯Â¸Â"
   },
   heatwave: {
     name: "Heatwave",
-    description: "Scorching heat frays tempers — more street fights, less police foot patrol",
+    description: "Scorching heat frays tempers Ã¢â‚¬â€ more street fights, less police foot patrol",
     effects: {
       policeResponse: -0.15,
       energyCost: 1.25,
       witnessReduction: 0.15
     },
-    icon: "🔥"
+    icon: "Ã°Å¸â€Â¥"
   },
   humid: {
     name: "Humid & Muggy",
-    description: "Thick, oppressive air hangs over the city — everyone moves slower",
+    description: "Thick, oppressive air hangs over the city Ã¢â‚¬â€ everyone moves slower",
     effects: {
       energyCost: 1.15,
       movementSpeed: -0.1
     },
-    icon: "🌡️"
+    icon: "Ã°Å¸Å’Â¡Ã¯Â¸Â"
   }
 };
 
@@ -11674,7 +11890,7 @@ const newsEvents = [
     },
     probability: 0.1,
     category: "law_enforcement",
-    icon: "💰"
+    icon: "Ã°Å¸â€™Â°"
   },
   {
     id: "new_police_chief",
@@ -11688,7 +11904,7 @@ const newsEvents = [
     },
     probability: 0.08,
     category: "law_enforcement",
-    icon: "👮"
+    icon: "Ã°Å¸â€˜Â®"
   },
   {
     id: "economic_boom",
@@ -11702,7 +11918,7 @@ const newsEvents = [
     },
     probability: 0.12,
     category: "economic",
-    icon: "📈"
+    icon: "Ã°Å¸â€œË†"
   },
   {
     id: "gang_violence_spike",
@@ -11716,7 +11932,7 @@ const newsEvents = [
     },
     probability: 0.15,
     category: "crime",
-    icon: "🔫"
+    icon: "Ã°Å¸â€Â«"
   },
   {
     id: "festival_announcement",
@@ -11730,7 +11946,7 @@ const newsEvents = [
     },
     probability: 0.2,
     category: "social",
-    icon: "🎪"
+    icon: "Ã°Å¸Å½Âª"
   },
   {
     id: "tech_surveillance",
@@ -11744,13 +11960,13 @@ const newsEvents = [
     },
     probability: 0.06,
     category: "technology",
-    icon: "📹"
+    icon: "Ã°Å¸â€œÂ¹"
   }
 ];
 
-// (Suspicion system removed — using unified Heat/Wanted Level instead)
+// (Suspicion system removed Ã¢â‚¬â€ using unified Heat/Wanted Level instead)
 
-// Police Crackdown System placeholder — keep crackdown array below
+// Police Crackdown System placeholder Ã¢â‚¬â€ keep crackdown array below
 // Legacy dead functions removed: checkSuspicionConsequences, checkFBIInvestigation,
 // showFBIEventOverlay, handleFBIChoice, executeFBIRaid
 
@@ -11774,7 +11990,7 @@ const crackdownTypes = [
     },
     triggers: ["high_drug_activity", "public_pressure"],
     severity: "high",
-    icon: "💊"
+    icon: "Ã°Å¸â€™Å "
   },
   {
     id: "gang_crackdown",
@@ -11788,7 +12004,7 @@ const crackdownTypes = [
     },
     triggers: ["territory_violence", "gang_visibility"],
     severity: "extreme",
-    icon: "👥"
+    icon: "Ã°Å¸â€˜Â¥"
   },
   {
     id: "vehicle_crackdown",
@@ -11802,7 +12018,7 @@ const crackdownTypes = [
     },
     triggers: ["car_theft_reports", "insurance_pressure"],
     severity: "medium",
-    icon: "🚗"
+    icon: "Ã°Å¸Å¡â€”"
   },
   {
     id: "corruption_investigation",
@@ -11816,7 +12032,7 @@ const crackdownTypes = [
     },
     triggers: ["corruption_exposure", "political_pressure"],
     severity: "extreme",
-    icon: "🔍"
+    icon: "Ã°Å¸â€Â"
   }
 ];
 
@@ -11876,7 +12092,7 @@ function updateSeasonalBackground() {
   }
 }
 
-// Weather system functions — season-aware
+// Weather system functions Ã¢â‚¬â€ season-aware
 function changeWeather() {
   // Get the weather weights for the current season
   const weights = seasonalWeatherWeights[currentSeason] || seasonalWeatherWeights.spring;
@@ -12097,7 +12313,7 @@ function startEventTimers() {
   // Clear any existing timers first to prevent stacking
   clearEventTimers();
 
-  // Weather changes every 30 minutes (client fallback only — server overrides when connected)
+  // Weather changes every 30 minutes (client fallback only Ã¢â‚¬â€ server overrides when connected)
   weatherTimer = setInterval(() => {
     if (!gameplayActive) return;
     // Skip local weather if connected to server (server handles it)
@@ -12165,7 +12381,7 @@ function showEventsStatus() {
       
       statusHTML += `
         <div style="background: rgba(0, 0, 0, 0.3); padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid ${typeColor};">
-          <h4 style="color: ${typeColor}; margin-bottom: 8px;">${event.icon || 'ï¿½'} ${event.name}</h4>
+          <h4 style="color: ${typeColor}; margin-bottom: 8px;">${event.icon || 'ÃƒÂ¯Ã‚Â¿Ã‚Â½'} ${event.name}</h4>
           <p style="margin-bottom: 8px;">${event.description}</p>
           <p style="color: #c0a040; margin: 0;"><strong>Time Left:</strong> ${hoursLeft} hour(s)</p>
         </div>
@@ -12201,7 +12417,7 @@ function showEventsStatus() {
       <button onclick="triggerRandomWeatherChange()" style="background: #c0a062; color: white; padding: 12px 25px; margin: 5px; border: none; border-radius: 8px; cursor: pointer;">
         Check Weather Update
       </button>
-      <button class="nav-btn-back" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
+      <button class="nav-btn-back" onclick="goBackToMainMenu()">Ã¢â€ Â Back to SafeHouse</button>
     </div>
   `;
   
@@ -12398,7 +12614,7 @@ function showSafehouseTip() {
         style="background: linear-gradient(135deg, #d4af37, #b8962e); color: #14120a; border: none;
                padding: 14px 36px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1.05em;
                font-family: 'Georgia', serif; box-shadow: 0 4px 15px rgba(212,175,55,0.4);">
-        Got It — Let's Go!
+        Got It Ã¢â‚¬â€ Let's Go!
       </button>
     </div>
   `;
@@ -12511,7 +12727,9 @@ function showPlayerStats() {
   const factionHTML = Object.entries(player.streetReputation || {}).map(([f, val]) => {
     const label = factionLabels[f] || f;
     const color = val > 0 ? '#8a9a6a' : (val < 0 ? '#8b3a3a' : '#6a5a3a');
-    return row(label, val > 0 ? `+${val}` : val, color);
+    const activeEffect = getActiveFactionEffect(f);
+    const effectText = activeEffect ? ` <span style="font-size:0.8em;color:${activeEffect.positive ? '#8a9a6a' : '#8b3a3a'};">(${activeEffect.effect})</span>` : '';
+    return row(label, `${val > 0 ? '+' : ''}${val}${effectText}`, color);
   }).join('');
 
   // ---- SECTION 6: Equipment Bonuses ----
@@ -12568,7 +12786,7 @@ function showPlayerStats() {
       ${card('Core Stats', '', coreHTML)}
       ${card('Skill Trees', '', skillTreeOverviewHTML)}
       ${card('Gang & Territory', '', gangHTML)}
-      ${card('Faction Reputation', '', factionHTML)}
+      ${card('Faction Reputation', 'Ã‚Â', factionHTML)}
       ${card('Equipment', '', equipHTML)}
       ${card('Playstyle', '', playstyleHTML)}
     </div>
@@ -13138,7 +13356,7 @@ function showRecruitment() {
                         color: white; padding: 12px 20px; border: none; border-radius: 8px; 
                         font-weight: bold; cursor: ${canAfford ? 'pointer' : 'not-allowed'}; 
                         font-size: 15px; font-family: 'Georgia', serif; transition: all 0.3s ease;">
-                  ${canAfford ? ' Recruit' : 'Too Expensive'}
+                  ${canAfford ? 'Ã‚Â Recruit' : 'Too Expensive'}
                 </button>
               </div>
             </div>
@@ -13154,7 +13372,7 @@ function showRecruitment() {
               font-size: 15px; font-family: 'Georgia', serif; transition: all 0.3s ease;">
         Look for New Recruits ($500)
       </button>
-      <button class="nav-btn-back" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
+      <button class="nav-btn-back" onclick="goBackToMainMenu()">Ã¢â€ Â Back to SafeHouse</button>
     </div>
   `;
 
@@ -13234,7 +13452,7 @@ function recruitMember(index) {
 
     const roleInfo = newMember.roleData ? ` as a ${newMember.roleData.icon} ${newMember.roleData.name}` : '';
     showBriefNotification(`${recruit.name}${roleInfo} recruited! They'll generate tribute next collection.`, 'success', 4000);
-    logAction(` ${recruit.name} joins your crew! The ${recruit.specialization} brings level ${recruit.experienceLevel} skills to your organization. Your empire grows stronger.`);
+    logAction(`Ã‚Â ${recruit.name} joins your crew! The ${recruit.specialization} brings level ${recruit.experienceLevel} skills to your organization. Your empire grows stronger.`);
     
     // Update mission progress
     updateMissionProgress('gang_member_recruited', 1);
@@ -13271,13 +13489,13 @@ let _currentBlackMarketTab = 'buy';
 // Store item category definitions
 const storeCategories = [
   { id: 'all',       label: 'All',          icon: '', types: null },
-  { id: 'weapons',   label: 'Weapons',       icon: '🔫', types: ['weapon'] },
-  { id: 'armor',     label: 'Armor',         icon: '🛡️', types: ['armor'] },
-  { id: 'vehicles',  label: 'Vehicles',      icon: '🚗', types: ['vehicle'] },
+  { id: 'weapons',   label: 'Weapons',       icon: 'Ã°Å¸â€Â«', types: ['weapon'] },
+  { id: 'armor',     label: 'Armor',         icon: 'Ã°Å¸â€ºÂ¡Ã¯Â¸Â', types: ['armor'] },
+  { id: 'vehicles',  label: 'Vehicles',      icon: 'Ã°Å¸Å¡â€”', types: ['vehicle'] },
   { id: 'supplies',  label: 'Supplies',      icon: '', types: ['ammo', 'gas'] },
   { id: 'energy',    label: 'Energy',        icon: '', types: ['energy'] },
-  { id: 'utility',   label: 'Utility',       icon: '🔧', types: ['utility'] },
-  { id: 'trade',     label: 'Trade Goods',   icon: '💊', types: ['highLevelDrug'] }
+  { id: 'utility',   label: 'Utility',       icon: 'Ã°Å¸â€Â§', types: ['utility'] },
+  { id: 'trade',     label: 'Trade Goods',   icon: 'Ã°Å¸â€™Å ', types: ['highLevelDrug'] }
 ];
 
 function showStore(activeTab) {
@@ -13325,7 +13543,7 @@ function showStore(activeTab) {
       <h1><span class="icon"></span> Black Market</h1>
       <div class="breadcrumb">
         <a href="#" onclick="goBackToMainMenu(); return false;">SafeHouse</a>
-        <span class="separator">›</span>
+        <span class="separator">Ã¢â‚¬Âº</span>
         <span class="current">Black Market</span>
       </div>
     </div>
@@ -13339,7 +13557,7 @@ function showStore(activeTab) {
     </div>
 
     <div class="page-nav">
-      <button class="nav-btn-back" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
+      <button class="nav-btn-back" onclick="goBackToMainMenu()">Ã¢â€ Â Back to SafeHouse</button>
     </div>
   `;
 
@@ -13613,9 +13831,9 @@ function renderStoreTab(tabId) {
         const bestOwned = ownedSameType.reduce((best, cur) => cur.power > best.power ? cur : best, ownedSameType[0]);
         const diff = item.power - bestOwned.power;
         if (diff > 0) {
-          comparisonHTML = `<div style="margin-top: 4px; color: #8a9a6a; font-size: 0.85em;">▲ +${diff} power vs your ${bestOwned.name}</div>`;
+          comparisonHTML = `<div style="margin-top: 4px; color: #8a9a6a; font-size: 0.85em;">Ã¢â€“Â² +${diff} power vs your ${bestOwned.name}</div>`;
         } else if (diff < 0) {
-          comparisonHTML = `<div style="margin-top: 4px; color: #8b3a3a; font-size: 0.85em;">▼ ${diff} power vs your ${bestOwned.name}</div>`;
+          comparisonHTML = `<div style="margin-top: 4px; color: #8b3a3a; font-size: 0.85em;">Ã¢â€“Â¼ ${diff} power vs your ${bestOwned.name}</div>`;
         } else {
           comparisonHTML = `<div style="margin-top: 4px; color: #8a7a5a; font-size: 0.85em;">= Same power as your ${bestOwned.name}</div>`;
         }
@@ -13631,7 +13849,7 @@ function renderStoreTab(tabId) {
       const hasVehicle = player.garage && player.garage.some(car => car.name === item.requiredVehicle);
       requirementMet = hasVehicle;
       requirementText = `<div style="margin-top: 5px; color: ${hasVehicle ? '#8a9a6a' : '#8b3a3a'}; font-size: 0.9em;">
-        ${hasVehicle ? '✓' : '🚫'} Requires: ${item.requiredVehicle}
+        ${hasVehicle ? 'Ã¢Å“â€œ' : 'Ã°Å¸Å¡Â«'} Requires: ${item.requiredVehicle}
       </div>`;
     }
     
@@ -13758,11 +13976,17 @@ async function buyItem(index) {
     const discount = 0.10 + (drugLab.level * 0.04); // 14% at Lv1, up to 30% at Lv5
     const savings = Math.floor(finalPrice * discount);
     finalPrice = Math.floor(finalPrice * (1 - discount));
-    logAction(`ª Your Drug Lab provides a supply chain discount — saved $${savings.toLocaleString()} on ${item.name}.`);
+    logAction(`Your Drug Lab provides a supply chain discount Ã¢â‚¬â€ saved $${savings.toLocaleString()} on ${item.name}.`);
+  }
+  
+  // Underground streetRep: positive = better black market prices, negative = markup
+  const ugRepMod = getStreetRepBonus('underground', 0.05, 0.10, 0.15, 0.25);
+  if (ugRepMod !== 0) {
+    finalPrice = Math.max(1, Math.floor(finalPrice * (1 - ugRepMod)));
   }
   
   if (player.money >= finalPrice) {
-    // One-of-each rule: weapon, armor, vehicle — can only own one of each specific item
+    // One-of-each rule: weapon, armor, vehicle Ã¢â‚¬â€ can only own one of each specific item
     const equipTypes = ['weapon', 'armor', 'vehicle'];
     if (equipTypes.includes(item.type)) {
       const alreadyOwned = player.inventory.some(i => i.name === item.name);
@@ -13803,12 +14027,12 @@ async function buyItem(index) {
       // Utility power recalculated (not equipped-based, always active)
       recalculatePower();
       showBriefNotification(`You bought a ${item.name} for $${finalPrice.toLocaleString()}.`, 'success');
-      logAction(`You acquired a ${item.name} — a useful tool for any serious criminal enterprise.`);
+      logAction(`You acquired a ${item.name} Ã¢â‚¬â€ a useful tool for any serious criminal enterprise.`);
     } else {
       // Deep-copy item so each instance tracks its own durability
       const itemCopy = Object.assign({}, item);
       player.inventory.push(itemCopy);
-      // Power is NOT added here — only equipped items contribute via recalculatePower()
+      // Power is NOT added here Ã¢â‚¬â€ only equipped items contribute via recalculatePower()
       
       // Show vehicle photo for vehicle purchases
       if (item.type === "vehicle") {
@@ -13818,12 +14042,12 @@ async function buyItem(index) {
     
     if (item.type !== "energy" && item.type !== "vehicle" && item.type !== "utility") {
       showBriefNotification(`You bought a ${item.name} for $${finalPrice.toLocaleString()}.`, 'success');
-      logAction(`’ Deal sealed with a firm handshake. The ${item.name} is yours now - power on the streets costs $${finalPrice.toLocaleString()}, but respect is priceless.`);
+      logAction(`Ã¢â‚¬â„¢ Deal sealed with a firm handshake. The ${item.name} is yours now - power on the streets costs $${finalPrice.toLocaleString()}, but respect is priceless.`);
     }
     
     updateUI();
     updateMissionAvailability(); // Check if any missions can now be unlocked
-    refreshStoreAfterPurchase(); // Targeted refresh — preserves scroll position
+    refreshStoreAfterPurchase(); // Targeted refresh Ã¢â‚¬â€ preserves scroll position
   } else {
     showBriefNotification("You don't have enough money to buy this item.", 'danger');
   }
@@ -14201,16 +14425,16 @@ function unlockAchievement(achievementId) {
   const achievement = achievements.find(a => a.id === achievementId);
   if (achievement && !achievement.unlocked) {
     achievement.unlocked = true;
-    // Achievements are for fun — no money or XP rewards
+    // Achievements are for fun Ã¢â‚¬â€ no money or XP rewards
     showBriefNotification(`${achievement.name}: ${achievement.description}`, 4000);
-    logAction(`Achievement Unlocked: "${achievement.name}" — ${achievement.description}.`);
+    logAction(`Achievement Unlocked: "${achievement.name}" Ã¢â‚¬â€ ${achievement.description}.`);
   }
 }
 
 // Track for streak-based achievements
 let _jobsWithoutArrest = 0;
 
-// Function to check achievements — called after most player actions
+// Function to check achievements Ã¢â‚¬â€ called after most player actions
 function checkAchievements() {
   const m = player.money;
   const g = player.gang.members;
@@ -14373,7 +14597,7 @@ function resetPlayerForNewGame() {
       isDon: false,
       bossesDefeated: []
     },
-    // ── Properties that were previously missing from reset ──
+    // Ã¢â€â‚¬Ã¢â€â‚¬ Properties that were previously missing from reset Ã¢â€â‚¬Ã¢â€â‚¬
     activeLaundering: [],
     currentTerritory: null,
     lastTerritoryMove: 0,
@@ -14413,14 +14637,14 @@ function startGame() {
       required: true,
       startOnRegister: true,
       onAuth: () => {
-        // Account created/signed in — now start character creation
+        // Account created/signed in Ã¢â‚¬â€ now start character creation
         resetPlayerForNewGame();
         showSimpleCharacterCreation();
       }
     });
     return;
   }
-  // Already logged in — proceed directly
+  // Already logged in Ã¢â‚¬â€ proceed directly
   resetPlayerForNewGame();
   showSimpleCharacterCreation();
 }
@@ -14441,7 +14665,7 @@ async function showSimpleCharacterCreation() {
   
   if (!playerName || playerName.trim() === "") {
     ui.alert("You need a name to make it in this world!");
-    // Re-prompt — new players must create a character
+    // Re-prompt Ã¢â‚¬â€ new players must create a character
     showSimpleCharacterCreation();
     return;
   }
@@ -14517,7 +14741,7 @@ function updateCharacterPreview() {
   }
 }
 
-// Function to load portrait grid in character creation — organized by gender
+// Function to load portrait grid in character creation Ã¢â‚¬â€ organized by gender
 function loadPortraitGrid() {
   const portraitGrid = document.getElementById('portrait-grid');
   if (!portraitGrid) return;
@@ -14564,9 +14788,9 @@ function loadPortraitGrid() {
   `;
 }
 
-// ──────────────────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 // CHANGE PORTRAIT (from Settings)
-// ──────────────────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 function showChangePortraitScreen() {
   const container = document.getElementById('options-screen');
 
@@ -14735,7 +14959,7 @@ function showPortraitSelection() {
   document.getElementById("intro-screen").style.display = "none";
   document.getElementById("character-creation-screen").style.display = "none";
   
-  // Create portrait selection HTML — organized by Male / Female
+  // Create portrait selection HTML Ã¢â‚¬â€ organized by Male / Female
   const maleOptions = [
     { file: "profile_pics/White male.png", label: "White Male" },
     { file: "profile_pics/Black male.png", label: "Black Male" },
@@ -14781,12 +15005,12 @@ function showPortraitSelection() {
         </h1>
         <p style="font-size: 1.2em; margin-bottom: 30px;">Select your appearance for the criminal underworld</p>
         
-        <h2 style="color: #c0a062; font-size: 1.5em; margin: 20px 0 10px; border-bottom: 2px solid #c0a062; padding-bottom: 8px; text-align: left;">👨 Male</h2>
+        <h2 style="color: #c0a062; font-size: 1.5em; margin: 20px 0 10px; border-bottom: 2px solid #c0a062; padding-bottom: 8px; text-align: left;">Ã°Å¸â€˜Â¨ Male</h2>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px; margin: 0 0 30px 0;">
           ${maleOptions.map(renderPortraitBtn).join('')}
         </div>
         
-        <h2 style="color: #e84393; font-size: 1.5em; margin: 20px 0 10px; border-bottom: 2px solid #e84393; padding-bottom: 8px; text-align: left;">👩 Female</h2>
+        <h2 style="color: #e84393; font-size: 1.5em; margin: 20px 0 10px; border-bottom: 2px solid #e84393; padding-bottom: 8px; text-align: left;">Ã°Å¸â€˜Â© Female</h2>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px; margin: 0 0 30px 0;">
           ${femaleOptions.map(renderPortraitBtn).join('')}
         </div>
@@ -14794,7 +15018,7 @@ function showPortraitSelection() {
         <button onclick="goBackToIntro()" 
             style="background: #6a5a3a; color: white; padding: 15px 30px; border: none; 
                 border-radius: 10px; font-size: 1.2em; font-weight: bold; cursor: pointer; margin-top: 20px;">
-          ← Back
+          Ã¢â€ ÂÃ‚Â Back
         </button>
       </div>
     </div>
@@ -14830,13 +15054,13 @@ function selectPortrait(portraitFile, portraitLabel) {
   showBackgroundAndPerkSelection();
 }
 
-// ──────────────────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 // TERRITORY SPAWN SELECTION (Phase 1)
-// ──────────────────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 // BACKGROUND & PERK SELECTION
 // Shown during character creation after portrait selection.
 // Player picks a backstory and one permanent perk.
-// ──────────────────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
 let _selectedBackground = null;
 let _selectedPerk = null;
@@ -14896,7 +15120,7 @@ function showBackgroundAndPerkSelection() {
           <button id="confirm-bg-perk-btn" onclick="confirmBackgroundAndPerk()" disabled
             style="padding: 14px 32px; font-size: 1.15em; font-weight: bold; border: none; border-radius: 10px;
                    background: #6a5a3a; color: white; cursor: not-allowed; transition: all 0.3s ease;">
-            Continue →
+            Continue Ã¢â€ â€™
           </button>
           <button onclick="skipBackgroundAndPerk()"
             style="padding: 14px 24px; font-size: 1em; background: transparent; color: #6a5a3a;
@@ -14918,7 +15142,7 @@ function selectBackground(bgId) {
   });
   const bg = CHARACTER_BACKGROUNDS.find(b => b.id === bgId);
   document.getElementById('preview-bg-text').innerHTML = bg
-    ? `Background: <strong>${bg.icon} ${bg.name}</strong> — <span style="color:#d4c4a0;">${bg.bonusText}</span>`
+    ? `Background: <strong>${bg.icon} ${bg.name}</strong> Ã¢â‚¬â€ <span style="color:#d4c4a0;">${bg.bonusText}</span>`
     : 'Background: <em>Not selected</em>';
   updateConfirmButton();
 }
@@ -14930,7 +15154,7 @@ function selectPerk(perkId) {
   });
   const pk = CHARACTER_PERKS.find(p => p.id === perkId);
   document.getElementById('preview-perk-text').innerHTML = pk
-    ? `Perk: <strong>${pk.icon} ${pk.name}</strong> — <span style="color:#d4c4a0;">${pk.effect}</span>`
+    ? `Perk: <strong>${pk.icon} ${pk.name}</strong> Ã¢â‚¬â€ <span style="color:#d4c4a0;">${pk.effect}</span>`
     : 'Perk: <em>Not selected</em>';
   updateConfirmButton();
 }
@@ -14984,7 +15208,7 @@ function confirmBackgroundAndPerk() {
 
   const bg = CHARACTER_BACKGROUNDS.find(b => b.id === _selectedBackground);
   const pk = CHARACTER_PERKS.find(p => p.id === _selectedPerk);
-  logAction(`${player.name} — ${bg ? bg.name : 'Unknown'} with the ${pk ? pk.name : 'Unknown'} perk — emerges from the shadows.`);
+  logAction(`${player.name} Ã¢â‚¬â€ ${bg ? bg.name : 'Unknown'} with the ${pk ? pk.name : 'Unknown'} perk Ã¢â‚¬â€ emerges from the shadows.`);
 
   // Continue to territory spawn
   showTerritorySpawn();
@@ -15004,34 +15228,34 @@ function skipBackgroundAndPerk() {
   const screen = document.getElementById('bg-perk-screen');
   if (screen) screen.remove();
 
-  logAction(`${player.name} — ${randomBg.name} with the ${randomPk.name} perk — emerges from the shadows.`);
+  logAction(`${player.name} Ã¢â‚¬â€ ${randomBg.name} with the ${randomPk.name} perk Ã¢â‚¬â€ emerges from the shadows.`);
   showBriefNotification(`Randomized: ${randomBg.icon} ${randomBg.name} + ${randomPk.icon} ${randomPk.name}`, 'success');
 
   showTerritorySpawn();
 }
 
-// ── PERK HELPER: Check if player has a specific perk ──
+// Ã¢â€â‚¬Ã¢â€â‚¬ PERK HELPER: Check if player has a specific perk Ã¢â€â‚¬Ã¢â€â‚¬
 function hasPlayerPerk(perkId) {
   return player.perk === perkId;
 }
 
-// ── PERK HELPER: Get perk info for display ──
+// Ã¢â€â‚¬Ã¢â€â‚¬ PERK HELPER: Get perk info for display Ã¢â€â‚¬Ã¢â€â‚¬
 function getPlayerPerkInfo() {
   if (!player.perk) return null;
   return CHARACTER_PERKS.find(p => p.id === player.perk) || null;
 }
 
-// ── PERK HELPER: Get background info for display ──
+// Ã¢â€â‚¬Ã¢â€â‚¬ PERK HELPER: Get background info for display Ã¢â€â‚¬Ã¢â€â‚¬
 function getPlayerBackgroundInfo() {
   if (!player.background) return null;
   return CHARACTER_BACKGROUNDS.find(b => b.id === player.background) || null;
 }
 
-// ──────────────────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 // TERRITORY SPAWN SELECTION (Phase 1)
 // Shown during character creation after portrait selection.
 // Player picks which of the 8 districts to start in.
-// ──────────────────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
 function showTerritorySpawn() {
   const container = document.getElementById('territory-spawn-screen') || (() => {
@@ -15068,7 +15292,7 @@ function showTerritorySpawn() {
         <h2 style="color: #8b3a3a; font-size: 2em; margin-bottom: 8px;">Choose Your Turf</h2>
         <p style="color: #d4c4a0; margin-bottom: 24px; font-size: 1.1em;">
           Where will <strong style="color:#c0a040;">${player.name}</strong> set up shop?
-          Pick a district to call home — you can always relocate later.
+          Pick a district to call home Ã¢â‚¬â€ you can always relocate later.
         </p>
         <div style="display: flex; flex-wrap: wrap; gap: 16px; justify-content: center;">
           ${cards}
@@ -15105,10 +15329,10 @@ function selectSpawnTerritory(districtId) {
   showIntroNarrative();
 }
 
-// ──────────────────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 // TERRITORY MANAGEMENT SCREEN (SafeHouse button)
 // Shows all SP turf zones and MP districts the player owns.
-// ──────────────────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
 function showTerritories() {
   hideAllScreens();
@@ -15131,7 +15355,7 @@ function renderTerritoriesScreen() {
   const myName = (typeof onlineWorldState !== 'undefined' && onlineWorldState.username) || player.name || '';
   const isOnline = typeof onlineWorldState !== 'undefined' && onlineWorldState.isConnected;
 
-  // ── SP Turf Zones ──
+  // Ã¢â€â‚¬Ã¢â€â‚¬ SP Turf Zones Ã¢â€â‚¬Ã¢â€â‚¬
   initTurfZones();
   const ownedTurf = player.turf.owned || [];
 
@@ -15160,7 +15384,7 @@ function renderTerritoriesScreen() {
             <span>Risk: ${zone.riskLevel}</span>
           </div>
           <div style="margin-top: 10px; text-align: center;">
-            <span style="color: #8a9a6a; font-weight: bold; font-size: 0.85em;">✅ Controlled</span>
+            <span style="color: #8a9a6a; font-weight: bold; font-size: 0.85em;">Ã¢Å“â€¦ Controlled</span>
           </div>
         </div>
       `;
@@ -15169,7 +15393,7 @@ function renderTerritoriesScreen() {
     spCards = '<p style="color:#888;text-align:center;padding:20px;width:100%;">You don\'t own any turf zones yet. Conquer zones through Operations > Turf Wars.</p>';
   }
 
-  // ── MP Districts ──
+  // Ã¢â€â‚¬Ã¢â€â‚¬ MP Districts Ã¢â€â‚¬Ã¢â€â‚¬
   const ownedDistricts = DISTRICTS.filter(d => {
     const terr = tState[d.id];
     return terr && terr.owner === myName;
@@ -15227,7 +15451,7 @@ function renderTerritoriesScreen() {
       : '<p style="color:#888;text-align:center;padding:20px;width:100%;">Connect to multiplayer to view district ownership.</p>';
   }
 
-  // ── Conquer Districts (not owned by player) ──
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Conquer Districts (not owned by player) Ã¢â€â‚¬Ã¢â€â‚¬
   const gangSize = (player.gang && player.gang.gangMembers) ? player.gang.gangMembers.length : 0;
   const allianceMembers = (typeof _currentAllianceData !== 'undefined' && _currentAllianceData && _currentAllianceData.myAlliance) ? (_currentAllianceData.myAlliance.members || []) : [];
 
@@ -15293,7 +15517,7 @@ function renderTerritoriesScreen() {
     conquerCards = '<p style="color:#8a9a6a;text-align:center;padding:20px;width:100%;">You own all districts! Total domination.</p>';
   }
 
-  // ── Summary stats ──
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Summary stats Ã¢â€â‚¬Ã¢â€â‚¬
   const totalTurf = ownedTurf.length;
   const totalDistricts = ownedDistricts.length;
   const totalTerritories = totalTurf + totalDistricts;
@@ -15307,7 +15531,7 @@ function renderTerritoriesScreen() {
           <h2 style="color: #d4af37; margin: 0;">Your Territories</h2>
           <p style="color: #d4c4a0; margin: 4px 0 0;">Manage your turf zones and district holdings</p>
         </div>
-        <button class="nav-btn-back" onclick="goBackToMainMenu();">← Back</button>
+        <button class="nav-btn-back" onclick="goBackToMainMenu();">Ã¢â€ Â Back</button>
       </div>
 
       <!-- Summary Bar -->
@@ -15362,10 +15586,10 @@ function renderTerritoriesScreen() {
 }
 window.renderTerritoriesScreen = renderTerritoriesScreen;
 
-// ──────────────────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 // TERRITORY RELOCATION (Phase 1)
-// Accessible from main menu — lets player move to another district.
-// ──────────────────────────────────────────────────────────────
+// Accessible from main menu Ã¢â‚¬â€ lets player move to another district.
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
 function showTerritoryRelocation() {
   const now = Date.now();
@@ -15458,7 +15682,7 @@ function showTerritoryRelocation() {
           <h2 style="color: #8b3a3a; margin: 0;">Relocate</h2>
           <p style="color: #d4c4a0; margin: 4px 0 0;">${headerNote}</p>
         </div>
-        <button class="nav-btn-back" onclick="goBackToMainMenu();">← Back</button>
+        <button class="nav-btn-back" onclick="goBackToMainMenu();">Ã¢â€ Â Back</button>
       </div>
       <div style="display: flex; flex-wrap: wrap; gap: 14px; justify-content: center;">
         ${cards}
@@ -15500,7 +15724,7 @@ async function confirmRelocation(districtId) {
   showTerritoryRelocation(); // Refresh the screen
 }
 
-// ── Phase 2: Territory War (Conquest) ───────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬ Phase 2: Territory War (Conquest) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
 async function wageWar(districtId) {
   const d = getDistrict(districtId);
@@ -15639,18 +15863,18 @@ function startGameAfterIntro() {
 const CURRENT_VERSION = "1.11.7";
 const VERSION_UPDATES = {
   "1.11.7": {
-    title: "Turf System Overhaul — Milestones, Escalation & Dominance",
+    title: "Turf System Overhaul Ã¢â‚¬â€ Milestones, Escalation & Dominance",
     date: "March 2026",
     changes: [
-      "Turf Milestones — 4 tiers unlock at 2/4/6/8 zones: +10% XP, faster heat decay, +15% income, and the exclusive Overlord's Scepter weapon",
-      "Rival Escalation — rival attacks now scale with your empire: attack chance rises from 7.5% to 25% and power from 55 to 160+ as you control more zones",
-      "Power-Scaled Defense — fortifications give 25 defense per level (up from 10), plus 10% of your total turf power as a passive bonus to every zone",
-      "Family Dominance — seize all zones from a rival family to earn $100K + 50 rep + 50 power + 30 turf reputation",
-      "Defense Breakdown panel on the Manage screen — shows fort contribution, defender count, power bonus, total defense, and vulnerability status",
-      "Rival Threat Level panel — shows current attack chance %, attack power range, and whether you're Well Defended / At Risk / Vulnerable",
-      "Turf Milestones panel on the Territory screen — tracks progress toward all 4 milestone tiers with locked/unlocked indicators",
-      "Family Dominance progress bars on the Territory screen — visual progress toward eliminating each rival family's territory",
-      "Milestone perks wired into gameplay — XP boost via gainExperience(), heat decay doubles with perk, turf income boosted +15%/+25%",
+      "Turf Milestones Ã¢â‚¬â€ 4 tiers unlock at 2/4/6/8 zones: +10% XP, faster heat decay, +15% income, and the exclusive Overlord's Scepter weapon",
+      "Rival Escalation Ã¢â‚¬â€ rival attacks now scale with your empire: attack chance rises from 7.5% to 25% and power from 55 to 160+ as you control more zones",
+      "Power-Scaled Defense Ã¢â‚¬â€ fortifications give 25 defense per level (up from 10), plus 10% of your total turf power as a passive bonus to every zone",
+      "Family Dominance Ã¢â‚¬â€ seize all zones from a rival family to earn $100K + 50 rep + 50 power + 30 turf reputation",
+      "Defense Breakdown panel on the Manage screen Ã¢â‚¬â€ shows fort contribution, defender count, power bonus, total defense, and vulnerability status",
+      "Rival Threat Level panel Ã¢â‚¬â€ shows current attack chance %, attack power range, and whether you're Well Defended / At Risk / Vulnerable",
+      "Turf Milestones panel on the Territory screen Ã¢â‚¬â€ tracks progress toward all 4 milestone tiers with locked/unlocked indicators",
+      "Family Dominance progress bars on the Territory screen Ã¢â‚¬â€ visual progress toward eliminating each rival family's territory",
+      "Milestone perks wired into gameplay Ã¢â‚¬â€ XP boost via gainExperience(), heat decay doubles with perk, turf income boosted +15%/+25%",
       "Key XP grants (chapters, operations, jailbreaks) now route through gainExperience() for consistent perk application",
     ]
   },
@@ -15662,7 +15886,7 @@ const VERSION_UPDATES = {
       "Death newspaper is now broadcast to all online players when an admin kills someone",
       "World chat announces admin kills via 'The Daily Racketeer' with a clickable newspaper card",
       "All newspaper text forced to pure black with bold weight and text-stroke for maximum readability",
-      "1920s-1950s visual overhaul — Art Deco styling, warm color palette, period-appropriate fonts",
+      "1920s-1950s visual overhaul Ã¢â‚¬â€ Art Deco styling, warm color palette, period-appropriate fonts",
       "Eliminated all blue/cool-toned backgrounds in favor of warm sepia and gold tones",
     ]
   },
@@ -15670,7 +15894,7 @@ const VERSION_UPDATES = {
     title: "Safehouse UX & Ledger Filters",
     date: "March 2026",
     changes: [
-      "Safehouse buttons reorganized — Operations first, then Jobs, Black Market, Stash, Doctor, Gambling, with progression unlocks after",
+      "Safehouse buttons reorganized Ã¢â‚¬â€ Operations first, then Jobs, Black Market, Stash, Doctor, Gambling, with progression unlocks after",
       "New one-time safehouse tip popup guides new players to start with Jobs and Operations",
       "Ledger now has filter buttons: All, Environment, and World Chat",
       "World Chat filter shows multiplayer chat messages and player connection/disconnect notices",
@@ -15688,7 +15912,7 @@ const VERSION_UPDATES = {
       "Tutorial now automatically appears after the changelog is dismissed on first play",
       "Safehouse tutorial expanded with 6 sections: Status Bar, Ledger, Quick Actions, Navigation, and Getting Started tips",
       "All 13 screen tutorials rewritten with more detail, tips, and explanations of every feature",
-      "Help guide expanded from 17 to 21 topics — new: UI Guide (HUD), Combat & Equipment, Dirty Money & Laundering, Seasons & Weather",
+      "Help guide expanded from 17 to 21 topics Ã¢â‚¬â€ new: UI Guide (HUD), Combat & Equipment, Dirty Money & Laundering, Seasons & Weather",
       "Every help topic rewritten with sub-headings, detailed explanations, and practical gameplay tips",
       "Heat system now explained with 5 granular tiers (Cool/Warm/Hot/Scorching/Inferno)",
       "Energy guide now covers all 3 consumable types with strategy tips",
@@ -15700,7 +15924,7 @@ const VERSION_UPDATES = {
     date: "March 2026",
     changes: [
       "Removed ~65 decorative emoji prefixes from tabs, buttons, headers, notifications, and log messages",
-      "Faction flag emojis replaced with text abbreviations (ITA, RUS, CHN, MEX) — flags now visible on Windows PC",
+      "Faction flag emojis replaced with text abbreviations (ITA, RUS, CHN, MEX) Ã¢â‚¬â€ flags now visible on Windows PC",
       "Cleared emoji icons from 15+ help guide topics",
       "Kept functional emojis: lock indicators, toggle checkmarks, map legend, and structural data fields",
     ]
@@ -15727,32 +15951,32 @@ const VERSION_UPDATES = {
     title: "Omerta-Style Economy Rebalance",
     date: "March 2026",
     changes: [
-      "Full economy rebalance — game pace now matches old-school Omerta browser game grind",
-      "Energy regen slowed: 45s base (was 20s) — energy management matters, no more infinite spam",
-      "Job energy costs increased across the board — Street Soldier now costs 3 energy (was 1)",
-      "Early job payouts reduced — Street Soldier $40-180 (was $60-300), Store Heist $800-2,200 (was $1,200-3,000)",
-      "XP curve steepened by ~50% — leveling takes real commitment",
-      "XP rewards per job reduced — low risk: 2 XP, medium: 4, high: 10, extreme: 25, legendary: 40",
+      "Full economy rebalance Ã¢â‚¬â€ game pace now matches old-school Omerta browser game grind",
+      "Energy regen slowed: 45s base (was 20s) Ã¢â‚¬â€ energy management matters, no more infinite spam",
+      "Job energy costs increased across the board Ã¢â‚¬â€ Street Soldier now costs 3 energy (was 1)",
+      "Early job payouts reduced Ã¢â‚¬â€ Street Soldier $40-180 (was $60-300), Store Heist $800-2,200 (was $1,200-3,000)",
+      "XP curve steepened by ~50% Ã¢â‚¬â€ leveling takes real commitment",
+      "XP rewards per job reduced Ã¢â‚¬â€ low risk: 2 XP, medium: 4, high: 10, extreme: 25, legendary: 40",
       "Reputation gains slowed ~40% across all risk tiers",
-      "Hospital costs increased — full heal $25/HP (was $10), patch $20/HP (was $8), rest costs 25 energy (was 20)",
-      "Store prices increased ~30% — weapons, armor, vehicles, utilities all cost more",
-      "Energy items significantly more expensive — Coffee $2,500 (was $1K), Steroids $10,000 (was $4K)",
-      "Property passive income halved — Basement Hideout $250/cycle (was $500), Private Island $8K (was $15K)",
+      "Hospital costs increased Ã¢â‚¬â€ full heal $25/HP (was $10), patch $20/HP (was $8), rest costs 25 energy (was 20)",
+      "Store prices increased ~30% Ã¢â‚¬â€ weapons, armor, vehicles, utilities all cost more",
+      "Energy items significantly more expensive Ã¢â‚¬â€ Coffee $2,500 (was $1K), Steroids $10,000 (was $4K)",
+      "Property passive income halved Ã¢â‚¬â€ Basement Hideout $250/cycle (was $500), Private Island $8K (was $15K)",
       "Business base income halved across all 9 business types",
-      "Passive income reduced — gang members $25/cycle (was $50), territory $100 (was $200)",
-      "Casino minimum bet raised to $100 (was $1) — no more risk-free penny gambling",
-      "Trade goods prices increased — Moonshine $75K, Mary Jane $150K, Cocaine $250K",
+      "Passive income reduced Ã¢â‚¬â€ gang members $25/cycle (was $50), territory $100 (was $200)",
+      "Casino minimum bet raised to $100 (was $1) Ã¢â‚¬â€ no more risk-free penny gambling",
+      "Trade goods prices increased Ã¢â‚¬â€ Moonshine $75K, Mary Jane $150K, Cocaine $250K",
     ]
   },
   "1.10.0": {
     title: "Tutorial System, Help Guide & Objective Cleanup",
     date: "March 2026",
     changes: [
-      "First-visit tutorial overlays — each screen shows a guide the first time you visit it",
+      "First-visit tutorial overlays Ã¢â‚¬â€ each screen shows a guide the first time you visit it",
       "Tutorial overlays explain every section of every major screen (SafeHouse, Jobs, Market, Missions, etc.)",
       "Skip All Tutorials button in Quick Actions bar and mobile hamburger menu",
-      "Tutorial toggle in Settings — disable/re-enable tutorials any time",
-      "Help & Game Guide — full reference covering every game system, accessible from Settings",
+      "Tutorial toggle in Settings Ã¢â‚¬â€ disable/re-enable tutorials any time",
+      "Help & Game Guide Ã¢â‚¬â€ full reference covering every game system, accessible from Settings",
       "Help index with 16 browsable topics: Getting Started, Jobs, Market, Missions, Territory, and more",
       "Removed dead Objective button and tracker code from mobile nav, hamburger menu, and nav customizer",
       "Cleaned up objective injection logic from mobile nav tab system",
@@ -15762,11 +15986,11 @@ const VERSION_UPDATES = {
     title: "Quest-Linked Street Stories & Operation Timers",
     date: "March 2026",
     changes: [
-      "Street Stories are no longer random encounters — each is now tied to a specific side quest step",
-      "Side quest steps now have countdown timers (3–20 min) — operations take real time to complete",
+      "Street Stories are no longer random encounters Ã¢â‚¬â€ each is now tied to a specific side quest step",
+      "Side quest steps now have countdown timers (3Ã¢â‚¬â€œ20 min) Ã¢â‚¬â€ operations take real time to complete",
       "Street Stories trigger at the START or COMPLETION of their linked quest step, matching the quest's theme",
       "All 17 Street Stories mapped to 15 quest steps across 5 quest chains (some steps trigger 2 stories)",
-      "Live countdown timer displayed on active quest steps — updates every second",
+      "Live countdown timer displayed on active quest steps Ã¢â‚¬â€ updates every second",
       "Quest screen shows total estimated time and per-step timer duration",
       "Steps require BOTH timer completion AND objective met before advancing",
       "Queued street stories show sequentially when a step triggers multiple stories",
@@ -15774,15 +15998,15 @@ const VERSION_UPDATES = {
     ]
   },
   "1.8.4": {
-    title: "Black Market Tabs — Fence & Player Market Merged",
+    title: "Black Market Tabs Ã¢â‚¬â€ Fence & Player Market Merged",
     date: "March 2026",
     changes: [
-      "Fence merged into the Black Market as a dedicated tab — no more separate Fence screen",
-      "Player Market added as a third tab in Black Market — trade vehicles with other players",
+      "Fence merged into the Black Market as a dedicated tab Ã¢â‚¬â€ no more separate Fence screen",
+      "Player Market added as a third tab in Black Market Ã¢â‚¬â€ trade vehicles with other players",
       "Black Market now has 3 tabs: Buy, The Fence, and Player Market",
       "Fence sell functions updated to use Heat (Wanted Level) instead of removed Suspicion",
       "Removed ~400 lines of commented-out dead code (old suspicion / FBI investigation block)",
-      "Removed Fence nav button — one fewer sidebar button",
+      "Removed Fence nav button Ã¢â‚¬â€ one fewer sidebar button",
       "Cleaned up remaining suspicion timer references in event system",
     ]
   },
@@ -15790,11 +16014,11 @@ const VERSION_UPDATES = {
     title: "Suspicion Removed, Motor Pool & Skills Consolidated",
     date: "March 2026",
     changes: [
-      "Removed entire Suspicion system — all suspicion gains now route through the existing Heat (Wanted Level) system",
+      "Removed entire Suspicion system Ã¢â‚¬â€ all suspicion gains now route through the existing Heat (Wanted Level) system",
       "Removed FBI Investigation popups, suspicion timers, and suspicion-based consequences",
       "Motor Pool moved into the Stash screen as its own tab (Stash & Motor Pool)",
       "Skills/Expertise moved into the Stats screen as its own tab (6 tabs total)",
-      "Removed Expertise and Motor Pool nav buttons — fewer buttons, less clutter",
+      "Removed Expertise and Motor Pool nav buttons Ã¢â‚¬â€ fewer buttons, less clutter",
       "Removed 'c' and 'k' keyboard shortcuts (now accessed through Stash and Stats)",
     ]
   },
@@ -15802,23 +16026,23 @@ const VERSION_UPDATES = {
     title: "UI Consolidation & Popup Events Removed",
     date: "March 2026",
     changes: [
-      "Stats screen — Empire Rating & Empire Overview merged in as tabs (5 tabs total)",
-      "Properties screen — Business Fronts merged in as Fronts tab (2 tabs total)",
-      "Gambling screen — Mini Games (Pastimes) merged in as Mini Games tab (2 tabs total)",
-      "Removed popup random events — no more interactive event modals interrupting gameplay",
+      "Stats screen Ã¢â‚¬â€ Empire Rating & Empire Overview merged in as tabs (5 tabs total)",
+      "Properties screen Ã¢â‚¬â€ Business Fronts merged in as Fronts tab (2 tabs total)",
+      "Gambling screen Ã¢â‚¬â€ Mini Games (Pastimes) merged in as Mini Games tab (2 tabs total)",
+      "Removed popup random events Ã¢â‚¬â€ no more interactive event modals interrupting gameplay",
       "Removed FBI investigation popup chain and suspicion consequence timers",
-      "Reduced nav menu clutter — 3 fewer buttons (Empire Rating, Fronts, Pastimes removed)",
+      "Reduced nav menu clutter Ã¢â‚¬â€ 3 fewer buttons (Empire Rating, Fronts, Pastimes removed)",
     ]
   },
   "1.8.1": {
     title: "Political System & Bug Fixes",
     date: "March 2026",
     changes: [
-      "Political System — Top Don (player/alliance with most territories) can set server-wide policies: world tax rate, market fees, crime bonus, jail time modifier, heist bonus",
-      "Alliance Discipline — leaders can warn, fine, demote, or kick members with full audit logging",
+      "Political System Ã¢â‚¬â€ Top Don (player/alliance with most territories) can set server-wide policies: world tax rate, market fees, crime bonus, jail time modifier, heist bonus",
+      "Alliance Discipline Ã¢â‚¬â€ leaders can warn, fine, demote, or kick members with full audit logging",
       "Energy items added to mobile navbar for quick access",
       "Fixed gang member dismissal not recalculating player power",
-      "Fixed political tax rate having no effect above 10% — server now computes tax authoritatively",
+      "Fixed political tax rate having no effect above 10% Ã¢â‚¬â€ server now computes tax authoritatively",
       "Removed dead code: stale TAX_RATE constants in server.js and territories.js"
     ]
   },
@@ -15826,22 +16050,22 @@ const VERSION_UPDATES = {
     title: "Story Expansion & Unified Skill Tree",
     date: "March 2026",
     changes: [
-      "Unified RPG Talent Tree — replaced basic skills + old skill trees with a single talent tree system across 6 branches",
-      "16 new Street Story encounters — rich random events with dialogue, scene-setting, and branching choices",
-      "5 Multi-Step Side Quest chains — Informant Network, Safe Houses, Ghost Money, Code of Honor, Nightlife Empire",
-      "4 Post-Don Endgame Story Arcs — The Successor, The Commission, The Reckoning, Legacy",
+      "Unified RPG Talent Tree Ã¢â‚¬â€ replaced basic skills + old skill trees with a single talent tree system across 6 branches",
+      "16 new Street Story encounters Ã¢â‚¬â€ rich random events with dialogue, scene-setting, and branching choices",
+      "5 Multi-Step Side Quest chains Ã¢â‚¬â€ Informant Network, Safe Houses, Ghost Money, Code of Honor, Nightlife Empire",
+      "4 Post-Don Endgame Story Arcs Ã¢â‚¬â€ The Successor, The Commission, The Reckoning, Legacy",
       "Level milestone narrations at levels 5, 10, 15, 20, 25, 30 with immersive story text",
-      "Atmospheric world narrations — 16 dynamic street atmosphere texts on a rolling timer",
-      "Family-specific narrations — Torrino, Kozlov, Chen, and Morales families now have unique job success/failure/atmosphere flavour text",
+      "Atmospheric world narrations Ã¢â‚¬â€ 16 dynamic street atmosphere texts on a rolling timer",
+      "Family-specific narrations Ã¢â‚¬â€ Torrino, Kozlov, Chen, and Morales families now have unique job success/failure/atmosphere flavour text",
       "Re-enabled interactive events system with expanded event pool and deduplication",
-      "New storyExpansion.js module — central content hub for all narrative expansion content"
+      "New storyExpansion.js module Ã¢â‚¬â€ central content hub for all narrative expansion content"
     ]
   },
   "1.7.6": {
     title: "README & Cleanup",
     date: "March 2026",
     changes: [
-      "Updated README to v1.7.6 — removed references to loans, mentors, loyalty, perks",
+      "Updated README to v1.7.6 Ã¢â‚¬â€ removed references to loans, mentors, loyalty, perks",
       "Cleaned stale onboarding references from mobile nav customizer",
       "Updated feature descriptions to reflect current game state"
     ]
@@ -15854,7 +16078,7 @@ const VERSION_UPDATES = {
       "Removed Expertise Perks system entirely (availablePerks, 11 perk effects, unlock/check flows)",
       "Removed Gang Loyalty system entirely (loyalty stats, UI bars, buttons, calculations, 35+ change areas)",
       "Removed Loan Shark system entirely (showLoanShark, takeLoan, repayLoan, loanOptions, Shylock menu)",
-      "Increased gang member death chance: Turf defense 10%→25%, expansion losses 1-3→2-5, war defeat 30%→45%",
+      "Increased gang member death chance: Turf defense 10%Ã¢â€ â€™25%, expansion losses 1-3Ã¢â€ â€™2-5, war defeat 30%Ã¢â€ â€™45%",
       "Added 8% death chance during gang operations (members can now die on missions)",
       "Turf defense victories now have 25% chance of injury/death (up from 15% injury only)",
       "Cleaned all stale references across player.js, economy.js, casino.js, generators.js, index.html"
@@ -15865,7 +16089,7 @@ const VERSION_UPDATES = {
     date: "March 2026",
     changes: [
       "Fixed PowerShell corruption in multiplayer PvP result popup",
-      "Fixed dismissMember ghost member bug — members now properly removed",
+      "Fixed dismissMember ghost member bug Ã¢â‚¬â€ members now properly removed",
       "Converted 137 bare alert() calls to themed showBriefNotification toasts",
       "Converted 3 bare confirm() calls to themed ui.confirm() modal dialogs",
       "Fixed fragile gangSize calculations to use gangMembers array directly",
@@ -15876,10 +16100,10 @@ const VERSION_UPDATES = {
     title: "Territory Management & Alliance Territories",
     date: "June 2025",
     changes: [
-      "New Territories button in SafeHouse — manage all owned turf zones & districts",
+      "New Territories button in SafeHouse Ã¢â‚¬â€ manage all owned turf zones & districts",
       "Territory management screen shows SP turf zones and MP districts with full stats",
       "Dashboard summary: total territories, residents, tax revenue at a glance",
-      "New Alliance Territories tab — see all districts held by alliance members",
+      "New Alliance Territories tab Ã¢â‚¬â€ see all districts held by alliance members",
       "Alliance panel now has tab navigation (Alliance Info / Alliance Territories)",
       "Server sends alliance territory data with alliance info for faster loading"
     ]
@@ -15889,9 +16113,9 @@ const VERSION_UPDATES = {
     date: "February 2026",
     changes: [
       "Fixed crash bug: generateTurfOverviewHTML infinite recursion",
-      "Unified reputation system — faction rep now syncs to passives & achievements",
+      "Unified reputation system Ã¢â‚¬â€ faction rep now syncs to passives & achievements",
       "All territory references migrated from dead player.territories to player.turf.owned",
-      "Map rewritten to use TURF_ZONES — shows actual turf war zones with boss info",
+      "Map rewritten to use TURF_ZONES Ã¢â‚¬â€ shows actual turf war zones with boss info",
       "Removed ~500 lines of dead code (legacy missions, rivalGangs, districtTypes)",
       "Wired mini-game rewards: Quick Draw boosts combat, TikTakToe boosts gang respect",
       "Fixed 5 routing bugs (hotkey t, map button, back buttons)",
@@ -15903,10 +16127,10 @@ const VERSION_UPDATES = {
     title: "Money Laundering Overhaul",
     date: "February 2026",
     changes: [
-      "Complete timer-based laundering system — dirty money now takes real time to process",
-      "Live countdown progress bars on active operations (2–15 min per method)",
-      "Collect button appears when laundering completes — no more missed payouts",
-      "Fixed failure path: caught operations now return 30–70% of dirty money instead of losing all",
+      "Complete timer-based laundering system Ã¢â‚¬â€ dirty money now takes real time to process",
+      "Live countdown progress bars on active operations (2Ã¢â‚¬â€œ15 min per method)",
+      "Collect button appears when laundering completes Ã¢â‚¬â€ no more missed payouts",
+      "Fixed failure path: caught operations now return 30Ã¢â‚¬â€œ70% of dirty money instead of losing all",
       "Max 3 concurrent laundering operations",
       "Toast notifications replace alert popups for all laundering feedback",
       "Background completion checker notifies you when operations finish"
@@ -15916,19 +16140,19 @@ const VERSION_UPDATES = {
     title: "NPC Rival Bosses & Territory Overhaul",
     date: "February 2026",
     changes: [
-      "All 8 territories now start controlled by NPC rival bosses — fight to take over!",
+      "All 8 territories now start controlled by NPC rival bosses Ã¢â‚¬â€ fight to take over!",
       "8 themed crime bosses (Vinnie 'The Rat', Don Castellano, Nikolai 'The Bear', etc.)",
-      "NPC defense scales per district difficulty (80–200 base defense rating)",
+      "NPC defense scales per district difficulty (80Ã¢â‚¬â€œ200 base defense rating)",
       "'RIVAL BOSS' badge on NPC-owned territories",
       "Fixed Challenge button to use correct territory war system",
-      "No more free territory claims — every takeover is a battle"
+      "No more free territory claims Ã¢â‚¬â€ every takeover is a battle"
     ]
   },
   "1.6.8": {
     title: "Horse Racing, Cleanup & Territory Polish",
     date: "February 2026",
     changes: [
-      "New casino game: Horse Racing — 6 horses with varied odds, animated racetrack, bets from $10 to $50k",
+      "New casino game: Horse Racing Ã¢â‚¬â€ 6 horses with varied odds, animated racetrack, bets from $10 to $50k",
       "Removed Turf Wars (dead feature) and Street News from Commission Activities",
       "Removed objective tracker sidebar (orphaned tutorial UI)",
       "Disabled onboarding.js tutorial system entirely",
@@ -15942,7 +16166,7 @@ const VERSION_UPDATES = {
     changes: [
       "Black Market now has 8 category tabs (All, Consumables, Weapons, Armor, Tools, Vehicles, Luxury, Special)",
       "Fixed Black Market scroll position resetting after purchases",
-      "Jail timer now syncs from server authority — no more early releases in multiplayer",
+      "Jail timer now syncs from server authority Ã¢â‚¬â€ no more early releases in multiplayer",
       "Rebalanced energy items: Coffee $1k/15E, Energy Drink $2.5k/30E, Steroids $4k/60E",
       "Removed redundant walkthrough tutorial system (onboarding preserved)",
       "Cleaned up ~200 lines of dead respect/relationships UI code and stale config flags"
@@ -15952,7 +16176,7 @@ const VERSION_UPDATES = {
     title: "Auto-Update & Safe-Area Fix",
     date: "February 2026",
     changes: [
-      "Game now checks server version during loading — auto-clears cache & reloads on mismatch",
+      "Game now checks server version during loading Ã¢â‚¬â€ auto-clears cache & reloads on mismatch",
       "Fixed stats bar clipping behind device notch / status bar on Pixel 10 Pro and similar phones",
       "Added viewport-fit=cover and safe-area-inset-top padding for modern mobile browsers"
     ]
@@ -15962,7 +16186,7 @@ const VERSION_UPDATES = {
     date: "February 2026",
     changes: [
       "Delete save from Settings now correctly returns to the title screen",
-      "Game startup pings the server — loading screen stays up while the server wakes from sleep",
+      "Game startup pings the server Ã¢â‚¬â€ loading screen stays up while the server wakes from sleep",
       "Operations and Breakout now unlocked from level 0 (were level 3)",
       "Updated tutorial unlock levels to match current progression"
     ]
@@ -15981,7 +16205,7 @@ const VERSION_UPDATES = {
     changes: [
       "Removed unused respect-based relationship system (4 dead functions)",
       "Removed legacy redirect stubs for old territory & mission generators",
-      "Consolidated duplicate Character Showcase — showCharacterShowcase() now reuses buildCharacterShowcaseHTML()",
+      "Consolidated duplicate Character Showcase Ã¢â‚¬â€ showCharacterShowcase() now reuses buildCharacterShowcaseHTML()",
       "Consolidated duplicate Save/Load slot card HTML into shared renderLoadSlotCards() helper",
       "Fixed showRecruitment() to use hideAllScreens() instead of 9 manual element hides"
     ]
@@ -16001,7 +16225,7 @@ const VERSION_UPDATES = {
     changes: [
       "Removed duplicate back button from Stash screen",
       "Unified all Pastimes play buttons to consistent gold style",
-      "Fixed Fence screen header clipping — added section header and page nav",
+      "Fixed Fence screen header clipping Ã¢â‚¬â€ added section header and page nav",
       "Merged Crew Details into Family screen via 'Manage Crew' button",
       "Standardized 25+ back buttons across all screens to unified nav-btn-back style",
       "Added null safety to all multiplayer DOM lookups to prevent console errors"
@@ -16011,11 +16235,11 @@ const VERSION_UPDATES = {
     title: "Turf System Overhaul & Bug Fixes",
     date: "February 2026",
     changes: [
-      "Complete SP territory system replaced with new Turf system — 8 unique zones (Little Italy, Redlight District, Chinatown, Harbor Row, The Slums, Midtown Heights, Old Quarter, The Sprawl)",
-      "4 Rival Families (Torrino, Kozlov, Chen, Morales) each with unique buffs — choose your allegiance and rise from Associate to Don",
+      "Complete SP territory system replaced with new Turf system Ã¢â‚¬â€ 8 unique zones (Little Italy, Redlight District, Chinatown, Harbor Row, The Slums, Midtown Heights, Old Quarter, The Sprawl)",
+      "4 Rival Families (Torrino, Kozlov, Chen, Morales) each with unique buffs Ã¢â‚¬â€ choose your allegiance and rise from Associate to Don",
       "New turf missions, boss fights, and family rank progression system",
       "Fixed critical missing comma in player.js that prevented game load",
-      "Fixed 13 broken addLog() calls — replaced with correct logAction()",
+      "Fixed 13 broken addLog() calls Ã¢â‚¬â€ replaced with correct logAction()",
       "Removed ~218 lines of duplicate function definitions",
       "Fixed getRiskColor missing 'extreme' and 'very high' risk levels",
       "Territory rewards now properly route through turf system instead of being overwritten"
@@ -16025,7 +16249,7 @@ const VERSION_UPDATES = {
     title: "Status Bar Customisation & Event Cleanup",
     date: "February 2026",
     changes: [
-      "New Status Bar section in Settings — toggle visibility of every HUD stat individually",
+      "New Status Bar section in Settings Ã¢â‚¬â€ toggle visibility of every HUD stat individually",
       "Removed interactive random encounters (police raid popup, rival scandal, arms deal, etc.)"
     ]
   },
@@ -16033,7 +16257,7 @@ const VERSION_UPDATES = {
     title: "Item System Overhaul - Equipment & Durability",
     date: "February 2026",
     changes: [
-      "Power is now derived from EQUIPPED items only — unequipped items no longer boost power",
+      "Power is now derived from EQUIPPED items only Ã¢â‚¬â€ unequipped items no longer boost power",
       "Added durability system: weapons, armor, and vehicles degrade with use and eventually break",
       "One-of-each limit: can only own one of each specific weapon/armor/vehicle at a time",
       "Equip system now supports vehicles alongside weapons and armor",
@@ -16069,7 +16293,7 @@ const VERSION_UPDATES = {
     date: "February 2026",
     changes: [
       "Fixed corrupted emoji characters throughout the game (double-encoded UTF-8 mojibake)",
-      "Lowered assassination success odds — base 8%→5%, max cap 20%→15%, stronger target defense",
+      "Lowered assassination success odds Ã¢â‚¬â€ base 8%Ã¢â€ â€™5%, max cap 20%Ã¢â€ â€™15%, stronger target defense",
       "Check for Updates now properly busts browser HTTP cache on all game assets before reloading",
       "Force Refresh no longer leaves stale ?_cb= params in the URL"
     ]
@@ -16104,7 +16328,7 @@ const VERSION_UPDATES = {
     title: "February 2026 Update - Version Sync & Bug Fixes",
     date: "February 2026",
     changes: [
-      "Unified version number across PC and mobile — both now show v1.5.2",
+      "Unified version number across PC and mobile Ã¢â‚¬â€ both now show v1.5.2",
       "Fixed duplicate code block that could break mobile Settings buttons on load",
       "Fixed mobile nav bar customizer and quick action customizer in Settings",
       "Save system now uses dynamic version constant instead of hardcoded strings",
@@ -16116,23 +16340,23 @@ const VERSION_UPDATES = {
     date: "February 2026",
     changes: [
       "Fixed jail timer not ticking down while serving sentence",
-      "Simplified jail breakout to 2 sections — Online Players + Rival Family Members",
-      "Removed flashy button pulse animations — clean hover/click transitions instead",
+      "Simplified jail breakout to 2 sections Ã¢â‚¬â€ Online Players + Rival Family Members",
+      "Removed flashy button pulse animations Ã¢â‚¬â€ clean hover/click transitions instead",
       "Faster world chat sync and player name correction",
       "Server status tooltip on Sign In button shows if server is online",
       "Removed duplicate jail inmate list (Made Men In The Can section)",
       "Added GitHub Pages to CORS allowed origins for auth",
-      "Removed More button from stats bar — all stats always visible"
+      "Removed More button from stats bar Ã¢â‚¬â€ all stats always visible"
     ]
   },
   "1.4.3": {
     title: "February 2026 Update - Layout & Economy Overhaul",
     date: "February 2026",
     changes: [
-      "Economy rebalance — tuned job payouts, energy costs, and progression curves",
-      "Comprehensive layout overhaul — all 31 game screens now align correctly at every breakpoint",
-      "Fixed responsive media queries — sidebar offsets, page-header, and stats bar at all screen sizes",
-      "Ledger polish — sticky heading, tighter log spacing, gradient header background",
+      "Economy rebalance Ã¢â‚¬â€ tuned job payouts, energy costs, and progression curves",
+      "Comprehensive layout overhaul Ã¢â‚¬â€ all 31 game screens now align correctly at every breakpoint",
+      "Fixed responsive media queries Ã¢â‚¬â€ sidebar offsets, page-header, and stats bar at all screen sizes",
+      "Ledger polish Ã¢â‚¬â€ sticky heading, tighter log spacing, gradient header background",
       "Tutorial skip button now properly cleans up after skipping or completing the tutorial",
       "Consolidated expanded-styles.css into main stylesheet for faster loading",
       "5 runtime error hotfixes across gang, territory, faction, and UI systems",
@@ -16144,16 +16368,16 @@ const VERSION_UPDATES = {
     date: "June 2025",
     changes: [
       "Command Center renamed to SafeHouse throughout the game",
-      "New Player Stats screen — view detailed skill, combat, and career statistics (unlocks at level 2)",
+      "New Player Stats screen Ã¢â‚¬â€ view detailed skill, combat, and career statistics (unlocks at level 2)",
       "Skill descriptions now show accurate current and next-level bonuses instead of 0%",
       "Fixed job button flickering caused by per-second UI rebuilds",
       "Screen transitions now scroll to the top automatically",
       "Slower XP progression curve for a more rewarding grind",
-      "Veteran recruit rework — experienced gang members cost more but start stronger",
+      "Veteran recruit rework Ã¢â‚¬â€ experienced gang members cost more but start stronger",
       "Season-aware weather system with real-world date-based seasons",
       "Weather and season-aware narration for immersive job stories",
       "Mobile responsiveness improvements across all screens",
-      "Payout balance pass — adjusted job rewards for better progression",
+      "Payout balance pass Ã¢â‚¬â€ adjusted job rewards for better progression",
       "Tutorial updated to reflect all current game features and SafeHouse rename",
       "Numerous bug fixes including property purchase and status bar display issues"
     ]
@@ -16162,18 +16386,18 @@ const VERSION_UPDATES = {
     title: "February 2026 Update - Dirty Money Overhaul",
     date: "February 21, 2026",
     changes: [
-      "Dirty Money rework — only Bank Job and Counterfeiting Money produce dirty money; all other jobs now pay clean cash",
-      "Money Laundering job reworked — now converts dirty money to clean money at 80-95% rate instead of paying cash",
+      "Dirty Money rework Ã¢â‚¬â€ only Bank Job and Counterfeiting Money produce dirty money; all other jobs now pay clean cash",
+      "Money Laundering job reworked Ã¢â‚¬â€ now converts dirty money to clean money at 80-95% rate instead of paying cash",
       "Dirty money jobs now raise Suspicion Level (+5-15 per job), making laundering more urgent",
-      "New Business: Counterfeiting Operation — $4M, $180K/day dirty income, +3% laundering job bonus",
-      "New Business: Drug Lab — $6M, $220K/day dirty income, the highest-earning illegal business",
-      "New Business: Chop Shop — $3.5M, $140K/day dirty income, pairs with Boost a Ride",
-      "New Job: Counterfeiting Money — extreme risk, $200K-$500K payout (dirty), requires Basement Hideout & Fake ID Kit",
+      "New Business: Counterfeiting Operation Ã¢â‚¬â€ $4M, $180K/day dirty income, +3% laundering job bonus",
+      "New Business: Drug Lab Ã¢â‚¬â€ $6M, $220K/day dirty income, the highest-earning illegal business",
+      "New Business: Chop Shop Ã¢â‚¬â€ $3.5M, $140K/day dirty income, pairs with Boost a Ride",
+      "New Job: Counterfeiting Money Ã¢â‚¬â€ extreme risk, $200K-$500K payout (dirty), requires Basement Hideout & Fake ID Kit",
       "Jobs and businesses that pay dirty money are now clearly labeled in red (DIRTY MONEY)",
       "Money Laundering screen now shows tips about the laundering job, Counterfeiting synergy, and suspicion",
       "Comprehensive 16-step tutorial rewritten to match all current game mechanics including dirty money",
       "Complete README overhaul with accurate game data for all 18 jobs, 9 businesses, and store prices",
-      "Save migration for older saves — dirty money, suspicion level, and laundering setups auto-initialize",
+      "Save migration for older saves Ã¢â‚¬â€ dirty money, suspicion level, and laundering setups auto-initialize",
       "Play Now button restored to project page"
     ]
   },
@@ -16324,7 +16548,7 @@ function closeVersionUpdate() {
   }
 }
 
-// Real Estate Functions — Properties screen with tabs (Properties + Fronts)
+// Real Estate Functions Ã¢â‚¬â€ Properties screen with tabs (Properties + Fronts)
 function showRealEstate(initialTab) {
   if (player.inJail) {
     showBriefNotification("You can't view properties while you're in jail!", 'danger');
@@ -16433,7 +16657,7 @@ function updateRealEstateDisplay() {
           return `
             <div style="padding: 15px; background: rgba(20, 18, 10, 0.6); border-radius: 10px; border: 2px solid ${isOwned ? '#8a9a6a' : (canAfford ? '#c0a062' : '#8b3a3a')};">
               <h4 style="color: ${isOwned ? '#8a9a6a' : '#f5e6c8'}; margin-bottom: 10px;">
-                ${property.name} ${isOwned ? '✅' : ''}
+                ${property.name} ${isOwned ? 'Ã¢Å“â€¦' : ''}
               </h4>
               <p style="color: #d4c4a0; margin-bottom: 10px;">${property.description}</p>
               <div style="margin-bottom: 10px;">
@@ -16449,7 +16673,7 @@ function updateRealEstateDisplay() {
                   ${canAfford ? 'Purchase' : 'Too Expensive'}
                 </button>
               ` : `
-                <span style="color: #8a9a6a; font-weight: bold;">✓ OWNED</span>
+                <span style="color: #8a9a6a; font-weight: bold;">Ã¢Å“â€œ OWNED</span>
               `}
             </div>
           `;
@@ -16729,7 +16953,7 @@ function buildStashHTML() {
       const isEquippable = item.type === 'weapon' || item.type === 'armor' || item.type === 'vehicle';
       s += `<div style="padding:10px;background:rgba(0,0,0,0.4);border-radius:8px;border:2px solid ${equipped ? '#8a9a6a' : '#1a1610'};display:flex;justify-content:space-between;align-items:center;">
         <div>
-          <strong style="color:${equipped ? '#8a9a6a' : '#f5e6c8'};">${item.name} ${equipped ? '✅ EQUIPPED' : ''}</strong><br>
+          <strong style="color:${equipped ? '#8a9a6a' : '#f5e6c8'};">${item.name} ${equipped ? 'Ã¢Å“â€¦ EQUIPPED' : ''}</strong><br>
           <small style="color:#d4c4a0;">Power: +${item.power || 0}${item.price ? ` | Value: $${sellPrice.toLocaleString()}` : ''}</small>
           ${durBar}
         </div>
@@ -16747,7 +16971,7 @@ function buildStashHTML() {
   }
 
   html += renderCategory('Weapons', '', weapons);
-  html += renderCategory('Armor', '¡️', armor);
+  html += renderCategory('Armor', 'Ã‚Â¡Ã¯Â¸Â', armor);
   html += renderCategory('Vehicles', '', vehicles);
   html += renderCategory('Other Items', '', other);
 
@@ -16842,7 +17066,7 @@ function buildMotorPoolHTML() {
                           color: white; padding: 12px 18px; border: none; border-radius: 10px; 
                           font-weight: bold; cursor: ${car.damagePercentage >= 90 ? 'not-allowed' : 'pointer'}; font-size: 15px;
                           transition: all 0.3s ease; min-width: 120px;">
-                    ${car.damagePercentage >= 90 ? '🚫 Too Damaged' : 'Use for Job'}
+                    ${car.damagePercentage >= 90 ? 'Ã°Å¸Å¡Â« Too Damaged' : 'Use for Job'}
                   </button>
                 </div>
               </div>
@@ -16936,7 +17160,7 @@ function scrapStolenCar(index) {
     scrapPrice += chopShopBonus;
   }
   
-  // Minimum scrap floor — even a totaled car has metal
+  // Minimum scrap floor Ã¢â‚¬â€ even a totaled car has metal
   const scrapFloor = Math.floor(car.baseValue * 0.08);
   scrapPrice = Math.max(scrapPrice, scrapFloor);
   
@@ -16947,9 +17171,9 @@ function scrapStolenCar(index) {
   
   if (chopShopBonus > 0) {
     logAction(`Scrapped ${car.name} for $${scrapPrice.toLocaleString()} (Chop Shop bonus: +$${chopShopBonus.toLocaleString()}).`);
-    showBriefNotification(`Scrapped ${car.name} — $${scrapPrice.toLocaleString()} (Chop Shop +$${chopShopBonus.toLocaleString()})`, 'success');
+    showBriefNotification(`Scrapped ${car.name} Ã¢â‚¬â€ $${scrapPrice.toLocaleString()} (Chop Shop +$${chopShopBonus.toLocaleString()})`, 'success');
   } else {
-    logAction(`Scrapped ${car.name} for parts — $${scrapPrice.toLocaleString()}.`);
+    logAction(`Scrapped ${car.name} for parts Ã¢â‚¬â€ $${scrapPrice.toLocaleString()}.`);
     showBriefNotification(`Scrapped ${car.name} for $${scrapPrice.toLocaleString()}`, 'success');
   }
   
@@ -16962,7 +17186,7 @@ function scrapStolenCar(index) {
 // Legacy alias for any remaining references
 function sellStolenCar(index) { scrapStolenCar(index); }
 
-// ==================== THE FENCE — BLACK MARKET SELL SCREEN ====================
+// ==================== THE FENCE Ã¢â‚¬â€ BLACK MARKET SELL SCREEN ====================
 // Dedicated screen for selling stolen goods, contraband, and inventory at premium rates
 
 // Fence price multiplier fluctuates based on various factors
@@ -16970,14 +17194,14 @@ function getFenceMultiplier() {
   const baseRate = 0.55; // Base 55% of item value (vs 40% at regular sell)
   let bonus = 0;
   
-  // Negotiation skill equivalent — charisma-like bonus from reputation
+  // Negotiation skill equivalent Ã¢â‚¬â€ charisma-like bonus from reputation
   bonus += Math.min(0.15, player.reputation / 10000 * 0.15); // Up to +15% at 10K rep
   
-  // Chop Shop synergy — better rates for cars
+  // Chop Shop synergy Ã¢â‚¬â€ better rates for cars
   const chopShop = (player.businesses || []).find(b => b.type === 'chopshop');
   const chopBonus = chopShop ? 0.05 + (chopShop.level * 0.03) : 0; // 8-20%
   
-  // Heat penalty — hot sellers get worse deals
+  // Heat penalty Ã¢â‚¬â€ hot sellers get worse deals
   const heatPenalty = Math.min(0.15, (player.wantedLevel || 0) / 100 * 0.15);
   
   // Random market fluctuation (-5% to +10%)
@@ -17131,7 +17355,7 @@ function renderHospitalContent() {
           <span class="hospital-icon"></span>
           <div>
             <strong>Quick Patch-Up</strong>
-            <p>A hasty job — bandages and painkillers. Gets you back on the street fast.</p>
+            <p>A hasty job Ã¢â‚¬â€ bandages and painkillers. Gets you back on the street fast.</p>
           </div>
         </div>
         <div class="hospital-option-footer">
@@ -17146,7 +17370,7 @@ function renderHospitalContent() {
     // Rest option (free but costs energy)
     html += `<div class="hospital-option">
       <div class="hospital-option-header">
-        <span class="hospital-icon">️</span>
+        <span class="hospital-icon">Ã‚ÂÃ¯Â¸Â</span>
         <div>
           <strong>Rest & Recover</strong>
           <p>Lay low for a while. Free, but drains your energy.</p>
@@ -17167,7 +17391,7 @@ function renderHospitalContent() {
   container.innerHTML = html;
 }
 
-// Function to heal player at the hospital — v1.11.0 Rebalance: costs increased
+// Function to heal player at the hospital Ã¢â‚¬â€ v1.11.0 Rebalance: costs increased
 function healAtHospital(healType) {
   const missingHealth = 100 - player.health;
   
@@ -17180,7 +17404,7 @@ function healAtHospital(healType) {
     player.money -= cost;
     player.health = 100;
     showBriefNotification("You have been healed to full health.", 'success');
-    logAction("Clean white sheets and the smell of antiseptic. The doc patches you up with no questions asked — some debts are paid in silence (Full health restored).");
+    logAction("Clean white sheets and the smell of antiseptic. The doc patches you up with no questions asked Ã¢â‚¬â€ some debts are paid in silence (Full health restored).");
   } else if (healType === 'partial') {
     const healAmount = Math.min(missingHealth, 25);
     const cost = healAmount * 20;
@@ -17191,7 +17415,7 @@ function healAtHospital(healType) {
     player.money -= cost;
     player.health = Math.min(100, player.health + healAmount);
     showBriefNotification(`Quick patch-up done. Restored ${healAmount} health.`, 'success');
-    logAction(`A quick patch job — bandages, painkillers and a shot of whiskey. Good enough to get back on the streets (+${healAmount} HP).`);
+    logAction(`A quick patch job Ã¢â‚¬â€ bandages, painkillers and a shot of whiskey. Good enough to get back on the streets (+${healAmount} HP).`);
   } else if (healType === 'rest') {
     if (player.energy < 25) {
       showBriefNotification("You're too exhausted to rest effectively.", 'success');
@@ -17201,7 +17425,7 @@ function healAtHospital(healType) {
     player.energy -= 25;
     player.health = Math.min(100, player.health + healAmount);
     showBriefNotification(`You rested and recovered ${healAmount} health.`, 'success');
-    logAction(`️ You find a quiet corner and lay low for a while. Sleep does its work slowly but surely (+${healAmount} HP, -25 energy).`);
+    logAction(`Ã‚ÂÃ¯Â¸Â You find a quiet corner and lay low for a while. Sleep does its work slowly but surely (+${healAmount} HP, -25 energy).`);
   }
   
   updateUI();
@@ -17270,7 +17494,7 @@ function showDeathScreen(causeOfDeath) {
           <div class="obituary-portrait">${player.portrait ? `<img src="${player.portrait}" alt="${player.name || 'Portrait'}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;">` : ''}</div>
           <div class="obituary-name-block">
             <h3>${player.name || 'Unknown'}</h3>
-            <span class="obituary-title">${legacyTitle} — Level ${player.level}</span>
+            <span class="obituary-title">${legacyTitle} Ã¢â‚¬â€ Level ${player.level}</span>
           </div>
         </div>
         <div class="obituary-cause">${cause}</div>
@@ -17288,7 +17512,7 @@ function showDeathScreen(causeOfDeath) {
     `;
   }
 
-  // Permadeath — show restart button
+  // Permadeath Ã¢â‚¬â€ show restart button
   const restartArea = document.getElementById('death-legacy-offer');
   if (restartArea) {
     restartArea.innerHTML = `
@@ -17323,7 +17547,7 @@ function showDeathScreen(causeOfDeath) {
   document.getElementById("death-screen").style.display = "flex";
 }
 
-// Function to restart the game (fresh start — permadeath)
+// Function to restart the game (fresh start Ã¢â‚¬â€ permadeath)
 function restartGame() {
   resetPlayerForNewGame();
   stopJailTimer();
@@ -17401,19 +17625,19 @@ function buildNewspaperHTML(data) {
 
   // Generate the prose obituary
   const netWorthStr = '$' + data.money.toLocaleString();
-  let openingLine = `The city mourns — or celebrates — the demise of <strong>${data.name}</strong>, a ${data.legacyTitle} of the ${data.family} family, found dead under grim circumstances.`;
+  let openingLine = `The city mourns Ã¢â‚¬â€ or celebrates Ã¢â‚¬â€ the demise of <strong>${data.name}</strong>, a ${data.legacyTitle} of the ${data.family} family, found dead under grim circumstances.`;
   let causeP = `Authorities report the cause of death as: <em>"${data.causeOfDeath}."</em> Police have closed the case, citing the dangers of the underworld as a sufficient explanation.`;
   let legacyP = '';
   if (data.level >= 25) {
     legacyP = `At level ${data.level}, ${data.name} had risen to the rank of ${data.legacyTitle}, amassing a fortune of ${netWorthStr} and leaving behind an empire spanning ${data.territories} territories and ${data.businesses} businesses. Associates say the streets will never be the same.`;
   } else if (data.level >= 10) {
-    legacyP = `Having reached level ${data.level}, ${data.name} was beginning to make a name in the organization as a ${data.legacyTitle}, with ${netWorthStr} to their name. Those who knew them say they had potential — if only they'd lived long enough to see it through.`;
+    legacyP = `Having reached level ${data.level}, ${data.name} was beginning to make a name in the organization as a ${data.legacyTitle}, with ${netWorthStr} to their name. Those who knew them say they had potential Ã¢â‚¬â€ if only they'd lived long enough to see it through.`;
   } else {
-    legacyP = `At only level ${data.level}, ${data.name} was still a relative nobody — a ${data.legacyTitle} with ${netWorthStr} in crumpled bills and little else. The city barely noticed their passing, and the gutter claimed another soul.`;
+    legacyP = `At only level ${data.level}, ${data.name} was still a relative nobody Ã¢â‚¬â€ a ${data.legacyTitle} with ${netWorthStr} in crumpled bills and little else. The city barely noticed their passing, and the gutter claimed another soul.`;
   }
   let crimeP = data.totalCrimes > 0
     ? `During their career, ${data.name} committed ${data.totalCrimes} known crimes, commanded a gang of ${data.gangSize}, and ${data.gamblingWins > 0 ? `won ${data.gamblingWins} times at the gambling tables` : 'never had any luck at the tables'}.`
-    : `${data.name} had no known criminal record — at least, none that survived the filing cabinet fire at the precinct.`;
+    : `${data.name} had no known criminal record Ã¢â‚¬â€ at least, none that survived the filing cabinet fire at the precinct.`;
   let skillP = data.bestSkillRank > 0
     ? `Their most notable talent was ${data.bestSkill} (Rank ${data.bestSkillRank}), a skill that ultimately could not save them from fate.`
     : '';
@@ -17494,13 +17718,13 @@ function showAchievements() {
   
   // Group achievements by category
   const categories = [
-    { name: 'Early Game', icon: '🌱', ids: ['first_job','first_blood','wheels','armed_dangerous','property_owner'] },
-    { name: 'Money Milestones', icon: '💰', ids: ['millionaire','half_mil','true_millionaire','multi_millionaire','billionaire'] },
-    { name: 'Gang & Social', icon: '👥', ids: ['first_recruit','gang_leader','crime_family','army','faction_friend','faction_ally'] },
-    { name: 'Combat & Crime', icon: '⚔️', ids: ['jail_break','most_wanted','ghost','boss_slayer'] },
-    { name: 'Progression', icon: '📈', ids: ['reputation_max','level_10','level_25','level_50','skill_master'] },
-    { name: 'Empire', icon: '🏛️', ids: ['territory_3','territory_10','business_owner','jobs_50','jobs_200'] },
-    { name: 'Mini-Games', icon: '🎮', ids: ['lucky_streak','gambler','snake_king','quick_draw'] }
+    { name: 'Early Game', icon: 'Ã°Å¸Å’Â±', ids: ['first_job','first_blood','wheels','armed_dangerous','property_owner'] },
+    { name: 'Money Milestones', icon: 'Ã°Å¸â€™Â°', ids: ['millionaire','half_mil','true_millionaire','multi_millionaire','billionaire'] },
+    { name: 'Gang & Social', icon: 'Ã°Å¸â€˜Â¥', ids: ['first_recruit','gang_leader','crime_family','army','faction_friend','faction_ally'] },
+    { name: 'Combat & Crime', icon: 'Ã¢Å¡â€Ã¯Â¸Â', ids: ['jail_break','most_wanted','ghost','boss_slayer'] },
+    { name: 'Progression', icon: 'Ã°Å¸â€œË†', ids: ['reputation_max','level_10','level_25','level_50','skill_master'] },
+    { name: 'Empire', icon: 'Ã°Å¸Ââ€ºÃ¯Â¸Â', ids: ['territory_3','territory_10','business_owner','jobs_50','jobs_200'] },
+    { name: 'Mini-Games', icon: 'Ã°Å¸Å½Â®', ids: ['lucky_streak','gambler','snake_king','quick_draw'] }
   ];
   
   let achievementsHTML = `
@@ -17536,7 +17760,7 @@ function showAchievements() {
                     opacity: ${a.unlocked ? '1' : '0.7'};">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                   <strong style="color: ${a.unlocked ? '#8a9a6a' : '#f5e6c8'};">${a.name}</strong>
-                  <span style="font-size: 1.2em;">${a.unlocked ? '✅' : '🔒'}</span>
+                  <span style="font-size: 1.2em;">${a.unlocked ? 'Ã¢Å“â€¦' : 'Ã°Å¸â€â€™'}</span>
                 </div>
                 <p style="color: #d4c4a0; font-size: 0.85em; margin: 5px 0 3px;">${a.description}</p>
               </div>
@@ -17549,7 +17773,7 @@ function showAchievements() {
   
   achievementsHTML += `
     <div class="page-nav" style="justify-content: center;">
-      <button class="nav-btn-back" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
+      <button class="nav-btn-back" onclick="goBackToMainMenu()">Ã¢â€ Â Back to SafeHouse</button>
     </div>
   `;
 
@@ -17666,8 +17890,8 @@ function rivalOffer() {
   const repCost = Math.floor(Math.random() * 3) + 2;
   player.money += cashOffer;
   player.reputation = Math.max(0, player.reputation - repCost);
-  showBriefNotification(` Rival offer: +$${cashOffer.toLocaleString()}, -${repCost} rep`, 3000);
-  logAction(` A rival gang approaches with a cash offer you can't refuse. You pocket $${cashOffer.toLocaleString()}, but it costs you ${repCost} reputation on the streets.`);
+  showBriefNotification(`Ã‚Â Rival offer: +$${cashOffer.toLocaleString()}, -${repCost} rep`, 3000);
+  logAction(`Ã‚Â A rival gang approaches with a cash offer you can't refuse. You pocket $${cashOffer.toLocaleString()}, but it costs you ${repCost} reputation on the streets.`);
   updateUI();
 }
 
@@ -17725,7 +17949,7 @@ function gangRecruitment() {
     
     // Create clickable action log entry
     const recruitmentId = 'recruitment-' + Date.now();
-    logAction(` <strong>${recruit.name}</strong> approaches you in the shadows. They've heard about your reputation and want to join your crew for <strong>$${recruit.cost.toLocaleString()}</strong>. 
+    logAction(`Ã‚Â <strong>${recruit.name}</strong> approaches you in the shadows. They've heard about your reputation and want to join your crew for <strong>$${recruit.cost.toLocaleString()}</strong>. 
           Specializes in <em>${recruit.skill}</em> (+${recruit.power} power). 
           <button id="${recruitmentId}" onclick="hireRandomRecruit('${recruitmentId}')" style="background: #7a8a5a; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; margin-left: 10px; font-weight: bold;">
             Hire for $${recruit.cost.toLocaleString()}
@@ -17823,7 +18047,7 @@ async function hireRandomRecruit(buttonId) {
     buttonElement.disabled = true;
     buttonElement.style.background = '#8a9a6a';
     buttonElement.style.cursor = 'not-allowed';
-    buttonElement.textContent = '✓ HIRED';
+    buttonElement.textContent = 'Ã¢Å“â€œ HIRED';
   }
   
   // Update timer display
@@ -17867,7 +18091,7 @@ function policeInformant() {
 
 // (Removed duplicate regenerateEnergy, startEnergyRegenTimer, startEnergyRegeneration; using player.js exports)
 
-// Passive income system — v1.11.0 Rebalance: halved rates
+// Passive income system Ã¢â‚¬â€ v1.11.0 Rebalance: halved rates
 function generatePassiveIncome() {
   let income = 0;
   
@@ -18044,7 +18268,7 @@ function chargeBookieFeeHourly() {
     } else {
       // Can't pay fee -> dismiss
       player.services.bookieHired = false;
-      logAction('Your bookie quits – no funds to cover fees.');
+      logAction('Your bookie quits Ã¢â‚¬â€œ no funds to cover fees.');
       if (typeof showBriefNotification === 'function') showBriefNotification('Bookie dismissed (unpaid)', 1500);
     }
   }
@@ -18064,12 +18288,12 @@ function startRandomEventChecker() {
 // NOTE: Removed per-second full re-render (caused hover flicker).
 // Gang screen is now refreshed by the slow-refresh timer below.
 function startGangTributeTimer() {
-  // intentionally empty – kept for backward compat with initGame()
+  // intentionally empty Ã¢â‚¬â€œ kept for backward compat with initGame()
 }
 
 // Function to refresh current screen with live timers
 function startScreenRefreshTimer() {
-  // --- Fast timer (1 s) – only screens with visible per-second countdowns ---
+  // --- Fast timer (1 s) Ã¢â‚¬â€œ only screens with visible per-second countdowns ---
   setInterval(() => {
     if (document.getElementById("jail-screen").style.display === "block") {
       updatePrisonerList(); // Update jail prisoner countdown
@@ -18079,7 +18303,7 @@ function startScreenRefreshTimer() {
     }
   }, 1000);
 
-  // --- Slow timer (30 s) – screens that only need occasional data refresh ---
+  // --- Slow timer (30 s) Ã¢â‚¬â€œ screens that only need occasional data refresh ---
   // Full innerHTML rebuilds on a 1-second loop destroy DOM elements mid-hover,
   // causing the "screen flash" bug. 30 s is frequent enough to catch passive
   // income changes without disrupting interaction.
@@ -18183,7 +18407,7 @@ function loadGame() {
   showSaveSelectionInterface(availableSaves);
 }
 
-// Shared helper — renders load-only slot cards for both in-game and intro load screens.
+// Shared helper Ã¢â‚¬â€ renders load-only slot cards for both in-game and intro load screens.
 // `onClickFn` receives a save object and returns the onclick JS string for that card.
 function renderLoadSlotCards(saves, onClickFn) {
   return saves.map(save => `
@@ -18238,7 +18462,7 @@ function showSaveSelectionInterface(saves) {
       
       <div class="page-nav" style="justify-content: center;">
         <button class="nav-btn-back" onclick="exitLoadInterface('menu')">
-          ← Back to SafeHouse
+          Ã¢â€ Â Back to SafeHouse
         </button>
       </div>
     </div>
@@ -18306,7 +18530,7 @@ function showSaveSelectionFromIntro(saves) {
       
       <div style="text-align: center;">
         <button onclick="cancelLoadFromIntro()" style="background: #8a7a5a; color: white; padding: 15px 30px; border: none; border-radius: 10px; cursor: pointer; font-size: 1.1em;">
-          ← Back to Main Screen
+          Ã¢â€ ÂÃ‚Â Back to Main Screen
         </button>
       </div>
     </div>
@@ -18503,7 +18727,7 @@ function checkForUpdates() {
       const localVersion = CURRENT_VERSION;
 
       if (serverVersion !== localVersion) {
-        btn.innerHTML = `🆕 Update found! v${localVersion} → v${serverVersion} — Updating...`;
+        btn.innerHTML = `Ã°Å¸â€ â€¢ Update found! v${localVersion} Ã¢â€ â€™ v${serverVersion} Ã¢â‚¬â€ Updating...`;
         btn.style.borderColor = '#8a9a6a';
         btn.style.color = '#8a9a6a';
 
@@ -18531,7 +18755,7 @@ function checkForUpdates() {
       }
     } catch (err) {
       console.error('Version check failed:', err);
-      btn.innerHTML = 'Server offline — try Force Refresh';
+      btn.innerHTML = 'Server offline Ã¢â‚¬â€ try Force Refresh';
       btn.style.borderColor = '#8b3a3a';
       btn.style.color = '#8b3a3a';
       setTimeout(() => {
@@ -18650,7 +18874,7 @@ function showDeleteSelectionInterface(saves) {
       
       <div style="text-align: center;">
         <button onclick="cancelDeleteSave()" style="background: #8a7a5a; color: white; padding: 15px 30px; border: none; border-radius: 10px; cursor: pointer; font-size: 1.1em;">
-          ← Cancel
+          Ã¢â€ ÂÃ‚Â Cancel
         </button>
       </div>
     </div>
@@ -18740,7 +18964,7 @@ function returnToIntroScreen() {
   document.getElementById('intro-screen').style.display = 'block';
 }
 
-// ── Delete all local saves and return to title screen ──────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬ Delete all local saves and return to title screen Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 // Called after the server-side account deletion is complete.
 function deleteAllLocalSavesAndReset() {
   // Wipe every game save slot from localStorage (0 = auto-save, 1-10 = manual)
@@ -18766,7 +18990,7 @@ function deleteAllLocalSavesAndReset() {
   // Update UI elements to reflect logged-out state
   updateAuthStatusUI();
   if (typeof window.showBriefNotification === 'function') {
-    window.showBriefNotification('Account deleted – returned to title', 3000);
+    window.showBriefNotification('Account deleted Ã¢â‚¬â€œ returned to title', 3000);
   }
 }
 window.deleteAllLocalSavesAndReset = deleteAllLocalSavesAndReset;
@@ -18897,7 +19121,7 @@ function activateGameplaySystems() {
   // Initialize expanded systems (gang roles, territory wars, etc.)
   initializeExpandedSystems(player);
 
-  // Interactive events & street stories — REMOVED (popup events disabled)
+  // Interactive events & street stories Ã¢â‚¬â€ REMOVED (popup events disabled)
   // setInterval(() => { if (gameplayActive) checkAndTriggerInteractiveEvent(); }, 60000);
 
   // World atmosphere narrations (every few minutes, ambient storytelling)
@@ -18976,7 +19200,7 @@ function initializeHotkeys() {
   });
 }
 
-// Map System — uses TURF_ZONES (the real SP turf data)
+// Map System Ã¢â‚¬â€ uses TURF_ZONES (the real SP turf data)
 function showMap() {
   hideAllScreens();
   document.getElementById("map-screen").style.display = "block";
@@ -18990,7 +19214,7 @@ function showMap() {
     <div style="margin: 20px 0; padding: 15px; background: rgba(52, 152, 219, 0.2); border-radius: 10px;">
       <h3 style="color: #c0a062; margin: 0 0 10px 0;">Map Legend</h3>
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
-        <div style="color: #8a9a6a;">✅ Your Turf</div>
+        <div style="color: #8a9a6a;">Ã¢Å“â€¦ Your Turf</div>
         <div style="color: #8b3a3a;">Rival Controlled</div>
         <div style="color: #c0a040;">Contested</div>
       </div>
@@ -19044,7 +19268,7 @@ function showMap() {
       <button onclick="showTerritoryControl();" style="background: #c0a062; color: white; padding: 12px 25px; margin: 5px; border: none; border-radius: 8px; cursor: pointer;">
         Turf Management
       </button>
-      <button class="nav-btn-back" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
+      <button class="nav-btn-back" onclick="goBackToMainMenu()">Ã¢â€ Â Back to SafeHouse</button>
     </div>
   `;
   
@@ -19053,7 +19277,7 @@ function showMap() {
 function showTerritoryInfo(zoneId) {
   const zone = TURF_ZONES.find(z => z.id === zoneId);
   if (!zone) return;
-  showBriefNotification(`${zone.icon} ${zone.name} — ${zone.description}`, 'info');
+  showBriefNotification(`${zone.icon} ${zone.name} Ã¢â‚¬â€ ${zone.description}`, 'info');
 }
 
 // Calendar System
@@ -19175,7 +19399,7 @@ function showCalendar() {
     </div>
     
     <div style="text-align: center; margin-top: 30px;">
-      <button class="nav-btn-back" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
+      <button class="nav-btn-back" onclick="goBackToMainMenu()">Ã¢â€ Â Back to SafeHouse</button>
     </div>
   `;
   
@@ -19440,7 +19664,7 @@ function showStatistics() {
       <button onclick="resetStatistics()" style="background: #8b3a3a; color: white; padding: 12px 25px; margin: 5px; border: none; border-radius: 8px; cursor: pointer;">
         Reset Stats
       </button>
-      <button class="nav-btn-back" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
+      <button class="nav-btn-back" onclick="goBackToMainMenu()">Ã¢â€ Â Back to SafeHouse</button>
     </div>
   `;
   
@@ -19768,7 +19992,7 @@ function buildEmpireOverviewHTML() {
           <div style="font-size: 1.4em; color: #ffeb3b;">$${dailyIncome.toLocaleString()}</div>
         </div>
         <div style="background: #2c2c2c; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid rgba(212,175,55,0.2);">
-          <div style="font-size: 2em;">🤝</div>
+          <div style="font-size: 2em;">Ã°Å¸Â¤Â</div>
           <div style="color: #aaa; font-size: 0.9em;">Total Influence</div>
           <div style="font-size: 1.4em; color: #9c27b0;">${totalRep} Rep</div>
         </div>
@@ -20044,7 +20268,7 @@ function importSaveData() {
           return;
         }
         
-        // Import all data — only allow known save-related keys
+        // Import all data Ã¢â‚¬â€ only allow known save-related keys
         const allowedKeyPrefixes = ['gameSlot_', 'saveSystemPrefs'];
         Object.entries(allSaves).forEach(([key, value]) => {
           if (allowedKeyPrefixes.some(prefix => key.startsWith(prefix))) {
@@ -20186,7 +20410,7 @@ function initializeMissingData() {
     calculateEmpireRating();
   }
   
-  // v1.3.0 — Dirty Money system migration for older saves
+  // v1.3.0 Ã¢â‚¬â€ Dirty Money system migration for older saves
   if (player.dirtyMoney === undefined || player.dirtyMoney === null) {
     player.dirtyMoney = 0;
   }
@@ -20203,7 +20427,7 @@ function initializeMissingData() {
     player.unlocksNotified = [];
   }
 
-  // v1.3.9 — Gang role migration: ensure members with expanded roles have derived specialization
+  // v1.3.9 Ã¢â‚¬â€ Gang role migration: ensure members with expanded roles have derived specialization
   if (player.gang && player.gang.gangMembers) {
     player.gang.gangMembers.forEach(member => {
       if (member.role && EXPANDED_TO_SPECIALIZATION[member.role]) {
@@ -20216,7 +20440,7 @@ function initializeMissingData() {
     });
   }
 
-  // Phase 3: Business district migration — stamp districtId on legacy businesses
+  // Phase 3: Business district migration Ã¢â‚¬â€ stamp districtId on legacy businesses
   if (player.businesses && player.businesses.length > 0) {
     const fallbackDistrict = player.currentTerritory || 'residential_low';
     player.businesses.forEach(biz => {
@@ -20226,7 +20450,7 @@ function initializeMissingData() {
     });
   }
 
-  // v1.5.8 — Item system migration: durability, type unification, equipped item objects
+  // v1.5.8 Ã¢â‚¬â€ Item system migration: durability, type unification, equipped item objects
   // Fix old "gun" types to "weapon" and "car" types to "vehicle"
   if (player.inventory && player.inventory.length > 0) {
     player.inventory.forEach(item => {
@@ -20262,7 +20486,7 @@ function initializeMissingData() {
     player.equippedVehicle = found || null;
   }
 
-  // v1.6.0 — Turf system migration for older saves
+  // v1.6.0 Ã¢â‚¬â€ Turf system migration for older saves
   if (!player.turf) {
     player.turf = { owned: [], power: 100, income: 0, reputation: 0 };
   }
@@ -20285,7 +20509,7 @@ function initializeMissingData() {
     player.missions.factionReputation = { torrino: 0, kozlov: 0, chen: 0, morales: 0 };
   }
 
-  // v1.6.0 — Story mode migration
+  // v1.6.0 Ã¢â‚¬â€ Story mode migration
   if (!player.storyProgress) {
     player.storyProgress = { currentChapter: 0, chaptersCompleted: [], respect: 0, choices: {}, isDon: false, bossesDefeated: [] };
   }
@@ -20428,11 +20652,11 @@ function showSaveSystem() {
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin: 10px 0;">
                       <div><span style="color: #8a9a6a;"></span> $${slot.money.toLocaleString()}</div>
                       <div><span style="color: #c0a062;"></span> Level ${slot.level}</div>
-                      <div><span style="color: #8b3a3a;">⭐</span> ${slot.reputation}</div>
+                      <div><span style="color: #8b3a3a;">Ã¢Â­ÂÃ‚Â</span> ${slot.reputation}</div>
                       <div><span style="color: #c0a040;"></span> ${slot.empireRating.toLocaleString()}</div>
                     </div>
                     <p style="color: #8a7a5a; margin: 5px 0 0 0; font-size: 0.9em;">
-                      ${formatTimestamp(new Date(slot.saveDate).getTime())} • ${slot.playtime || 'Unknown'}
+                      ${formatTimestamp(new Date(slot.saveDate).getTime())} Ã¢â‚¬Â¢ ${slot.playtime || 'Unknown'}
                     </p>
                   </div>
                   
@@ -20460,7 +20684,7 @@ function showSaveSystem() {
       </div>
       
       <div style="text-align: center; margin-top: 30px;">
-        <button class="nav-btn-back" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
+        <button class="nav-btn-back" onclick="goBackToMainMenu()">Ã¢â€ Â Back to SafeHouse</button>
       </div>
     </div>
   `;
@@ -20685,13 +20909,13 @@ function showBriefNotification(message, durationOrType = 2000) {
 // Competition system configuration
 const COMPETITION_SYSTEM = {
   leaderboardCategories: [
-    { id: 'empire', name: 'Empire Rating', icon: '⭐', description: 'Overall criminal power and influence' },
-    { id: 'wealth', name: 'Criminal Wealth', icon: '💰', description: 'Total money accumulated' },
-    { id: 'reputation', name: 'Street Reputation', icon: '👑', description: 'Respect in the criminal underworld' },
-    { id: 'territory', name: 'Turf Control', icon: '🏛️', description: 'Turf zones under your family\'s control' },
-    { id: 'gang', name: 'Gang Power', icon: '👥', description: 'Size and strength of criminal organization' },
-    { id: 'business', name: 'Business Empire', icon: '🏭', description: 'Number of criminal enterprises' },
-    { id: 'longevity', name: 'Career Longevity', icon: '⏰', description: 'Time survived in the criminal world' }
+    { id: 'empire', name: 'Empire Rating', icon: 'Ã¢Â­ÂÃ‚Â', description: 'Overall criminal power and influence' },
+    { id: 'wealth', name: 'Criminal Wealth', icon: 'Ã°Å¸â€™Â°', description: 'Total money accumulated' },
+    { id: 'reputation', name: 'Street Reputation', icon: 'Ã°Å¸â€˜â€˜', description: 'Respect in the criminal underworld' },
+    { id: 'territory', name: 'Turf Control', icon: 'Ã°Å¸Ââ€ºÃ¯Â¸Â', description: 'Turf zones under your family\'s control' },
+    { id: 'gang', name: 'Gang Power', icon: 'Ã°Å¸â€˜Â¥', description: 'Size and strength of criminal organization' },
+    { id: 'business', name: 'Business Empire', icon: 'Ã°Å¸ÂÂ­', description: 'Number of criminal enterprises' },
+    { id: 'longevity', name: 'Career Longevity', icon: 'Ã¢ÂÂ°', description: 'Time survived in the criminal world' }
   ],
   maxLeaderboardEntries: 50,
   submissionCooldown: 60000, // 1 minute
@@ -20713,7 +20937,7 @@ const WEEKLY_CHALLENGES = {
       id: 'money_maker',
       name: 'Money Maker',
       description: 'Earn {target} in a single week',
-      icon: '💰',
+      icon: 'Ã°Å¸â€™Â°',
       targets: { easy: 100000, medium: 500000, hard: 1000000, extreme: 5000000 },
       checkProgress: (target) => player.statistics.totalMoneyEarned >= target
     },
@@ -20721,7 +20945,7 @@ const WEEKLY_CHALLENGES = {
       id: 'job_master',
       name: 'Job Master',
       description: 'Complete {target} jobs successfully',
-      icon: '🎯',
+      icon: 'Ã°Å¸Å½Â¯',
       targets: { easy: 10, medium: 25, hard: 50, extreme: 100 },
       checkProgress: (target) => player.statistics.jobsCompleted >= target
     },
@@ -20729,7 +20953,7 @@ const WEEKLY_CHALLENGES = {
       id: 'empire_builder',
       name: 'Empire Builder',
       description: 'Reach empire rating of {target}',
-      icon: '⭐',
+      icon: 'Ã¢Â­ÂÃ‚Â',
       targets: { easy: 2000, medium: 4000, hard: 6000, extreme: 8000 },
       checkProgress: (target) => calculateEmpireRating().totalScore >= target
     },
@@ -20745,7 +20969,7 @@ const WEEKLY_CHALLENGES = {
       id: 'territory_king',
       name: 'Territory King',
       description: 'Control {target} territories',
-      icon: '🏛️',
+      icon: 'Ã°Å¸Ââ€ºÃ¯Â¸Â',
       targets: { easy: 3, medium: 8, hard: 15, extreme: 25 },
       checkProgress: (target) => player.territory >= target
     },
@@ -20753,7 +20977,7 @@ const WEEKLY_CHALLENGES = {
       id: 'business_mogul',
       name: 'Business Mogul',
       description: 'Own {target} businesses',
-      icon: '🏭',
+      icon: 'Ã°Å¸ÂÂ­',
       targets: { easy: 2, medium: 5, hard: 10, extreme: 20 },
       checkProgress: (target) => (player.businesses ? player.businesses.length : 0) >= target
     },
@@ -20761,7 +20985,7 @@ const WEEKLY_CHALLENGES = {
       id: 'escape_artist',
       name: 'Escape Artist',
       description: 'Escape from jail {target} times',
-      icon: '🔓',
+      icon: 'Ã°Å¸â€â€œ',
       targets: { easy: 2, medium: 5, hard: 10, extreme: 20 },
       checkProgress: (target) => player.statistics.timesEscaped >= target
     },
@@ -20769,7 +20993,7 @@ const WEEKLY_CHALLENGES = {
       id: 'car_thief',
       name: 'Car Thief',
       description: 'Steal {target} vehicles',
-      icon: '🚗',
+      icon: 'Ã°Å¸Å¡â€”',
       targets: { easy: 10, medium: 25, hard: 50, extreme: 100 },
       checkProgress: (target) => player.statistics.carsStolen >= target
     }
@@ -21216,7 +21440,7 @@ function displayImportedShowcase(showcase) {
       </div>
       
       <div style="text-align: center; margin-top: 30px;">
-        <button class="nav-btn-back" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
+        <button class="nav-btn-back" onclick="goBackToMainMenu()">Ã¢â€ Â Back to SafeHouse</button>
       </div>
     </div>
   `;
@@ -21269,7 +21493,7 @@ function showRivalsScreen() {
       </div>
       
       <div style="text-align: center; margin-top: 30px;">
-        <button class="nav-btn-back" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
+        <button class="nav-btn-back" onclick="goBackToMainMenu()">Ã¢â€ Â Back to SafeHouse</button>
       </div>
     </div>
   `;
@@ -21409,7 +21633,7 @@ function showCompetitionTab() {
                   <div style="color: #d4c4a0; font-size: 0.9em;">${challenge.description}</div>
                 </div>
                 <div style="color: ${challenge.completed ? '#8a9a6a' : '#c0a040'}; font-weight: bold;">
-                  ${challenge.completed ? '✅ Complete' : challenge.difficulty.toUpperCase()}
+                  ${challenge.completed ? 'Ã¢Å“â€¦ Complete' : challenge.difficulty.toUpperCase()}
                 </div>
               </div>
             `).join('')}
@@ -21473,7 +21697,7 @@ function showLeaderboards() {
         <button onclick="showCompetition()" style="background: linear-gradient(45deg, #8b3a3a, #7a2a2a); color: white; padding: 15px 30px; border: none; border-radius: 12px; font-size: 1.2em; font-weight: bold; cursor: pointer; margin-right: 15px;">
           Back to Competition
         </button>
-        <button class="nav-btn-back" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
+        <button class="nav-btn-back" onclick="goBackToMainMenu()">Ã¢â€ Â Back to SafeHouse</button>
       </div>
     </div>
   `;
@@ -21504,7 +21728,7 @@ function updateLeaderboardDisplay() {
           ${leaderboard.map((entry, index) => {
             const isPlayer = entry.name === playerName;
             const rankColor = index === 0 ? '#c0a040' : index === 1 ? '#8a7a5a' : index === 2 ? '#cd7f32' : '#f5e6c8';
-            const rankIcon = index === 0 ? '‡' : index === 1 ? 'ˆ' : index === 2 ? '‰' : `#${index + 1}`;
+            const rankIcon = index === 0 ? 'Ã¢â‚¬Â¡' : index === 1 ? 'Ã‹â€ ' : index === 2 ? 'Ã¢â‚¬Â°' : `#${index + 1}`;
             
             return `
               <div style="display: flex; align-items: center; padding: 12px; background: ${isPlayer ? 'rgba(138, 154, 106, 0.2)' : 'rgba(0,0,0,0.3)'}; border-radius: 8px; ${isPlayer ? 'border: 2px solid #8a9a6a;' : ''}">
@@ -21516,7 +21740,7 @@ function updateLeaderboardDisplay() {
                     ${entry.name} ${isPlayer ? '(You)' : ''}
                   </div>
                   <div style="color: #d4c4a0; font-size: 0.9em;">
-                    Level ${entry.level} • Submitted ${formatTimestamp(entry.submissionDate)}
+                    Level ${entry.level} Ã¢â‚¬Â¢ Submitted ${formatTimestamp(entry.submissionDate)}
                   </div>
                 </div>
                 <div style="color: ${rankColor}; font-weight: bold; font-size: 1.3em;">
@@ -21598,7 +21822,7 @@ function showWeeklyChallenges() {
                         ${challenge.difficulty}
                       </div>
                       <div style="color: ${challenge.completed ? '#8a9a6a' : '#d4c4a0'}; font-size: 0.9em;">
-                        ${challenge.completed ? '✅ Complete' : (progress ? 'Ready!' : 'In Progress')}
+                        ${challenge.completed ? 'Ã¢Å“â€¦ Complete' : (progress ? 'Ready!' : 'In Progress')}
                       </div>
                     </div>
                   </div>
@@ -21648,7 +21872,7 @@ function showWeeklyChallenges() {
                 <div style="flex: 1;">
                   <div style="color: #f5e6c8; font-weight: bold;">${completion.name}</div>
                   <div style="color: #d4c4a0; font-size: 0.9em;">
-                    ${completion.difficulty.toUpperCase()} • Completed ${new Date(completion.completedAt).toLocaleDateString()}
+                    ${completion.difficulty.toUpperCase()} Ã¢â‚¬Â¢ Completed ${new Date(completion.completedAt).toLocaleDateString()}
                   </div>
                 </div>
                 <div style="color: #8b6a4a; font-weight: bold;">
@@ -21664,7 +21888,7 @@ function showWeeklyChallenges() {
         <button onclick="showRivalsScreen()" style="background: linear-gradient(45deg, #8b3a3a, #7a2a2a); color: white; padding: 15px 30px; border: none; border-radius: 12px; font-size: 1.2em; font-weight: bold; cursor: pointer; margin-right: 15px;">
           Back to Rivals
         </button>
-        <button class="nav-btn-back" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
+        <button class="nav-btn-back" onclick="goBackToMainMenu()">Ã¢â€ Â Back to SafeHouse</button>
       </div>
     </div>
   `;
@@ -21683,7 +21907,7 @@ function showCharacterShowcase() {
         <button onclick="showRivalsScreen()" style="background: linear-gradient(45deg, #8b3a3a, #7a2a2a); color: white; padding: 15px 30px; border: none; border-radius: 12px; font-size: 1.2em; font-weight: bold; cursor: pointer; margin-right: 15px;">
           Back to Rivals
         </button>
-        <button class="nav-btn-back" onclick="goBackToMainMenu()">← Back to SafeHouse</button>
+        <button class="nav-btn-back" onclick="goBackToMainMenu()">Ã¢â€ Â Back to SafeHouse</button>
       </div>
   `;
   
@@ -21725,7 +21949,7 @@ function startLoadingSequence() {
   let serverReady = false;
   let loadingFinished = false; // guard against duplicate completeLoading calls
 
-  // ── Server health ping ────────────────────────────────────────
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Server health ping Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
   // Resolve the HTTP health URL from the same logic multiplayer.js uses.
   const SERVER_HEALTH_URL = (function () {
     try {
@@ -21745,10 +21969,10 @@ function startLoadingSequence() {
         throw new Error('Server returned ' + res.status);
       })
       .then(data => {
-        // ── Version mismatch check ──────────────────────
+        // Ã¢â€â‚¬Ã¢â€â‚¬ Version mismatch check Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
         if (data.version && data.version !== CURRENT_VERSION) {
-          console.warn(`[loading] Version mismatch! Local: ${CURRENT_VERSION}  Server: ${data.version} — auto-updating...`);
-          loadingText.textContent = `Update found (v${CURRENT_VERSION} → v${data.version}) — refreshing...`;
+          console.warn(`[loading] Version mismatch! Local: ${CURRENT_VERSION}  Server: ${data.version} Ã¢â‚¬â€ auto-updating...`);
+          loadingText.textContent = `Update found (v${CURRENT_VERSION} Ã¢â€ â€™ v${data.version}) Ã¢â‚¬â€ refreshing...`;
           loadingProgress.style.width = '100%';
           loadingPercentage.textContent = '100%';
           // Give the player a moment to read the message, then force-reload
@@ -21772,13 +21996,13 @@ function startLoadingSequence() {
   // Start pinging immediately so the server wakes while visual steps run
   pingServer();
 
-  // ── Timeout guard ─────────────────────────────────────────────
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Timeout guard Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
   // Render cold-starts can take ~15-20 s; give up to 30 s before forcing.
   const maxLoadingTime = 30000;
   setTimeout(() => {
     if (!loadingFinished) {
       console.warn('Loading timeout reached. Proceeding without server...');
-      loadingText.textContent = "Server unavailable — starting in offline mode...";
+      loadingText.textContent = "Server unavailable Ã¢â‚¬â€ starting in offline mode...";
       loadingPercentage.textContent = '100%';
       loadingProgress.style.width = '100%';
       finishLoading();
@@ -21791,7 +22015,7 @@ function startLoadingSequence() {
     completeLoading();
   }
 
-  // ── Visual loading steps ──────────────────────────────────────
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Visual loading steps Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
   function updateLoading() {
     if (currentStep < loadingSteps.length) {
       const step = loadingSteps[currentStep];
@@ -22003,7 +22227,7 @@ window.unlockAchievement = unlockAchievement;
 window.checkAchievements = checkAchievements;
 window.showAchievements = showAchievements;
 
-// FBI Investigation (removed — suspicion system consolidated into heat)
+// FBI Investigation (removed Ã¢â‚¬â€ suspicion system consolidated into heat)
 // window.handleFBIChoice = handleFBIChoice;
 
 // The Fence
@@ -22068,7 +22292,7 @@ window.startEventTimers = startEventTimers;
 window.showEventsStatus = showEventsStatus;
 window.triggerRandomWeatherChange = triggerRandomWeatherChange;
 
-// Mini Games (from miniGames.js — only HTML-callable functions need window exposure)
+// Mini Games (from miniGames.js Ã¢â‚¬â€ only HTML-callable functions need window exposure)
 window.showMiniGames = showMiniGames;
 window.backToMiniGamesList = backToMiniGamesList;
 window.resetCurrentMiniGame = resetCurrentMiniGame;
@@ -22167,7 +22391,7 @@ window.selectPerk = selectPerk;
 window.confirmBackgroundAndPerk = confirmBackgroundAndPerk;
 window.skipBackgroundAndPerk = skipBackgroundAndPerk;
 
-// Territory System (Phase 2) — Ownership & Conquest
+// Territory System (Phase 2) Ã¢â‚¬â€ Ownership & Conquest
 window.wageWar = wageWar;
 
 // Other Locations
