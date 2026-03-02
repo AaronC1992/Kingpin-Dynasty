@@ -5,6 +5,18 @@ All notable changes to From Dusk To Don (Mafia Born) will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.4] - 2026-03-01
+
+### Changed — Tutorial & Help Overhaul
+- **Tutorial starts after changelog** — the safehouse tutorial now automatically appears after the "What's New" changelog is dismissed on first play
+- **Safehouse tutorial expanded** — 6 detailed sections covering Status Bar stats, The Ledger, Quick Actions Bar, Navigation Buttons, and Getting Started tips
+- **All 13 screen tutorials rewritten** — more detail, tips, and full explanations for every screen (Jobs, Store, Missions, Gang, Properties, Casino, Stash, Hospital, Skills, Stats, Territory, Settings)
+- **Help guide expanded from 17 to 21 topics** — new topics: UI Guide (HUD), Combat & Equipment, Dirty Money & Laundering, Seasons & Weather
+- **Every help topic rewritten** — added sub-headings, detailed explanations, strategy tips, and complete mechanic breakdowns
+- **Heat system guide** — now explains 5 granular tiers (Cool/Warm/Hot/Scorching/Inferno) with causes and reduction methods
+- **Energy guide** — covers all 3 consumable types with grinding strategy tips
+- **Skills guide** — explains what each of the 6 talent trees is best suited for
+
 ## [1.11.3] - 2026-03-01
 
 ### Changed — Emoji Cleanup & Faction Flag Fix

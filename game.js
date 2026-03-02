@@ -7742,104 +7742,116 @@ function hideAllScreens() {
 
 const TUTORIAL_CONTENT = {
   safehouse: {
-    title: 'Welcome to Your SafeHouse',
+    title: 'Welcome to Mafia Born',
     sections: [
-      { heading: 'Your Hub', text: 'This is your base of operations. Every action you take in the city starts here.' },
-      { heading: 'Navigation', text: 'Tap any unlocked button to visit that part of the city. New screens unlock as you level up.' },
-      { heading: 'Quick Actions', text: 'The panel on the right (or swipe on mobile) gives fast access to your favourite screens.' },
-      { heading: 'Status Bar', text: 'The bar at the top tracks your cash, health, energy, heat, and rank in real time.' },
+      { heading: 'Your SafeHouse', text: 'This is your base of operations — the hub of your criminal empire. Every journey into the city starts from here. As you level up, new locations and features will unlock on the navigation buttons below.' },
+      { heading: 'The Status Bar (Top)', text: 'The bar running across the top of the screen shows your vital stats at a glance:<br><b>Cash</b> — your spending money.<br><b>Health</b> — drops from fights and failed jobs; if it hits 0, you black out.<br><b>Energy</b> — most actions cost energy; it regenerates over time or can be restored with items.<br><b>Heat</b> — your wanted level; rises from crime, attracts police attention, and decays over time.<br><b>Rank</b> — your current level in the underworld; level up to unlock new content.<br>You can customise which stats are shown in Settings > UI Toggles.' },
+      { heading: 'The Ledger (Activity Log)', text: 'Below the status bar is The Ledger — a scrolling log that records everything you do: jobs, fights, purchases, story events, and more. Keep an eye on it for confirmation of your actions and narrative flavour.' },
+      { heading: 'Quick Actions Bar (Right Panel)', text: 'On the right (desktop) or accessible via the mobile menu, the Quick Actions bar provides one-tap shortcuts to your most-used screens. It also has a Save button, Help button, and a Skip Tutorials option. You can customise which shortcuts appear in Settings.' },
+      { heading: 'Navigation Buttons', text: 'The main buttons in the SafeHouse let you visit Jobs, the Black Market, Missions, the Casino, Hospital, and more. Buttons are locked until you reach the required level — keep grinding!' },
+      { heading: 'Getting Started Tips', text: 'Start by doing <b>Jobs</b> to earn cash and XP. Visit the <b>Black Market</b> to buy weapons and armour. Check <b>Missions</b> when you\'re ready for the story. Visit the <b>Hospital</b> when your health is low. Head to <b>Settings > Help</b> at any time for a full game guide.' },
     ]
   },
   jobs: {
     title: 'Jobs & Hustles',
     sections: [
       { heading: 'Earn Cash & XP', text: 'Pick a job from the list to earn money and experience. Higher-tier jobs pay more but cost more energy.' },
-      { heading: 'Energy Cost', text: 'Every job costs energy. When you run out, wait for it to regenerate or buy an energy item.' },
-      { heading: 'Levelling Up', text: 'XP from jobs levels you up, unlocking new screens, gear, and story chapters.' },
+      { heading: 'Energy Cost', text: 'Every job costs energy. When you run out, wait for it to regenerate, rest at the hospital, or buy Coffee/Energy Drinks from the Black Market or quick-buy buttons.' },
+      { heading: 'Heat Warning', text: 'Some jobs raise your Heat (wanted level). Higher heat means more police encounters and bigger penalties if caught.' },
+      { heading: 'Levelling Up', text: 'XP from jobs levels you up, unlocking new screens, gear, and story chapters. Check your XP bar in the status bar.' },
     ]
   },
   store: {
     title: 'The Black Market',
     sections: [
-      { heading: 'Buy Tab', text: 'Browse weapons, armour, and supplies. Better gear boosts your attack & defence in fights.' },
-      { heading: 'The Fence', text: 'Sell stolen goods from heists and jobs at premium rates. Higher heat = riskier but more profitable.' },
-      { heading: 'Player Market', text: 'Trade vehicles with other players. List your rides for sale or grab someone else\'s.' },
+      { heading: 'Buy Tab', text: 'Browse weapons, armour, and consumables. Equipping better gear directly increases your Attack and Defence stats in combat.' },
+      { heading: 'The Fence', text: 'Sell stolen goods from heists and jobs at premium rates. Fence prices fluctuate based on your Heat level — riskier sales can be more profitable.' },
+      { heading: 'Player Market', text: 'Buy and sell vehicles with other real players. List your rides for sale or snap up someone else\'s wheels.' },
+      { heading: 'Consumables', text: 'Coffee, Energy Drinks, and Steroids restore your energy. Medkits restore health. Stock up before long grinding sessions.' },
     ]
   },
   missions: {
     title: 'Missions & Story',
     sections: [
-      { heading: 'Family Story', text: 'Choose a crime family and follow their story from street-level to Don. Each chapter has cinematic missions.' },
-      { heading: 'Side Operations', text: 'Optional quest chains with countdown timers. Complete objectives while the timer ticks to advance.' },
-      { heading: 'Street Stories', text: 'Narrative encounters tied to side operation steps — they add flavour and consequences to your quests.' },
+      { heading: 'Family Story', text: 'Choose a crime family (Corleone, Moretti, etc.) and follow their cinematic storyline from street thug to Don. Story chapters unlock as you level up.' },
+      { heading: 'Side Operations', text: 'Optional quest chains with countdown timers (3-20 minutes). You must wait for the timer AND complete the objective to advance to the next step.' },
+      { heading: 'Street Stories', text: 'Narrative encounters that trigger during side operations. They add consequences, choices, and flavour to your quests.' },
+      { heading: 'Rewards', text: 'Completing missions awards large chunks of XP, cash, influence, and sometimes unique items or crew members.' },
     ]
   },
   gang: {
     title: 'The Family',
     sections: [
-      { heading: 'Create or Join', text: 'Start your own crime family or join an existing one. Families share territory and resources.' },
-      { heading: 'Members', text: 'Recruit AI members or invite real players. Assign roles and manage your crew.' },
-      { heading: 'Family Wars', text: 'Clash with rival families for territory and dominance. Coordinate attacks with your crew.' },
+      { heading: 'Create or Join', text: 'Start your own crime family (costs cash) or join an existing one. Families share territory, resources, and bonuses.' },
+      { heading: 'Members & Roles', text: 'Recruit AI crew members or invite real players. Assign roles: Boss, Underboss, Capo, Soldier — each with different authority levels.' },
+      { heading: 'Family Wars', text: 'Clash with rival families for territory and dominance. Coordinate attacks with your crew to win turf.' },
+      { heading: 'Benefits', text: 'Being in a family gives stat bonuses, shared defence of territory, and access to family-only missions and features.' },
     ]
   },
   properties: {
     title: 'Properties & Fronts',
     sections: [
-      { heading: 'Properties Tab', text: 'Buy real estate across the city. Properties generate passive income every cycle.' },
-      { heading: 'Fronts Tab', text: 'Business fronts launder dirty money into clean cash. Higher-tier fronts process more per cycle.' },
+      { heading: 'Properties Tab', text: 'Buy real estate (apartments, shops, warehouses) across the city. Each property generates passive income every game cycle automatically.' },
+      { heading: 'Fronts Tab', text: 'Business fronts (laundromats, restaurants, etc.) launder your Dirty Money into clean Cash. Higher-tier fronts process larger amounts per cycle.' },
+      { heading: 'Dirty Money', text: 'Dirty Money is earned from heists and illegal activities. It cannot be spent directly — you must launder it through Fronts to convert it into usable Cash.' },
     ]
   },
   casino: {
     title: 'Casino & Mini Games',
     sections: [
-      { heading: 'Gambling', text: 'Try your luck at poker, slots, blackjack, and more. Win big or lose it all.' },
-      { heading: 'Mini Games', text: 'Quick pastimes like lockpicking and card games. Fun distractions with small rewards.' },
+      { heading: 'Gambling', text: 'Try your luck at Poker, Blackjack, Slots, Roulette, and more. Wager cash for big wins — or big losses.' },
+      { heading: 'Mini Games', text: 'Quick pastimes like Lockpicking and Number Cracking. Fun distractions with consistent, smaller rewards.' },
+      { heading: 'Risk Warning', text: 'The Casino uses your real in-game Cash. There is no guaranteed win — gamble responsibly to protect your bankroll!' },
     ]
   },
   stash: {
     title: 'Stash & Motor Pool',
     sections: [
-      { heading: 'Stash Tab', text: 'Your inventory of weapons, armour, consumables, and stolen goods. Equip gear to boost stats.' },
-      { heading: 'Motor Pool', text: 'View and manage your vehicles. Cars give speed bonuses and are used for heists and getaways.' },
+      { heading: 'Stash Tab', text: 'Your full inventory of weapons, armour, consumables, and stolen goods. Tap an item to equip it or use it. Equipped weapons and armour boost your Attack and Defence.' },
+      { heading: 'Motor Pool', text: 'View and manage your vehicle collection. Cars give speed bonuses and are used for heists and getaways. Sell vehicles you don\'t need on the Player Market.' },
     ]
   },
   hospital: {
     title: 'The Doctor',
     sections: [
-      { heading: 'Heal Up', text: 'Pay the back-alley doctor to restore health. Full treatment costs more but heals everything.' },
-      { heading: 'Patch Job', text: 'Cheaper partial heal or rest with energy. Use when you just need a quick fix.' },
+      { heading: 'Full Treatment', text: 'Pay the back-alley doctor to restore health to 100%. Expensive but worth it when you\'re critically low.' },
+      { heading: 'Patch Job', text: 'Cheaper partial heal — restores up to 25 HP. Good for a quick fix between jobs.' },
+      { heading: 'Rest', text: 'Spend energy instead of cash to heal a small amount. Useful when you\'re broke but have energy to spare.' },
+      { heading: 'Why Heal?', text: 'If your health drops to 0 during a fight or failed job, you\'ll black out and lose time and money. Keep your health topped up!' },
     ]
   },
   skills: {
     title: 'Talents & Skills',
     sections: [
-      { heading: 'Skill Trees', text: 'Spend skill points across Combat, Stealth, Business, Endurance, Street Smarts, and Leadership.' },
-      { heading: 'Passive Bonuses', text: 'Each skill node gives permanent bonuses like extra damage, income boosts, or cheaper heals.' },
+      { heading: 'Six Skill Trees', text: 'Spend skill points in: <b>Combat</b> (attack, crit), <b>Stealth</b> (dodge, heat reduction), <b>Business</b> (income, prices), <b>Endurance</b> (HP, energy), <b>Street Smarts</b> (XP, loot), <b>Leadership</b> (crew, territory).' },
+      { heading: 'Skill Points', text: 'You earn skill points when you level up. Spend them wisely — each node gives permanent passive bonuses to your character.' },
+      { heading: 'Passive Bonuses', text: 'Examples: extra damage per hit, higher income from jobs, cheaper hospital visits, faster energy regen, better loot drops, and stronger crew defence.' },
     ]
   },
   stats: {
     title: 'Player Stats',
     sections: [
-      { heading: 'Overview', text: 'Detailed breakdown of your character — level, cash, reputation, combat stats, and more.' },
-      { heading: 'Empire Rating', text: 'Your overall empire score based on territory, income, crew size, and story progress.' },
-      { heading: 'Empire Overview', text: 'Visual dashboard showing all your assets, income sources, and power at a glance.' },
+      { heading: 'Overview', text: 'Full breakdown of your character: level, cash, dirty money, health, energy, attack, defence, influence, reputation, and more.' },
+      { heading: 'Empire Rating', text: 'A composite score measuring your overall power — based on territory controlled, income streams, crew size, properties, and story progress.' },
+      { heading: 'Empire Overview', text: 'A visual dashboard showing all your assets, income sources, crew members, and territory at a glance. Great for tracking your empire\'s growth.' },
     ]
   },
   territory: {
     title: 'Territory Control',
     sections: [
-      { heading: 'Districts', text: 'The city is divided into districts. Claim and defend them to earn tribute and influence.' },
-      { heading: 'Turf Wars', text: 'Attack rival territories or defend your own. Bring weapons, crew, and a plan.' },
-      { heading: 'Tribute', text: 'Controlled districts generate tribute income every cycle. More turf = more money.' },
+      { heading: 'Districts', text: 'The city is divided into districts. Claim them by spending Influence and fighting NPCs or rival players.' },
+      { heading: 'Turf Wars', text: 'Attack rival territories or defend your own. Bring your best weapons, armour, and crew for the best odds.' },
+      { heading: 'Tribute', text: 'Every district you control generates Tribute income each game cycle. The more turf you hold, the richer you get.' },
+      { heading: 'Defence & Relocation', text: 'Upgrade district defences and assign crew to hold your turf. You can also relocate to a different district to access local bonuses and job variants.' },
     ]
   },
   settings: {
     title: 'Settings',
     sections: [
-      { heading: 'Save & Load', text: 'Save your game to multiple slots. Cloud save syncs across devices when signed in.' },
-      { heading: 'Customize', text: 'Customise your quick-action bar and mobile nav bar with your most-used screens.' },
-      { heading: 'UI Toggles', text: 'Show or hide the quick-actions panel, mobile nav bar, and individual HUD stats.' },
-      { heading: 'Help', text: 'Tap the Help button for a full guide covering every game system.' },
+      { heading: 'Save & Load', text: 'Save your game to multiple slots. Auto-save runs periodically. Sign in for Cloud Save to sync across devices.' },
+      { heading: 'Customize', text: 'Customise your Quick Actions bar and mobile nav bar — choose which screen shortcuts appear for fast access.' },
+      { heading: 'UI Toggles', text: 'Show or hide the Quick Actions panel, mobile nav bar, and individual stats on the Status Bar. Tailor the HUD to your preference.' },
+      { heading: 'Help & Tutorials', text: 'Tap the Help button for a full guide covering every game system, status, and mechanic. You can also re-enable or disable screen tutorials from here.' },
     ]
   },
 };
@@ -8009,140 +8021,390 @@ const SCREEN_TUTORIAL_MAP = {
 
 const HELP_TOPICS = [
   { id: 'getting-started', icon: '', title: 'Getting Started', content: `
-    <p>Welcome to <strong>Mafia-Born</strong> — a browser-based crime RPG where you rise from street thug to Don.</p>
+    <p>Welcome to <strong>Mafia-Born</strong> — a browser-based crime RPG where you rise from street thug to Don of your own criminal empire.</p>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">Core Concepts</h4>
     <ul>
-      <li><strong>Energy</strong> — Most actions cost energy. It regenerates over time, or buy coffee/energy drinks from the mobile nav.</li>
-      <li><strong>Cash & Dirty Money</strong> — Cash is earned from jobs and businesses. Dirty money comes from heists and must be laundered through business fronts.</li>
-      <li><strong>XP & Levelling</strong> — XP from jobs, missions, and side ops. Level up to unlock new screens and features.</li>
-      <li><strong>Health</strong> — Drops when attacked or during failed jobs. Heal at the Hospital or rest.</li>
+      <li><strong>Energy</strong> — Most actions (jobs, heists, fights) cost energy. It regenerates over time (~1 per minute), or you can restore it instantly with Coffee, Energy Drinks, or Steroids from the Black Market.</li>
+      <li><strong>Cash</strong> — Your main currency. Earned from jobs, businesses, missions, and the casino. Spend it on gear, properties, heals, and more.</li>
+      <li><strong>Dirty Money</strong> — Earned from heists and illegal activities. Cannot be spent directly — you must launder it through Business Fronts (Properties screen) to convert it into clean Cash.</li>
+      <li><strong>Health</strong> — Drops from combat, failed jobs, and random events. If it hits 0, you black out and lose time/money. Heal at the Hospital or use Medkits.</li>
+      <li><strong>Heat (Wanted Level)</strong> — Rises when you commit crimes. Higher heat means more police encounters, bigger fines, and possible arrest. Heat decays slowly over time, or you can reduce it via skills and bribes.</li>
+      <li><strong>XP & Rank</strong> — Earn XP from jobs, missions, side ops, and combat. Level up ("Rank up") to unlock new screens, gear, story chapters, and features.</li>
+      <li><strong>Influence</strong> — A measure of your power in the underworld. Used to claim territory and affects your Empire Rating.</li>
     </ul>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">Your First Steps</h4>
+    <ol style="color:#bdc3c7; line-height:1.7;">
+      <li>Do <strong>Jobs</strong> to earn cash and XP.</li>
+      <li>Visit the <strong>Black Market</strong> to buy a weapon and armour.</li>
+      <li>Check <strong>Missions</strong> to start your crime family story.</li>
+      <li>Visit the <strong>Hospital</strong> when your health is low.</li>
+      <li>Open <strong>Settings > Help</strong> any time for detailed guides.</li>
+    </ol>
+  `},
+  { id: 'ui-guide', icon: '', title: 'UI Guide (HUD)', content: `
+    <p>Understanding the on-screen interface.</p>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">Status Bar (Top of Screen)</h4>
+    <p>The bar at the very top displays your vital stats in real time:</p>
+    <ul>
+      <li><strong>Cash</strong> — Your clean, spendable money.</li>
+      <li><strong>Health</strong> — Your current HP. If it reaches 0, you black out.</li>
+      <li><strong>Energy</strong> — Shows current/max energy. Regenerates over time. Most actions cost energy.</li>
+      <li><strong>Heat</strong> — Your wanted level (0-100). Higher = more police attention.</li>
+      <li><strong>Rank</strong> — Your character level. Level up to unlock content.</li>
+      <li><strong>Dirty Money</strong> — Cash from illegal activities that needs laundering.</li>
+      <li><strong>Influence</strong> — Your underworld power / reputation score.</li>
+      <li><strong>Turf / Tribute</strong> — Number of territories held and income earned from them.</li>
+      <li><strong>XP</strong> — Current experience and how much you need for the next level.</li>
+      <li><strong>Skill Points</strong> — Unspent points available for the Skills screen.</li>
+      <li><strong>Season / Weather</strong> — The current in-game season and weather, which can affect events.</li>
+      <li><strong>Bullets / Gas / Respect</strong> — Resource counters shown when you have relevant items or features unlocked.</li>
+    </ul>
+    <p style="color:#95a5a6; font-style:italic;">Tip: You can customise which stats appear on the Status Bar in Settings > UI Toggles.</p>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">The Ledger (Activity Log)</h4>
+    <p>Located below the status bar, The Ledger is a scrolling log that records everything you do — jobs completed, items bought, fights won or lost, story events, and atmospheric narration. It's your running history of actions and events.</p>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">Quick Actions Bar (Right Panel / Mobile Menu)</h4>
+    <p>On desktop, the right-side panel provides one-tap shortcuts to your favourite screens. It includes:</p>
+    <ul>
+      <li><strong>SafeHouse</strong> — Return to your home base.</li>
+      <li><strong>Screen Shortcuts</strong> — Quick links to Jobs, Market, Missions, etc. (customisable in Settings).</li>
+      <li><strong>Save Records</strong> — Quick-save your game.</li>
+      <li><strong>Skip Tutorials</strong> — Disable all tutorial pop-ups (if tutorials are active).</li>
+      <li><strong>Help</strong> — Open this guide.</li>
+      <li><strong>Energy Quick-Buy</strong> — Buy Coffee, Energy Drinks, or Steroids directly.</li>
+    </ul>
+    <p style="color:#95a5a6; font-style:italic;">Tip: On mobile, access quick actions from the hamburger menu or swipe panel.</p>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">Navigation Buttons</h4>
+    <p>The main SafeHouse screen has buttons for every area of the game. Buttons are locked (greyed out) until you reach the required level. Hover over a locked button to see what level unlocks it.</p>
   `},
   { id: 'safehouse-help', icon: '', title: 'SafeHouse', content: `
-    <p>Your home base. All navigation starts here. Buttons unlock as you level up.</p>
+    <p>Your home base and central hub. All navigation starts here.</p>
     <ul>
-      <li><strong>Quick Actions</strong> — The right-side panel (desktop) or swipe menu (mobile) with shortcuts to your favourite screens.</li>
-      <li><strong>Status Bar</strong> — Top bar showing cash, health, energy, heat, rank, and more. Customise which stats show in Settings.</li>
+      <li><strong>Navigation</strong> — Tap any unlocked button to visit that area. Buttons unlock as you level up through Jobs and Missions.</li>
+      <li><strong>Quick Actions</strong> — The right panel (desktop) or mobile menu provides fast shortcuts to your favourite screens, a save button, and help.</li>
+      <li><strong>Status Bar</strong> — The top bar shows your cash, health, energy, heat, rank, and more at all times. Customise it in Settings > UI Toggles.</li>
+      <li><strong>The Ledger</strong> — The scrolling activity log below the status bar records all your actions, purchases, fights, and story events.</li>
+      <li><strong>Portrait</strong> — Your character portrait is shown in the top-left. You can change it from Settings.</li>
     </ul>
   `},
   { id: 'jobs-help', icon: '', title: 'Jobs', content: `
-    <p>Your main source of income and XP early on.</p>
+    <p>Your main source of income and XP, especially early on.</p>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">How Jobs Work</h4>
     <ul>
-      <li>Each job has an <strong>energy cost</strong> and pays cash + XP on success.</li>
-      <li>Higher-tier jobs unlock at higher levels and pay significantly more.</li>
+      <li>Each job has an <strong>energy cost</strong> and pays <strong>cash + XP</strong> on success.</li>
+      <li>Higher-tier jobs unlock at higher levels and pay significantly more, but cost more energy.</li>
+      <li>Some jobs have a <strong>chance to fail</strong>, especially risky ones. Failure may cost health or attract heat.</li>
       <li>Some jobs increase <strong>Heat</strong> (wanted level), which makes cops more aggressive.</li>
+      <li>Jobs may reward <strong>stolen goods</strong> that you can sell at the Fence (Black Market) for extra profit.</li>
+    </ul>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">Tips</h4>
+    <ul>
+      <li>Grind low-energy jobs early to build a cash reserve before buying gear.</li>
+      <li>Watch your heat — if it gets too high, lay low for a while.</li>
+      <li>Buy Coffee or Energy Drinks from the quick-buy panel to keep grinding without waiting.</li>
     </ul>
   `},
   { id: 'store-help', icon: '', title: 'Black Market', content: `
-    <p>Three tabs: <strong>Buy</strong>, <strong>The Fence</strong>, and <strong>Player Market</strong>.</p>
+    <p>Three tabs for all your shopping needs: <strong>Buy</strong>, <strong>The Fence</strong>, and <strong>Player Market</strong>.</p>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">Buy Tab</h4>
     <ul>
-      <li><strong>Buy</strong> — Purchase weapons, armour, and supplies. Better gear = higher attack/defence.</li>
-      <li><strong>The Fence</strong> — Sell stolen items at premium prices. Fence prices vary by your heat level.</li>
-      <li><strong>Player Market</strong> — Buy/sell vehicles with other real players.</li>
+      <li>Purchase <strong>weapons</strong> (increase Attack), <strong>armour</strong> (increase Defence), and <strong>consumables</strong> (restore energy/health).</li>
+      <li>Better gear costs more but gives you a massive edge in combat and job success rates.</li>
+      <li>Consumables include Coffee (small energy), Energy Drinks (moderate energy), Steroids (large energy), and Medkits (restore health).</li>
+    </ul>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">The Fence</h4>
+    <ul>
+      <li>Sell stolen goods obtained from jobs and heists at premium prices.</li>
+      <li>Fence prices can fluctuate based on your heat level and market conditions.</li>
+    </ul>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">Player Market</h4>
+    <ul>
+      <li>Buy and sell vehicles with other real players.</li>
+      <li>List your vehicles for a price, or browse listings to find a deal.</li>
     </ul>
   `},
   { id: 'missions-help', icon: '', title: 'Missions & Story', content: `
-    <p>The narrative heart of the game.</p>
+    <p>The narrative heart of the game — follow your crime family's story from street-level nobody to untouchable Don.</p>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">Family Story</h4>
     <ul>
-      <li><strong>Family Story</strong> — Choose a crime family (Corleone, Moretti, etc.) and play through their cinematic storyline from thug to Don.</li>
-      <li><strong>Side Operations</strong> — Optional quest chains. Each step has a <strong>countdown timer</strong> (3–20 min). You must wait AND complete the objective to advance.</li>
-      <li><strong>Street Stories</strong> — Narrative events tied to side operation steps. They add consequences and flavour.</li>
+      <li>Choose a crime family (Corleone, Moretti, etc.) and play through their <strong>cinematic storyline</strong>.</li>
+      <li>Story chapters unlock as you level up. Each chapter has unique missions with dialogue, choices, and consequences.</li>
+    </ul>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">Side Operations</h4>
+    <ul>
+      <li>Optional quest chains that run in parallel with the main story.</li>
+      <li>Each step has a <strong>countdown timer</strong> (3–20 minutes). You must wait for the timer AND complete the objective to advance.</li>
+      <li>Great source of extra XP, cash, influence, and sometimes unique rewards.</li>
+    </ul>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">Street Stories</h4>
+    <ul>
+      <li>Narrative events triggered during side operation steps.</li>
+      <li>They add choices, consequences, and atmospheric flavour to your quests.</li>
     </ul>
   `},
   { id: 'gang-help', icon: '', title: 'The Family (Gang)', content: `
-    <p>Crime families are the multiplayer social system.</p>
+    <p>Crime families are the social and multiplayer system of Mafia Born.</p>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">Creating or Joining</h4>
     <ul>
-      <li><strong>Create</strong> a family (costs cash) or <strong>join</strong> an existing one.</li>
-      <li><strong>Roles</strong> — Boss, Underboss, Capo, Soldier. Higher roles have more authority.</li>
-      <li><strong>Family Wars</strong> — Coordinate with members to attack rival families for territory and respect.</li>
-      <li><strong>Recruitment</strong> — Hire AI crew members that boost your stats and join heists.</li>
+      <li><strong>Create</strong> a family (costs cash) and become the Boss, or <strong>join</strong> an existing family.</li>
+      <li>Families share territory control, resources, and receive group bonuses.</li>
+    </ul>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">Roles & Hierarchy</h4>
+    <ul>
+      <li><strong>Boss</strong> — Full control over the family. Can promote, demote, and kick members.</li>
+      <li><strong>Underboss</strong> — Second in command. Can manage members and initiate wars.</li>
+      <li><strong>Capo</strong> — Squad leader. Can recruit and manage soldiers.</li>
+      <li><strong>Soldier</strong> — The backbone. Contributes to wars and earns from family operations.</li>
+    </ul>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">Family Wars</h4>
+    <ul>
+      <li>Coordinate with family members to attack rival families.</li>
+      <li>Win wars to gain territory, respect, and dominance on the leaderboard.</li>
+    </ul>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">AI Crew</h4>
+    <ul>
+      <li>Hire AI crew members who boost your stats and join heists.</li>
+      <li>Better crew = better odds in combat and territory control.</li>
     </ul>
   `},
   { id: 'properties-help', icon: '', title: 'Properties & Fronts', content: `
+    <p>Two tabs: <strong>Properties</strong> and <strong>Fronts</strong> — your path to passive income and money laundering.</p>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">Properties</h4>
     <ul>
-      <li><strong>Properties</strong> — Buy apartments, shops, warehouses. They generate <strong>passive income</strong> every cycle.</li>
-      <li><strong>Fronts</strong> — Business fronts (laundromats, restaurants, etc.) launder dirty money into clean cash automatically.</li>
+      <li>Buy apartments, shops, and warehouses across the city.</li>
+      <li>Each property generates <strong>passive income</strong> every game cycle automatically — no action needed.</li>
+      <li>More expensive properties yield higher income returns.</li>
+    </ul>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">Business Fronts</h4>
+    <ul>
+      <li>Fronts (laundromats, restaurants, etc.) automatically launder your <strong>Dirty Money</strong> into clean <strong>Cash</strong>.</li>
+      <li>Higher-tier fronts process larger amounts per cycle.</li>
+      <li>You <em>must</em> have fronts to convert dirty money — it's useless otherwise.</li>
     </ul>
   `},
   { id: 'casino-help', icon: '', title: 'Casino & Mini Games', content: `
+    <p>High risk, high reward entertainment with your hard-earned cash.</p>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">Casino Games</h4>
     <ul>
-      <li><strong>Casino</strong> — Poker, Blackjack, Slots, Roulette, and more. High risk, high reward.</li>
-      <li><strong>Mini Games</strong> — Quick games like Lockpicking and Number Cracking with small but consistent rewards.</li>
+      <li><strong>Poker</strong> — Classic card game. Try to beat the dealer's hand.</li>
+      <li><strong>Blackjack</strong> — Hit 21 or get closer than the dealer without going bust.</li>
+      <li><strong>Slots</strong> — Spin the reels and hope for matching symbols. Quick and luck-based.</li>
+      <li><strong>Roulette</strong> — Bet on numbers, colours, or ranges. Wide variety of bet types.</li>
     </ul>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">Mini Games</h4>
+    <ul>
+      <li><strong>Lockpicking</strong> — Test your timing skills for small but consistent rewards.</li>
+      <li><strong>Number Cracking</strong> — Guess the code for a payout.</li>
+    </ul>
+    <p style="color:#e74c3c; font-style:italic;">Warning: The Casino uses your real in-game Cash. There is no guaranteed win — gamble responsibly!</p>
   `},
   { id: 'stash-help', icon: '', title: 'Stash & Motor Pool', content: `
+    <p>Your inventory and vehicle garage.</p>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">Stash (Inventory)</h4>
     <ul>
-      <li><strong>Stash</strong> — Your inventory. Equip weapons and armour, use consumables, or sell items at the Fence.</li>
-      <li><strong>Motor Pool</strong> — Manage your vehicle collection. Vehicles give speed bonuses and are used in heists/getaways.</li>
+      <li>View all your weapons, armour, consumables, and stolen goods.</li>
+      <li><strong>Equip</strong> a weapon and armour piece to boost your Attack and Defence stats.</li>
+      <li><strong>Use</strong> consumables (Coffee, Medkits, etc.) directly from your stash.</li>
+      <li><strong>Sell</strong> stolen goods at the Fence in the Black Market for extra cash.</li>
+    </ul>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">Motor Pool</h4>
+    <ul>
+      <li>Browse your vehicle collection. Vehicles provide speed bonuses and are used in heists and getaways.</li>
+      <li>Sell unwanted vehicles on the Player Market, or buy new rides there.</li>
     </ul>
   `},
   { id: 'hospital-help', icon: '', title: 'Hospital', content: `
-    <p>Heal injuries at the underground doctor.</p>
+    <p>The underground doctor keeps you patched up — for a price.</p>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">Healing Options</h4>
     <ul>
-      <li><strong>Full Treatment</strong> — Expensive but heals to 100%.</li>
-      <li><strong>Patch Job</strong> — Cheaper partial heal (up to 25 HP).</li>
-      <li><strong>Rest</strong> — Costs energy instead of cash but heals less.</li>
+      <li><strong>Full Treatment</strong> — Restores health to 100%. Expensive, but the most thorough option.</li>
+      <li><strong>Patch Job</strong> — Cheaper partial heal (restores up to ~25 HP). Good for a quick fix between jobs.</li>
+      <li><strong>Rest</strong> — Costs energy instead of cash. Heals a small amount. Useful when you're broke.</li>
+    </ul>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">Why Healing Matters</h4>
+    <ul>
+      <li>If your health drops to 0 during a fight or failed job, you <strong>black out</strong> — losing time and cash.</li>
+      <li>Keep your health above 50% before doing risky jobs or entering combat.</li>
+      <li>Medkits (from the Black Market) can restore health outside the Hospital.</li>
     </ul>
   `},
   { id: 'skills-help', icon: '', title: 'Talents & Skills', content: `
-    <p>Spend skill points in 6 trees:</p>
+    <p>Invest skill points into 6 permanent talent trees to customise your playstyle.</p>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">Skill Trees</h4>
     <ul>
-      <li><strong>Combat</strong> — Attack power, crit chance, armour penetration.</li>
-      <li><strong>Stealth</strong> — Dodge chance, theft success, reduced heat gain.</li>
-      <li><strong>Business</strong> — Income boosts, cheaper purchases, better property returns.</li>
-      <li><strong>Endurance</strong> — Max energy, faster regen, HP bonuses.</li>
-      <li><strong>Street Smarts</strong> — XP boosts, jail time reduction, better loot.</li>
-      <li><strong>Leadership</strong> — Crew bonuses, family buffs, territory defence.</li>
+      <li><strong>Combat</strong> — Increase attack power, critical hit chance, and armour penetration. Best for fighters.</li>
+      <li><strong>Stealth</strong> — Boost dodge chance, theft success rate, and reduce heat gained from crimes. Best for sneaky players.</li>
+      <li><strong>Business</strong> — Increase income from jobs and properties, reduce purchase prices, and improve front efficiency. Best for empire builders.</li>
+      <li><strong>Endurance</strong> — Raise max energy, speed up energy regen, and gain bonus HP. Best for grinders.</li>
+      <li><strong>Street Smarts</strong> — Boost XP gains, reduce jail time, and improve loot quality. Best for fast levellers.</li>
+      <li><strong>Leadership</strong> — Strengthen crew bonuses, family buffs, and territory defence. Best for gang leaders.</li>
+    </ul>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">Earning Skill Points</h4>
+    <ul>
+      <li>You receive skill points each time you level up.</li>
+      <li>Spend them from the <strong>Skills</strong> screen. Each node is permanent once purchased.</li>
     </ul>
   `},
   { id: 'territory-help', icon: '', title: 'Territory Control', content: `
+    <p>Dominate the city district by district.</p>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">Claiming Territory</h4>
     <ul>
-      <li><strong>Districts</strong> — The city is split into districts. Claim them by spending influence and fighting NPCs/players.</li>
-      <li><strong>Tribute</strong> — Controlled districts pay tribute income every cycle. More turf = more money.</li>
-      <li><strong>Defence</strong> — Upgrade district defences to hold turf against rivals. Assign crew to defend.</li>
-      <li><strong>Relocation</strong> — Move to a different district to access local bonuses and job variants.</li>
+      <li>The city is divided into <strong>districts</strong>. Claim them by spending Influence and winning fights against NPC defenders (or rival players).</li>
+      <li>Each district you control generates <strong>Tribute</strong> — passive income every game cycle.</li>
+    </ul>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">Defending & Upgrading</h4>
+    <ul>
+      <li>Upgrade district <strong>defences</strong> to make them harder for rivals to take.</li>
+      <li>Assign <strong>crew members</strong> to defend your most valuable turf.</li>
+      <li>Rivals (AI or players) may attack your territory at any time.</li>
+    </ul>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">Relocation</h4>
+    <ul>
+      <li>You can <strong>relocate</strong> to a different district to access local bonuses and unique job variants.</li>
+      <li>Your "home" district affects some events and encounters.</li>
     </ul>
   `},
   { id: 'stats-help', icon: '', title: 'Stats & Empire', content: `
+    <p>Track every detail of your criminal career.</p>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">Player Stats</h4>
     <ul>
-      <li><strong>Player Stats</strong> — Full stat breakdown: level, cash, combat stats, reputation, etc.</li>
-      <li><strong>Empire Rating</strong> — Composite score of your territory, businesses, crew, and story progress.</li>
-      <li><strong>Empire Overview</strong> — Visual dashboard of all your assets at a glance.</li>
+      <li>Full breakdown of your character: <strong>Level, Cash, Dirty Money, Health, Energy, Attack, Defence, Influence, Reputation</strong>, and more.</li>
+      <li>See your equipped weapon and armour, total jobs completed, missions finished, and crimes committed.</li>
+    </ul>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">Empire Rating</h4>
+    <ul>
+      <li>A <strong>composite score</strong> measuring your overall power in the game.</li>
+      <li>Factors in: territory held, passive income, crew size, properties owned, story progress, and more.</li>
+      <li>Compare your Empire Rating against other players on the leaderboard.</li>
+    </ul>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">Empire Overview</h4>
+    <ul>
+      <li>A visual dashboard showing all your assets, income sources, crew, and territory at a glance.</li>
+      <li>Great for seeing the big picture of your criminal empire's growth.</li>
     </ul>
   `},
   { id: 'heat-help', icon: '', title: 'Heat (Wanted Level)', content: `
-    <p>Heat is your wanted level. It rises from crime and falls over time.</p>
+    <p><strong>Heat</strong> is your wanted level — a number from 0 to 100 representing how much the police are watching you.</p>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">Heat Levels</h4>
     <ul>
-      <li><strong>Low Heat (0-30)</strong> — Cops mostly leave you alone.</li>
-      <li><strong>Medium Heat (30-60)</strong> — Random police encounters, fines, possible arrest.</li>
-      <li><strong>High Heat (60-100)</strong> — Frequent raids, higher bail, tougher consequences.</li>
-      <li><strong>Reducing Heat</strong> — Lay low (wait), bribe officials, or use certain skills.</li>
+      <li><strong>0-15 (Cool)</strong> — You're under the radar. Almost no police encounters.</li>
+      <li><strong>16-30 (Warm)</strong> — Occasional police attention. Minor fines possible.</li>
+      <li><strong>31-50 (Hot)</strong> — Regular police encounters. Risk of being stopped, fined, or arrested.</li>
+      <li><strong>51-75 (Scorching)</strong> — Frequent raids and patrols. Higher bail if arrested. Jobs and heists become riskier.</li>
+      <li><strong>76-100 (Inferno)</strong> — Maximum police pressure. Very high arrest chance. Severe penalties. Lay low immediately!</li>
+    </ul>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">What Causes Heat?</h4>
+    <ul>
+      <li>Risky jobs (theft, assault, heists).</li>
+      <li>Failed jobs and botched crimes.</li>
+      <li>Attacking other players (PvP).</li>
+      <li>Certain story mission actions.</li>
+    </ul>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">How to Reduce Heat</h4>
+    <ul>
+      <li><strong>Wait</strong> — Heat decays slowly over real time.</li>
+      <li><strong>Lay Low</strong> — Avoid committing crimes to let it drop faster.</li>
+      <li><strong>Bribe Officials</strong> — Spend cash to reduce heat quickly.</li>
+      <li><strong>Stealth Skills</strong> — The Stealth skill tree has nodes that reduce heat gain and increase decay speed.</li>
     </ul>
   `},
   { id: 'energy-help', icon: '', title: 'Energy System', content: `
-    <p>Energy is needed for most actions.</p>
+    <p><strong>Energy</strong> is the fuel for almost everything you do in Mafia Born.</p>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">How Energy Works</h4>
     <ul>
-      <li><strong>Regeneration</strong> — Energy regenerates slowly over time.</li>
-      <li><strong>Coffee (☕)</strong> — Restores a small amount, cheap.</li>
-      <li><strong>Energy Drink (⚡)</strong> — Moderate restore, moderate cost.</li>
-      <li><strong>Steroids (💉)</strong> — Large restore, expensive.</li>
-      <li><strong>Max Energy</strong> — Increases with Endurance skill tree investments.</li>
+      <li>You start with a maximum energy pool (default: 100). This can be increased via the <strong>Endurance</strong> skill tree.</li>
+      <li>Most actions — jobs, heists, side ops, combat — cost energy.</li>
+      <li>Energy regenerates slowly over real time (approximately 1 point per minute).</li>
+    </ul>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">Restoring Energy</h4>
+    <ul>
+      <li><strong>Coffee</strong> — Cheap. Restores a small amount of energy. Available from Black Market or quick-buy.</li>
+      <li><strong>Energy Drink</strong> — Moderate cost and restore. Good mid-game option.</li>
+      <li><strong>Steroids</strong> — Expensive. Restores a large amount. Use for long grinding sessions.</li>
+    </ul>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">Energy Tips</h4>
+    <ul>
+      <li>Plan your sessions — do the most expensive jobs first, then switch to cheaper ones as energy runs low.</li>
+      <li>Invest in the <strong>Endurance</strong> skill tree to raise your max energy and regen rate.</li>
+      <li>The quick-buy buttons on the Quick Actions bar let you buy energy items without visiting the store.</li>
+    </ul>
+  `},
+  { id: 'combat-help', icon: '', title: 'Combat & Equipment', content: `
+    <p>Understanding how fights work and how to gear up for them.</p>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">Attack & Defence</h4>
+    <ul>
+      <li><strong>Attack</strong> — Determines how much damage you deal. Increased by equipping weapons and investing in the Combat skill tree.</li>
+      <li><strong>Defence</strong> — Determines how much damage you resist. Increased by equipping armour and investing in skills.</li>
+    </ul>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">Equipment</h4>
+    <ul>
+      <li>Buy weapons and armour from the <strong>Black Market</strong>.</li>
+      <li>Equip them from your <strong>Stash</strong> — tap an item and select Equip.</li>
+      <li>You can have one weapon and one armour equipped at a time.</li>
+      <li>Higher-tier, more expensive gear provides significantly better stats.</li>
+    </ul>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">PvP (Player vs Player)</h4>
+    <ul>
+      <li>Attack other real players to steal their cash and gain respect.</li>
+      <li>Your combat outcome is determined by both players' Attack, Defence, HP, and some randomness.</li>
+      <li>PvP increases Heat: the more you fight, the more wanted you become.</li>
+    </ul>
+  `},
+  { id: 'dirty-money-help', icon: '', title: 'Dirty Money & Laundering', content: `
+    <p>Not all money is created equal — dirty money needs to be cleaned before you can spend it.</p>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">What is Dirty Money?</h4>
+    <ul>
+      <li>Earned from high-risk activities: heists, certain jobs, and illegal operations.</li>
+      <li>Shown as a separate counter on your Status Bar ("Dirty: $X").</li>
+      <li><strong>Cannot be spent directly</strong> on gear, heals, or properties.</li>
+    </ul>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">How to Launder It</h4>
+    <ul>
+      <li>Buy <strong>Business Fronts</strong> from the Properties screen.</li>
+      <li>Fronts automatically convert dirty money into clean cash every game cycle.</li>
+      <li>Better fronts launder more per cycle — invest in upgrades when you can.</li>
+    </ul>
+  `},
+  { id: 'seasons-help', icon: '', title: 'Seasons & Weather', content: `
+    <p>The game world has dynamic seasons and weather that affect gameplay.</p>
+    <ul>
+      <li><strong>Seasons</strong> — Cycle through Spring, Summer, Autumn, and Winter. Each season can influence events, job availability, and NPC behaviour.</li>
+      <li><strong>Weather</strong> — Changes between Clear, Rain, Fog, Storm, and more. Some weather conditions affect job success rates or trigger unique events.</li>
+      <li>Both are shown on the Status Bar and update automatically during gameplay.</li>
     </ul>
   `},
   { id: 'multiplayer-help', icon: '', title: 'Multiplayer & Cloud', content: `
-    <p>Play with others and sync your progress.</p>
+    <p>Play with others and sync your progress across devices.</p>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">Online Features</h4>
     <ul>
-      <li><strong>Cloud Save</strong> — Sign in from Settings to sync saves across devices.</li>
-      <li><strong>World Chat</strong> — Chat with other players in real time.</li>
-      <li><strong>Player Market</strong> — Trade vehicles with other players via the Black Market.</li>
-      <li><strong>PvP</strong> — Attack other players, steal their cash, and climb the leaderboard.</li>
+      <li><strong>Cloud Save</strong> — Sign in from Settings to sync your save across browsers and devices.</li>
+      <li><strong>World Chat</strong> — Chat with other players in real time. Coordinate, trade tips, or talk trash.</li>
+      <li><strong>Player Market</strong> — Buy and sell vehicles with other real players via the Black Market.</li>
+      <li><strong>PvP Combat</strong> — Attack other players, steal their cash, and climb the leaderboard.</li>
+      <li><strong>Families</strong> — Create or join a crime family (gang) for group play, territory wars, and shared bonuses.</li>
+    </ul>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">Offline Play</h4>
+    <ul>
+      <li>Mafia Born works fully offline. Multiplayer features enhance the experience but are not required.</li>
+      <li>Your local saves are always available even without internet.</li>
     </ul>
   `},
   { id: 'saving-help', icon: '', title: 'Saving & Loading', content: `
+    <p>Never lose your progress — multiple save options keep you covered.</p>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">Save Options</h4>
     <ul>
-      <li><strong>Auto-Save</strong> — Game auto-saves to Slot 0 periodically.</li>
-      <li><strong>Manual Save</strong> — Save to any slot from Settings > Save Game.</li>
-      <li><strong>Cloud Sync</strong> — Sign in for cloud saves that persist across browsers/devices.</li>
-      <li><strong>Load Game</strong> — Pick any save slot to resume from Settings > Resume.</li>
+      <li><strong>Auto-Save</strong> — The game automatically saves to Slot 0 at regular intervals.</li>
+      <li><strong>Manual Save</strong> — Save to any slot from Settings > Save Game, or use the "Save Records" button in Quick Actions.</li>
+      <li><strong>Cloud Save</strong> — Sign in for cloud saves that persist across browsers and devices.</li>
+    </ul>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">Loading</h4>
+    <ul>
+      <li>Go to Settings > Resume to pick any save slot and load it.</li>
+      <li>Cloud saves will sync automatically when you sign in on a new device.</li>
+    </ul>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">Tips</h4>
+    <ul>
+      <li>Save before risky activities like high-heat jobs, PvP, or the Casino.</li>
+      <li>Use multiple slots to keep backups at key progression points.</li>
     </ul>
   `},
 ];
@@ -14536,8 +14798,22 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = "1.11.3";
+const CURRENT_VERSION = "1.11.4";
 const VERSION_UPDATES = {
+  "1.11.4": {
+    title: "Tutorial & Help Overhaul",
+    date: "March 2026",
+    changes: [
+      "Tutorial now automatically appears after the changelog is dismissed on first play",
+      "Safehouse tutorial expanded with 6 sections: Status Bar, Ledger, Quick Actions, Navigation, and Getting Started tips",
+      "All 13 screen tutorials rewritten with more detail, tips, and explanations of every feature",
+      "Help guide expanded from 17 to 21 topics — new: UI Guide (HUD), Combat & Equipment, Dirty Money & Laundering, Seasons & Weather",
+      "Every help topic rewritten with sub-headings, detailed explanations, and practical gameplay tips",
+      "Heat system now explained with 5 granular tiers (Cool/Warm/Hot/Scorching/Inferno)",
+      "Energy guide now covers all 3 consumable types with strategy tips",
+      "Skills guide explains what each of the 6 trees is best suited for",
+    ]
+  },
   "1.11.3": {
     title: "Emoji Cleanup & Faction Flag Fix",
     date: "March 2026",
@@ -15158,7 +15434,12 @@ function closeVersionUpdate() {
   const overlay = document.getElementById('version-update-overlay');
   if (overlay) {
     overlay.style.animation = 'fadeOut 0.3s ease';
-    setTimeout(() => overlay.remove(), 300);
+    setTimeout(() => {
+      overlay.remove();
+      // After the changelog is dismissed, trigger the safehouse tutorial
+      // (only shows if the player hasn't seen it yet)
+      setTimeout(() => showTutorialOverlay('safehouse'), 300);
+    }, 300);
   }
 }
 
