@@ -1,4 +1,4 @@
-:root {
+﻿:root {
     --stats-bar-h: 44px;
     --color-bg: #0d0b07;
     --color-bg-warm: #110e08;
@@ -291,7 +291,7 @@ body.season-winter {
     font-family: var(--font-body);
 }
 
-/* Accent borders per button � period-appropriate muted palette */
+/* Accent borders per button — period-appropriate muted palette */
 .hub-jobs  { border-left: 5px solid #6b7c4a; } /* muted olive */
 .hub-ops   { border-left: 5px solid var(--color-burgundy); } /* deep burgundy */
 .hub-motor { border-left: 5px solid #4a3a2a; } /* leather brown */

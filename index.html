@@ -113,7 +113,7 @@
                     <p id="dirty-money-display">Dirty: $0</p>
                     <p id="power-display">Influence: 0</p>
                     <p id="territory-display" style="display: none;">Turf: 0 | Tribute: $0/week</p>
-                    <p id="current-territory-display" style="display: none; cursor: pointer;" onclick="showTerritoryRelocation()">District: �</p>
+                    <p id="current-territory-display" style="display: none; cursor: pointer;" onclick="showTerritoryRelocation()">District: —</p>
                     <p id="experience-display">XP: 0/100</p>
                     <p id="skill-points-display">Skill Points: 0</p>
                     <p id="season-display">Season: Spring</p>
@@ -305,7 +305,7 @@
         <!-- Jail Screen -->
         <div id="jail-screen" class="game-screen" style="display:none;">
             <div class="page-header">
-                <h1><span class="icon">??</span> Locked Up</h1>
+                <h1><span class="icon">🔒</span> Locked Up</h1>
                 <div class="breadcrumb">
                     <span class="current">Jail</span>
                 </div>
@@ -464,7 +464,7 @@
                 <div class="content-card" id="casino-game-select">
                     <p style="text-align:center; color:#d4c4a0;">Choose your game:</p>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 10px;">
-                        <button id="btn-blackjack" onclick="startBlackjack()" style="padding: 15px; border-radius: 2px; border: 2px solid #7a8a5a; background: rgba(122, 138, 90,0.2); color: #f5e6c8; cursor: pointer; font-size: 1.1em;">?? Blackjack</button>
+                        <button id="btn-blackjack" onclick="startBlackjack()" style="padding: 15px; border-radius: 2px; border: 2px solid #7a8a5a; background: rgba(122, 138, 90,0.2); color: #f5e6c8; cursor: pointer; font-size: 1.1em;">🃏 Blackjack</button>
                         <button id="btn-slots" onclick="startSlots()" style="padding: 15px; border-radius: 2px; border: 2px solid #e67e22; background: rgba(230,126,34,0.2); color: #f5e6c8; cursor: pointer; font-size: 1.1em;">Slots</button>
                         <button id="btn-roulette" onclick="startRoulette()" style="padding: 15px; border-radius: 2px; border: 2px solid #8b3a3a; background: rgba(139, 58, 58,0.2); color: #f5e6c8; cursor: pointer; font-size: 1.1em;">Roulette</button>
                         <button id="btn-dice" onclick="startDiceGame()" style="padding: 15px; border-radius: 2px; border: 2px solid #c0a062; background: rgba(192,160,98,0.2); color: #f5e6c8; cursor: pointer; font-size: 1.1em;">Dice</button>
@@ -755,10 +755,10 @@
             
             <div style="margin-top: 20px; padding: 15px; background: #1a0000; border-radius: 4px; border: 1px solid #ff0000;">
                 <h4>Risks</h4>
-                <p>� Failure means you join them</p>
-                <p>� Stealth helps you stay unseen</p>
-                <p>� Takes energy</p>
-                <p>� Earns respect</p>
+                <p>• Failure means you join them</p>
+                <p>• Stealth helps you stay unseen</p>
+                <p>• Takes energy</p>
+                <p>• Earns respect</p>
             </div>
             
             <button onclick="if(typeof requestJailRoster==='function') requestJailRoster(); if(typeof updateJailbreakPrisonerList==='function') updateJailbreakPrisonerList();">Refresh Intel</button>
