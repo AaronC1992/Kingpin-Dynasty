@@ -19,7 +19,7 @@ export const familyStories = {
   // ╚══════════════════════════════════════════════════════════╝
   torrino: {
     storyTitle: "Blood & Honor",
-    icon: "🇮🇹",
+    icon: "Torrino Family",
     color: "#8b0000",
     tagline: "A tale of tradition, loyalty, and the weight of the crown.",
     chapters: [
@@ -291,7 +291,7 @@ export const familyStories = {
   // ╚══════════════════════════════════════════════════════════╝
   kozlov: {
     storyTitle: "Iron & Ice",
-    icon: "🇷🇺",
+    icon: "Kozlov Bratva",
     color: "#4169e1",
     tagline: "A tale of strength, discipline, and the cold price of power.",
     chapters: [
@@ -558,7 +558,7 @@ export const familyStories = {
   // ╚══════════════════════════════════════════════════════════╝
   chen: {
     storyTitle: "Shadow & Silk",
-    icon: "🇨🇳",
+    icon: "Chen Triad",
     color: "#2e8b57",
     tagline: "A tale of patience, intelligence, and the invisible hand that moves the world.",
     chapters: [
@@ -822,7 +822,7 @@ export const familyStories = {
   // ╚══════════════════════════════════════════════════════════╝
   morales: {
     storyTitle: "Fire & Blood",
-    icon: "🇲🇽",
+    icon: "Morales Cartel",
     color: "#ff8c00",
     tagline: "A tale of loyalty, sacrifice, and the fire that burns in those who have nothing to lose.",
     chapters: [

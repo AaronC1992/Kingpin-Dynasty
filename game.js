@@ -383,8 +383,7 @@ function renderStoryFamilyPicker() {
     const buff = rivalFam?.buff;
     html += `
       <div class="story-family-card" style="--fam-color:${fam.color}">
-        <div class="story-family-icon">${fam.icon}</div>
-        <h2 class="story-family-name">${rivalFam?.name || famKey}</h2>
+        <div class="story-family-icon">${rivalFam?.name || fam.icon}</div>
         <h3 class="story-family-story-title">"${fam.storyTitle}"</h3>
         <p class="story-family-tagline">${fam.tagline}</p>
         ${buff ? `<div class="story-family-buff">${buff.name}: ${buff.description}</div>` : ''}
@@ -577,10 +576,9 @@ function renderStoryChapter() {
       <!-- Story Header -->
       <div class="story-header" style="--fam-color:${fam.color}">
         <div class="story-header-top">
-          <span class="story-fam-icon">${fam.icon}</span>
           <div class="story-header-info">
             <h1 class="story-header-title">${fam.storyTitle}</h1>
-            <div class="story-header-meta">${rivalFam?.name || famKey} &middot; ${rank.charAt(0).toUpperCase() + rank.slice(1)} &middot; Respect: ${sp.respect || 0}</div>
+            <div class="story-header-meta">${rivalFam?.name || fam.icon} &middot; ${rank.charAt(0).toUpperCase() + rank.slice(1)} &middot; Respect: ${sp.respect || 0}</div>
           </div>
         </div>
         <div class="story-chapter-bar">
@@ -675,9 +673,8 @@ function renderStoryEpilogue(famKey, fam) {
     <div class="story-screen">
       <div class="story-header" style="--fam-color:${fam.color}">
         <div class="story-header-top">
-          <span class="story-fam-icon">${fam.icon}</span>
           <div class="story-header-info">
-            <h1 class="story-header-title">${rivalFam?.name || famKey} — Don</h1>
+            <h1 class="story-header-title">${rivalFam?.name || fam.icon} — Don</h1>
             <div class="story-header-meta">Story Complete &middot; Empire Unlocked</div>
           </div>
         </div>
@@ -1387,7 +1384,8 @@ const TURF_ZONES = [
 const RIVAL_FAMILIES = {
     torrino: {
         name: "Torrino Family",
-        icon: "ITA",
+        icon: "Torrino Family",
+        ethnicity: "Italian",
         color: "#8b0000",
         motto: "Blood is thicker than wine.",
         don: {
@@ -1415,7 +1413,8 @@ const RIVAL_FAMILIES = {
     },
     kozlov: {
         name: "Kozlov Bratva",
-        icon: "RUS",
+        icon: "Kozlov Bratva",
+        ethnicity: "Russian",
         color: "#4169e1",
         motto: "Strength is the only law.",
         don: {
@@ -1441,7 +1440,8 @@ const RIVAL_FAMILIES = {
     },
     chen: {
         name: "Chen Triad",
-        icon: "CHN",
+        icon: "Chen Triad",
+        ethnicity: "Chinese",
         color: "#2e8b57",
         motto: "Patience is the sharpest blade.",
         don: {
@@ -1467,7 +1467,8 @@ const RIVAL_FAMILIES = {
     },
     morales: {
         name: "Morales Cartel",
-        icon: "MEX",
+        icon: "Morales Cartel",
+        ethnicity: "South American",
         color: "#ff8c00",
         motto: "Fear is the foundation of empire.",
         don: {
@@ -5072,8 +5073,7 @@ function showTerritoryControl() {
     <div style="background: linear-gradient(135deg, ${fam.color}33, ${fam.color}11); padding: 15px; border-radius: 10px; margin-bottom: 20px; border-left: 4px solid ${fam.color};">
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
         <div>
-          <span style="font-size:1.5em;">${fam.icon}</span>
-          <strong style="color:${fam.color}; font-size:1.1em;"> ${fam.name}</strong>
+          <strong style="color:${fam.color}; font-size:1.1em;">${fam.icon}</strong>
           <span style="color:#bdc3c7; margin-left:10px;">Rank: <strong style="color:#f1c40f;">${rankLabel}</strong></span>
         </div>
         <div style="color:#bdc3c7; font-size:0.9em;">${fam.buff.name}: ${fam.buff.description}</div>
@@ -5552,7 +5552,7 @@ function showFamilyChoice() {
       <div style="background:linear-gradient(135deg, ${fam.color}22, rgba(52,73,94,0.9)); padding:25px; border-radius:14px; border-left:5px solid ${fam.color}; cursor:pointer; transition:transform 0.2s;"
            onmouseover="this.style.transform='scale(1.01)'" onmouseout="this.style.transform='scale(1)'">
         <div style="display:flex; align-items:center; gap:15px; margin-bottom:12px;">
-          <span style="font-size:2.5em;">${fam.icon}</span>
+          <span style="font-size:1.4em; font-weight:bold; color:${fam.color};">${fam.icon}</span>
           <div>
             <h3 style="color:${fam.color}; margin:0; font-size:1.3em;">${fam.name}</h3>
             <div style="color:#95a5a6; font-size:0.85em;">${fam.ethnicity} crime family</div>
@@ -5951,8 +5951,7 @@ function generateTurfOverviewHTML() {
     <div style="background:linear-gradient(135deg, ${fam.color}33, ${fam.color}11); padding:15px; border-radius:10px; border-left:4px solid ${fam.color};">
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
         <div>
-          <span style="font-size:1.5em;">${fam.icon}</span>
-          <strong style="color:${fam.color}; font-size:1.1em;"> ${fam.name}</strong>
+          <strong style="color:${fam.color}; font-size:1.1em;">${fam.icon}</strong>
           <span style="color:#bdc3c7; margin-left:10px;">Rank: <strong style="color:#f1c40f;">${rankLabel}</strong></span>
         </div>
         <div style="color:#bdc3c7; font-size:0.9em;">${fam.buff.name}: ${fam.buff.description}</div>
@@ -8660,12 +8659,67 @@ function formatShortMoney(amount) {
   return amount.toLocaleString();
 }
 
-function logAction(message) {
+// ==================== LEDGER FILTER SYSTEM ====================
+// Tracks which category of log entries to show: 'all', 'environment', 'chat'
+let currentLedgerFilter = 'all';
+
+function setLedgerFilter(filter) {
+  currentLedgerFilter = filter;
+
+  // Update active button state
+  document.querySelectorAll('.ledger-filter-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-filter') === filter);
+  });
+
+  // Show/hide log items based on category
+  const logList = document.getElementById('log-list');
+  if (!logList) return;
+  Array.from(logList.children).forEach(li => {
+    const cat = li.getAttribute('data-log-category') || 'environment';
+    if (filter === 'all') {
+      li.style.display = '';
+    } else if (filter === 'chat') {
+      // 'chat' filter also shows 'online' entries (connection/disconnect messages)
+      li.style.display = (cat === 'chat' || cat === 'online') ? '' : 'none';
+    } else {
+      li.style.display = (cat === filter) ? '' : 'none';
+    }
+  });
+
+  // Scroll to the newest visible entry
+  const visible = logList.querySelector('li:not([style*="display: none"]):last-child') ||
+                  logList.querySelector('li:not([style*="display: none"])');
+  if (visible) visible.scrollIntoView({ behavior: 'smooth' });
+}
+window.setLedgerFilter = setLedgerFilter;
+
+function logAction(message, category) {
+  // category: 'environment' (default), 'chat', or 'online'
+  const cat = category || 'environment';
   const logList = document.getElementById("log-list");
   const logItem = document.createElement("li");
+  logItem.setAttribute('data-log-category', cat);
   logItem.innerText = stripEmoji(message);
+
+  // Style chat entries differently
+  if (cat === 'chat') {
+    logItem.style.borderLeftColor = '#3498db';
+  } else if (cat === 'online') {
+    logItem.style.borderLeftColor = '#9b59b6';
+  }
+
+  // Respect current filter
+  if (currentLedgerFilter !== 'all' && cat !== currentLedgerFilter) {
+    // 'online' entries show under both 'chat' filter and 'all'
+    if (!(currentLedgerFilter === 'chat' && cat === 'online')) {
+      logItem.style.display = 'none';
+    }
+  }
+
   logList.appendChild(logItem);
-  logItem.scrollIntoView({ behavior: "smooth" }); // Scroll to the new log item
+  if (logItem.style.display !== 'none') {
+    logItem.scrollIntoView({ behavior: "smooth" });
+  }
   
   // Update mobile action log if mobile system is loaded
   updateMobileActionLog();
@@ -11434,43 +11488,35 @@ function triggerRandomWeatherChange() {
 // Menu items unlock as the player progresses, reducing initial overwhelm
 
 const menuUnlockConfig = [
-  // === ALWAYS AVAILABLE (Level 0) ===
+  // === CORE PROGRESSION (Always Available) ===
+  { id: 'missions',    fn: 'showMissions()',          label: 'Operations',     tip: 'Story missions & special ops',     level: 0 },
   { id: 'jobs',        fn: 'showJobs()',              label: 'Jobs',           tip: 'Complete tasks for cash & XP',     level: 0 },
   { id: 'store',       fn: 'showStore()',             label: 'Black Market',   tip: 'Buy weapons, armor & supplies',    level: 0 },
   { id: 'inventory',   fn: 'showInventory()',         label: 'Stash',          tip: 'Inventory, equipment & motor pool',  level: 0 },
   { id: 'hospital',    fn: 'showHospital()',          label: 'The Doctor',     tip: 'Heal your injuries',               level: 0 },
-  { id: 'options',     fn: 'showOptions()',           label: 'Settings',       tip: 'Save, load & game options',        level: 0 },
+  { id: 'casino',      fn: 'showCasino()',            label: 'Gambling',       tip: 'Slots, roulette, cards & mini games', level: 0 },
 
   // === EARLY GAME (Level 2-3) ===
-  { id: 'relocate',   fn: 'showTerritoryRelocation()', label: 'Relocate',     tip: 'Move to a different district',     level: 2 },
   { id: 'playerstats', fn: 'showPlayerStats()',       label: 'Stats',           tip: 'Stats, skills, empire & overview',  level: 2 },
+  { id: 'relocate',   fn: 'showTerritoryRelocation()', label: 'Relocate',     tip: 'Move to a different district',     level: 2 },
   { id: 'realestate',  fn: 'showRealEstate()',        label: 'Properties',     tip: 'Real estate & business fronts',    level: 3 },
-  { id: 'missions',    fn: 'showMissions()',          label: 'Operations',     tip: 'Story missions & special ops',     level: 0 },
 
   // === MID GAME (Level 5-8) ===
-  { id: 'territories', fn: 'showTerritories()',        label: 'Territories',    tip: 'Manage your owned territories',    level: 5 },
   { id: 'gang',        fn: 'showGang()',              label: 'The Family',     tip: 'Recruit & manage your crew',       level: 5 },
+  { id: 'territories', fn: 'showTerritories()',        label: 'Territories',    tip: 'Manage your owned territories',    level: 5 },
   { id: 'courthouse',  fn: 'showCourtHouse()',        label: 'Legal Aid',      tip: 'Pay to reduce your wanted level',  level: 5 },
   { id: 'events',      fn: 'showEventsStatus()',      label: 'Events',         tip: 'Current weather & world events',   level: 5 },
-  // Mini Games merged into Gambling screen as a tab
-  { id: 'casino',      fn: 'showCasino()',            label: 'Gambling',       tip: 'Slots, roulette, cards & mini games', level: 0 },
-  // Fence merged into Black Market screen as a tab
-  // Crew Details merged into The Family — access via 'Manage Crew' button
   { id: 'jailbreak',   fn: 'showJailbreak()',         label: 'Breakout',       tip: 'Break allies out of prison',       level: 0 },
 
   // === LATE GAME (Level 10-15) ===
-  // Fronts (Businesses) moved into Properties screen as a tab
-  // Turf Wars & Turf Map are now inside Operations
   { id: 'laundering',  fn: 'showMoneyLaundering()',   label: 'The Wash',       tip: 'Launder dirty money into clean cash', level: 12 },
 
-  // === ENDGAME (Level 15+) ===
-  // Empire Rating & Empire Overview moved into Stats screen as tabs
-
-  // === WORLD CHAT (Always Available) ===
+  // === SOCIAL / ONLINE ===
   { id: 'worldchat',   fn: 'showWorldChat()',            label: 'World Chat',     tip: 'Chat with other players online',  level: 0 },
-
-  // === MULTIPLAYER (Level 5+) ===
   { id: 'onlineworld', fn: 'showOnlineWorld()',         label: 'The Commission', tip: 'Enter the online underworld',     level: 5 },
+
+  // === SETTINGS (Always last) ===
+  { id: 'options',     fn: 'showOptions()',           label: 'Settings',       tip: 'Save, load & game options',        level: 0 },
 ];
 
 function isMenuItemUnlocked(item) {
@@ -11576,8 +11622,53 @@ function showCommandCenter() {
   });
   
   grid.innerHTML = html;
+
+  // Show a one-time beginner tip after the safehouse loads
+  if (!localStorage.getItem('safehouseTipSeen')) {
+    setTimeout(() => showSafehouseTip(), 400);
+  }
 }
 window.showCommandCenter = showCommandCenter;
+
+// Dismissible first-time tip for new players
+function showSafehouseTip() {
+  if (document.getElementById('safehouse-tip-overlay')) return;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'safehouse-tip-overlay';
+  overlay.style.cssText = `
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 99999;
+    background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center;
+    animation: tutorialFadeIn 0.3s ease; padding: 20px; box-sizing: border-box;
+  `;
+
+  overlay.innerHTML = `
+    <div style="background: linear-gradient(135deg, #1a1a2e, #16213e); border: 2px solid #c0a062;
+         border-radius: 16px; padding: 30px; max-width: 480px; width: 90%;
+         box-shadow: 0 20px 60px rgba(0,0,0,0.8); text-align: center;">
+      <div style="font-size: 2.5em; margin-bottom: 12px;">&#128161;</div>
+      <h2 style="color: #c0a062; margin: 0 0 14px; font-family: 'Georgia', serif; font-size: 1.4em;">Tip: How to Get Started</h2>
+      <p style="color: #bdc3c7; font-size: 1em; line-height: 1.7; margin: 0 0 10px;">
+        Start by running <strong style="color:#d4af37;">Operations</strong> and doing <strong style="color:#d4af37;">Jobs</strong> to earn cash, XP, and level up.
+      </p>
+      <p style="color: #bdc3c7; font-size: 0.95em; line-height: 1.7; margin: 0 0 10px;">
+        Once you have some money, visit the <strong style="color:#d4af37;">Black Market</strong> for weapons and armour, then check <strong style="color:#d4af37;">The Doctor</strong> when your health is low.
+      </p>
+      <p style="color: #95a5a6; font-size: 0.85em; line-height: 1.6; margin: 0 0 20px;">
+        More locations and features unlock as you level up. Check <strong>Settings &gt; Help</strong> any time for a full guide.
+      </p>
+      <button onclick="document.getElementById('safehouse-tip-overlay').remove(); localStorage.setItem('safehouseTipSeen', '1');"
+        style="background: linear-gradient(135deg, #d4af37, #b8962e); color: #1a1a2e; border: none;
+               padding: 14px 36px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1.05em;
+               font-family: 'Georgia', serif; box-shadow: 0 4px 15px rgba(212,175,55,0.4);">
+        Got It — Let's Go!
+      </button>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+}
+window.showSafehouseTip = showSafehouseTip;
 
 // ========================
 // PLAYER STATS SCREEN
@@ -14798,8 +14889,23 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = "1.11.4";
+const CURRENT_VERSION = "1.11.5";
 const VERSION_UPDATES = {
+  "1.11.5": {
+    title: "Safehouse UX & Ledger Filters",
+    date: "March 2026",
+    changes: [
+      "Safehouse buttons reorganized — Operations first, then Jobs, Black Market, Stash, Doctor, Gambling, with progression unlocks after",
+      "New one-time safehouse tip popup guides new players to start with Jobs and Operations",
+      "Ledger now has filter buttons: All, Environment, and World Chat",
+      "World Chat filter shows multiplayer chat messages and player connection/disconnect notices",
+      "Environment filter shows only game events (job results, combat, territory, etc.)",
+      "Ledger entries are color-coded: gold (environment), blue (chat), purple (online status)",
+      "Faction flag abbreviations (ITA, RUS, CHN, MEX) replaced with full faction names (Torrino Family, Kozlov Bratva, Chen Triad, Morales Cartel)",
+      "Fixed undefined ethnicity display on family choice screen",
+      "Cleaned up remaining flag emojis in passive manager log messages",
+    ]
+  },
   "1.11.4": {
     title: "Tutorial & Help Overhaul",
     date: "March 2026",

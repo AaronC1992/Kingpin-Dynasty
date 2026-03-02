@@ -5,6 +5,18 @@ All notable changes to From Dusk To Don (Mafia Born) will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.5] - 2026-03-01
+
+### Changed — Safehouse UX & Ledger Filters
+- **Safehouse buttons reorganized** — Operations first, then Jobs, Black Market, Stash, Doctor, Gambling, with progression unlocks after and Settings last
+- **New safehouse tip** — one-time dismissible popup guides new players to start with Jobs and Operations
+- **Ledger filter buttons** — All, Environment, and World Chat filters let players control what appears in the ledger
+- **World Chat in ledger** — multiplayer chat messages and player connection/disconnect notices now appear in the ledger under the World Chat filter
+- **Color-coded ledger entries** — gold border (environment), blue (chat), purple (online status)
+- **Faction names replace abbreviations** — ITA/RUS/CHN/MEX replaced with full names: Torrino Family, Kozlov Bratva, Chen Triad, Morales Cartel across all files
+- **Ethnicity added to faction data** — family choice screen now correctly shows "Italian/Russian/Chinese/South American crime family"
+- **Passive log messages fixed** — removed broken flag emojis from Chen and Morales passive log entries
+
 ## [1.11.4] - 2026-03-01
 
 ### Changed — Tutorial & Help Overhaul

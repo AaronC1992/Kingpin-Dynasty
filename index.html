@@ -11,7 +11,7 @@
     <meta property="og:image" content="GameLogo.png">
     <link rel="icon" href="GameLogo.png" type="image/png">
     <title>Mafia Born - From Dusk To Don</title>
-    <link rel="stylesheet" href="styles.css?v=1.11.4">
+    <link rel="stylesheet" href="styles.css?v=1.11.5">
 </head>
 <body>
     <noscript>
@@ -141,6 +141,11 @@
         <!-- Action Log -->
         <div id="action-log">
             <h3>The Ledger</h3>
+            <div id="ledger-filters">
+                <button class="ledger-filter-btn active" data-filter="all" onclick="setLedgerFilter('all')">All</button>
+                <button class="ledger-filter-btn" data-filter="environment" onclick="setLedgerFilter('environment')">Environment</button>
+                <button class="ledger-filter-btn" data-filter="chat" onclick="setLedgerFilter('chat')">World Chat</button>
+            </div>
             <ul id="log-list"></ul>
         </div>
 
@@ -929,6 +934,6 @@
     <!-- Multiplayer client (global script, must load before game.js module) -->
     <script src="multiplayer.js"></script>
     <!-- Main game logic (Module) -->
-    <script type="module" src="game.js?v=1.11.4"></script>
+    <script type="module" src="game.js?v=1.11.5"></script>
 </body>
 </html>

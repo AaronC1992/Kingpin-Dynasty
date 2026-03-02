@@ -33,7 +33,7 @@ export function applyDailyPassives() {
         const interest = Math.min(maxInterest, Math.floor(player.money * interestRate));
         if (interest > 0) {
             player.money += interest;
-            if (window.logAction) window.logAction(` Torrino "The Books" passive: Earned $${interest.toLocaleString()} interest on your cash.${interest >= maxInterest ? ' (capped)' : ''}`);
+            if (window.logAction) window.logAction(`Torrino Family "The Books" passive: Earned $${interest.toLocaleString()} interest on your cash.${interest >= maxInterest ? ' (capped)' : ''}`);
         }
     }
 
@@ -43,7 +43,7 @@ export function applyDailyPassives() {
         if (Math.random() < regenChance) {
             const ammoGain = Math.floor(Math.random() * 5) + 1;
             player.ammo += ammoGain;
-            if (window.logAction) window.logAction(` Kozlov "Arms Deal" passive: Received a shipment of ${ammoGain} ammo.`);
+            if (window.logAction) window.logAction(`Kozlov Bratva "Arms Deal" passive: Received a shipment of ${ammoGain} ammo.`);
         }
     }
 
@@ -51,7 +51,7 @@ export function applyDailyPassives() {
     if (hasPassive('chen')) {
         const networkBonus = Math.floor(50 + Math.random() * 150); // $50-$200 daily
         player.dirtyMoney = (player.dirtyMoney || 0) + networkBonus;
-        if (window.logAction) window.logAction(`🇨🇳 Chen "Smuggling Routes" passive: Your drug network earns $${networkBonus} dirty money overnight.`);
+        if (window.logAction) window.logAction(`Chen Triad "Smuggling Routes" passive: Your drug network earns $${networkBonus} dirty money overnight.`);
     }
 
     // Morales Cartel: "Cartel Connections" - Small daily wanted level decay
@@ -59,7 +59,7 @@ export function applyDailyPassives() {
         if (player.wantedLevel > 0) {
             const decay = Math.min(player.wantedLevel, Math.floor(Math.random() * 3) + 1);
             player.wantedLevel = Math.max(0, player.wantedLevel - decay);
-            if (window.logAction) window.logAction(`�🇽 Morales "Cartel Connections" passive: Corrupt officials scrub ${decay} from your wanted level.`);
+            if (window.logAction) window.logAction(`Morales Cartel "Cartel Connections" passive: Corrupt officials scrub ${decay} from your wanted level.`);
         }
     }
 }

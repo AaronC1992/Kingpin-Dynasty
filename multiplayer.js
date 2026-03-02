@@ -909,7 +909,7 @@ function connectToOnlineWorld() {
     try {
         // Try to connect to real WebSocket server
         const serverUrl = onlineWorld.serverUrl;
-        logAction(" Connecting to online world...");
+        logAction(" Connecting to online world...", 'chat');
         // Add a console log for clearer diagnostics
         console.log('[multiplayer] Connecting to WebSocket server at', serverUrl);
         
@@ -948,7 +948,7 @@ function connectToOnlineWorld() {
             initializeWorldData();
             startWorldUpdates();
             
-            logAction(` Connected to online world! Player ID: ${onlineWorldState.playerId}`);
+            logAction(` Connected to online world! Player ID: ${onlineWorldState.playerId}`, 'chat');
             showWelcomeMessage();
             
             // Deferred name correction: once player data fully loads, re-send with the real name
@@ -966,7 +966,7 @@ function connectToOnlineWorld() {
             if (onlineWorldState.connectionStatus === 'connected') {
                 onlineWorldState.connectionStatus = 'disconnected';
                 updateConnectionStatus();
-                logAction(" Disconnected from online world");
+                logAction(" Disconnected from online world", 'chat');
                 // Attempt to reconnect
                 setTimeout(() => {
                     connectToOnlineWorld();
@@ -978,7 +978,7 @@ function connectToOnlineWorld() {
         onlineWorldState.socket.onerror = function(error) {
             onlineWorldState.connectionStatus = 'error';
             updateConnectionStatus();
-            logAction(" Failed to connect to online world. Retrying...");
+            logAction(" Failed to connect to online world. Retrying...", 'chat');
             
             // Fallback to local demo mode
             setTimeout(() => {
@@ -989,7 +989,7 @@ function connectToOnlineWorld() {
     } catch (error) {
         onlineWorldState.connectionStatus = 'error';
         updateConnectionStatus();
-        logAction(" Failed to connect to online world. Retrying...");
+        logAction(" Failed to connect to online world. Retrying...", 'chat');
         
         setTimeout(() => {
             connectToLocalDemo();
@@ -1003,7 +1003,7 @@ function connectToLocalDemo() {
     onlineWorldState.connectionStatus = 'offline';
     onlineWorldState.serverInfo.playerCount = 0;
     updateConnectionStatus();
-    logAction('Server unavailable — World Chat is offline. Will retry automatically.');
+    logAction('Server unavailable — World Chat is offline. Will retry automatically.', 'chat');
 }
 
 // Handle messages from the server
@@ -1096,6 +1096,11 @@ async function handleServerMessage(message) {
             // Keep only last 50 messages
             if (onlineWorldState.globalChat.length > 50) {
                 onlineWorldState.globalChat = onlineWorldState.globalChat.slice(-50);
+            }
+
+            // Log chat message to The Ledger under 'chat' category
+            if (typeof logAction === 'function') {
+                logAction(`[Chat] ${chatMessage.player}: ${chatMessage.message}`, 'chat');
             }
             
             // Update chat if visible

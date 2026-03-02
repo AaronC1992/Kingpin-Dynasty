@@ -1164,13 +1164,52 @@ p, ul {
     font-size: 1.1em;
     color: #d4af37;
     background: linear-gradient(to bottom, #1a1a1a, #111);
-    border-bottom: 2px solid #d4af37;
-    padding: 12px 15px 10px;
+    border-bottom: none;
+    padding: 12px 15px 8px;
     text-transform: uppercase;
     letter-spacing: 2px;
     text-align: center;
+    z-index: 2;
+    box-shadow: none;
+}
+
+#ledger-filters {
+    position: sticky;
+    top: 38px;
+    display: flex;
+    gap: 0;
+    padding: 0 10px 8px;
+    background: linear-gradient(to bottom, #111, #111);
+    border-bottom: 2px solid #d4af37;
     z-index: 1;
     box-shadow: 0 2px 8px rgba(0,0,0,0.6);
+}
+
+.ledger-filter-btn {
+    flex: 1;
+    padding: 6px 4px;
+    background: transparent;
+    color: #7f8c8d;
+    border: 1px solid #333;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 10px;
+    font-family: 'Courier New', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all 0.2s ease;
+}
+
+.ledger-filter-btn:hover {
+    color: #bdc3c7;
+    border-color: #555;
+}
+
+.ledger-filter-btn.active {
+    color: #d4af37;
+    border-color: #d4af37;
+    background: rgba(212, 175, 55, 0.1);
+    font-weight: bold;
 }
 
 #action-log ul {
