@@ -7730,12 +7730,6 @@ function hideAllScreens() {
   if (playerStatsScreen) playerStatsScreen.style.display = "none";
   const cmdCenter = document.getElementById("safehouse");
   if (cmdCenter) cmdCenter.style.display = "none";
-  // Remove era theme classes when leaving safehouse
-  const gameEl = document.getElementById("game");
-  if (gameEl) ['era1920','era1950','era1970'].forEach(t => gameEl.classList.remove(`theme-${t}`));
-  // Hide the theme bar
-  const themeBar = document.getElementById('safehouse-theme-bar');
-  if (themeBar) themeBar.style.display = 'none';
   const multiplayerScreen = document.getElementById("multiplayer-screen");
   if (multiplayerScreen) multiplayerScreen.style.display = "none";
 }
@@ -11609,43 +11603,6 @@ function showUnlockToast(items) {
   }, 8000);
 }
 
-// ==================== SAFEHOUSE THEME SYSTEM ====================
-const SAFEHOUSE_THEMES = ['classic', 'era1920', 'era1950', 'era1970'];
-const SAFEHOUSE_THEME_LABELS = {
-  classic: 'Classic',
-  era1920: '1920s Prohibition',
-  era1950: '1950s Golden Age',
-  era1970: '1970s Underworld'
-};
-
-// Category groups for themed layouts (non-classic themes group buttons into sections)
-const SAFEHOUSE_CATEGORIES = [
-  { key: 'core',   title: 'Core Operations',     ids: ['missions','jobs','store','inventory','hospital','casino'] },
-  { key: 'early',  title: 'Street Level',         ids: ['playerstats','relocate','realestate'] },
-  { key: 'mid',    title: 'Organization',          ids: ['gang','territories','courthouse','events','jailbreak'] },
-  { key: 'late',   title: 'Empire',                ids: ['laundering'] },
-  { key: 'social', title: 'The Wire',              ids: ['worldchat','onlineworld'] },
-  { key: 'system', title: 'Back Office',            ids: ['options'] },
-];
-
-function getSafehouseTheme() {
-  return localStorage.getItem('safehouseTheme') || 'classic';
-}
-
-function setSafehouseTheme(theme) {
-  if (!SAFEHOUSE_THEMES.includes(theme)) return;
-  localStorage.setItem('safehouseTheme', theme);
-}
-
-function cycleSafehouseTheme() {
-  const current = getSafehouseTheme();
-  const idx = SAFEHOUSE_THEMES.indexOf(current);
-  const next = SAFEHOUSE_THEMES[(idx + 1) % SAFEHOUSE_THEMES.length];
-  setSafehouseTheme(next);
-  showCommandCenter();
-}
-window.cycleSafehouseTheme = cycleSafehouseTheme;
-
 // Function to show the SafeHouse (full menu with all options)
 function showCommandCenter() {
   hideAllScreens();
@@ -11654,57 +11611,13 @@ function showCommandCenter() {
   const grid = document.getElementById("safehouse-grid");
   if (!grid) return;
   
-  const theme = getSafehouseTheme();
-  const gameEl = document.getElementById("game");
-  const safehouse = document.getElementById("safehouse");
-  
-  // Remove any previous theme class from #game (so it styles everything on screen)
-  SAFEHOUSE_THEMES.forEach(t => gameEl.classList.remove(`theme-${t}`));
-  
-  // Apply current theme class (classic uses default styles, no class needed)
-  if (theme !== 'classic') {
-    gameEl.classList.add(`theme-${theme}`);
-  }
-  
-  // Show and update the theme bar
-  const themeBar = document.getElementById('safehouse-theme-bar');
-  const themeBtn = document.getElementById('safehouse-theme-btn');
-  if (themeBar) themeBar.style.display = 'flex';
-  if (themeBtn) themeBtn.innerHTML = `${SAFEHOUSE_THEME_LABELS[theme]} &#9654;`;
-  
   let html = '';
-  
-  if (theme === 'classic') {
-    // Classic: flat grid, no grouping
-    menuUnlockConfig.forEach(item => {
-      html += `<button class="menu-btn-unlocked" onclick="${item.fn}">
-        <span class="menu-btn-label">${item.label}</span>
-        <span class="menu-btn-tip">${item.tip}</span>
-      </button>`;
-    });
-  } else {
-    // Themed layouts: grouped sections
-    const itemMap = {};
-    menuUnlockConfig.forEach(item => itemMap[item.id] = item);
-    
-    SAFEHOUSE_CATEGORIES.forEach(cat => {
-      const items = cat.ids.map(id => itemMap[id]).filter(Boolean);
-      if (items.length === 0) return;
-      
-      html += `<div class="sh-section sh-cat-${cat.key}">
-        <div class="sh-section-title">${cat.title}</div>
-        <div class="sh-section-grid">`;
-      
-      items.forEach(item => {
-        html += `<button class="menu-btn-unlocked" onclick="${item.fn}">
-          <span class="menu-btn-label">${item.label}</span>
-          <span class="menu-btn-tip">${item.tip}</span>
-        </button>`;
-      });
-      
-      html += `</div></div>`;
-    });
-  }
+  menuUnlockConfig.forEach(item => {
+    html += `<button class="menu-btn-unlocked" onclick="${item.fn}">
+      <span class="menu-btn-label">${item.label}</span>
+      <span class="menu-btn-tip">${item.tip}</span>
+    </button>`;
+  });
   
   grid.innerHTML = html;
 
