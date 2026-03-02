@@ -5,6 +5,16 @@ All notable changes to From Dusk To Don (Mafia Born) will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.6] - 2026-03-02
+
+### Fixed — Admin Kill & Death Newspaper
+- **Admin kill triggers permadeath** — target player now sees the full death screen and newspaper when killed by an admin
+- **Death newspaper broadcast** — server builds newspaper data and broadcasts it to all online players on admin kill
+- **World chat announcement** — admin kills are announced in world chat as "The Daily Racketeer" with a clickable newspaper card
+- **Newspaper text readability** — all newspaper body text, stats, dateline, and footer forced to pure black (#000000) with bold weight, text-shadow, and text-stroke
+- **1920s visual overhaul** — Art Deco styling, warm sepia/gold color palette, Playfair Display and Special Elite fonts throughout
+- **Blue color elimination** — replaced all blue/cool-toned inline backgrounds with warm period-appropriate colors
+
 ## [1.11.5] - 2026-03-01
 
 ### Changed — Safehouse UX & Ledger Filters

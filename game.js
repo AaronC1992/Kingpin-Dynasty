@@ -14971,8 +14971,20 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = "1.11.5";
+const CURRENT_VERSION = "1.11.6";
 const VERSION_UPDATES = {
+  "1.11.6": {
+    title: "Admin Kill Fix & Death Newspaper Polish",
+    date: "March 2026",
+    changes: [
+      "Admin Kill now properly triggers permadeath on the target player (death screen + newspaper)",
+      "Death newspaper is now broadcast to all online players when an admin kills someone",
+      "World chat announces admin kills via 'The Daily Racketeer' with a clickable newspaper card",
+      "All newspaper text forced to pure black with bold weight and text-stroke for maximum readability",
+      "1920s-1950s visual overhaul — Art Deco styling, warm color palette, period-appropriate fonts",
+      "Eliminated all blue/cool-toned backgrounds in favor of warm sepia and gold tones",
+    ]
+  },
   "1.11.5": {
     title: "Safehouse UX & Ledger Filters",
     date: "March 2026",
