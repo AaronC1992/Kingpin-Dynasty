@@ -16702,6 +16702,23 @@ function closeDeathNewspaper() {
 }
 window.closeDeathNewspaper = closeDeathNewspaper;
 
+// DEV TEST: Trigger a fake death newspaper using current player data
+function testDeathNewspaper() {
+  const causes = [
+    'Gunned down outside a speakeasy on 5th Avenue',
+    'Killed in a botched bank heist getaway',
+    'Poisoned at a Family dinner — suspicion falls on the Underboss',
+    'Found floating in the river with concrete shoes',
+    'Ambushed by a rival gang during a territory dispute',
+    'Shot by police during a high-speed chase',
+    'Stabbed in a back-alley dice game gone wrong'
+  ];
+  const fakeCause = causes[Math.floor(Math.random() * causes.length)];
+  const data = generateDeathNewspaperData(fakeCause);
+  showDeathNewspaper(data);
+}
+window.testDeathNewspaper = testDeathNewspaper;
+
 // Function to show achievements
 function showAchievements() {
   if (player.inJail) {
