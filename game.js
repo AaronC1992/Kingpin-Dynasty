@@ -7730,6 +7730,12 @@ function hideAllScreens() {
   if (playerStatsScreen) playerStatsScreen.style.display = "none";
   const cmdCenter = document.getElementById("safehouse");
   if (cmdCenter) cmdCenter.style.display = "none";
+  // Remove era theme classes when leaving safehouse
+  const gameEl = document.getElementById("game");
+  if (gameEl) ['era1920','era1950','era1970'].forEach(t => gameEl.classList.remove(`theme-${t}`));
+  // Hide the theme bar
+  const themeBar = document.getElementById('safehouse-theme-bar');
+  if (themeBar) themeBar.style.display = 'none';
   const multiplayerScreen = document.getElementById("multiplayer-screen");
   if (multiplayerScreen) multiplayerScreen.style.display = "none";
 }
@@ -11604,27 +11610,22 @@ function showUnlockToast(items) {
 }
 
 // ==================== SAFEHOUSE THEME SYSTEM ====================
-const SAFEHOUSE_THEMES = ['classic', 'neon', 'don', 'tactical', 'blueprint', 'scarface', 'prohibition', 'shadows', 'cosanostra'];
+const SAFEHOUSE_THEMES = ['classic', 'era1920', 'era1950', 'era1970'];
 const SAFEHOUSE_THEME_LABELS = {
   classic: 'Classic',
-  neon: 'Neon Noir',
-  don: "Don's Office",
-  tactical: 'Tactical',
-  blueprint: 'Blueprint',
-  scarface: 'Scarface',
-  prohibition: 'Prohibition',
-  shadows: 'Shadows',
-  cosanostra: 'Cosa Nostra'
+  era1920: '1920s Prohibition',
+  era1950: '1950s Golden Age',
+  era1970: '1970s Underworld'
 };
 
 // Category groups for themed layouts (non-classic themes group buttons into sections)
 const SAFEHOUSE_CATEGORIES = [
   { key: 'core',   title: 'Core Operations',     ids: ['missions','jobs','store','inventory','hospital','casino'] },
-  { key: 'early',  title: 'Early Game',          ids: ['playerstats','relocate','realestate'] },
-  { key: 'mid',    title: 'Mid Game',             ids: ['gang','territories','courthouse','events','jailbreak'] },
-  { key: 'late',   title: 'Late Game',            ids: ['laundering'] },
-  { key: 'social', title: 'Social / Online',      ids: ['worldchat','onlineworld'] },
-  { key: 'system', title: 'System',               ids: ['options'] },
+  { key: 'early',  title: 'Street Level',         ids: ['playerstats','relocate','realestate'] },
+  { key: 'mid',    title: 'Organization',          ids: ['gang','territories','courthouse','events','jailbreak'] },
+  { key: 'late',   title: 'Empire',                ids: ['laundering'] },
+  { key: 'social', title: 'The Wire',              ids: ['worldchat','onlineworld'] },
+  { key: 'system', title: 'Back Office',            ids: ['options'] },
 ];
 
 function getSafehouseTheme() {
@@ -11654,14 +11655,15 @@ function showCommandCenter() {
   if (!grid) return;
   
   const theme = getSafehouseTheme();
+  const gameEl = document.getElementById("game");
   const safehouse = document.getElementById("safehouse");
   
-  // Remove any previous theme class
-  SAFEHOUSE_THEMES.forEach(t => safehouse.classList.remove(`safehouse-${t}`));
+  // Remove any previous theme class from #game (so it styles everything on screen)
+  SAFEHOUSE_THEMES.forEach(t => gameEl.classList.remove(`theme-${t}`));
   
   // Apply current theme class (classic uses default styles, no class needed)
   if (theme !== 'classic') {
-    safehouse.classList.add(`safehouse-${theme}`);
+    gameEl.classList.add(`theme-${theme}`);
   }
   
   // Show and update the theme bar
