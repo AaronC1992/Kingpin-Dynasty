@@ -15919,8 +15919,20 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = "1.11.7";
+const CURRENT_VERSION = "1.11.8";
 const VERSION_UPDATES = {
+  "1.11.8": {
+    title: "Skills & Buffs Audit - 6 Dead Systems Wired",
+    date: "March 2026",
+    changes: [
+      "Removed orphaned getReputationPriceModifier() function (never called, redundant with getStreetRepBonus)",
+      "Chen smugglingMultiplier now boosts laundering conversion rate (+4.5%) and collection payout (+15%)",
+      "Morales energyRegenBonus now reads dynamically from getChosenFamilyBuff() instead of hardcoded family check",
+      "Skill Tree Upgrades count now displayed in Playstyle Stats profile section",
+      "Family street reputation wired to 8 gameplay hooks (2 per family): Torrino sell prices + territory defense, Kozlov gang war power + weapon discounts, Chen drug/smuggling income + mission success, Morales heat reduction + injury chance reduction",
+      "Faction effects display text updated to accurately describe real implemented gameplay mechanics",
+    ]
+  },
   "1.11.7": {
     title: "Turf System Overhaul Ã¢â‚¬â€ Milestones, Escalation & Dominance",
     date: "March 2026",

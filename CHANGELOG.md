@@ -5,6 +5,20 @@ All notable changes to From Dusk To Don (Mafia Born) will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.8] - 2026-03-02
+
+### Fixed — Skills & Buffs Audit: 6 Dead Systems Wired
+- **Removed orphaned `getReputationPriceModifier()`** — never called anywhere, redundant with `getStreetRepBonus`
+- **Chen `smugglingMultiplier` wired** — laundering conversion rate bonus (+4.5%) and collection payout bonus (+15%)
+- **Morales `energyRegenBonus` wired dynamically** — `player.js` now reads from `getChosenFamilyBuff()` instead of hardcoded family check
+- **Skill Tree Upgrades displayed** — `playstyleStats.skillTreeUpgrades` now shown in Playstyle Stats profile section
+- **8 family streetRep gameplay hooks** (2 per family):
+  - Torrino: sell price bonus at shops/fence + territory defense bonus
+  - Kozlov: gang war power bonus + weapon price discount
+  - Chen: drug/smuggling income bonus + faction mission success bonus
+  - Morales: heat reduction from activities + injury chance reduction
+- **Faction effects display text updated** — all 4 family faction positive/negative effect descriptions now match real implemented mechanics
+
 ## [1.11.7] - 2026-03-02
 
 ### Added — Turf System Overhaul: Milestones, Escalation & Dominance
