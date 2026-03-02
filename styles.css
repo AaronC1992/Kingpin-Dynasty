@@ -656,7 +656,7 @@ button:disabled::after {
 
 /* Art Deco ornamental divider below page header */
 .page-header::after {
-    content: '� ? �';
+    content: '\25C6 \2022 \25C6';
     position: absolute;
     bottom: -14px;
     left: 50%;
