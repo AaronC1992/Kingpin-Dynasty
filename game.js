@@ -33,7 +33,7 @@ import {
   startSnakeGame, restartSnake,
   startQuickDraw, startReactionTest, handleReactionClick
 } from './miniGames.js';
-import { DISTRICTS, getDistrict, MOVE_COOLDOWN_MS, MIN_CLAIM_LEVEL, CLAIM_COSTS, MIN_WAR_GANG_SIZE, WAR_ENERGY_COST, BUSINESS_TAX_RATE, getBusinessMultiplier, NPC_OWNER_NAMES } from './territories.js';
+import { DISTRICTS, getDistrict, MOVE_COOLDOWN_MS, MIN_CLAIM_LEVEL, CLAIM_COSTS, MIN_WAR_GANG_SIZE, WAR_ENERGY_COST, BUSINESS_TAX_RATE, getBusinessMultiplier, getDistrictBenefit, NPC_OWNER_NAMES } from './territories.js';
 import { STREET_STORIES, SIDE_QUESTS, POST_DON_ARCS, DEEP_NARRATIONS } from './storyExpansion.js';
 
 // Expose to window for legacy compatibility
@@ -787,7 +787,8 @@ async function startStoryBossFight(chapterId) {
   player.energy -= energyCost;
 
   // Battle calculation
-  const playerStrength = player.power + (player.gang.members * 8) + (player.skillTree.combat.brawler * 10);
+  const enforcerBonus = (player.skillTree.combat.enforcer || 0) * 0.15; // +15% boss power per rank
+  const playerStrength = Math.floor((player.power + (player.gang.members * 8) + (player.skillTree.combat.brawler * 10)) * (1 + enforcerBonus));
   const bossStrength = boss.power + (boss.gangSize * 6);
   const successChance = Math.min(85, 30 + ((playerStrength / bossStrength) * 40));
 
@@ -3727,7 +3728,14 @@ async function purchaseBusiness(businessTypeId) {
   const businessType = businessTypes.find(bt => bt.id === businessTypeId);
   if (!businessType) return;
   
-  if (player.money < businessType.basePrice) {
+  // Corruption: businessLicense discount on purchase cost
+  let finalBusinessPrice = businessType.basePrice;
+  const corruptBizDiscount = getCorruptionBenefit('businessLicense');
+  if (corruptBizDiscount > 0) {
+    finalBusinessPrice = Math.floor(finalBusinessPrice * (1 - corruptBizDiscount));
+  }
+  
+  if (player.money < finalBusinessPrice) {
     showBriefNotification("You don't have enough money to purchase this business!", 'danger');
     return;
   }
@@ -3759,7 +3767,7 @@ async function purchaseBusiness(businessTypeId) {
   const bizBonus = getBusinessMultiplier(districtId);
   const bonusLabel = bizBonus > 1.0 ? ` (${Math.round((bizBonus - 1) * 100)}% income bonus from ${district.shortName})` : '';
   
-  player.money -= businessType.basePrice;
+  player.money -= finalBusinessPrice;
   player.businesses.push({
     type: businessTypeId,
     name: businessType.name,
@@ -3868,7 +3876,13 @@ async function collectBusinessIncome(businessIndex) {
   const bizMultiplier = getBusinessMultiplier(business.districtId || player.currentTerritory);
   
   const hourlyIncome = Math.floor(businessType.baseIncome * Math.pow(businessType.incomeMultiplier, business.level - 1) / 24);
-  const grossIncome = Math.floor(hourlyIncome * Math.min(hoursElapsed, 48) * bizMultiplier);
+  let grossIncome = Math.floor(hourlyIncome * Math.min(hoursElapsed, 48) * bizMultiplier);
+
+  // Corruption: contractAccess boosts business income
+  const corruptContractBonus = getCorruptionBenefit('contractAccess');
+  if (corruptContractBonus > 0) {
+    grossIncome = Math.floor(grossIncome * (1 + corruptContractBonus));
+  }
 
   // Phase 3: Territory tax — if business is in an owned district and owner isn't the player
   let taxAmount = 0;
@@ -4193,9 +4207,11 @@ function startLaundering(methodId) {
     return;
   }
   
-  // Limit concurrent operations to 3
-  if (player.activeLaundering.length >= 3) {
-    showToast("You can only run 3 laundering operations at once! Wait for one to finish.", 'error');
+  // Limit concurrent operations (base 3, storage district bonus increases cap)
+  const storageMult = getDistrictBenefit(player.currentTerritory, 'storage', 1);
+  const maxOps = Math.floor(3 * storageMult);
+  if (player.activeLaundering.length >= maxOps) {
+    showToast(`You can only run ${maxOps} laundering operations at once! Wait for one to finish.`, 'error');
     return;
   }
   
@@ -4234,6 +4250,13 @@ function startLaundering(methodId) {
   if (hasUtilityItem('Burner Phone')) {
     adjustedRisk *= 0.85;
     logAction(`Your Burner Phone keeps communications untraceable — interception risk reduced.`);
+  }
+
+  // International district benefit: offshore connections reduce interception risk
+  const intlMult = getDistrictBenefit(player.currentTerritory, 'international', 1);
+  if (intlMult > 1) {
+    adjustedRisk /= intlMult; // e.g. 1.8 cuts risk nearly in half
+    logAction(`International shipping connections make your money harder to trace.`);
   }
   
   if (riskRoll < adjustedRisk) {
@@ -4606,6 +4629,16 @@ function calculateGangPower() {
       totalPower += (member.experienceLevel * 20);
     }
   });
+  // Kozlov Iron Discipline: +25% gang member effectiveness
+  const gangBuff = getChosenFamilyBuff();
+  if (gangBuff && gangBuff.gangEffectiveness) {
+    totalPower = Math.floor(totalPower * gangBuff.gangEffectiveness);
+  }
+  // District benefit: recruitment boosts gang power in that district
+  if (player.currentTerritory) {
+    const recruitMult = getDistrictBenefit(player.currentTerritory, 'recruitment');
+    if (recruitMult > 1) { totalPower = Math.floor(totalPower * recruitMult); }
+  }
   return Math.floor(totalPower);
 }
 
@@ -5625,7 +5658,9 @@ async function attackTurfZone(zoneId) {
     
     // Solo penalty: without gang members, player takes a 25% attack penalty
     const soloPenalty = activeGang.length === 0 ? 0.75 : 1.0;
-    const finalAttack = Math.floor(attackRoll * soloPenalty);
+    // Corruption: zonePermits boosts attack effectiveness for territory capture
+    const zonePermitBonus = 1 + getCorruptionBenefit('zonePermits');
+    const finalAttack = Math.floor(attackRoll * soloPenalty * zonePermitBonus);
     
     if (finalAttack <= defenseRoll) {
       // Attack FAILED — zone not taken
@@ -6975,6 +7010,21 @@ function manageTerritoryDetails(territoryId) {
 
 async function fortifyTerritory(territoryId) {
   fortifyTurf(territoryId);
+}
+
+// ── Corruption Benefit Helper ──────────────────────────────
+// Returns the best (highest) value for a given corruption benefit type
+// among all currently active (non-expired) corrupted officials.
+function getCorruptionBenefit(benefitType) {
+  const officials = player.corruptedOfficials || [];
+  const now = Date.now();
+  let best = 0;
+  officials.forEach(o => {
+    if (o.expirationDate > now && o.benefits && o.benefits[benefitType]) {
+      best = Math.max(best, o.benefits[benefitType]);
+    }
+  });
+  return best;
 }
 
 // Process Territory Events and Income (called periodically) — now delegates to turf
@@ -9363,6 +9413,15 @@ async function startJob(index) {
   // Calculate actual energy cost with endurance skill reduction
   let actualEnergyCost = Math.max(1, job.energyCost - player.skillTree.endurance.vitality); // Minimum 1 energy
   
+  // Light Feet: −1 energy cost per rank
+  actualEnergyCost = Math.max(1, actualEnergyCost - (player.skillTree.stealth.light_feet || 0));
+  
+  // Unstoppable: −20% energy cost per rank (multiplicative)
+  const unstoppableLevel = player.skillTree.endurance.unstoppable || 0;
+  if (unstoppableLevel > 0) {
+    actualEnergyCost = Math.max(1, Math.floor(actualEnergyCost * (1 - unstoppableLevel * 0.08)));
+  }
+  
   // Quick Hands perk: -15% energy cost on all jobs
   if (hasPlayerPerk('quick_hands')) {
     actualEnergyCost = Math.max(1, Math.floor(actualEnergyCost * 0.85));
@@ -9472,6 +9531,8 @@ async function startJob(index) {
   // Calculate job success chance based on player's power level and skills
   let successChance;
   let skillBonus = (player.skillTree.intelligence.quick_study + player.skillTree.luck.fortune) * 2;
+  // Awareness: +2% luck-based outcomes per rank
+  skillBonus += (player.skillTree.intelligence.awareness || 0) * 2;
   let carBonus = 0;
   
   // Apply advanced skill tree bonuses
@@ -9532,6 +9593,18 @@ async function startJob(index) {
 
   // Cap success chance at 95%
   successChance = Math.min(successChance, 95);
+
+  // Corruption: crimeBonus increases success chance
+  const corruptCrimeBonus = getCorruptionBenefit('crimeBonus');
+  if (corruptCrimeBonus > 0) {
+    successChance = Math.min(95, successChance + corruptCrimeBonus * 100);
+  }
+
+  // District benefit: information boosts job success
+  if (player.currentTerritory) {
+    const infoMult = getDistrictBenefit(player.currentTerritory, 'information');
+    if (infoMult > 1) { successChance = Math.min(95, successChance * infoMult); }
+  }
 
 
   // Random chance for job success
@@ -9601,12 +9674,72 @@ async function startJob(index) {
     }
   }
 
+  // Kingpin Aura skill: +5% all income per rank
+  const kingpinAuraLevel = player.skillTree.charisma?.kingpin_aura || 0;
+  if (kingpinAuraLevel > 0) {
+    const auraBonus = Math.floor(earnings * kingpinAuraLevel * 0.05);
+    earnings += auraBonus;
+    if (auraBonus > 0) logAction(`Your kingpin aura commands respect — your cut is $${auraBonus.toLocaleString()} larger.`);
+  }
+
+  // Scavenger skill: +3% bonus loot per rank
+  const scavengerLevel = player.skillTree.luck?.scavenger || 0;
+  if (scavengerLevel > 0) {
+    const scavengerBonus = Math.floor(earnings * scavengerLevel * 0.03);
+    earnings += scavengerBonus;
+    if (scavengerBonus > 0) logAction(`Your scavenger instincts find extra valuables worth $${scavengerBonus.toLocaleString()}.`);
+  }
+
+  // ── District Benefits applied to job earnings ──
+  const curDistrict = player.currentTerritory || null;
+  if (curDistrict) {
+    // drugSales: boost drug-related job payout
+    if (jn.includes('drug') || jn.includes('dealer') || jn.includes('distribution') || jn.includes('powder')) {
+      const drugSalesMult = getDistrictBenefit(curDistrict, 'drugSales');
+      if (drugSalesMult > 1) { earnings = Math.floor(earnings * drugSalesMult); }
+    }
+    // smuggling: boost smuggling/transport payout
+    if (jn.includes('smuggl') || jn.includes('transport') || jn.includes('shipping')) {
+      const smugglingMult = getDistrictBenefit(curDistrict, 'smuggling');
+      if (smugglingMult > 1) { earnings = Math.floor(earnings * smugglingMult); }
+    }
+    // theft: boost theft/robbery payout
+    if (jn.includes('theft') || jn.includes('steal') || jn.includes('shoplift') || jn.includes('pickpocket') || jn.includes('burglar')) {
+      const theftMult = getDistrictBenefit(curDistrict, 'theft');
+      if (theftMult > 1) { earnings = Math.floor(earnings * theftMult); }
+    }
+    // vice: boost vice-related job payout
+    if (jn.includes('gambl') || jn.includes('prostit') || jn.includes('vice') || jn.includes('bootleg') || jn.includes('speakeasy')) {
+      const viceMult = getDistrictBenefit(curDistrict, 'vice');
+      if (viceMult > 1) { earnings = Math.floor(earnings * viceMult); }
+    }
+    // heistRewards: boost heist payout
+    if (jn.includes('heist') || jn.includes('bank job') || jn.includes('vault')) {
+      const heistMult = getDistrictBenefit(curDistrict, 'heistRewards');
+      if (heistMult > 1) { earnings = Math.floor(earnings * heistMult); }
+    }
+    // protection: boost protection/extortion payout
+    if (jn.includes('protect') || jn.includes('extort') || jn.includes('racket')) {
+      const protMult = getDistrictBenefit(curDistrict, 'protection');
+      if (protMult > 1) { earnings = Math.floor(earnings * protMult); }
+    }
+    // networking: small boost to ALL job earnings
+    const netMult = getDistrictBenefit(curDistrict, 'networking');
+    if (netMult > 1) { earnings = Math.floor(earnings * netMult); }
+  }
+
   // Calculate jail chance with stealth skill reducing it
   let stealthBonus = player.skillTree.stealth.shadow_step * 2;
   stealthBonus += player.skillTree.stealth.escape_artist * 3; // Advanced escape skills
   stealthBonus += player.skillTree.stealth.infiltration * 2; // Advanced infiltration skills
   
   let adjustedJailChance = Math.max(1, job.jailChance - stealthBonus);
+  
+  // Corruption: cases dismissed by a judge
+  const corruptDismissal = getCorruptionBenefit('casesDismissed');
+  if (corruptDismissal > 0) {
+    adjustedJailChance = Math.max(1, Math.floor(adjustedJailChance * (1 - corruptDismissal)));
+  }
   
   // Street Smarts perk: +15% job success (reduces effective jail chance by 15%)
   if (hasPlayerPerk('street_smarts')) {
@@ -9616,9 +9749,16 @@ async function startJob(index) {
   let jailChance = Math.random() * 100;
 
   if (jailChance <= adjustedJailChance) {
-    sendToJail(job.wantedLevelGain);
-    logAction(`Sirens wail behind you! Cold metal cuffs bite into your wrists as the cops drag you away. The ${job.name} was a setup all along...`);
-    return;
+    // Corruption: raidWarning gives chance to avoid arrest
+    const raidWarningChance = getCorruptionBenefit('raidWarning');
+    if (raidWarningChance > 0 && Math.random() < raidWarningChance) {
+      logAction(`Your captain on the payroll tipped you off \u2014 you slipped away before the bust!`);
+      showBriefNotification(`Raid warning! Your corrupt contact saved you from arrest.`, 'warning');
+    } else {
+      sendToJail(job.wantedLevelGain);
+      logAction(`Sirens wail behind you! Cold metal cuffs bite into your wrists as the cops drag you away. The ${job.name} was a setup all along...`);
+      return;
+    }
   }
 
   // Only Bank Job and Counterfeiting Money pay dirty money; all other jobs pay clean money
@@ -9643,6 +9783,12 @@ async function startJob(index) {
   let intimidationReduction = player.skillTree.combat.intimidation * 0.1; // 10% reduction per level
   wantedLevelGain = Math.max(1, Math.floor(wantedLevelGain * (1 - intimidationReduction)));
   
+  // Ghost Protocol: −4% heat gain per rank
+  const ghostLevel = player.skillTree.stealth.ghost_protocol || 0;
+  if (ghostLevel > 0) {
+    wantedLevelGain = Math.max(1, Math.floor(wantedLevelGain * (1 - ghostLevel * 0.04)));
+  }
+  
   // Utility item: Police Scanner reduces wanted level gain by 20%
   if (hasUtilityItem('Police Scanner')) {
     wantedLevelGain = Math.max(1, Math.floor(wantedLevelGain * 0.8));
@@ -9657,6 +9803,35 @@ async function startJob(index) {
       wantedLevelGain = Math.max(1, Math.floor(wantedLevelGain * heatMultiplier));
     }
   }
+
+  // Chosen family buffs on heat reduction
+  const heatFamilyBuff = getChosenFamilyBuff();
+  if (heatFamilyBuff) {
+    // Torrino Omerta: -20% heat from ALL jobs
+    if (heatFamilyBuff.heatReduction) {
+      wantedLevelGain = Math.max(1, Math.floor(wantedLevelGain * (1 - heatFamilyBuff.heatReduction)));
+    }
+    // Morales Cartel Supply Line: violent jobs generate 25% less heat
+    if (heatFamilyBuff.violentHeatReduction && job.name &&
+        (job.name.toLowerCase().includes('fight') || job.name.toLowerCase().includes('rob') ||
+         job.name.toLowerCase().includes('assault') || job.name.toLowerCase().includes('heist'))) {
+      wantedLevelGain = Math.max(1, Math.floor(wantedLevelGain * (1 - heatFamilyBuff.violentHeatReduction)));
+    }
+  }
+
+  // Corruption: bribed officials reduce heat gain
+  const corruptHeatReduction = Math.max(getCorruptionBenefit('heatReduction'), getCorruptionBenefit('cityWideProtection'));
+  if (corruptHeatReduction > 0) {
+    wantedLevelGain = Math.max(1, Math.floor(wantedLevelGain * (1 - corruptHeatReduction)));
+  }
+
+  // District benefits: heatReduction and legitimacy lower heat gain
+  if (curDistrict) {
+    const distHeatRed = getDistrictBenefit(curDistrict, 'heatReduction', 0);
+    if (distHeatRed > 0) { wantedLevelGain = Math.max(1, Math.floor(wantedLevelGain * (1 - distHeatRed))); }
+    const distLegitimacy = getDistrictBenefit(curDistrict, 'legitimacy');
+    if (distLegitimacy > 1) { wantedLevelGain = Math.max(1, Math.floor(wantedLevelGain / distLegitimacy)); }
+  }
   
   player.wantedLevel += wantedLevelGain;
   
@@ -9669,6 +9844,11 @@ async function startJob(index) {
   if (player.skillTree.intelligence.forensics > 0) {
     let forensicsSuccess = Math.random() * 100;
     let forensicsChance = player.skillTree.intelligence.forensics * 8; // 8% chance per level
+    // Corruption: evidenceDestruction stacks with forensics
+    const corruptEvidence = getCorruptionBenefit('evidenceDestruction');
+    if (corruptEvidence > 0) {
+      forensicsChance += corruptEvidence * 100;
+    }
     
     if (forensicsSuccess < forensicsChance) {
       let evidenceReduction = Math.min(2, Math.floor(player.skillTree.intelligence.forensics / 3)); // 1-2 wanted level reduction
@@ -9727,8 +9907,29 @@ async function startJob(index) {
     gainExperience(40);
   }
 
+  // Street Cred skill: +2% reputation gain per rank
+  const streetCredLevel = player.skillTree.charisma?.street_cred || 0;
+  if (streetCredLevel > 0) {
+    const riskRepMap = { low: 0.2, medium: 0.3, high: 0.6, 'very high': 1.0, extreme: 1.5, legendary: 2.5 };
+    const baseRep = riskRepMap[job.risk] || 0.2;
+    const bonusRep = baseRep * streetCredLevel * 0.02;
+    player.reputation += bonusRep;
+  }
+
   // Track reputation changes for campaign objectives
   updateMissionProgress('reputation_changed');
+
+  // Toughness skill: -2% hurt chance per rank
+  const toughnessLevel = player.skillTree.combat?.toughness || 0;
+  if (toughnessLevel > 0) {
+    hurtChance = Math.max(0, hurtChance * (1 - toughnessLevel * 0.02));
+  }
+
+  // Lucky Break skill: -5% hurt chance per rank (avoid negative events)
+  const luckyBreakLevel = player.skillTree.luck?.lucky_break || 0;
+  if (luckyBreakLevel > 0) {
+    hurtChance = Math.max(0, hurtChance * (1 - luckyBreakLevel * 0.05));
+  }
 
   // Check if the player gets hurt
   if (Math.random() * 100 < hurtChance) {
@@ -9736,6 +9937,16 @@ async function startJob(index) {
     // Thick Skin perk: -25% health loss from jobs
     if (hasPlayerPerk('thick_skin')) {
       healthLoss = Math.max(1, Math.floor(healthLoss * 0.75));
+    }
+    // Resilience skill: -3% injury severity per rank
+    const resilienceLevel = player.skillTree.endurance?.resilience || 0;
+    if (resilienceLevel > 0) {
+      healthLoss = Math.max(1, Math.floor(healthLoss * (1 - resilienceLevel * 0.03)));
+    }
+    // Resistance skill: -5% all damage taken per rank
+    const resistanceLevel = player.skillTree.endurance?.resistance || 0;
+    if (resistanceLevel > 0) {
+      healthLoss = Math.max(1, Math.floor(healthLoss * (1 - resistanceLevel * 0.05)));
     }
     player.health -= healthLoss;
     flashHurtScreen();
@@ -9749,6 +9960,28 @@ async function startJob(index) {
     player.money += bonusCash;
     logAction(`🍀 Lucky Devil! You found an extra $${bonusCash.toLocaleString()} while on the job!`);
     showBriefNotification(`🍀 Lucky bonus: +$${bonusCash.toLocaleString()}!`, 'success');
+  }
+
+  // Jackpot skill: +4% critical success chance per rank (double payout on crit)
+  const jackpotLevel = player.skillTree.luck?.jackpot || 0;
+  if (jackpotLevel > 0 && Math.random() * 100 < jackpotLevel * 4) {
+    const critBonus = earnings;
+    if (job.paysDirty) {
+      player.dirtyMoney = (player.dirtyMoney || 0) + critBonus;
+    } else {
+      player.money += critBonus;
+    }
+    logAction(`🎰 JACKPOT! Critical success — you scored an extra $${critBonus.toLocaleString()}!`);
+    showBriefNotification(`🎰 JACKPOT! +$${critBonus.toLocaleString()}!`, 'success');
+  }
+
+  // Serendipity skill: +1% rare event chance per rank (bonus discovery)
+  const serendipityLevel = player.skillTree.luck?.serendipity || 0;
+  if (serendipityLevel > 0 && Math.random() * 100 < serendipityLevel) {
+    const rareLoot = Math.floor(earnings * 0.5 + Math.random() * earnings * 0.5);
+    player.money += rareLoot;
+    logAction(`✨ Serendipity! You stumble upon a hidden stash worth $${rareLoot.toLocaleString()}!`);
+    showBriefNotification(`✨ Rare find: +$${rareLoot.toLocaleString()}!`, 'success');
   }
 
   // Deduct ammo and gas if used
@@ -10353,6 +10586,14 @@ function sendToJail(wantedLevelLoss) {
   const escapeReduction = (player.skillTree.stealth.escape_artist || 0) * 2; // -2s per escape level
   const baseJailTime = Math.min(90, 15 + Math.floor(player.wantedLevel * 0.8));
   let calculatedJailTime = Math.max(10, baseJailTime - escapeReduction);
+  
+  // Corruption: Judge sentence reduction
+  const corruptSentenceReduction = getCorruptionBenefit('sentenceReduction');
+  if (corruptSentenceReduction > 0) {
+    const reduced = Math.floor(calculatedJailTime * corruptSentenceReduction);
+    calculatedJailTime = Math.max(5, calculatedJailTime - reduced);
+    logAction(`Your judge on the payroll pulls strings — sentence reduced by ${reduced}s.`);
+  }
   
   // Iron Will perk: -25% jail time
   if (hasPlayerPerk('iron_will')) {
@@ -13499,6 +13740,16 @@ async function buyItem(index) {
   // Kozlov Bratva passive: weapons cost 10% less
   if (item.type === 'weapon' || item.type === 'armor' || item.type === 'ammo') {
     finalPrice = Math.floor(finalPrice * getWeaponPriceMultiplier());
+    // Kozlov chosen family buff: weapons cost 15% less
+    const weaponBuff = getChosenFamilyBuff();
+    if (weaponBuff && weaponBuff.weaponDiscount) {
+      finalPrice = Math.floor(finalPrice * (1 - weaponBuff.weaponDiscount));
+    }
+    // District benefit: weapons discount
+    if (player.currentTerritory) {
+      const weapMult = getDistrictBenefit(player.currentTerritory, 'weapons');
+      if (weapMult > 1) { finalPrice = Math.max(1, Math.floor(finalPrice / weapMult)); }
+    }
   }
   
   // Drug Lab synergy: owning a Drug Lab reduces trade goods purchase price by 15-30%

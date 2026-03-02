@@ -225,6 +225,15 @@ export function getLaunderingMultiplier(districtId) {
   return (d && d.benefits && d.benefits.laundering) || 1.0;
 }
 
+/**
+ * Generic district benefit lookup.
+ * Returns the `benefits[key]` value for the given district, defaulting to fallback.
+ */
+export function getDistrictBenefit(districtId, key, fallback = 1.0) {
+  const d = DISTRICTS.find(dd => dd.id === districtId);
+  return (d && d.benefits && d.benefits[key]) || fallback;
+}
+
 /** Look up a district definition by id */
 export function getDistrict(districtId) {
   return DISTRICTS.find(d => d.id === districtId) || null;

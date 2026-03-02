@@ -269,6 +269,11 @@ export function gainExperience(amount) {
   if (typeof window !== 'undefined' && typeof window.hasTurfPerk === 'function' && window.hasTurfPerk('xp_boost')) {
     amount = Math.floor(amount * 1.10);
   }
+  // Mastermind: +10% XP per rank
+  const mastermindLevel = (player.skillTree && player.skillTree.intelligence && player.skillTree.intelligence.mastermind) || 0;
+  if (mastermindLevel > 0) {
+    amount = Math.floor(amount * (1 + mastermindLevel * 0.10));
+  }
   player.experience += amount;
   // Note: logAction is defined in game.js - will be available when modules are imported
   if (typeof logAction === 'function') {
@@ -326,7 +331,11 @@ export function regenerateEnergy() {
       
       // v1.11.0 Rebalance: Regen interval 45s base (was 20s) — Omerta-style energy scarcity
       // Reduced by 1s per 2 recovery levels (min 25s)
-      const regenInterval = Math.max(25, 45 - Math.floor(recoveryLevel / 2));
+      let regenInterval = Math.max(25, 45 - Math.floor(recoveryLevel / 2));
+      // Morales Cartel Supply Line: +20% energy regen speed
+      if (player.chosenFamily === 'morales') {
+        regenInterval = Math.max(20, Math.floor(regenInterval * 0.80));
+      }
       player.energyRegenTimer = regenInterval;
       
       if (typeof logAction === 'function') {
