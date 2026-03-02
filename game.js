@@ -1355,7 +1355,7 @@ const TURF_ZONES = [
         icon: "🏚️",
         description: "Crumbling tenements and burned-out lots. No single family controls it — gangs fight for every block.",
         baseIncome: 1500,
-        defenseRequired: 80,
+        defenseRequired: 120,
         riskLevel: "low",
         controlledBy: "contested",
         boss: null,
@@ -5459,10 +5459,12 @@ function showTurfMap() {
       html += `<div style="color:#c0a062;font-size:0.9em;padding:10px;">Allied territory</div>`;
     } else {
       const canAttack = (player.turf.power || 100) >= zone.defenseRequired;
+      const atkPower = typeof calculateTurfAttackPower === 'function' ? calculateTurfAttackPower() : (player.turf.power || 100);
+      const activeGang = (player.gang?.gangMembers || []).filter(m => m.status === 'active');
       html += `
         <div style="margin-bottom:8px;font-size:0.8em;text-align:center;">
           <div style="color:#8b6a4a;">Defense: ${zone.defenseRequired}</div>
-          <div style="font-size:0.75em;color:#d4c4a0;">(Your power: ${player.turf.power || 100})</div>
+          <div style="font-size:0.75em;color:#d4c4a0;">(Attack power: ${atkPower}${activeGang.length ? ' ⚔️' + activeGang.length + ' crew' : ' ⚠️ solo'})</div>
         </div>
         <button onclick="attackTurfZone('${zone.id}')" 
           style="width:100%;padding:10px;background:linear-gradient(135deg,#8b3a3a,#7a2a2a);border:none;border-radius:8px;color:white;font-weight:bold;cursor:pointer;font-size:0.9em;${!canAttack?'opacity:0.6;cursor:not-allowed;':''}">
@@ -5496,6 +5498,65 @@ function findBossById(bossId) {
   return INDEPENDENT_BOSSES[bossId] || null;
 }
 
+// ── Calculate total offensive power for a turf attack ──
+// Gang members contribute significantly; solo attacks are possible but much harder.
+function calculateTurfAttackPower() {
+  let power = player.turf.power || 100;
+  
+  // Player combat stats
+  power += (player.skillTree?.combat?.brawler || 0) * 4;
+  power += (player.combatReflexBonus || 0) * 3;
+  
+  // Weapon / armour bonus (10% of raw power per equipped tier, roughly)
+  if (player.equippedWeapon) power += 10;
+  if (player.equippedArmor) power += 8;
+  
+  // Gang member offensive contribution — the key to winning turf
+  const active = (player.gang?.gangMembers || []).filter(m => m.status === 'active');
+  active.forEach(m => {
+    let contrib = calculateMemberEffectiveness(m, 'violence');
+    // Role-specific multipliers for offence
+    if (m.role === 'enforcer') contrib *= 1.20;
+    if (m.role === 'bruiser')  contrib *= 1.15;
+    if (m.role === 'hitman')   contrib *= 1.25;
+    power += Math.floor(contrib);
+  });
+  
+  return Math.floor(power);
+}
+
+// ── Process casualties among gang members after a turf fight ──
+// deathChance / injuryChance are base rates; actual chance per member is randomised.
+function processTurfAttackCasualties(won, gangMembers, zoneName) {
+  const casualties = [];
+  const injured = [];
+  const active = gangMembers.filter(m => m.status === 'active');
+  if (active.length === 0) return { casualties, injured };
+  
+  // Losing fights are bloodier
+  const baseDeathChance  = won ? 0.08 : 0.18;
+  const baseInjuryChance = won ? 0.15 : 0.30;
+  
+  active.forEach(m => {
+    const roll = Math.random();
+    // Veteran trait halves death chance
+    const deathMod = m.traits?.some(t => t.name === 'Veteran') ? 0.5 : 1;
+    const injMod   = m.traits?.some(t => t.name === 'Cautious') ? 0.6 : 1;
+    
+    if (roll < baseDeathChance * deathMod) {
+      m.status = 'dead';
+      casualties.push(m.name);
+    } else if (roll < (baseDeathChance * deathMod) + (baseInjuryChance * injMod)) {
+      m.status = 'injured';
+      injured.push(m.name);
+      // Recover after 5 minutes
+      setTimeout(() => { if (m.status === 'injured') m.status = 'active'; }, 300000);
+    }
+  });
+  
+  return { casualties, injured };
+}
+
 // Attack a rival-held turf zone
 async function attackTurfZone(zoneId) {
   initTurfZones();
@@ -5507,24 +5568,36 @@ async function attackTurfZone(zoneId) {
   const playerPower = player.turf.power || 100;
   if (playerPower < powerNeeded) { showBriefNotification(`Not enough power! Need ${powerNeeded}, have ${playerPower}.`, 'danger'); return; }
   
+  // Calculate full attack strength (player power + gang members + gear)
+  const attackPower = calculateTurfAttackPower();
+  const activeGang = (player.gang?.gangMembers || []).filter(m => m.status === 'active');
+  const gangStr = activeGang.length > 0 ? `\nGang Backup: ${activeGang.length} member${activeGang.length > 1 ? 's' : ''}` : '\n⚠️ No gang backup — this will be much harder solo!';
+  
   // Check if there's a boss guarding this zone
   const bossId = zone.boss;
   const bossInfo = bossId ? findBossById(bossId) : null;
   const bossAlive = bossInfo && !(player.turf.bossesDefeated || []).includes(bossInfo.id);
   
   let confirmMsg = `Attack ${zone.name}?`;
-  if (bossAlive) confirmMsg += `\n\n${bossInfo.name} guards this zone! (Power: ${bossInfo.power})`;
-  confirmMsg += `\n\nYour Power: ${playerPower} vs Defense: ${powerNeeded}`;
+  if (bossAlive) confirmMsg += `\n\n⚔️ ${bossInfo.name} guards this zone! (Power: ${bossInfo.power})`;
+  confirmMsg += `\n\nYour Attack Power: ${attackPower} vs Zone Defense: ${powerNeeded}${gangStr}`;
+  if (activeGang.length > 0) confirmMsg += `\n\n⚠️ Warning: Gang members may be killed or injured in the assault.`;
   
   if (await ui.confirm(confirmMsg)) {
     // Boss fight if boss is alive
     if (bossAlive) {
-      const result = resolveBossFight(bossInfo, playerPower);
+      const result = resolveBossFight(bossInfo, attackPower);
       if (!result.won) {
         player.health = Math.max(1, player.health - result.damageTaken);
         player.turf.power = Math.max(10, (player.turf.power || 100) - 15);
-        showBriefNotification(`${bossInfo.name} defeated you! Lost 15 power and ${result.damageTaken} health.`, 'danger');
+        // Gang casualties even on boss loss
+        const { casualties, injured } = processTurfAttackCasualties(false, player.gang?.gangMembers || [], zone.name);
+        let lossMsg = `${bossInfo.name} defeated you! Lost 15 power and ${result.damageTaken} health.`;
+        if (casualties.length) lossMsg += ` KILLED: ${casualties.join(', ')}.`;
+        if (injured.length) lossMsg += ` Injured: ${injured.join(', ')}.`;
+        showBriefNotification(lossMsg, 'danger');
         logAction(`You attacked ${zone.name} but ${bossInfo.name} crushed your assault. Regroup and try again.`);
+        if (casualties.length) logAction(`💀 Lost in the fight: ${casualties.join(', ')}`);
         updateUI();
         return;
       }
@@ -5544,6 +5617,35 @@ async function attackTurfZone(zoneId) {
       }
     }
     
+    // ── TURF COMBAT ROLL ──
+    // Even without a boss, taking turf requires winning a fight against the zone's garrison.
+    // Attack power includes gang members; defense is the zone's defenseRequired with variance.
+    const attackRoll = attackPower + Math.floor(Math.random() * 60) - 30;  // ±30 variance
+    const defenseRoll = powerNeeded + Math.floor(Math.random() * 40) - 10; // slightly favours defense
+    
+    // Solo penalty: without gang members, player takes a 25% attack penalty
+    const soloPenalty = activeGang.length === 0 ? 0.75 : 1.0;
+    const finalAttack = Math.floor(attackRoll * soloPenalty);
+    
+    if (finalAttack <= defenseRoll) {
+      // Attack FAILED — zone not taken
+      player.health = Math.max(1, player.health - Math.floor(Math.random() * 15 + 10));
+      player.turf.power = Math.max(10, (player.turf.power || 100) - 10);
+      const { casualties, injured } = processTurfAttackCasualties(false, player.gang?.gangMembers || [], zone.name);
+      let failMsg = `Attack on ${zone.name} failed! (${finalAttack} vs ${defenseRoll}) Lost 10 power.`;
+      if (casualties.length) failMsg += ` KILLED: ${casualties.join(', ')}.`;
+      if (injured.length) failMsg += ` Injured: ${injured.join(', ')}.`;
+      showBriefNotification(failMsg, 'danger');
+      logAction(`Your assault on <strong>${zone.name}</strong> was repelled. The garrison held firm.`);
+      if (casualties.length) logAction(`💀 Lost in the fight: ${casualties.join(', ')}`);
+      if (injured.length) logAction(`🩹 Injured: ${injured.join(', ')}`);
+      updateUI();
+      return;
+    }
+    
+    // Attack SUCCEEDED — process gang casualties (lighter on victory)
+    const { casualties, injured } = processTurfAttackCasualties(true, player.gang?.gangMembers || [], zone.name);
+    
     // Take the zone
     zone.controlledBy = 'player';
     zone.defendingMembers = [];
@@ -5557,19 +5659,25 @@ async function attackTurfZone(zoneId) {
     checkTurfMilestoneUnlocks();
     checkTurfDominance(zone.id);
     
-    showBriefNotification(`${zone.name} is now your turf!`, 'success');
-    logAction(`You seized control of ${zone.name}. The streets know your name.`);
+    let successMsg = `${zone.name} is now your turf!`;
+    if (casualties.length) successMsg += ` But you lost: ${casualties.join(', ')}.`;
+    if (injured.length) successMsg += ` Injured: ${injured.join(', ')}.`;
+    showBriefNotification(successMsg, casualties.length ? 'warning' : 'success');
+    logAction(`You seized control of <strong>${zone.name}</strong>. The streets know your name.`);
+    if (casualties.length) logAction(`💀 Fallen in the assault: ${casualties.join(', ')}`);
+    if (injured.length) logAction(`🩹 Wounded: ${injured.join(', ')}`);
     updateUI();
     showTurfMap();
   }
 }
 window.attackTurfZone = attackTurfZone;
 
-// Boss fight resolution — combatReflexBonus (from Quick Draw mini-game) adds dodge bonus
+// Boss fight resolution — playerPower already includes gang, gear, and skill bonuses via calculateTurfAttackPower
 function resolveBossFight(bossInfo, playerPower) {
   const reflexBonus = player.combatReflexBonus || 0;
   const bossStrength = bossInfo.power + Math.floor(Math.random() * 40) - 20;
-  const playerStrength = playerPower + Math.floor(Math.random() * 50) - 25 + (player.skillTree?.combat?.brawler || 0) * 3 + reflexBonus * 2;
+  // Don't re-add brawler/reflex — they're already in playerPower from calculateTurfAttackPower
+  const playerStrength = playerPower + Math.floor(Math.random() * 50) - 25;
   const won = playerStrength > bossStrength;
   // Reflex bonus reduces damage taken (each point = ~1 less damage)
   const rawDamage = won ? Math.floor(Math.random() * 15) + 5 : Math.floor(Math.random() * 25) + 15;
@@ -6296,10 +6404,12 @@ function generateTurfOverviewHTML() {
       html += `<div style="color:#c0a062; font-size:0.9em; padding:10px;">Allied territory</div>`;
     } else {
       const canAttack = (player.turf.power || 100) >= zone.defenseRequired;
+      const atkPower = typeof calculateTurfAttackPower === 'function' ? calculateTurfAttackPower() : (player.turf.power || 100);
+      const activeGang = (player.gang?.gangMembers || []).filter(m => m.status === 'active');
       html += `
         <div style="margin-bottom:8px; font-size:0.8em; text-align:center;">
           <div style="color:#8b6a4a;">Defense: ${zone.defenseRequired}</div>
-          <div style="font-size:0.75em; color:#d4c4a0;">(Your power: ${player.turf.power || 100})</div>
+          <div style="font-size:0.75em; color:#d4c4a0;">(Attack power: ${atkPower}${activeGang.length ? ' ⚔️' + activeGang.length + ' crew' : ' ⚠️ solo'})</div>
         </div>
         <button onclick="attackTurfZone('${zone.id}')" 
           style="width:100%;padding:10px;background:linear-gradient(135deg,#8b3a3a,#7a2a2a);border:none;border-radius:8px;color:white;font-weight:bold;cursor:pointer;font-size:0.9em;${!canAttack ? 'opacity:0.6;cursor:not-allowed;' : ''}">
