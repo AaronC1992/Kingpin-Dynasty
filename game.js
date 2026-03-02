@@ -11664,13 +11664,14 @@ function showCommandCenter() {
     safehouse.classList.add(`safehouse-${theme}`);
   }
   
-  // Build the theme switcher into the page header
+  // Build the theme switcher into the breadcrumb row
   const header = safehouse.querySelector('.page-header');
-  let switcher = header.querySelector('.theme-switcher');
+  const breadcrumb = header.querySelector('.breadcrumb');
+  let switcher = breadcrumb.querySelector('.theme-switcher');
   if (!switcher) {
     switcher = document.createElement('div');
     switcher.className = 'theme-switcher';
-    header.appendChild(switcher);
+    breadcrumb.appendChild(switcher);
   }
   switcher.innerHTML = `
     <span class="theme-switcher-label">Theme:</span>
