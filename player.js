@@ -265,6 +265,10 @@ export function gainExperience(amount) {
   if (player.perk === 'street_smarts') {
     amount = Math.floor(amount * 1.10);
   }
+  // Turf milestone perk: +10% XP (Street Presence — 2 zones)
+  if (typeof window !== 'undefined' && typeof window.hasTurfPerk === 'function' && window.hasTurfPerk('xp_boost')) {
+    amount = Math.floor(amount * 1.10);
+  }
   player.experience += amount;
   // Note: logAction is defined in game.js - will be available when modules are imported
   if (typeof logAction === 'function') {

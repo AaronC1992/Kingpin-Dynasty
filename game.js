@@ -100,11 +100,21 @@ function recalculatePower() {
   if (player.realEstate && player.realEstate.ownedProperties) {
     player.realEstate.ownedProperties.forEach(p => { total += p.power || 0; });
   }
-  // Gang member power
+  // Gang member power — use explicit .power if set, otherwise derive from experience level
   if (player.gang && player.gang.gangMembers) {
-    player.gang.gangMembers.forEach(m => { total += m.power || 0; });
+    player.gang.gangMembers.forEach(m => {
+      total += m.power || (Math.floor((m.experienceLevel || 1) * 2) + 5);
+    });
   }
   player.power = total;
+
+  // Sync turf power — base 100 + total from equipment and gang
+  if (player.turf) {
+    player.turf.power = 100 + total;
+  }
+  // Keep legacy territoryPower in sync
+  player.territoryPower = (player.turf?.power) || (100 + total);
+
   return total;
 }
 window.recalculatePower = recalculatePower;
@@ -831,7 +841,7 @@ function advanceStoryChapter() {
 
   // Give rewards
   player.money += chapter.rewards.money || 0;
-  player.experience += chapter.rewards.experience || 0;
+  gainExperience(chapter.rewards.experience || 0);
   player.reputation += chapter.rewards.reputation || 0;
   sp.respect = (sp.respect || 0) + (chapter.respectGain || 0);
 
@@ -848,6 +858,29 @@ function advanceStoryChapter() {
       sp.isDon = true;
       logAction(`You are now the <strong>Don</strong>. The city bows to your will.`);
       showBriefNotification('You are the Don! Turf Wars unlocked!', 'success');
+
+      // Transfer all faction-controlled territory to the player
+      initTurfZones();
+      const familyKey = player.chosenFamily;
+      if (familyKey) {
+        const familyZoneIds = RIVAL_FAMILIES[familyKey]?.turfZones || [];
+        const zones = player.turf._zones || [];
+        if (!player.turf.owned) player.turf.owned = [];
+
+        zones.forEach(zone => {
+          if (familyZoneIds.includes(zone.id) && !player.turf.owned.includes(zone.id)) {
+            zone.controlledBy = 'player';
+            zone.defendingMembers = [];
+            player.turf.owned.push(zone.id);
+            player.turf.reputation = (player.turf.reputation || 0) + 10;
+            logAction(`<strong>${zone.name}</strong> is now under your direct control.`);
+          }
+        });
+        recalcTurfIncome();
+        checkTurfMilestoneUnlocks();
+        checkTurfDominance();
+        showBriefNotification(`All ${RIVAL_FAMILIES[familyKey].name} territory is now yours!`, 'success');
+      }
     }
   }
 
@@ -1516,6 +1549,75 @@ const FAMILY_RANK_REQUIREMENTS = {
     don:       { turfOwned: 7, bossesDefeated: 5, level: 35, allDonsDefeated: true }
 };
 
+// ==================== TURF MILESTONES ====================
+// Passive bonuses unlocked at zone-count thresholds.
+const TURF_MILESTONES = [
+  { zones: 2, label: 'Street Presence',  icon: '🏘️', description: '+10% passive XP from all sources',    perk: 'xp_boost',      value: 0.10 },
+  { zones: 4, label: 'Neighbourhood Boss', icon: '🏙️', description: '-20% heat from all jobs',             perk: 'heat_reduction', value: 0.20 },
+  { zones: 6, label: 'District Kingpin',  icon: '👑', description: '+15% store sell prices & gang recruit quality', perk: 'trade_boost',  value: 0.15 },
+  { zones: 8, label: 'City Overlord',     icon: '🌆', description: 'Exclusive Overlord weapon & +25% turf income', perk: 'overlord',     value: 0.25 },
+];
+
+// Returns array of milestone objects the player has currently unlocked
+function getUnlockedTurfMilestones() {
+  const count = (player.turf?.owned || []).length;
+  return TURF_MILESTONES.filter(m => count >= m.zones);
+}
+
+// Check whether a specific perk is active
+function hasTurfPerk(perkId) {
+  return getUnlockedTurfMilestones().some(m => m.perk === perkId);
+}
+window.hasTurfPerk = hasTurfPerk;
+
+// ==================== TURF DOMINANCE REWARDS ====================
+// Call after taking a zone to see if the player now owns every zone a family used to hold.
+function checkTurfDominance(justTakenZoneId) {
+  if (!player.turf.dominanceRewards) player.turf.dominanceRewards = [];
+
+  Object.entries(RIVAL_FAMILIES).forEach(([famKey, fam]) => {
+    if (famKey === player.chosenFamily) return; // Skip your own family
+    if (player.turf.dominanceRewards.includes(famKey)) return; // Already claimed
+    const allOwned = fam.turfZones.every(zId => (player.turf.owned || []).includes(zId));
+    if (!allOwned) return;
+
+    // --- Grant reward ---
+    player.turf.dominanceRewards.push(famKey);
+    const cashReward = 100000;
+    const repReward  = 50;
+    const powerReward = 50;
+    player.money += cashReward;
+    player.reputation += repReward;
+    player.turf.power = (player.turf.power || 100) + powerReward;
+    player.turf.reputation = (player.turf.reputation || 0) + 30;
+
+    showBriefNotification(`DOMINANCE! You control all ${fam.name} territory! +$${cashReward.toLocaleString()}, +${repReward} Rep, +${powerReward} Power`, 'success');
+    logAction(`<strong>${fam.name} ELIMINATED.</strong> Every block, every alley — yours. The streets will remember this. +$${cashReward.toLocaleString()}, +${repReward} Reputation, +${powerReward} permanent Turf Power.`);
+  });
+}
+
+// ==================== TURF MILESTONE NOTIFICATION ====================
+// Called after zone count changes; fires a one-time notification per milestone.
+function checkTurfMilestoneUnlocks() {
+  if (!player.turf.milestonesNotified) player.turf.milestonesNotified = [];
+  const count = (player.turf.owned || []).length;
+  TURF_MILESTONES.forEach(m => {
+    if (count >= m.zones && !player.turf.milestonesNotified.includes(m.perk)) {
+      player.turf.milestonesNotified.push(m.perk);
+      showBriefNotification(`${m.icon} MILESTONE: ${m.label} — ${m.description}`, 'success');
+      logAction(`<strong>Turf Milestone Unlocked:</strong> ${m.icon} ${m.label} — ${m.description}`);
+
+      // Grant the Overlord weapon once
+      if (m.perk === 'overlord' && !player.inventory.some(i => i.name === 'Overlord\'s Scepter')) {
+        const scepter = { name: 'Overlord\'s Scepter', type: 'weapon', power: 60, price: 0, durability: 200, maxDurability: 200, description: 'A golden cane concealing a razor blade. Earned by controlling all 8 turf zones.' };
+        player.inventory.push(scepter);
+        showBriefNotification('🗡️ You received the Overlord\'s Scepter! Equip it for +60 power.', 'success');
+        logAction('A golden cane arrives in a velvet case. The <strong>Overlord\'s Scepter</strong> — proof of total dominion.');
+      }
+    }
+  });
+}
+
 // Assign gang members to defend a turf zone
 function assignMembersToTurf(zoneId, memberIds, player) {
     const zone = getTurfZone(zoneId);
@@ -1566,11 +1668,15 @@ function initTurfZones() {
 }
 
 // Calculate total defense strength of a turf zone
+// Now includes fortification from player.turf.fortifications AND player turf-power scaling.
 function calculateTurfDefense(zone, player) {
-    let totalDefense = (zone.fortificationLevel || 0) * 10;
+    // Use the per-zone fortification the player upgrades (fortifyTurf) — stored in player.turf.fortifications
+    const fortLevel = (player.turf?.fortifications || {})[zone.id] || zone.fortificationLevel || 0;
+    let totalDefense = fortLevel * 25;  // Each fort level = 25 defense (was 10)
     
+    // Gang members assigned to defend
     (zone.defendingMembers || []).forEach(memberId => {
-        const member = player.gang.gangMembers.find(m => m.id === memberId);
+        const member = (player.gang?.gangMembers || []).find(m => m.id === memberId);
         if (member && member.status === "active") {
             totalDefense += calculateMemberEffectiveness(member, "defense");
             if (member.role === "enforcer") totalDefense *= 1.15;
@@ -1578,6 +1684,10 @@ function calculateTurfDefense(zone, player) {
             if (member.role === "scout") totalDefense *= 1.05;
         }
     });
+
+    // Power scaling: 10% of the player's turf power is added as passive defense to every zone
+    const powerBonus = Math.floor((player.turf?.power || 100) * 0.10);
+    totalDefense += powerBonus;
     
     return Math.floor(totalDefense);
 }
@@ -2463,16 +2573,27 @@ function showPostDonArc(arcId) {
     return `<div class="story-block story-narration">${block.text}</div>`;
   }).join('');
 
-  // Successor arc has candidate cards
+  // Successor arc has candidate cards with selection buttons
   let candidatesHTML = '';
   if (arc.candidates) {
-    candidatesHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;margin:20px 0;">` +
-      arc.candidates.map(c => `
-        <div style="background:#14120a;border:1px solid #c0a04033;border-radius:12px;padding:15px;">
+    // Show current chosen successor if already selected
+    const currentChoice = player.storyProgress?.chosenSuccessor;
+    candidatesHTML = `<h3 style="color:#c0a040;text-align:center;margin:20px 0 10px;">${currentChoice ? '✅ Your Chosen Successor' : '👑 Choose Your Successor'}</h3>`;
+    candidatesHTML += `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;margin:0 0 20px;">` +
+      arc.candidates.map(c => {
+        const isChosen = currentChoice === c.name;
+        const borderStyle = isChosen ? 'border:2px solid #c0a040;' : 'border:1px solid #c0a04033;';
+        return `
+        <div style="background:#14120a;${borderStyle}border-radius:12px;padding:15px;">
           <h3 style="color:#c0a040;margin:0 0 8px;">${c.name}</h3>
           <p style="color:#ccc;font-size:0.9em;line-height:1.4;">${c.desc}</p>
-          <div style="color:#8b3a3a;font-size:0.8em;margin-top:8px;">Risk: ${c.risk}</div>
-        </div>`).join('') +
+          <div style="color:#8a9a6a;font-size:0.8em;margin-top:8px;">Trait: ${c.trait}</div>
+          <div style="color:#8b3a3a;font-size:0.8em;margin-top:4px;">Risk: ${c.risk}</div>
+          <button onclick="selectSuccessor('${c.name}', '${c.trait}')"
+            style="margin-top:12px;width:100%;padding:8px;background:${isChosen ? 'linear-gradient(135deg,#c0a040,#a08830)' : 'linear-gradient(135deg,#7a8a5a,#8a9a6a)'};border:none;border-radius:8px;color:white;font-weight:bold;cursor:pointer;font-size:0.9em;">
+            ${isChosen ? '✅ Chosen' : '👑 Choose'}
+          </button>
+        </div>`}).join('') +
       `</div>`;
   }
 
@@ -2493,6 +2614,20 @@ function showPostDonArc(arcId) {
   document.getElementById("missions-screen").style.display = "block";
 }
 window.showPostDonArc = showPostDonArc;
+
+// Select a successor for the Successor Crisis arc
+function selectSuccessor(candidateName, candidateTrait) {
+  if (!player.storyProgress) return;
+  player.storyProgress.chosenSuccessor = candidateName;
+  player.storyProgress.successorTrait = candidateTrait;
+
+  showBriefNotification(`${candidateName} has been chosen as your successor.`, 'success');
+  logAction(`You chose <strong>${candidateName}</strong> as your successor. The future of your empire is in their hands.`);
+
+  // Re-render the arc to show the updated selection
+  showPostDonArc('pda_the_successor');
+}
+window.selectSuccessor = selectSuccessor;
 
 // ==================== LEVEL-UP MILESTONE NARRATIONS ====================
 
@@ -4740,7 +4875,7 @@ function completeGangOperation(operationData) {
   
   // Update member stats
   member.experienceLevel = Math.min(10, member.experienceLevel + 0.1);
-  player.experience += Math.floor(operation.rewards.experience * 0.7); // Reduce XP for operations
+  gainExperience(Math.floor(operation.rewards.experience * 0.7)); // Reduce XP for operations
   
   // Remove from active operations
   player.gang.activeOperations = player.gang.activeOperations.filter(op => op !== operationData);
@@ -5173,7 +5308,7 @@ function showTerritoryControl() {
   } else {
     html += `
       <div style="background: rgba(231, 76, 60, 0.2); padding: 20px; border-radius: 10px; text-align: center; margin-bottom: 20px;">
-        <div style="font-size: 3em; margin-bottom: 10px;"></div>
+        <div style="font-size: 3em; margin-bottom: 10px;">&#x1F3D9;</div>
         <h3 style="color: #8b3a3a; margin: 0 0 10px 0;">No Turf Controlled</h3>
         <p style="color: #d4c4a0; margin: 0;">Every zone is held by a rival family. Complete missions and fight for control!</p>
       </div>`;
@@ -5193,6 +5328,61 @@ function showTerritoryControl() {
             <div style="text-align: right; color: #e67e22; font-weight: bold;">${Math.ceil(event.duration)} days</div>
           </div>
         </div>`;
+    });
+    html += `</div></div>`;
+  }
+  
+  // --- Turf Milestones Panel ---
+  if (typeof TURF_MILESTONES !== 'undefined' && TURF_MILESTONES.length > 0) {
+    const unlockedIds = getUnlockedTurfMilestones().map(m => m.id);
+    html += `
+      <div style="background:rgba(155,89,182,0.15);padding:20px;border-radius:10px;margin-bottom:20px;border:1px solid rgba(155,89,182,0.3);">
+        <h3 style="color:#bb8fce;margin-bottom:15px;">Turf Milestones</h3>
+        <div style="display:grid;gap:10px;">`;
+    TURF_MILESTONES.forEach(ms => {
+      const unlocked = unlockedIds.includes(ms.id);
+      html += `
+          <div style="background:rgba(20,18,10,0.8);padding:12px;border-radius:8px;border-left:4px solid ${unlocked ? '#2ecc71' : '#555'};opacity:${unlocked ? 1 : 0.6};">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <span style="color:${unlocked ? '#2ecc71' : '#888'};margin-right:8px;">${unlocked ? '\u2705' : '\u{1F512}'}</span>
+                <strong style="color:#f5e6c8;">${ms.name}</strong>
+                <span style="color:#8a7a5a;font-size:0.85em;margin-left:8px;">(${ms.zonesRequired} zones)</span>
+              </div>
+              <span style="color:#d4c4a0;font-size:0.85em;">${ms.description}</span>
+            </div>
+          </div>`;
+    });
+    html += `</div></div>`;
+  }
+  
+  // --- Family Dominance Panel ---
+  if (typeof RIVAL_FAMILIES !== 'undefined') {
+    const domRewards = player.turf.dominanceRewards || [];
+    html += `
+      <div style="background:rgba(231,76,60,0.12);padding:20px;border-radius:10px;margin-bottom:20px;border:1px solid rgba(231,76,60,0.25);">
+        <h3 style="color:#e74c3c;margin-bottom:15px;">Family Dominance</h3>
+        <div style="display:grid;gap:10px;">`;
+    Object.entries(RIVAL_FAMILIES).forEach(([key, fam]) => {
+      const famZones = fam.turfZones || [];
+      const ownedOfFam = famZones.filter(zId => (player.turf.owned || []).includes(zId)).length;
+      const dominated = domRewards.includes(key);
+      const pct = famZones.length > 0 ? Math.floor((ownedOfFam / famZones.length) * 100) : 0;
+      html += `
+          <div style="background:rgba(20,18,10,0.8);padding:12px;border-radius:8px;border-left:4px solid ${dominated ? '#2ecc71' : fam.color || '#8b3a3a'};">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <strong style="color:${fam.color || '#f5e6c8'};">${fam.icon || ''} ${fam.name}</strong>
+                <span style="color:#8a7a5a;font-size:0.85em;margin-left:8px;">${ownedOfFam}/${famZones.length} zones</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div style="width:80px;height:8px;background:#333;border-radius:4px;overflow:hidden;">
+                  <div style="width:${pct}%;height:100%;background:${dominated ? '#2ecc71' : fam.color || '#e74c3c'};border-radius:4px;"></div>
+                </div>
+                <span style="color:${dominated ? '#2ecc71' : '#d4c4a0'};font-size:0.85em;font-weight:bold;">${dominated ? 'DOMINATED' : pct + '%'}</span>
+              </div>
+            </div>
+          </div>`;
     });
     html += `</div></div>`;
   }
@@ -5364,6 +5554,8 @@ async function attackTurfZone(zoneId) {
     player.turf.reputation = (player.turf.reputation || 0) + 15;
     recalcTurfIncome();
     checkFamilyRankUp();
+    checkTurfMilestoneUnlocks();
+    checkTurfDominance(zone.id);
     
     showBriefNotification(`${zone.name} is now your turf!`, 'success');
     logAction(`You seized control of ${zone.name}. The streets know your name.`);
@@ -5398,6 +5590,11 @@ function calculateTurfZoneIncome(zone) {
   // Gang member bonuses
   const enforcers = (player.gang?.gangMembers || []).filter(m => m.specialization === 'enforcer' || m.specialization === 'lieutenant');
   income *= (1 + enforcers.length * 0.05);
+  // Milestone perks: trade boost (+15% income) and overlord (+25% income)
+  if (typeof hasTurfPerk === 'function') {
+    if (hasTurfPerk('trade_boost')) income *= 1.15;
+    if (hasTurfPerk('overlord')) income *= 1.25;
+  }
   return Math.floor(income);
 }
 
@@ -5420,10 +5617,31 @@ function manageTurfDetails(zoneId) {
   const heat = (player.turf.heat || {})[zone.id] || 0;
   const fort = (player.turf.fortifications || {})[zone.id] || 0;
   
+  // Calculate defense breakdown
+  const fortContrib = fort * 25;
+  const defenders = (zone.defendingMembers || []).length;
+  const defenderContrib = defenders * 20;
+  const turfPower = player.turf.power || 0;
+  const powerBonus = Math.floor(turfPower * 0.1);
+  const totalDefense = fortContrib + defenderContrib + powerBonus;
+  
+  // Rival threat assessment
+  const ownedCount = (player.turf.owned || []).length;
+  const escalationTier = Math.min(ownedCount, 8);
+  const attackChancePct = ((0.05 + escalationTier * 0.025) * 100).toFixed(1);
+  const minPower = 40 + escalationTier * 15;
+  const maxPower = minPower + 30 + escalationTier * 10;
+  
+  // Vulnerability status
+  let vulnLabel, vulnColor;
+  if (totalDefense >= maxPower) { vulnLabel = 'Well Defended'; vulnColor = '#2ecc71'; }
+  else if (totalDefense >= minPower) { vulnLabel = 'At Risk'; vulnColor = '#f39c12'; }
+  else { vulnLabel = 'Vulnerable'; vulnColor = '#e74c3c'; }
+  
   let html = `
     <h2 style="color:#f5e6c8; text-align:center; margin-bottom:25px;">${zone.icon} ${zone.name}</h2>
     <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:12px; margin-bottom:20px;">
-      <div style="background:rgba(138, 154, 106,0.2);padding:12px;border-radius:10px;text-align:center;">
+      <div style="background:rgba(138,154,106,0.2);padding:12px;border-radius:10px;text-align:center;">
         <div style="font-size:0.85em;color:#d4c4a0;">Income</div>
         <div style="font-size:1.2em;font-weight:bold;color:#8a9a6a;">$${income.toLocaleString()}/wk</div>
       </div>
@@ -5435,7 +5653,31 @@ function manageTurfDetails(zoneId) {
         <div style="font-size:0.85em;color:#d4c4a0;">Fortification</div>
         <div style="font-size:1.2em;font-weight:bold;color:#c0a062;">Lv ${fort}</div>
       </div>
+      <div style="background:rgba(155,89,182,0.2);padding:12px;border-radius:10px;text-align:center;">
+        <div style="font-size:0.85em;color:#d4c4a0;">Defense</div>
+        <div style="font-size:1.2em;font-weight:bold;color:#bb8fce;">${totalDefense}</div>
+      </div>
     </div>
+    
+    <div style="background:rgba(0,0,0,0.3);border:1px solid #444;border-radius:10px;padding:15px;margin-bottom:16px;">
+      <h4 style="color:#bb8fce;margin:0 0 10px;">Defense Breakdown</h4>
+      <div style="display:flex;flex-direction:column;gap:6px;font-size:0.9em;">
+        <div style="display:flex;justify-content:space-between;"><span style="color:#d4c4a0;">Fortification (Lv ${fort} x 25)</span><span style="color:#c0a062;">+${fortContrib}</span></div>
+        <div style="display:flex;justify-content:space-between;"><span style="color:#d4c4a0;">Defenders (${defenders} members)</span><span style="color:#5dade2;">+${defenderContrib}</span></div>
+        <div style="display:flex;justify-content:space-between;"><span style="color:#d4c4a0;">Power Bonus (10% of ${turfPower})</span><span style="color:#bb8fce;">+${powerBonus}</span></div>
+        <div style="display:flex;justify-content:space-between;border-top:1px solid #555;padding-top:6px;font-weight:bold;"><span style="color:#f5e6c8;">Total Defense</span><span style="color:#f5e6c8;">${totalDefense}</span></div>
+      </div>
+    </div>
+    
+    <div style="background:rgba(0,0,0,0.3);border:1px solid #444;border-radius:10px;padding:15px;margin-bottom:20px;">
+      <h4 style="color:#e74c3c;margin:0 0 10px;">Rival Threat Level</h4>
+      <div style="display:flex;flex-direction:column;gap:6px;font-size:0.9em;">
+        <div style="display:flex;justify-content:space-between;"><span style="color:#d4c4a0;">Attack Chance/cycle</span><span style="color:#e74c3c;">${attackChancePct}%</span></div>
+        <div style="display:flex;justify-content:space-between;"><span style="color:#d4c4a0;">Attack Power Range</span><span style="color:#e74c3c;">${minPower} – ${maxPower}</span></div>
+        <div style="display:flex;justify-content:space-between;"><span style="color:#d4c4a0;">Status</span><span style="color:${vulnColor};font-weight:bold;">${vulnLabel}</span></div>
+      </div>
+    </div>
+    
     <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-bottom:20px;">
       <button onclick="fortifyTurf('${zone.id}')" style="padding:10px 20px;background:linear-gradient(135deg,#e67e22,#d35400);border:none;border-radius:8px;color:white;cursor:pointer;font-weight:bold;">Fortify ($${((fort+1)*5000).toLocaleString()})</button>
       <button onclick="reduceHeatTurf('${zone.id}')" style="padding:10px 20px;background:linear-gradient(135deg,#c0a062,#a08850);border:none;border-radius:8px;color:white;cursor:pointer;font-weight:bold;">Reduce Heat ($${Math.floor(heat*10000).toLocaleString()})</button>
@@ -5513,22 +5755,28 @@ function processTurfOperations() {
     logAction(`Weekly turf tribute: +$${player.turf.income.toLocaleString()} (dirty money)`);
   }
   
-  // Decay heat slowly
+  // Decay heat slowly (faster with heat_reduction milestone perk)
+  const heatDecayRate = (typeof hasTurfPerk === 'function' && hasTurfPerk('heat_reduction')) ? 0.11 : 0.05;
   Object.keys(player.turf.heat || {}).forEach(zId => {
-    player.turf.heat[zId] = Math.max(0, (player.turf.heat[zId] || 0) - 0.05);
+    player.turf.heat[zId] = Math.max(0, (player.turf.heat[zId] || 0) - heatDecayRate);
   });
   
-  // Random rival retaliation (10% per owned zone)
+  // Rival retaliation - ESCALATES with turf control
+  const escalationTier = Math.min(owned.length, 8);
+  const baseAttackChance = 0.05 + escalationTier * 0.025; // 7.5% at 1 zone → 25% at 8
+  const baseAttackPower = 40 + escalationTier * 15;        // 55 at 1 → 160 at 8
+  const attackVariance = 30 + escalationTier * 10;          // bigger swings at more zones
+  
   owned.forEach(zId => {
-    if (Math.random() < 0.1) {
+    if (Math.random() < baseAttackChance) {
       const zone = (player.turf._zones || []).find(z => z.id === zId);
       if (!zone) return;
-      const attackStrength = 50 + Math.floor(Math.random() * 100);
+      const attackStrength = baseAttackPower + Math.floor(Math.random() * attackVariance);
       const result = processTurfAttack(zone, 'Rival Gang', attackStrength, player);
       if (result.lostTurf) {
         logAction(`Rival gang seized <strong>${zone.name}</strong>! Reinforce your turf.`);
       } else {
-        logAction(`Defended <strong>${zone.name}</strong> from a rival attack.`);
+        logAction(`Defended <strong>${zone.name}</strong> from a rival attack (power: ${attackStrength}).`);
       }
     }
   });
@@ -5689,8 +5937,9 @@ function showProtectionRackets() {
     html += `</div></div>`;
   }
   
-  // Show available businesses to approach
+  // Show available businesses to approach (cache for approachBusiness lookups)
   const availableBusinesses = getAvailableBusinessesForProtection();
+  _cachedAvailableBusinesses = availableBusinesses;
   if (availableBusinesses.length > 0) {
     html += `
       <div style="background: rgba(0, 0, 0, 0.3); padding: 20px; border-radius: 10px; margin-bottom: 20px;">
@@ -5768,6 +6017,7 @@ function getAvailableBusinessesForProtection() {
         const randomBusiness = protectionBusinesses[Math.floor(Math.random() * protectionBusinesses.length)];
         availableBusinesses.push({
           ...randomBusiness,
+          templateId: randomBusiness.id,  // Preserve original template ID for racket storage
           territoryId: zone.id,
           businessIndex: i,
           id: `${zone.id}_business_${i}`
@@ -6472,8 +6722,12 @@ async function corruptOfficial(targetId) {
   }
 }
 
+// Cache of available businesses so approachBusiness can look them up after render
+let _cachedAvailableBusinesses = [];
+
 function approachBusiness(businessId, territoryId) {
-  const business = protectionBusinesses.find(b => businessId.includes(b.id.split('_')[0]));
+  // Look up from the cached generated businesses (set during showProtectionRackets)
+  const business = _cachedAvailableBusinesses.find(b => b.id === businessId);
   if (!business) return;
   
   // Success chance based on gang reputation and territory power
@@ -6482,9 +6736,9 @@ function approachBusiness(businessId, territoryId) {
   if (Math.random() < successChance) {
     const racket = {
       id: `racket_${Date.now()}`,
-      businessId: business.id,
+      businessId: business.templateId,  // Store original template ID for later lookups
       territoryId: territoryId,
-      businessIndex: parseInt(businessId.split('_').pop()),
+      businessIndex: business.businessIndex,
       weeklyPayment: business.basePayment,
       fearLevel: 5.0,
       lastCollection: Date.now()
@@ -6646,21 +6900,13 @@ function updateUI() {
   if (player.gang && player.gang.gangMembers) {
     // Ensure legacy count matches actual array length
     player.gang.members = player.gang.gangMembers.length;
-    
-    // Recalculate turf power based on gang members if it seems too low
-    const turfPower = player.turf?.power || 100;
-    if (turfPower < 150 && player.gang.gangMembers.length > 0) {
-      let calculatedPower = 100; // Base power
-      player.gang.gangMembers.forEach(member => {
-        calculatedPower += Math.floor((member.experienceLevel || 1) * 2) + 5;
-      });
-      if (player.turf) player.turf.power = Math.max(turfPower, calculatedPower);
-    }
-    // Keep legacy territoryPower in sync
-    player.territoryPower = player.turf?.power || 100;
-    // Keep legacy territory count in sync with turf owned zones
-    player.territory = (player.turf?.owned || []).length;
   }
+
+  // Recalculate all power (equipment + gang + turf) every UI update
+  recalculatePower();
+
+  // Keep legacy territory count in sync with turf owned zones
+  player.territory = (player.turf?.owned || []).length;
   
   // Update player portrait and name
   if (player.name) {
@@ -10694,7 +10940,7 @@ function breakoutPrisoner(prisonerIndex) {
   
   if (success) {
   const expReward = prisoner.difficulty * 3 + 2;
-  player.experience += expReward;
+  gainExperience(expReward);
     
     // Check for level up
     checkLevelUp();
@@ -12373,7 +12619,7 @@ function attemptJailbreak(prisonerIndex) {
   
   if (success) {
     // Successful jailbreak
-  player.experience += Math.floor(prisoner.expReward * 0.6); // Reduce XP for jailbreaks
+  gainExperience(Math.floor(prisoner.expReward * 0.6)); // Reduce XP for jailbreaks
     player.money += prisoner.cashReward;
     player.reputation += Math.floor(prisoner.difficulty * 1.5);
     
