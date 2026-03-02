@@ -5746,6 +5746,15 @@ function manageTurfDetails(zoneId) {
   else if (totalDefense >= minPower) { vulnLabel = 'At Risk'; vulnColor = '#f39c12'; }
   else { vulnLabel = 'Vulnerable'; vulnColor = '#e74c3c'; }
   
+  // Chen Triad intel: show precise attack info instead of ranges
+  const isChenTriad = player.chosenFamily === 'chen';
+  const attackPowerDisplay = isChenTriad
+    ? `<span style="color:#2e8b57;">${minPower} – ${maxPower} (exact)</span>`
+    : `<span style="color:#e74c3c;">${minPower} – ${maxPower}</span>`;
+  const chenIntelRow = isChenTriad
+    ? `<div style="display:flex;justify-content:space-between;"><span style="color:#2e8b57;">Intel Foil Chance</span><span style="color:#2e8b57;font-weight:bold;">20%</span></div>`
+    : '';
+
   let html = `
     <h2 style="color:#f5e6c8; text-align:center; margin-bottom:25px;">${zone.icon} ${zone.name}</h2>
     <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:12px; margin-bottom:20px;">
@@ -5781,8 +5790,9 @@ function manageTurfDetails(zoneId) {
       <h4 style="color:#e74c3c;margin:0 0 10px;">Rival Threat Level</h4>
       <div style="display:flex;flex-direction:column;gap:6px;font-size:0.9em;">
         <div style="display:flex;justify-content:space-between;"><span style="color:#d4c4a0;">Attack Chance/cycle</span><span style="color:#e74c3c;">${attackChancePct}%</span></div>
-        <div style="display:flex;justify-content:space-between;"><span style="color:#d4c4a0;">Attack Power Range</span><span style="color:#e74c3c;">${minPower} – ${maxPower}</span></div>
+        <div style="display:flex;justify-content:space-between;"><span style="color:#d4c4a0;">Attack Power Range</span>${attackPowerDisplay}</div>
         <div style="display:flex;justify-content:space-between;"><span style="color:#d4c4a0;">Status</span><span style="color:${vulnColor};font-weight:bold;">${vulnLabel}</span></div>
+        ${chenIntelRow}
       </div>
     </div>
     
@@ -5875,10 +5885,22 @@ function processTurfOperations() {
   const baseAttackPower = 40 + escalationTier * 15;        // 55 at 1 → 160 at 8
   const attackVariance = 30 + escalationTier * 10;          // bigger swings at more zones
   
+  // Chen Triad intel bonus: 20% chance to foil rival attacks before they happen
+  const hasChenIntel = player.chosenFamily === 'chen';
+  const chenIntelChance = hasChenIntel ? (getChosenFamilyBuff()?.intelBonus || 0.20) : 0;
+
   owned.forEach(zId => {
     if (Math.random() < baseAttackChance) {
       const zone = (player.turf._zones || []).find(z => z.id === zId);
       if (!zone) return;
+
+      // Chen Triad intel: chance to intercept and foil the attack entirely
+      if (hasChenIntel && Math.random() < chenIntelChance) {
+        logAction(`Your Triad informants intercepted a rival attack on <strong>${zone.name}</strong> before it began!`);
+        showBriefNotification(`Turf attack on ${zone.name} foiled! Chen Triad intel network intercepted the operation.`, 'success');
+        return; // attack foiled — skip combat
+      }
+
       const attackStrength = baseAttackPower + Math.floor(Math.random() * attackVariance);
       const result = processTurfAttack(zone, 'Rival Gang', attackStrength, player);
       if (result.lostTurf) {
@@ -9557,7 +9579,7 @@ async function startJob(index) {
     earnings = job.payout;
   }
 
-  // Chen Triad passive: drug/smuggling jobs earn 15% more
+  // Chen Triad passive: drug/smuggling jobs earn 30% more
   const jn = job.name.toLowerCase();
   if (jn.includes('drug') || jn.includes('smuggl') || jn.includes('dealer') || jn.includes('transport')) {
     const drugMultiplier = getDrugIncomeMultiplier();

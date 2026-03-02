@@ -66,9 +66,9 @@ export const crimeFamilies = {
         lore: "Ancient traditions meet modern technology. The Chen Triad combines centuries-old honor codes with cutting-edge cybercrime and precision drug manufacturing. They value intelligence over brute force.",
         passive: {
             name: "Smuggling Routes",
-            description: "Drug sales and transport jobs earn 15% more.",
+            description: "Drug sales and transport jobs earn 30% more.",
             effectId: "bonus_drug_income",
-            multiplier: 1.15
+            multiplier: 1.30
         },
         signatureJob: {
             id: "chen_cyber_raid",
