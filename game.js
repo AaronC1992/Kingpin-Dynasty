@@ -10003,6 +10003,11 @@ async function startJob(index) {
   
   player.wantedLevel += wantedLevelGain;
   
+  // Every 5 clean jobs (no arrest) slowly improves police relations (staying under the radar)
+  if (_jobsWithoutArrest > 0 && _jobsWithoutArrest % 5 === 0 && player.streetReputation) {
+    player.streetReputation.police = Math.min(100, (player.streetReputation.police || 0) + 1);
+  }
+  
   // Log intimidation effect if it reduced wanted level
   if (intimidationReduction > 0 && wantedLevelGain < job.wantedLevelGain) {
     logAction(`Ã‚Â¨ Your intimidating presence makes witnesses think twice about reporting the crime!`);
