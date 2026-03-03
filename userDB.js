@@ -72,6 +72,27 @@ function verifyPassword(password, stored) {
 const sessions = new Map(); // token -> { username, expiresAt }
 const TOKEN_LIFETIME_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
+// Restore sessions from persisted db (survives server restarts)
+function restoreSessionsFromDB() {
+    if (db.sessions && typeof db.sessions === 'object') {
+        const now = Date.now();
+        let restored = 0;
+        for (const [tok, sess] of Object.entries(db.sessions)) {
+            if (sess.expiresAt > now) {
+                sessions.set(tok, sess);
+                restored++;
+            }
+        }
+        if (restored > 0) console.log(` Restored ${restored} active session(s)`);
+    }
+}
+
+// Persist sessions to db (called on create/destroy)
+function persistSessionsToDB() {
+    db.sessions = Object.fromEntries(sessions);
+    saveDB();
+}
+
 function generateToken() {
     return crypto.randomBytes(32).toString('hex');
 }
@@ -86,6 +107,7 @@ function createSession(username) {
         username,
         expiresAt: Date.now() + TOKEN_LIFETIME_MS
     });
+    persistSessionsToDB();
     return token;
 }
 
@@ -102,14 +124,17 @@ function validateToken(token) {
 
 function destroySession(token) {
     sessions.delete(token);
+    persistSessionsToDB();
 }
 
 // Periodically clean expired sessions (every 30 min)
 setInterval(() => {
     const now = Date.now();
+    let cleaned = false;
     for (const [tok, sess] of sessions) {
-        if (now > sess.expiresAt) sessions.delete(tok);
+        if (now > sess.expiresAt) { sessions.delete(tok); cleaned = true; }
     }
+    if (cleaned) persistSessionsToDB();
 }, 30 * 60 * 1000);
 
 // ── User CRUD ──────────────────────────────────────────────────
@@ -154,6 +179,15 @@ function setUserSave(username, saveData) {
     const user = db.users[key];
     if (!user) return false;
     user.saveData = saveData;
+    saveDB();
+    return true;
+}
+
+function clearUserSave(username) {
+    const key = username.toLowerCase();
+    const user = db.users[key];
+    if (!user) return false;
+    user.saveData = null;
     saveDB();
     return true;
 }
@@ -209,13 +243,13 @@ function isPlayerNameTaken(name, excludeUsername) {
 }
 
 // ── Initialize on require ──────────────────────────────────────
-loadDB();
-
+loadDB();restoreSessionsFromDB();
 module.exports = {
     createUser,
     authenticateUser,
     getUserSave,
     setUserSave,
+    clearUserSave,
     changePassword,
     deleteUser,
     getUserInfo,

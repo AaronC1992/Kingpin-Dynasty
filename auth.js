@@ -121,6 +121,11 @@ export async function cloudLoad() {
     return apiFetch('/api/load', { method: 'GET' });
 }
 
+// Delete the cloud save (used on permadeath)
+export async function cloudDeleteSave() {
+    return apiFetch('/api/save', { method: 'DELETE' });
+}
+
 // Check if a character name is already taken by another player's cloud save
 export async function checkPlayerName(name) {
     const data = await apiFetch(`/api/check-name?name=${encodeURIComponent(name)}`, { method: 'GET' });
@@ -528,12 +533,21 @@ export function updateAuthStatusUI() {
 }
 
 // ── Auto cloud save hook (called from game.js after local save) ──
+let _lastCloudFailNotify = 0;
 export async function autoCloudSave(saveEntry) {
     if (!isLoggedIn) return;
     try {
         await cloudSave(saveEntry);
     } catch (err) {
         console.warn('Auto cloud save failed:', err.message);
+        // Notify user at most once every 5 minutes so it's not spammy
+        const now = Date.now();
+        if (now - _lastCloudFailNotify > 300000) {
+            _lastCloudFailNotify = now;
+            if (typeof window.showBriefNotification === 'function') {
+                window.showBriefNotification('Cloud save failed — progress saved locally only', 'warning');
+            }
+        }
     }
 }
 
@@ -549,10 +563,28 @@ export async function initAuth() {
             try {
                 const save = await cloudLoad();
                 if (save && save.data && typeof window.applyCloudSave === 'function') {
-                    window.applyCloudSave(save);
-                    console.log('[auth] Cloud save auto-loaded on startup');
-                    if (typeof window.showBriefNotification === 'function') {
-                        setTimeout(() => window.showBriefNotification(` Welcome back, ${save.playerName || authUsername}!`, 'success'), 500);
+                    // Check if a newer LOCAL save exists before overwriting
+                    let localIsNewer = false;
+                    try {
+                        const prefs = localStorage.getItem('saveSystemPrefs');
+                        const slot = prefs ? (JSON.parse(prefs).currentSlot ?? 1) : 1;
+                        const localRaw = localStorage.getItem(`gameSlot_${slot}`);
+                        if (localRaw) {
+                            const localEntry = JSON.parse(localRaw);
+                            const localTime = new Date(localEntry.saveDate).getTime();
+                            const cloudTime = new Date(save.saveDate).getTime();
+                            if (localTime > cloudTime) localIsNewer = true;
+                        }
+                    } catch { /* ignore parse errors */ }
+
+                    if (localIsNewer) {
+                        console.log('[auth] Local save is newer than cloud — skipping auto-load');
+                    } else {
+                        window.applyCloudSave(save);
+                        console.log('[auth] Cloud save auto-loaded on startup');
+                        if (typeof window.showBriefNotification === 'function') {
+                            setTimeout(() => window.showBriefNotification(` Welcome back, ${save.playerName || authUsername}!`, 'success'), 500);
+                        }
                     }
                 }
             } catch (e) {

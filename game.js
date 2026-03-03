@@ -13,7 +13,7 @@ import { GameLogging } from './logging.js';
 import { ui, ModalSystem } from './ui-modal.js';
 import { MobileSystem, updateMobileActionLog } from './mobile-responsive.js';
 import { initUIEvents } from './ui-events.js';
-import { initAuth, showAuthModal, autoCloudSave, getAuthState, updateAuthStatusUI, checkPlayerName, checkAdmin, adminModify } from './auth.js';
+import { initAuth, showAuthModal, autoCloudSave, cloudDeleteSave, getAuthState, updateAuthStatusUI, checkPlayerName, checkAdmin, adminModify } from './auth.js';
 import {
   initCasino, getCasinoWins,
   showCasino, showCasinoTab, startBlackjack, bjDeal, bjHit, bjStand, bjDouble,
@@ -193,7 +193,7 @@ window.applyCloudSave = function (cloudEntry) {
     applySaveData(saveData);
     // Also store locally so local save system stays in sync
     const localEntry = {
-        slotNumber: SAVE_SYSTEM.currentSlot || 1,
+        slotNumber: SAVE_SYSTEM.currentSlot ?? 1,
         saveName: `Cloud - ${cloudEntry.playerName || player.name}`,
         playerName: cloudEntry.playerName || player.name,
         level: cloudEntry.level || player.level,
@@ -206,7 +206,7 @@ window.applyCloudSave = function (cloudEntry) {
         gameVersion: cloudEntry.gameVersion || CURRENT_VERSION,
         data: saveData
     };
-    localStorage.setItem(`gameSlot_${SAVE_SYSTEM.currentSlot || 1}`, JSON.stringify(localEntry));
+    localStorage.setItem(`gameSlot_${SAVE_SYSTEM.currentSlot ?? 1}`, JSON.stringify(localEntry));
     updateUI();
     applyUIToggles();
     applyStatBarPrefs();
@@ -9121,7 +9121,7 @@ const HELP_TOPICS = [
     <p>Never lose your progress -- multiple save options keep you covered.</p>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Save Options</h4>
     <ul>
-      <li><strong>Auto-Save</strong> -- The game automatically saves to Slot 0 at regular intervals.</li>
+      <li><strong>Auto-Save</strong> -- The game automatically saves to your current slot every 60 seconds.</li>
       <li><strong>Manual Save</strong> -- Save to any slot from Settings > Save Game, or use the "Save Records" button in Quick Actions.</li>
       <li><strong>Cloud Save</strong> -- Sign in for cloud saves that persist across browsers and devices.</li>
     </ul>
@@ -17571,6 +17571,13 @@ function showDeathScreen(causeOfDeath) {
     }
   }
 
+  // PERMADEATH: Also delete cloud save so player can't resurrect via server
+  try {
+    cloudDeleteSave().catch(err => console.warn('Cloud save delete failed:', err.message));
+  } catch (e) {
+    console.warn('Cloud save delete error:', e);
+  }
+
   // Build obituary
   const cause = causeOfDeath || "Died on the streets";
   const totalCrimes = (player.playstyleStats.stealthyJobs || 0) + (player.playstyleStats.violentJobs || 0) + (player.playstyleStats.diplomaticActions || 0);
@@ -17683,6 +17690,16 @@ function restartGame() {
   if (typeof weeklyChallenges !== 'undefined') {
     weeklyChallenges.length = 0;
   }
+
+  // Re-enable auto-save for the new life (permadeath disabled it)
+  SAVE_SYSTEM.autoSaveEnabled = true;
+  SAVE_SYSTEM.currentSlot = 1;
+  saveSaveSystemPrefs();
+  startAutoSave();
+
+  // Allow gameplay systems to be re-activated for the new character
+  gameplayActive = false;
+  clearAllGameplayIntervals();
 
   updateUI();
   logAction("The slate is wiped clean. Back to the bottom of the food chain, but every kingpin started somewhere. Time to climb again.");
@@ -20190,7 +20207,7 @@ function autoSave() {
   try {
     const currentTime = Date.now();
     // Auto-save to the currently loaded slot instead of always slot 0
-    const targetSlot = SAVE_SYSTEM.currentSlot || 1; // Default to slot 1 if no current slot set
+    const targetSlot = SAVE_SYSTEM.currentSlot ?? 1; // Default to slot 1 if no current slot set
     saveGameToSlot(targetSlot, `${player.name} - ${getCurrentDateString()}`, true);
     SAVE_SYSTEM.lastAutoSave = currentTime;
 

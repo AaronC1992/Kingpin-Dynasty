@@ -234,6 +234,14 @@ const server = http.createServer(async (req, res) => {
                 return json(200, save);
             }
 
+            // ── DELETE /api/save ────────────────────────────
+            if (urlPath === '/api/save' && req.method === 'DELETE') {
+                const username = userDB.validateToken(getToken());
+                if (!username) return json(401, { error: 'Not authenticated' });
+                userDB.clearUserSave(username);
+                return json(200, { ok: true });
+            }
+
             // ── POST /api/change-password ──────────────────
             if (urlPath === '/api/change-password' && req.method === 'POST') {
                 const username = userDB.validateToken(getToken());
