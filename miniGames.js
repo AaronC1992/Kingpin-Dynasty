@@ -253,6 +253,8 @@ let memoryMatchedPairs = 0;
 let memoryStartTime = 0;
 let memoryPersonalBest = null;
 let snakeGame = null;
+function snakeMouseEnter() { if (snakeGame) snakeGame.mouseInCanvas = true; }
+function snakeMouseLeave() { if (snakeGame) snakeGame.mouseInCanvas = false; }
 let quickDrawStartTime = 0;
 let quickDrawWaiting = false;
 let quickDrawPersonalBest = null;
@@ -356,8 +358,8 @@ export function resetCurrentMiniGame() {
         document.removeEventListener('keydown', handleSnakeControls);
         if (snakeGame.canvas) {
           snakeGame.canvas.removeEventListener('mousemove', handleSnakeMouseMove);
-          snakeGame.canvas.removeEventListener('mouseenter', () => snakeGame.mouseInCanvas = true);
-          snakeGame.canvas.removeEventListener('mouseleave', () => snakeGame.mouseInCanvas = false);
+          snakeGame.canvas.removeEventListener('mouseenter', snakeMouseEnter);
+          snakeGame.canvas.removeEventListener('mouseleave', snakeMouseLeave);
         }
         snakeGame = null;
       }
@@ -771,8 +773,8 @@ export function initSnakeGame() {
   document.addEventListener('keydown', handleSnakeControls);
 
   canvas.addEventListener('mousemove', handleSnakeMouseMove);
-  canvas.addEventListener('mouseenter', () => snakeGame.mouseInCanvas = true);
-  canvas.addEventListener('mouseleave', () => snakeGame.mouseInCanvas = false);
+  canvas.addEventListener('mouseenter', snakeMouseEnter);
+  canvas.addEventListener('mouseleave', snakeMouseLeave);
 }
 
 export function generateFood() {
@@ -908,8 +910,8 @@ export function gameOverSnake() {
   document.removeEventListener('keydown', handleSnakeControls);
   if (snakeGame.canvas) {
     snakeGame.canvas.removeEventListener('mousemove', handleSnakeMouseMove);
-    snakeGame.canvas.removeEventListener('mouseenter', () => snakeGame.mouseInCanvas = true);
-    snakeGame.canvas.removeEventListener('mouseleave', () => snakeGame.mouseInCanvas = false);
+    snakeGame.canvas.removeEventListener('mouseenter', snakeMouseEnter);
+    snakeGame.canvas.removeEventListener('mouseleave', snakeMouseLeave);
   }
 
   const perFoodReward = 50 + (player.level * 25);
@@ -945,8 +947,8 @@ export function restartSnake() {
     document.removeEventListener('keydown', handleSnakeControls);
     if (snakeGame.canvas) {
       snakeGame.canvas.removeEventListener('mousemove', handleSnakeMouseMove);
-      snakeGame.canvas.removeEventListener('mouseenter', () => snakeGame.mouseInCanvas = true);
-      snakeGame.canvas.removeEventListener('mouseleave', () => snakeGame.mouseInCanvas = false);
+      snakeGame.canvas.removeEventListener('mouseenter', snakeMouseEnter);
+      snakeGame.canvas.removeEventListener('mouseleave', snakeMouseLeave);
     }
   }
   initSnakeGame();

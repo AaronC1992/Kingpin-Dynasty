@@ -174,7 +174,7 @@ export const factionEffects = {
     },
     police: {
         name: "Police Corruption",
-        icon: "🚨",
+        icon: "[COP]",
         positiveEffects: [
             { level: 25, effect: "10% reduced arrest chance" },
             { level: 50, effect: "Inside information on raids" },
@@ -190,7 +190,7 @@ export const factionEffects = {
     },
     civilians: {
         name: "Public Opinion",
-        icon: "👥",
+        icon: "[CIV]",
         positiveEffects: [
             { level: 25, effect: "Citizens provide tips and intel" },
             { level: 50, effect: "Public refuses to cooperate with police" },
@@ -206,7 +206,7 @@ export const factionEffects = {
     },
     underground: {
         name: "Criminal Underworld",
-        icon: "🕵️",
+        icon: "[UND]",
         positiveEffects: [
             { level: 25, effect: "Access to black market deals" },
             { level: 50, effect: "Criminal contacts provide jobs" },

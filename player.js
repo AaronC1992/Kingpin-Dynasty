@@ -130,6 +130,7 @@ export const player = {
   portrait: "", // Path to player's portrait image
   background: null, // CHARACTER_BACKGROUNDS id chosen at creation
   perk: null,       // CHARACTER_PERKS id chosen at creation
+  storyProgress: null, // Set when player begins a family story
   money: 0, // Starting with no money for maximum challenge
   inventory: [],
   stolenCars: [], // Array to store stolen cars
@@ -275,9 +276,9 @@ export function gainExperience(amount) {
     amount = Math.floor(amount * (1 + mastermindLevel * 0.10));
   }
   player.experience += amount;
-  // Note: logAction is defined in game.js - will be available when modules are imported
-  if (typeof logAction === 'function') {
-    logAction(`You gained ${amount} experience points.`);
+  // Note: logAction is defined in game.js and exposed via window.logAction
+  if (typeof window !== 'undefined' && typeof window.logAction === 'function') {
+    window.logAction(`You gained ${amount} experience points.`);
   }
   checkLevelUp();
 }
@@ -292,6 +293,7 @@ export function checkLevelUp() {
     player.level++;
     player.experience -= requiredXP;
     player.skillPoints += 2; // Gain 2 skill points per level (slower progression)
+    player.reputation = (player.reputation || 0) + 5; // Gain 5 reputation per level up
     
     // Bonus skill point at milestone levels (every 5 levels)
     if (player.level % 5 === 0) {
@@ -299,12 +301,12 @@ export function checkLevelUp() {
     }
     
     // Show dramatic level up screen effects
-    if (typeof showLevelUpEffects === 'function') {
-      showLevelUpEffects();
+    if (typeof window !== 'undefined' && typeof window.showLevelUpEffects === 'function') {
+      window.showLevelUpEffects();
     }
     
-    if (typeof logAction === 'function') {
-      logAction(` The streets recognize your growing power! You've clawed your way up to level ${player.level}. Every scar tells a story, every skill hard-earned.`);
+    if (typeof window !== 'undefined' && typeof window.logAction === 'function') {
+      window.logAction(` The streets recognize your growing power! You've clawed your way up to level ${player.level}. Every scar tells a story, every skill hard-earned.`);
     }
   }
 }
@@ -339,8 +341,8 @@ export function regenerateEnergy() {
       }
       player.energyRegenTimer = regenInterval;
       
-      if (typeof logAction === 'function') {
-        logAction(` You catch your breath in the shadows. The adrenaline fades and your strength slowly returns. (+${energyGain} energy)`);
+      if (typeof window.logAction === 'function') {
+        window.logAction(` You catch your breath in the shadows. The adrenaline fades and your strength slowly returns. (+${energyGain} energy)`);
       }
       
       // Forensics skill: Advanced wanted level decay
@@ -348,15 +350,15 @@ export function regenerateEnergy() {
         let forensicsDecayChance = player.skillTree.intelligence.forensics * 3; // 3% chance per level
         if (Math.random() * 100 < forensicsDecayChance) {
           player.wantedLevel = Math.max(0, player.wantedLevel - 1);
-          if (typeof logAction === 'function') {
-            logAction(" Your forensics expertise helps eliminate evidence over time. Heat level decreased by 1!");
+          if (typeof window.logAction === 'function') {
+            window.logAction(" Your forensics expertise helps eliminate evidence over time. Heat level decreased by 1!");
           }
         }
       }
     }
     
-    if (typeof updateUI === 'function') {
-      updateUI();
+    if (typeof window.updateUI === 'function') {
+      window.updateUI();
     }
   }
 }
@@ -376,8 +378,10 @@ export function startEnergyRegenTimer() {
  * Initialize the energy regeneration interval (1 energy per 30 seconds)
  * Should be called once when the game starts
  */
+let energyRegenInterval = null;
 export function startEnergyRegeneration() {
-  setInterval(() => {
+  if (energyRegenInterval) clearInterval(energyRegenInterval);
+  energyRegenInterval = setInterval(() => {
     regenerateEnergy();
   }, 1000); // Update every second for timer display
 }

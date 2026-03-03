@@ -47,7 +47,13 @@ function loadWorldState() {
     const merged = {
       cityDistricts: parsed.cityDistricts || { ...DEFAULT_STATE.cityDistricts },
       cityEvents: Array.isArray(parsed.cityEvents) ? parsed.cityEvents : [...DEFAULT_STATE.cityEvents],
-      leaderboard: Array.isArray(parsed.leaderboard) ? parsed.leaderboard : []
+      leaderboard: Array.isArray(parsed.leaderboard) ? parsed.leaderboard : [],
+      territories: parsed.territories || null,
+      politics: parsed.politics || null,
+      alliances: parsed.alliances || null,
+      bounties: Array.isArray(parsed.bounties) ? parsed.bounties : null,
+      marketplace: Array.isArray(parsed.marketplace) ? parsed.marketplace : null,
+      season: parsed.season || null
     };
     console.log(' World state loaded from world-state.json');
     return merged;

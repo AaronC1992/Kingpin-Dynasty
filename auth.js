@@ -503,7 +503,12 @@ export function updateAuthStatusUI() {
     const indicators = document.querySelectorAll('.auth-status-indicator');
     indicators.forEach(el => {
         if (isLoggedIn) {
-            el.innerHTML = `<span class="auth-status-online" title="Signed in as ${authUsername}"> ${authUsername}</span>`;
+            const span = document.createElement('span');
+            span.className = 'auth-status-online';
+            span.title = `Signed in as ${authUsername}`;
+            span.textContent = ` ${authUsername}`;
+            el.innerHTML = '';
+            el.appendChild(span);
         } else {
             el.innerHTML = `<span class="auth-status-offline" title="Not signed in — progress saved locally only"> Local Only</span>`;
         }

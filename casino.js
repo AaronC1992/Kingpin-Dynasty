@@ -351,7 +351,7 @@ function bjResolve() {
 // ═══════════════════════════════════════════════════════════════════════
 
 const SLOT_SYMBOLS = ['🍒','🍋','🍊','🍇','💎','7️⃣','🔔','⭐'];
-const SLOT_PAYOUTS = { '7️⃣': 10, '': 7, '⭐': 5, '': 4, '': 3, '': 2, '': 1.5, '': 1 };
+const SLOT_PAYOUTS = { '7️⃣': 10, '💎': 7, '⭐': 5, '🔔': 4, '🍇': 3, '🍊': 2, '🍋': 1.5, '🍒': 1 };
 
 export function startSlots() {
   const { defaultBet } = getCasinoBetRange();
@@ -376,7 +376,7 @@ export function startSlots() {
       <button id="slot-spin-btn" onclick="slotSpin()" style="background:linear-gradient(135deg,#e67e22,#c0a040);color:white;padding:14px 40px;border:none;border-radius:10px;cursor:pointer;font-size:1.3em;font-weight:bold;">SPIN!</button>
       <button onclick="showCasino()" style="background:#6a5a3a;color:white;padding:12px 20px;border:none;border-radius:8px;cursor:pointer;font-size:1em;margin-left:10px;">Back</button>
       <div style="margin-top:15px;color:#6a5a3a;font-size:0.8em;">
-        Payouts: 7️⃣=10x | =7x | ⭐=5x | =4x | =3x | 2-match=1.5x
+        Payouts: 7️⃣=10x | 💎=7x | ⭐=5x | 🔔=4x | 🍇=3x | 🍊=2x | 🍋=1.5x | 🍒=1x | 2-match=1.5x
       </div>
     </div>`;
 }

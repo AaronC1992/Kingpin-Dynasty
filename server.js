@@ -14,6 +14,40 @@ function isAdmin(username) {
     return username && ADMIN_USERNAMES.has(username.toLowerCase());
 }
 
+// ── Rate limiter for auth endpoints ────────────────────────────
+const authRateLimits = new Map(); // IP -> { count, resetTime }
+const AUTH_RATE_LIMIT = 5;        // max attempts per window
+const AUTH_RATE_WINDOW = 60000;   // 1 minute window (ms)
+
+function checkAuthRateLimit(ip) {
+    const now = Date.now();
+    const entry = authRateLimits.get(ip);
+    if (!entry || now > entry.resetTime) {
+        authRateLimits.set(ip, { count: 1, resetTime: now + AUTH_RATE_WINDOW });
+        return true; // allowed
+    }
+    entry.count++;
+    if (entry.count > AUTH_RATE_LIMIT) {
+        return false; // blocked
+    }
+    return true;
+}
+
+// Periodically clean up expired rate limit entries (every 5 minutes)
+setInterval(() => {
+    const now = Date.now();
+    for (const [ip, entry] of authRateLimits) {
+        if (now > entry.resetTime) authRateLimits.delete(ip);
+    }
+}, 5 * 60 * 1000);
+
+// ── Allowed fields for admin modifications ─────────────────────
+const ADMIN_ALLOWED_FIELDS = new Set([
+    'money', 'level', 'experience', 'health', 'energy', 'maxEnergy',
+    'power', 'reputation', 'wantedLevel', 'ammo', 'gas', 'skillPoints',
+    'territory', 'dirtyMoney'
+]);
+
 // Server configuration
 const PORT = process.env.PORT || 3000;
 // Allowed origins for CORS (game website)
@@ -105,6 +139,8 @@ const server = http.createServer(async (req, res) => {
 
             // ── POST /api/register ─────────────────────────
             if (urlPath === '/api/register' && req.method === 'POST') {
+                const clientIP = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket.remoteAddress;
+                if (!checkAuthRateLimit(clientIP)) return json(429, { error: 'Too many attempts. Please wait a minute.' });
                 const { username, password } = await readBody();
                 if (!username || !password) return json(400, { error: 'Username and password required' });
                 const result = userDB.createUser(username.trim(), password);
@@ -115,6 +151,8 @@ const server = http.createServer(async (req, res) => {
 
             // ── POST /api/login ────────────────────────────
             if (urlPath === '/api/login' && req.method === 'POST') {
+                const clientIP = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket.remoteAddress;
+                if (!checkAuthRateLimit(clientIP)) return json(429, { error: 'Too many attempts. Please wait a minute.' });
                 const { username, password } = await readBody();
                 if (!username || !password) return json(400, { error: 'Username and password required' });
                 const result = userDB.authenticateUser(username.trim(), password);
@@ -152,9 +190,17 @@ const server = http.createServer(async (req, res) => {
                 if (!username) return json(401, { error: 'Not authenticated' });
                 if (!isAdmin(username)) return json(403, { error: 'Forbidden' });
                 const body = await readBody();
-                // Return the modifications for the client to apply locally
-                // The server trusts admin, the client applies changes to the local player object
-                return json(200, { ok: true, modifications: body });
+                // Validate: only allow known safe fields with numeric values
+                const sanitized = {};
+                for (const [key, value] of Object.entries(body)) {
+                    if (!ADMIN_ALLOWED_FIELDS.has(key)) continue;
+                    if (typeof value !== 'number' || !isFinite(value)) continue;
+                    sanitized[key] = value;
+                }
+                if (Object.keys(sanitized).length === 0) {
+                    return json(400, { error: 'No valid modifications provided. Allowed fields: ' + [...ADMIN_ALLOWED_FIELDS].join(', ') });
+                }
+                return json(200, { ok: true, modifications: sanitized });
             }
 
             // ── POST /api/save ─────────────────────────────
@@ -290,10 +336,11 @@ const server = http.createServer(async (req, res) => {
         if (error) {
             if (error.code === 'ENOENT') {
                 console.log(` File not found: ${filePath}`);
+                const safeUrl = req.url.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
                 res.writeHead(404, { 'Content-Type': 'text/html' });
                 res.end(`
                     <h1> Mafia Born - Multiplayer Server</h1>
-                    <p>File not found: ${req.url}</p>
+                    <p>File not found: ${safeUrl}</p>
                     <p><a href="/"> Go to Game</a></p>
                     <hr>
                     <p>Server Status: Online | Players Connected: ${clients.size}</p>
@@ -542,6 +589,35 @@ try {
         gameState.politics.policyChangedAt = persisted.politics.policyChangedAt || 0;
     }
 
+    // Load alliances (Map)
+    if (persisted.alliances && typeof persisted.alliances === 'object') {
+        for (const [id, data] of Object.entries(persisted.alliances)) {
+            gameState.alliances.set(id, data);
+        }
+    }
+
+    // Load bounties
+    if (Array.isArray(persisted.bounties)) {
+        gameState.bounties = persisted.bounties;
+    }
+
+    // Load marketplace
+    if (Array.isArray(persisted.marketplace)) {
+        gameState.marketplace = persisted.marketplace;
+    }
+
+    // Load season ratings (Map)
+    if (persisted.season) {
+        if (persisted.season.number) gameState.season.number = persisted.season.number;
+        if (persisted.season.startedAt) gameState.season.startedAt = persisted.season.startedAt;
+        if (persisted.season.endsAt) gameState.season.endsAt = persisted.season.endsAt;
+        if (persisted.season.ratings && typeof persisted.season.ratings === 'object') {
+            for (const [id, data] of Object.entries(persisted.season.ratings)) {
+                gameState.season.ratings.set(id, data);
+            }
+        }
+    }
+
     // Migration: assign NPC bosses to any territory still unclaimed (owner: null)
     for (const id of TERRITORY_IDS) {
         const terr = gameState.territories[id];
@@ -587,7 +663,16 @@ function scheduleWorldSave() {
                 cityEvents: gameState.cityEvents,
                 leaderboard: persistedLeaderboard,
                 territories: gameState.territories,
-                politics: gameState.politics
+                politics: gameState.politics,
+                alliances: Object.fromEntries(gameState.alliances),
+                bounties: gameState.bounties,
+                marketplace: gameState.marketplace,
+                season: {
+                    number: gameState.season.number,
+                    startedAt: gameState.season.startedAt,
+                    endsAt: gameState.season.endsAt,
+                    ratings: Object.fromEntries(gameState.season.ratings)
+                }
             });
         } catch (err) {
             console.error(' Error during world save:', err.message);

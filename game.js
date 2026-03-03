@@ -222,6 +222,15 @@ window.applyCloudSave = function (cloudEntry) {
 // Set to true only when the player enters actual gameplay.
 let gameplayActive = false;
 
+// Track all gameplay interval IDs so they can be cleared on game reset
+const gameplayIntervals = [];
+
+function clearAllGameplayIntervals() {
+  while (gameplayIntervals.length > 0) {
+    clearInterval(gameplayIntervals.pop());
+  }
+}
+
 // Save / load related functions that are used via inline onclick handlers
 // (defined later in this file, but hoisted onto window here for safety)
 window.loadGameFromIntroSlot = undefined;
@@ -1301,7 +1310,7 @@ const TURF_ZONES = [
     {
         id: "little_italy",
         name: "Little Italy",
-        icon: "",
+        icon: "[ITA]",
         description: "Old-world streets lined with trattorias and back-room card games. The Torrino Family's ancestral stronghold.",
         baseIncome: 4000,
         defenseRequired: 180,
@@ -1316,7 +1325,7 @@ const TURF_ZONES = [
     {
         id: "redlight_district",
         name: "Redlight District",
-        icon: "",
+        icon: "[RED]",
         description: "Neon-soaked blocks of vice parlors, strip clubs, and underground dens. Morales Cartel territory.",
         baseIncome: 5500,
         defenseRequired: 200,
@@ -1331,7 +1340,7 @@ const TURF_ZONES = [
     {
         id: "chinatown",
         name: "Chinatown",
-        icon: "",
+        icon: "[CHN]",
         description: "A labyrinth of narrow alleys, tea houses, and hidden parlors. The Chen Triad rules from the shadows.",
         baseIncome: 4500,
         defenseRequired: 190,
@@ -1346,7 +1355,7 @@ const TURF_ZONES = [
     {
         id: "harbor_row",
         name: "Harbor Row",
-        icon: "",
+        icon: "[HBR]",
         description: "Fog-cloaked wharves where containers vanish overnight. The Kozlov Bratva's smuggling nerve center.",
         baseIncome: 5000,
         defenseRequired: 210,
@@ -1361,7 +1370,7 @@ const TURF_ZONES = [
     {
         id: "the_slums",
         name: "The Slums",
-        icon: "",
+        icon: "[SLM]",
         description: "Crumbling tenements and burned-out lots. No single family controls it -- gangs fight for every block.",
         baseIncome: 1500,
         defenseRequired: 120,
@@ -1376,7 +1385,7 @@ const TURF_ZONES = [
     {
         id: "midtown_heights",
         name: "Midtown Heights",
-        icon: "",
+        icon: "[MID]",
         description: "Glass towers and penthouse suites. White-collar crime thrives behind boardroom doors.",
         baseIncome: 6000,
         defenseRequired: 250,
@@ -1391,7 +1400,7 @@ const TURF_ZONES = [
     {
         id: "old_quarter",
         name: "The Old Quarter",
-        icon: "",
+        icon: '[OLD]',
         description: "Historic cobblestone streets with speakeasies and antique shops hiding contraband.",
         baseIncome: 3000,
         defenseRequired: 140,
@@ -1406,7 +1415,7 @@ const TURF_ZONES = [
     {
         id: "the_sprawl",
         name: "The Sprawl",
-        icon: "",
+        icon: "[SPR]",
         description: "Endless suburban strip malls and quiet cul-de-sacs. Prescription drugs and suburban rackets.",
         baseIncome: 2500,
         defenseRequired: 120,
@@ -1426,7 +1435,7 @@ const TURF_ZONES = [
 const RIVAL_FAMILIES = {
     torrino: {
         name: "Torrino Family",
-        icon: "Torrino Family",
+        icon: "[TOR]",
         ethnicity: "Italian",
         color: "#8b0000",
         motto: "Blood is thicker than wine.",
@@ -1455,7 +1464,7 @@ const RIVAL_FAMILIES = {
     },
     kozlov: {
         name: "Kozlov Bratva",
-        icon: "Kozlov Bratva",
+        icon: "[KOZ]",
         ethnicity: "Russian",
         color: "#4169e1",
         motto: "Strength is the only law.",
@@ -1482,7 +1491,7 @@ const RIVAL_FAMILIES = {
     },
     chen: {
         name: "Chen Triad",
-        icon: "Chen Triad",
+        icon: "[CHN]",
         ethnicity: "Chinese",
         color: "#2e8b57",
         motto: "Patience is the sharpest blade.",
@@ -1509,7 +1518,7 @@ const RIVAL_FAMILIES = {
     },
     morales: {
         name: "Morales Cartel",
-        icon: "Morales Cartel",
+        icon: "[MOR]",
         ethnicity: "South American",
         color: "#ff8c00",
         motto: "Fear is the foundation of empire.",
@@ -1561,10 +1570,10 @@ const FAMILY_RANK_REQUIREMENTS = {
 // ==================== TURF MILESTONES ====================
 // Passive bonuses unlocked at zone-count thresholds.
 const TURF_MILESTONES = [
-  { zones: 2, label: 'Street Presence', icon: '', description: '+10% passive XP from all sources', perk: 'xp_boost', value: 0.10 },
-  { zones: 4, label: 'Neighbourhood Boss', icon: '', description: '-20% heat from all jobs', perk: 'heat_reduction', value: 0.20 },
-  { zones: 6, label: 'District Kingpin', icon: '', description: '+15% store sell prices & gang recruit quality', perk: 'trade_boost', value: 0.15 },
-  { zones: 8, label: 'City Overlord', icon: '', description: 'Exclusive Overlord weapon & +25% turf income', perk: 'overlord', value: 0.25 },
+  { zones: 2, label: 'Street Presence', icon: '[+]', description: '+10% passive XP from all sources', perk: 'xp_boost', value: 0.10 },
+  { zones: 4, label: 'Neighbourhood Boss', icon: '[++]', description: '-20% heat from all jobs', perk: 'heat_reduction', value: 0.20 },
+  { zones: 6, label: 'District Kingpin', icon: '[+++]', description: '+15% store sell prices & gang recruit quality', perk: 'trade_boost', value: 0.15 },
+  { zones: 8, label: 'City Overlord', icon: '[*]', description: 'Exclusive Overlord weapon & +25% turf income', perk: 'overlord', value: 0.25 },
 ];
 
 // Returns array of milestone objects the player has currently unlocked
@@ -2672,7 +2681,7 @@ function maybeShowWorldNarration() {
   lastWorldNarrationTime = now;
 
   // Show as a brief atmospheric notification
-  GameLogging.logEvent(text);
+  GameLogging.logEvent('WORLD_NARRATION', { text });
 }
 
 // ==================== INTEGRATION & INITIALIZATION ==
@@ -2774,7 +2783,7 @@ window.recruitGangMemberExpanded = function() {
   player.gang.members++;
   player.money -= 5000;
 
-  GameLogging.logEvent(`Recruited ${newMember.roleData.icon} ${newMember.name} (${newMember.roleData.name}) to your gang!`);
+  GameLogging.logEvent('GANG_RECRUIT', { name: newMember.name, role: newMember.roleData.name });
 
   showGangManagementScreen(); // Refresh
   updateUI();
@@ -2799,7 +2808,7 @@ window.dismissMember = async function(memberId) {
   player.gang.members = player.gang.gangMembers.length;
 
   recalculatePower();
-  GameLogging.logEvent(`${member.name} has been dismissed from your gang.`);
+  GameLogging.logEvent('GANG_DISMISS', { name: member.name });
   showGangManagementScreen();
   updateUI();
 };
@@ -4449,9 +4458,9 @@ function startLaunderingCountdown() {
 
 // Background laundering completion checker (runs every 10 seconds regardless of screen)
 function startLaunderingCompletionChecker() {
-  setInterval(() => {
+  gameplayIntervals.push(setInterval(() => {
     checkLaunderingCompletions();
-  }, 10000);
+  }, 10000));
 }
 
 // Toast notification system for in-page feedback
@@ -7441,7 +7450,7 @@ function updateUI() {
   }
   const reputationDisplay = document.getElementById("reputation-display");
   if (reputationDisplay) {
-    reputationDisplay.innerText = `Respect: ${Math.floor(player.reputation || 0)}`;
+    reputationDisplay.innerText = `Rep: ${Math.floor(player.reputation || 0)}`;
   }
 
   // Apply user stat-bar visibility preferences (hides toggled-off stats)
@@ -8730,7 +8739,7 @@ const SCREEN_TUTORIAL_MAP = {
 // Full help reference accessed from Settings > Help button.
 
 const HELP_TOPICS = [
-  { id: 'getting-started', icon: '', title: 'Getting Started', content: `
+  { id: 'getting-started', icon: '[?]', title: 'Getting Started', content: `
     <p>Welcome to <strong>Mafia-Born</strong> -- a browser-based crime RPG where you rise from street thug to Don of your own criminal empire.</p>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Core Concepts</h4>
     <ul>
@@ -8751,7 +8760,7 @@ const HELP_TOPICS = [
       <li>Open <strong>Settings > Help</strong> any time for detailed guides.</li>
     </ol>
   `},
-  { id: 'ui-guide', icon: '', title: 'UI Guide (HUD)', content: `
+  { id: 'ui-guide', icon: '[UI]', title: 'UI Guide (HUD)', content: `
     <p>Understanding the on-screen interface.</p>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Status Bar (Top of Screen)</h4>
     <p>The bar at the very top displays your vital stats in real time:</p>
@@ -8786,7 +8795,7 @@ const HELP_TOPICS = [
     <h4 style="color:#c0a062; margin:14px 0 6px;">Navigation Buttons</h4>
     <p>The main SafeHouse screen has buttons for every area of the game. Buttons are locked (greyed out) until you reach the required level. Hover over a locked button to see what level unlocks it.</p>
   `},
-  { id: 'safehouse-help', icon: '', title: 'SafeHouse', content: `
+  { id: 'safehouse-help', icon: '[HOME]', title: 'SafeHouse', content: `
     <p>Your home base and central hub. All navigation starts here.</p>
     <ul>
       <li><strong>Navigation</strong> -- Tap any unlocked button to visit that area. Buttons unlock as you level up through Jobs and Missions.</li>
@@ -8796,7 +8805,7 @@ const HELP_TOPICS = [
       <li><strong>Portrait</strong> -- Your character portrait is shown in the top-left. You can change it from Settings.</li>
     </ul>
   `},
-  { id: 'jobs-help', icon: '', title: 'Jobs', content: `
+  { id: 'jobs-help', icon: '[JOB]', title: 'Jobs', content: `
     <p>Your main source of income and XP, especially early on.</p>
     <h4 style="color:#c0a062; margin:14px 0 6px;">How Jobs Work</h4>
     <ul>
@@ -8813,7 +8822,7 @@ const HELP_TOPICS = [
       <li>Buy Coffee or Energy Drinks from the quick-buy panel to keep grinding without waiting.</li>
     </ul>
   `},
-  { id: 'store-help', icon: '', title: 'Black Market', content: `
+  { id: 'store-help', icon: '[SHOP]', title: 'Black Market', content: `
     <p>Three tabs for all your shopping needs: <strong>Buy</strong>, <strong>The Fence</strong>, and <strong>Player Market</strong>.</p>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Buy Tab</h4>
     <ul>
@@ -8832,7 +8841,7 @@ const HELP_TOPICS = [
       <li>List your vehicles for a price, or browse listings to find a deal.</li>
     </ul>
   `},
-  { id: 'missions-help', icon: '', title: 'Missions & Story', content: `
+  { id: 'missions-help', icon: '[MSN]', title: 'Missions & Story', content: `
     <p>The narrative heart of the game -- follow your crime family's story from street-level nobody to untouchable Don.</p>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Family Story</h4>
     <ul>
@@ -8851,7 +8860,7 @@ const HELP_TOPICS = [
       <li>They add choices, consequences, and atmospheric flavour to your quests.</li>
     </ul>
   `},
-  { id: 'gang-help', icon: '', title: 'The Family (Gang)', content: `
+  { id: 'gang-help', icon: '[GANG]', title: 'The Family (Gang)', content: `
     <p>Crime families are the social and multiplayer system of Mafia Born.</p>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Creating or Joining</h4>
     <ul>
@@ -8876,7 +8885,7 @@ const HELP_TOPICS = [
       <li>Better crew = better odds in combat and territory control.</li>
     </ul>
   `},
-  { id: 'properties-help', icon: '', title: 'Properties & Fronts', content: `
+  { id: 'properties-help', icon: '[PROP]', title: 'Properties & Fronts', content: `
     <p>Two tabs: <strong>Properties</strong> and <strong>Fronts</strong> -- your path to passive income and money laundering.</p>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Properties</h4>
     <ul>
@@ -8891,7 +8900,7 @@ const HELP_TOPICS = [
       <li>You <em>must</em> have fronts to convert dirty money -- it's useless otherwise.</li>
     </ul>
   `},
-  { id: 'casino-help', icon: '', title: 'Casino & Mini Games', content: `
+  { id: 'casino-help', icon: '[BET]', title: 'Casino & Mini Games', content: `
     <p>High risk, high reward entertainment with your hard-earned cash.</p>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Casino Games</h4>
     <ul>
@@ -8907,7 +8916,7 @@ const HELP_TOPICS = [
     </ul>
     <p style="color:#8b3a3a; font-style:italic;">Warning: The Casino uses your real in-game Cash. There is no guaranteed win -- gamble responsibly!</p>
   `},
-  { id: 'stash-help', icon: '', title: 'Stash & Motor Pool', content: `
+  { id: 'stash-help', icon: '[STASH]', title: 'Stash & Motor Pool', content: `
     <p>Your inventory and vehicle garage.</p>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Stash (Inventory)</h4>
     <ul>
@@ -8922,7 +8931,7 @@ const HELP_TOPICS = [
       <li>Sell unwanted vehicles on the Player Market, or buy new rides there.</li>
     </ul>
   `},
-  { id: 'hospital-help', icon: '', title: 'Hospital', content: `
+  { id: 'hospital-help', icon: '[MED]', title: 'Hospital', content: `
     <p>The underground doctor keeps you patched up -- for a price.</p>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Healing Options</h4>
     <ul>
@@ -8937,7 +8946,7 @@ const HELP_TOPICS = [
       <li>Medkits (from the Black Market) can restore health outside the Hospital.</li>
     </ul>
   `},
-  { id: 'skills-help', icon: '', title: 'Talents & Skills', content: `
+  { id: 'skills-help', icon: '[SKILL]', title: 'Talents & Skills', content: `
     <p>Invest skill points into 6 permanent talent trees to customise your playstyle.</p>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Skill Trees</h4>
     <ul>
@@ -8954,7 +8963,7 @@ const HELP_TOPICS = [
       <li>Spend them from the <strong>Skills</strong> screen. Each node is permanent once purchased.</li>
     </ul>
   `},
-  { id: 'territory-help', icon: '', title: 'Territory Control', content: `
+  { id: 'territory-help', icon: '[TURF]', title: 'Territory Control', content: `
     <p>Dominate the city district by district. The turf system is your path to real power -- but expanding your empire paints a bigger target on your back.</p>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Claiming Territory</h4>
     <ul>
@@ -8994,7 +9003,7 @@ const HELP_TOPICS = [
       <li>Reduce turf heat to maximize your weekly income -- high heat cuts income by up to 70%.</li>
     </ul>
   `},
-  { id: 'stats-help', icon: '', title: 'Stats & Empire', content: `
+  { id: 'stats-help', icon: '[STAT]', title: 'Stats & Empire', content: `
     <p>Track every detail of your criminal career.</p>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Player Stats</h4>
     <ul>
@@ -9013,7 +9022,7 @@ const HELP_TOPICS = [
       <li>Great for seeing the big picture of your criminal empire's growth.</li>
     </ul>
   `},
-  { id: 'heat-help', icon: '', title: 'Heat (Wanted Level)', content: `
+  { id: 'heat-help', icon: '[HEAT]', title: 'Heat (Wanted Level)', content: `
     <p><strong>Heat</strong> is your wanted level -- a number from 0 to 100 representing how much the police are watching you.</p>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Heat Levels</h4>
     <ul>
@@ -9038,7 +9047,7 @@ const HELP_TOPICS = [
       <li><strong>Stealth Skills</strong> -- The Stealth skill tree has nodes that reduce heat gain and increase decay speed.</li>
     </ul>
   `},
-  { id: 'energy-help', icon: '', title: 'Energy System', content: `
+  { id: 'energy-help', icon: '[NRG]', title: 'Energy System', content: `
     <p><strong>Energy</strong> is the fuel for almost everything you do in Mafia Born.</p>
     <h4 style="color:#c0a062; margin:14px 0 6px;">How Energy Works</h4>
     <ul>
@@ -9059,7 +9068,7 @@ const HELP_TOPICS = [
       <li>The quick-buy buttons on the Quick Actions bar let you buy energy items without visiting the store.</li>
     </ul>
   `},
-  { id: 'combat-help', icon: '', title: 'Combat & Equipment', content: `
+  { id: 'combat-help', icon: '[FIGHT]', title: 'Combat & Equipment', content: `
     <p>Understanding how fights work and how to gear up for them.</p>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Attack & Defence</h4>
     <ul>
@@ -9080,7 +9089,7 @@ const HELP_TOPICS = [
       <li>PvP increases Heat: the more you fight, the more wanted you become.</li>
     </ul>
   `},
-  { id: 'dirty-money-help', icon: '', title: 'Dirty Money & Laundering', content: `
+  { id: 'dirty-money-help', icon: '[CASH]', title: 'Dirty Money & Laundering', content: `
     <p>Not all money is created equal -- dirty money needs to be cleaned before you can spend it.</p>
     <h4 style="color:#c0a062; margin:14px 0 6px;">What is Dirty Money?</h4>
     <ul>
@@ -9095,7 +9104,7 @@ const HELP_TOPICS = [
       <li>Better fronts launder more per cycle -- invest in upgrades when you can.</li>
     </ul>
   `},
-  { id: 'seasons-help', icon: '', title: 'Seasons & Weather', content: `
+  { id: 'seasons-help', icon: '[SZN]', title: 'Seasons & Weather', content: `
     <p>The game world has dynamic seasons and weather that affect gameplay.</p>
     <ul>
       <li><strong>Seasons</strong> -- Cycle through Spring, Summer, Autumn, and Winter. Each season can influence events, job availability, and NPC behaviour.</li>
@@ -9103,7 +9112,7 @@ const HELP_TOPICS = [
       <li>Both are shown on the Status Bar and update automatically during gameplay.</li>
     </ul>
   `},
-  { id: 'multiplayer-help', icon: '', title: 'Multiplayer & Cloud', content: `
+  { id: 'multiplayer-help', icon: '[MP]', title: 'Multiplayer & Cloud', content: `
     <p>Play with others and sync your progress across devices.</p>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Online Features</h4>
     <ul>
@@ -9119,7 +9128,7 @@ const HELP_TOPICS = [
       <li>Your local saves are always available even without internet.</li>
     </ul>
   `},
-  { id: 'saving-help', icon: '', title: 'Saving & Loading', content: `
+  { id: 'saving-help', icon: '[SAVE]', title: 'Saving & Loading', content: `
     <p>Never lose your progress -- multiple save options keep you covered.</p>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Save Options</h4>
     <ul>
@@ -9431,7 +9440,7 @@ function logAction(message, category) {
   const logList = document.getElementById("log-list");
   const logItem = document.createElement("li");
   logItem.setAttribute('data-log-category', cat);
-  logItem.innerText = stripEmoji(message);
+  logItem.innerText = message;
 
   // Style chat entries differently
   if (cat === 'chat') {
@@ -11669,7 +11678,7 @@ const seasonalEvents = {
         duration: 3 * 24 * 60 * 60 * 1000 // 3 days
       },
       probability: 0.3,
-      icon: ""
+      icon: '[SPR]'
     },
     {
       id: "tax_season",
@@ -11681,7 +11690,7 @@ const seasonalEvents = {
         duration: 7 * 24 * 60 * 60 * 1000 // 1 week
       },
       probability: 0.4,
-      icon: ""
+      icon: '[$]'
     }
   ],
   summer: [
@@ -11695,7 +11704,7 @@ const seasonalEvents = {
         duration: 2 * 7 * 24 * 60 * 60 * 1000 // 2 weeks
       },
       probability: 0.5,
-      icon: ""
+      icon: '[SUN]'
     },
     {
       id: "heat_wave",
@@ -11708,7 +11717,7 @@ const seasonalEvents = {
         duration: 5 * 24 * 60 * 60 * 1000 // 5 days
       },
       probability: 0.3,
-      icon: ""
+      icon: '[HOT]'
     }
   ],
   autumn: [
@@ -11722,7 +11731,7 @@ const seasonalEvents = {
         duration: 4 * 24 * 60 * 60 * 1000 // 4 days
       },
       probability: 0.35,
-      icon: ""
+      icon: '[HRV]'
     },
     {
       id: "back_to_school",
@@ -11734,7 +11743,7 @@ const seasonalEvents = {
         duration: 2 * 7 * 24 * 60 * 60 * 1000 // 2 weeks
       },
       probability: 0.4,
-      icon: ""
+      icon: '[SCH]'
     }
   ],
   winter: [
@@ -11749,7 +11758,7 @@ const seasonalEvents = {
         duration: 3 * 7 * 24 * 60 * 60 * 1000 // 3 weeks
       },
       probability: 0.6,
-      icon: ""
+      icon: '[HOL]'
     },
     {
       id: "cold_snap",
@@ -11762,7 +11771,7 @@ const seasonalEvents = {
         duration: 1 * 7 * 24 * 60 * 60 * 1000 // 1 week
       },
       probability: 0.25,
-      icon: ""
+      icon: '[BRR]'
     }
   ]
 };
@@ -11773,7 +11782,7 @@ const weatherEffects = {
     name: "Clear Skies",
     description: "Perfect conditions for operations",
     effects: {},
-    icon: ""
+    icon: '[CLR]'
   },
   overcast: {
     name: "Overcast",
@@ -11782,7 +11791,7 @@ const weatherEffects = {
       witnessReduction: 0.1,
       stealthBonus: 0.05
     },
-    icon: ""
+    icon: '[CLD]'
   },
   rain: {
     name: "Rain",
@@ -11793,7 +11802,7 @@ const weatherEffects = {
       witnessReduction: 0.2,
       energyCost: 1.1
     },
-    icon: ""
+    icon: '[RN]'
   },
   drizzle: {
     name: "Light Drizzle",
@@ -11802,7 +11811,7 @@ const weatherEffects = {
       stealthBonus: 0.08,
       witnessReduction: 0.1
     },
-    icon: ""
+    icon: '[DRZ]'
   },
   snow: {
     name: "Snow",
@@ -11813,7 +11822,7 @@ const weatherEffects = {
       heatingCosts: 1.3,
       carDamage: 1.2
     },
-    icon: ""
+    icon: '[SNW]'
   },
   blizzard: {
     name: "Blizzard",
@@ -11826,7 +11835,7 @@ const weatherEffects = {
       businessDisruption: 0.5,
       movementSpeed: -0.35
     },
-    icon: ""
+    icon: '[BLZ]'
   },
   sleet: {
     name: "Sleet",
@@ -11837,7 +11846,7 @@ const weatherEffects = {
       witnessReduction: 0.25,
       energyCost: 1.2
     },
-    icon: ""
+    icon: '[SLT]'
   },
   fog: {
     name: "Fog",
@@ -11848,7 +11857,7 @@ const weatherEffects = {
       carAccidents: 0.15,
       jobSuccessBonus: 0.1
     },
-    icon: ""
+    icon: '[FOG]'
   },
   storm: {
     name: "Storm",
@@ -11860,7 +11869,7 @@ const weatherEffects = {
       energyCost: 1.3,
       businessDisruption: 0.4
     },
-    icon: ""
+    icon: '[STM]'
   },
   heatwave: {
     name: "Heatwave",
@@ -11870,7 +11879,7 @@ const weatherEffects = {
       energyCost: 1.25,
       witnessReduction: 0.15
     },
-    icon: ""
+    icon: '[HOT]'
   },
   humid: {
     name: "Humid & Muggy",
@@ -11879,7 +11888,7 @@ const weatherEffects = {
       energyCost: 1.15,
       movementSpeed: -0.1
     },
-    icon: ""
+    icon: '[HMD]'
   }
 };
 
@@ -11937,7 +11946,7 @@ const newsEvents = [
     },
     probability: 0.1,
     category: "law_enforcement",
-    icon: ""
+    icon: '[NEWS]'
   },
   {
     id: "new_police_chief",
@@ -11951,7 +11960,7 @@ const newsEvents = [
     },
     probability: 0.08,
     category: "law_enforcement",
-    icon: ""
+    icon: "[COP]"
   },
   {
     id: "economic_boom",
@@ -11965,7 +11974,7 @@ const newsEvents = [
     },
     probability: 0.12,
     category: "economic",
-    icon: ""
+    icon: "[$$$]"
   },
   {
     id: "gang_violence_spike",
@@ -11979,7 +11988,7 @@ const newsEvents = [
     },
     probability: 0.15,
     category: "crime",
-    icon: ""
+    icon: "[!]"
   },
   {
     id: "festival_announcement",
@@ -11993,7 +12002,7 @@ const newsEvents = [
     },
     probability: 0.2,
     category: "social",
-    icon: ""
+    icon: "[EVT]"
   },
   {
     id: "tech_surveillance",
@@ -12007,7 +12016,7 @@ const newsEvents = [
     },
     probability: 0.06,
     category: "technology",
-    icon: ""
+    icon: "[CAM]"
   }
 ];
 
@@ -12037,7 +12046,7 @@ const crackdownTypes = [
     },
     triggers: ["high_drug_activity", "public_pressure"],
     severity: "high",
-    icon: ""
+    icon: "[DEA]"
   },
   {
     id: "gang_crackdown",
@@ -12051,7 +12060,7 @@ const crackdownTypes = [
     },
     triggers: ["territory_violence", "gang_visibility"],
     severity: "extreme",
-    icon: ""
+    icon: "[SWAT]"
   },
   {
     id: "vehicle_crackdown",
@@ -12065,7 +12074,7 @@ const crackdownTypes = [
     },
     triggers: ["car_theft_reports", "insurance_pressure"],
     severity: "medium",
-    icon: ""
+    icon: "[AUTO]"
   },
   {
     id: "corruption_investigation",
@@ -12079,7 +12088,7 @@ const crackdownTypes = [
     },
     triggers: ["corruption_exposure", "political_pressure"],
     severity: "extreme",
-    icon: ""
+    icon: "[FBI]"
   }
 ];
 
@@ -13536,14 +13545,14 @@ let _currentBlackMarketTab = 'buy';
 
 // Store item category definitions
 const storeCategories = [
-  { id: 'all', label: 'All', icon: '', types: null },
-  { id: 'weapons', label: 'Weapons', icon: '', types: ['weapon'] },
-  { id: 'armor', label: 'Armor', icon: '', types: ['armor'] },
-  { id: 'vehicles', label: 'Vehicles', icon: '', types: ['vehicle'] },
-  { id: 'supplies', label: 'Supplies', icon: '', types: ['ammo', 'gas'] },
-  { id: 'energy', label: 'Energy', icon: '', types: ['energy'] },
-  { id: 'utility', label: 'Utility', icon: '', types: ['utility'] },
-  { id: 'trade', label: 'Trade Goods', icon: '', types: ['highLevelDrug'] }
+  { id: 'all', label: 'All', icon: '[ALL]', types: null },
+  { id: 'weapons', label: 'Weapons', icon: '[WPN]', types: ['weapon'] },
+  { id: 'armor', label: 'Armor', icon: '[ARM]', types: ['armor'] },
+  { id: 'vehicles', label: 'Vehicles', icon: '[CAR]', types: ['vehicle'] },
+  { id: 'supplies', label: 'Supplies', icon: '[SUP]', types: ['ammo', 'gas'] },
+  { id: 'energy', label: 'Energy', icon: '[NRG]', types: ['energy'] },
+  { id: 'utility', label: 'Utility', icon: '[UTL]', types: ['utility'] },
+  { id: 'trade', label: 'Trade Goods', icon: '[TRD]', types: ['highLevelDrug'] }
 ];
 
 function showStore(activeTab) {
@@ -17795,13 +17804,13 @@ function showAchievements() {
 
   // Group achievements by category
   const categories = [
-    { name: 'Early Game', icon: '', ids: ['first_job','first_blood','wheels','armed_dangerous','property_owner'] },
-    { name: 'Money Milestones', icon: '', ids: ['millionaire','half_mil','true_millionaire','multi_millionaire','billionaire'] },
-    { name: 'Gang & Social', icon: '', ids: ['first_recruit','gang_leader','crime_family','army','faction_friend','faction_ally'] },
-    { name: 'Combat & Crime', icon: '', ids: ['jail_break','most_wanted','ghost','boss_slayer'] },
-    { name: 'Progression', icon: '', ids: ['reputation_max','level_10','level_25','level_50','skill_master'] },
-    { name: 'Empire', icon: '', ids: ['territory_3','territory_10','business_owner','jobs_50','jobs_200'] },
-    { name: 'Mini-Games', icon: '', ids: ['lucky_streak','gambler','snake_king','quick_draw'] }
+    { name: 'Early Game', icon: '[NEW]', ids: ['first_job','first_blood','wheels','armed_dangerous','property_owner'] },
+    { name: 'Money Milestones', icon: '[$]', ids: ['millionaire','half_mil','true_millionaire','multi_millionaire','billionaire'] },
+    { name: 'Gang & Social', icon: '[FAM]', ids: ['first_recruit','gang_leader','crime_family','army','faction_friend','faction_ally'] },
+    { name: 'Combat & Crime', icon: '[!!]', ids: ['jail_break','most_wanted','ghost','boss_slayer'] },
+    { name: 'Progression', icon: '[LVL]', ids: ['reputation_max','level_10','level_25','level_50','skill_master'] },
+    { name: 'Empire', icon: '[EMP]', ids: ['territory_3','territory_10','business_owner','jobs_50','jobs_200'] },
+    { name: 'Mini-Games', icon: '[GAME]', ids: ['lucky_streak','gambler','snake_king','quick_draw'] }
   ];
 
   let achievementsHTML = `
@@ -18206,7 +18215,7 @@ function generatePassiveIncome() {
 
 // Start passive income generation
 function startPassiveIncomeGenerator() {
-  setInterval(() => {
+  gameplayIntervals.push(setInterval(() => {
     generatePassiveIncome();
     processTerritoryOperations(); // Process territory income and events
     applyDailyPassives(); // Apply faction passives (interest, ammo regen, etc.)
@@ -18220,7 +18229,7 @@ function startPassiveIncomeGenerator() {
         chargeBookieFeeHourly();
       } catch (e) { console.warn('Auto-collect error', e); }
     }
-  }, 300000); // Every 5 minutes
+  }, 300000)); // Every 5 minutes
 }
 
 // Release arrested gang members whose sentence has expired
@@ -18353,12 +18362,12 @@ function chargeBookieFeeHourly() {
 
 // Function to periodically check for random events
 function startRandomEventChecker() {
-  setInterval(() => {
+  gameplayIntervals.push(setInterval(() => {
     if (!gameplayActive) return;
     if (Math.random() < 0.05) { // 5% chance every minute for better balance
       triggerRandomEvent();
     }
-  }, 60000); // Check every minute
+  }, 60000)); // Check every minute
 }
 
 // Function to update gang tribute timer display
@@ -18371,20 +18380,20 @@ function startGangTributeTimer() {
 // Function to refresh current screen with live timers
 function startScreenRefreshTimer() {
   // --- Fast timer (1 s) - only screens with visible per-second countdowns ---
-  setInterval(() => {
+  gameplayIntervals.push(setInterval(() => {
     if (document.getElementById("jail-screen").style.display === "block") {
       updatePrisonerList(); // Update jail prisoner countdown
     }
     if (document.getElementById("jailbreak-screen").style.display === "block") {
       updateJailbreakPrisonerTimers(); // Update jailbreak prisoner countdown
     }
-  }, 1000);
+  }, 1000));
 
   // --- Slow timer (30 s) - screens that only need occasional data refresh ---
   // Full innerHTML rebuilds on a 1-second loop destroy DOM elements mid-hover,
   // causing the "screen flash" bug. 30 s is frequent enough to catch passive
   // income changes without disrupting interaction.
-  setInterval(() => {
+  gameplayIntervals.push(setInterval(() => {
     if (document.getElementById("gang-screen").style.display === "block") {
       showGang();
     }
@@ -18394,7 +18403,7 @@ function startScreenRefreshTimer() {
     if (document.getElementById("store-screen").style.display === "block") {
       showStore();
     }
-  }, 30000);
+  }, 30000));
 }
 
 // Function to update jailbreak prisoner timers (separate from display)
@@ -19038,6 +19047,7 @@ function returnToIntroScreen() {
 
   // Return to title screen
   gameplayActive = false;
+  clearAllGameplayIntervals();
   document.getElementById('intro-screen').style.display = 'block';
 }
 
@@ -19052,6 +19062,7 @@ function deleteAllLocalSavesAndReset() {
 
   // Reset runtime state so nothing lingers
   gameplayActive = false;
+  clearAllGameplayIntervals();
   resetPlayerForNewGame();
   stopJailTimer();
 
@@ -19202,7 +19213,7 @@ function activateGameplaySystems() {
   // setInterval(() => { if (gameplayActive) checkAndTriggerInteractiveEvent(); }, 60000);
 
   // World atmosphere narrations (every few minutes, ambient storytelling)
-  setInterval(() => { if (gameplayActive) maybeShowWorldNarration(); }, 120000);
+  gameplayIntervals.push(setInterval(() => { if (gameplayActive) maybeShowWorldNarration(); }, 120000));
 
   // Initialize UI Events
   if (typeof initUIEvents === 'function') {
@@ -20986,13 +20997,13 @@ function showBriefNotification(message, durationOrType = 2000) {
 // Competition system configuration
 const COMPETITION_SYSTEM = {
   leaderboardCategories: [
-    { id: 'empire', name: 'Empire Rating', icon: '', description: 'Overall criminal power and influence' },
-    { id: 'wealth', name: 'Criminal Wealth', icon: '', description: 'Total money accumulated' },
-    { id: 'reputation', name: 'Street Reputation', icon: '', description: 'Respect in the criminal underworld' },
-    { id: 'territory', name: 'Turf Control', icon: '', description: 'Turf zones under your family\'s control' },
-    { id: 'gang', name: 'Gang Power', icon: '', description: 'Size and strength of criminal organization' },
-    { id: 'business', name: 'Business Empire', icon: '', description: 'Number of criminal enterprises' },
-    { id: 'longevity', name: 'Career Longevity', icon: '', description: 'Time survived in the criminal world' }
+    { id: 'empire', name: 'Empire Rating', icon: '[#1]', description: 'Overall criminal power and influence' },
+    { id: 'wealth', name: 'Criminal Wealth', icon: '[$]', description: 'Total money accumulated' },
+    { id: 'reputation', name: 'Street Reputation', icon: '[REP]', description: 'Respect in the criminal underworld' },
+    { id: 'territory', name: 'Turf Control', icon: '[MAP]', description: 'Turf zones under your family\'s control' },
+    { id: 'gang', name: 'Gang Power', icon: '[FAM]', description: 'Size and strength of criminal organization' },
+    { id: 'business', name: 'Business Empire', icon: '[BIZ]', description: 'Number of criminal enterprises' },
+    { id: 'longevity', name: 'Career Longevity', icon: '[VET]', description: 'Time survived in the criminal world' }
   ],
   maxLeaderboardEntries: 50,
   submissionCooldown: 60000, // 1 minute
@@ -21014,7 +21025,7 @@ const WEEKLY_CHALLENGES = {
       id: 'money_maker',
       name: 'Money Maker',
       description: 'Earn {target} in a single week',
-      icon: '',
+      icon: '[$]',
       targets: { easy: 100000, medium: 500000, hard: 1000000, extreme: 5000000 },
       checkProgress: (target) => player.statistics.totalMoneyEarned >= target
     },
@@ -21022,7 +21033,7 @@ const WEEKLY_CHALLENGES = {
       id: 'job_master',
       name: 'Job Master',
       description: 'Complete {target} jobs successfully',
-      icon: '',
+      icon: '[JOB]',
       targets: { easy: 10, medium: 25, hard: 50, extreme: 100 },
       checkProgress: (target) => player.statistics.jobsCompleted >= target
     },
@@ -21030,7 +21041,7 @@ const WEEKLY_CHALLENGES = {
       id: 'empire_builder',
       name: 'Empire Builder',
       description: 'Reach empire rating of {target}',
-      icon: '',
+      icon: '[EMP]',
       targets: { easy: 2000, medium: 4000, hard: 6000, extreme: 8000 },
       checkProgress: (target) => calculateEmpireRating().totalScore >= target
     },
@@ -21038,7 +21049,7 @@ const WEEKLY_CHALLENGES = {
       id: 'gang_leader',
       name: 'Gang Leader',
       description: 'Recruit {target} gang members',
-      icon: '',
+      icon: '[BOSS]',
       targets: { easy: 5, medium: 15, hard: 30, extreme: 50 },
       checkProgress: (target) => (player.gang.gangMembers ? player.gang.gangMembers.length : player.gang.members) >= target
     },
@@ -21046,7 +21057,7 @@ const WEEKLY_CHALLENGES = {
       id: 'territory_king',
       name: 'Territory King',
       description: 'Control {target} territories',
-      icon: '',
+      icon: '[TURF]',
       targets: { easy: 3, medium: 8, hard: 15, extreme: 25 },
       checkProgress: (target) => player.territory >= target
     },
@@ -21054,7 +21065,7 @@ const WEEKLY_CHALLENGES = {
       id: 'business_mogul',
       name: 'Business Mogul',
       description: 'Own {target} businesses',
-      icon: '',
+      icon: '[BIZ]',
       targets: { easy: 2, medium: 5, hard: 10, extreme: 20 },
       checkProgress: (target) => (player.businesses ? player.businesses.length : 0) >= target
     },
@@ -21062,7 +21073,7 @@ const WEEKLY_CHALLENGES = {
       id: 'escape_artist',
       name: 'Escape Artist',
       description: 'Escape from jail {target} times',
-      icon: '',
+      icon: '[RUN]',
       targets: { easy: 2, medium: 5, hard: 10, extreme: 20 },
       checkProgress: (target) => player.statistics.timesEscaped >= target
     },
@@ -21070,7 +21081,7 @@ const WEEKLY_CHALLENGES = {
       id: 'car_thief',
       name: 'Car Thief',
       description: 'Steal {target} vehicles',
-      icon: '',
+      icon: '[CAR]',
       targets: { easy: 10, medium: 25, hard: 50, extreme: 100 },
       checkProgress: (target) => player.statistics.carsStolen >= target
     }
@@ -21315,7 +21326,7 @@ function checkWeeklyChallenges() {
 
 function startChallengeChecker() {
   // Check challenges every 30 seconds
-  setInterval(checkWeeklyChallenges, 30000);
+  gameplayIntervals.push(setInterval(checkWeeklyChallenges, 30000));
 }
 
 // Character showcase system
