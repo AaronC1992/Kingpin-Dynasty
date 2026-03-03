@@ -8450,7 +8450,7 @@ const TUTORIAL_CONTENT = {
     title: 'Welcome to Mafia Born',
     sections: [
       { heading: 'Your SafeHouse', text: 'This is your base of operations -- the hub of your criminal empire. Every journey into the city starts from here. As you level up, new locations and features will unlock on the navigation buttons below.' },
-      { heading: 'The Status Bar (Top)', text: 'The bar running across the top of the screen shows your vital stats at a glance:<br><b>Cash</b> -- your spending money.<br><b>Health</b> -- drops from fights and failed jobs; if it hits 0, you black out.<br><b>Energy</b> -- most actions cost energy; it regenerates over time or can be restored with items.<br><b>Heat</b> -- your wanted level; rises from crime, attracts police attention, and decays over time.<br><b>Rank</b> -- your current level in the underworld; level up to unlock new content.<br>You can customise which stats are shown in Settings > UI Toggles.' },
+      { heading: 'The Status Bar (Top)', text: 'The bar running across the top of the screen shows your vital stats at a glance:<br><b>Cash</b> -- your spending money.<br><b>Health</b> -- drops from fights and failed jobs; if it hits 0, your character dies permanently (permadeath).<br><b>Energy</b> -- most actions cost energy; it regenerates over time or can be restored with items.<br><b>Heat</b> -- your wanted level; rises from crime, attracts police attention, and decays over time.<br><b>Rank</b> -- your current level in the underworld; level up to unlock new content.<br>You can customise which stats are shown in Settings > UI Toggles.' },
       { heading: 'The Ledger (Activity Log)', text: 'Below the status bar is The Ledger -- a scrolling log that records everything you do: jobs, fights, purchases, story events, and more. Keep an eye on it for confirmation of your actions and narrative flavour.' },
       { heading: 'Quick Actions Bar (Right Panel)', text: 'On the right (desktop) or accessible via the mobile menu, the Quick Actions bar provides one-tap shortcuts to your most-used screens. It also has a Save button, Help button, and a Skip Tutorials option. You can customise which shortcuts appear in Settings.' },
       { heading: 'Navigation Buttons', text: 'The main buttons in the SafeHouse let you visit Jobs, the Black Market, Missions, the Casino, Hospital, and more. Buttons are locked until you reach the required level -- keep grinding!' },
@@ -8478,7 +8478,7 @@ const TUTORIAL_CONTENT = {
   missions: {
     title: 'Missions & Story',
     sections: [
-      { heading: 'Family Story', text: 'Choose a crime family (Corleone, Moretti, etc.) and follow their cinematic storyline from street thug to Don. Story chapters unlock as you level up.' },
+      { heading: 'Family Story', text: 'Choose a crime family (Torrino, Kozlov, Chen, or Morales) and follow their cinematic storyline from street thug to Don. Story chapters unlock as you level up.' },
       { heading: 'Side Operations', text: 'Optional quest chains with countdown timers (3-20 minutes). You must wait for the timer AND complete the objective to advance to the next step.' },
       { heading: 'Street Stories', text: 'Narrative encounters that trigger during side operations. They add consequences, choices, and flavour to your quests.' },
       { heading: 'Rewards', text: 'Completing missions awards large chunks of XP, cash, influence, and sometimes unique items or crew members.' },
@@ -8504,8 +8504,8 @@ const TUTORIAL_CONTENT = {
   casino: {
     title: 'Casino & Mini Games',
     sections: [
-      { heading: 'Gambling', text: 'Try your luck at Poker, Blackjack, Slots, Roulette, and more. Wager cash for big wins -- or big losses.' },
-      { heading: 'Mini Games', text: 'Quick pastimes like Lockpicking and Number Cracking. Fun distractions with consistent, smaller rewards.' },
+      { heading: 'Gambling', text: 'Try your luck at Blackjack, Slots, Roulette, Dice, and Horse Racing. Wager cash for big wins -- or big losses.' },
+      { heading: 'Mini Games', text: 'Quick pastimes like TikTakToe, Number Guessing, Rock Paper Scissors, and Snake. Fun distractions with consistent, smaller rewards.' },
       { heading: 'Risk Warning', text: 'The Casino uses your real in-game Cash. There is no guaranteed win -- gamble responsibly to protect your bankroll!' },
     ]
   },
@@ -8522,7 +8522,7 @@ const TUTORIAL_CONTENT = {
       { heading: 'Full Treatment', text: 'Pay the back-alley doctor to restore health to 100%. Expensive but worth it when you\'re critically low.' },
       { heading: 'Patch Job', text: 'Cheaper partial heal -- restores up to 25 HP. Good for a quick fix between jobs.' },
       { heading: 'Rest', text: 'Spend energy instead of cash to heal a small amount. Useful when you\'re broke but have energy to spare.' },
-      { heading: 'Why Heal?', text: 'If your health drops to 0 during a fight or failed job, you\'ll black out and lose time and money. Keep your health topped up!' },
+      { heading: 'Why Heal?', text: 'If your health drops to 0 during a fight or failed job, your character dies permanently -- this is permadeath! Keep your health topped up.' },
     ]
   },
   skills: {
@@ -8732,7 +8732,7 @@ const HELP_TOPICS = [
       <li><strong>Energy</strong> -- Most actions (jobs, heists, fights) cost energy. It regenerates over time (~1 per minute), or you can restore it instantly with Coffee, Energy Drinks, or Steroids from the Black Market.</li>
       <li><strong>Cash</strong> -- Your main currency. Earned from jobs, businesses, missions, and the casino. Spend it on gear, properties, heals, and more.</li>
       <li><strong>Dirty Money</strong> -- Earned from heists and illegal activities. Cannot be spent directly -- you must launder it through Business Fronts (Properties screen) to convert it into clean Cash.</li>
-      <li><strong>Health</strong> -- Drops from combat, failed jobs, and random events. If it hits 0, you black out and lose time/money. Heal at the Hospital or use Medkits.</li>
+      <li><strong>Health</strong> -- Drops from combat, failed jobs, and random events. If it hits 0, your character dies permanently (permadeath). Heal at the Hospital or use Medkits.</li>
       <li><strong>Heat (Wanted Level)</strong> -- Rises when you commit crimes. Higher heat means more police encounters, bigger fines, and possible arrest. Heat decays slowly over time, or you can reduce it via skills and bribes.</li>
       <li><strong>XP & Rank</strong> -- Earn XP from jobs, missions, side ops, and combat. Level up ("Rank up") to unlock new screens, gear, story chapters, and features.</li>
       <li><strong>Influence</strong> -- A measure of your power in the underworld. Used to claim territory and affects your Empire Rating.</li>
@@ -8752,7 +8752,7 @@ const HELP_TOPICS = [
     <p>The bar at the very top displays your vital stats in real time:</p>
     <ul>
       <li><strong>Cash</strong> -- Your clean, spendable money.</li>
-      <li><strong>Health</strong> -- Your current HP. If it reaches 0, you black out.</li>
+      <li><strong>Health</strong> -- Your current HP. If it reaches 0, your character dies permanently (permadeath).</li>
       <li><strong>Energy</strong> -- Shows current/max energy. Regenerates over time. Most actions cost energy.</li>
       <li><strong>Heat</strong> -- Your wanted level (0-100). Higher = more police attention.</li>
       <li><strong>Rank</strong> -- Your character level. Level up to unlock content.</li>
@@ -8831,7 +8831,7 @@ const HELP_TOPICS = [
     <p>The narrative heart of the game -- follow your crime family's story from street-level nobody to untouchable Don.</p>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Family Story</h4>
     <ul>
-      <li>Choose a crime family (Corleone, Moretti, etc.) and play through their <strong>cinematic storyline</strong>.</li>
+      <li>Choose a crime family (Torrino, Kozlov, Chen, or Morales) and play through their <strong>cinematic storyline</strong>.</li>
       <li>Story chapters unlock as you level up. Each chapter has unique missions with dialogue, choices, and consequences.</li>
     </ul>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Side Operations</h4>
@@ -8890,15 +8890,18 @@ const HELP_TOPICS = [
     <p>High risk, high reward entertainment with your hard-earned cash.</p>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Casino Games</h4>
     <ul>
-      <li><strong>Poker</strong> -- Classic card game. Try to beat the dealer's hand.</li>
       <li><strong>Blackjack</strong> -- Hit 21 or get closer than the dealer without going bust.</li>
       <li><strong>Slots</strong> -- Spin the reels and hope for matching symbols. Quick and luck-based.</li>
       <li><strong>Roulette</strong> -- Bet on numbers, colours, or ranges. Wide variety of bet types.</li>
+      <li><strong>Dice</strong> -- Roll the dice and bet on the outcome.</li>
+      <li><strong>Horse Racing</strong> -- Pick a horse and watch the race unfold.</li>
     </ul>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Mini Games</h4>
     <ul>
-      <li><strong>Lockpicking</strong> -- Test your timing skills for small but consistent rewards.</li>
-      <li><strong>Number Cracking</strong> -- Guess the code for a payout.</li>
+      <li><strong>TikTakToe</strong> -- Classic noughts and crosses against the AI.</li>
+      <li><strong>Number Guessing</strong> -- Guess the hidden number for a payout.</li>
+      <li><strong>Rock Paper Scissors</strong> -- Best of rounds against the AI.</li>
+      <li><strong>Snake</strong> -- Classic snake game with cash rewards for high scores.</li>
     </ul>
     <p style="color:#8b3a3a; font-style:italic;">Warning: The Casino uses your real in-game Cash. There is no guaranteed win -- gamble responsibly!</p>
   `},
@@ -8927,7 +8930,7 @@ const HELP_TOPICS = [
     </ul>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Why Healing Matters</h4>
     <ul>
-      <li>If your health drops to 0 during a fight or failed job, you <strong>black out</strong> -- losing time and cash.</li>
+      <li>If your health drops to 0 during a fight or failed job, your character <strong>dies permanently</strong> -- this is permadeath!</li>
       <li>Keep your health above 50% before doing risky jobs or entering combat.</li>
       <li>Medkits (from the Black Market) can restore health outside the Hospital.</li>
     </ul>
