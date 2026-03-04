@@ -5,6 +5,31 @@ All notable changes to From Dusk To Don (Mafia Born) will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.13.0] - 2026-03-04
+
+### Added — Mobile & QoL
+- **Inline job requirements** — reputation, required items, jail chance, damage, and wanted gain now shown directly on job cards (no hover needed)
+- **Requirement indicators** — green \u2713 for met, red \u2717 for unmet requirements
+- **Gang operation countdowns** — live timer on operations panel and member status cards
+- **Gang training countdowns** — live timer shown next to "In Training" status
+- **Cooldown display** — operations show remaining cooldown time after completion
+- **Gang screen auto-refresh** — timers update every 5 seconds while viewing gang screen
+
+### Fixed — Gang Operations & Training
+- **Operations/training survive reload** — pending timers resume on save-load with correct remaining time
+- **Cooldown system** — rewritten to use persistent timestamps (was completely broken)
+- **Arrest/betrayal cleanup** — active operation data properly removed on arrest or betrayal
+- **Training role check** — `startTraining()` now recognises expanded roles (bruiser, fixer, etc.)
+- **Offline completion** — operations and training that finish while offline are resolved on load
+
+### Changed — Balance
+- XP curve lowered ~40% for faster levelling
+- Energy regen doubled (2/tick, 30s interval, min 15s)
+- Energy now regenerates while in jail
+- Offline catch-up for jail timer and energy regeneration
+
+---
+
 ## [1.12.1] - 2026-03-03
 
 ### Fixed — Save/Load System (6 issues)

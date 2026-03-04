@@ -4629,10 +4629,34 @@ function showGangManagementScreen() {
     crewHTML += '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px;">';
 
     members.forEach((member, index) => {
-      const statusText = member.arrested ? 'Arrested' :
+      let statusText = member.arrested ? 'Arrested' :
                 member.onOperation ? 'On Operation' :
                 member.inTraining ? 'In Training' : 'Available';
       const statusColor = member.arrested ? '#8b3a3a' : member.onOperation ? '#c0a040' : member.inTraining ? '#8b6a4a' : '#8a9a6a';
+
+      // Add countdown timer to status
+      if (member.onOperation) {
+        const opData = player.gang.activeOperations.find(op => op.memberName === member.name);
+        if (opData) {
+          const remaining = Math.max(0, (opData.startTime + opData.duration) - Date.now());
+          if (remaining > 0) {
+            statusText += ` (${formatCountdown(remaining)})`;
+          } else {
+            statusText += ' (Completing...)';
+          }
+        }
+      }
+      if (member.inTraining) {
+        const trainData = player.gang.trainingQueue.find(t => t.memberName === member.name);
+        if (trainData) {
+          const remaining = Math.max(0, (trainData.startTime + trainData.duration) - Date.now());
+          if (remaining > 0) {
+            statusText += ` (${formatCountdown(remaining)})`;
+          } else {
+            statusText += ' (Completing...)';
+          }
+        }
+      }
       const role = member.specialization || 'none';
       const expandedRoleName = member.role && GANG_MEMBER_ROLES[member.role] ? GANG_MEMBER_ROLES[member.role].name : null;
       const roleName = expandedRoleName || (role !== 'none' ? role.charAt(0).toUpperCase() + role.slice(1) : 'Unassigned');
@@ -4734,6 +4758,21 @@ function generateGangOperationsHTML() {
   gangOperations.forEach(operation => {
     const availableMembers = getAvailableMembersForOperation(operation.requiredRole);
     const isOnCooldown = isOperationOnCooldown(operation.id);
+    // Check if this operation is currently running
+    const activeOp = player.gang.activeOperations.find(op => op.operationId === operation.id);
+    let activeOpStatus = '';
+    if (activeOp) {
+      const remaining = Math.max(0, (activeOp.startTime + activeOp.duration) - Date.now());
+      activeOpStatus = `<div style="margin:6px 0;padding:6px 8px;background:rgba(192,160,98,0.15);border:1px solid #c0a040;border-radius:4px;">
+        <small style="color:#c0a040;"><strong>In Progress:</strong> ${activeOp.memberName} — ${remaining > 0 ? formatCountdown(remaining) + ' remaining' : 'Completing...'}</small>
+      </div>`;
+    }
+    let cooldownStatus = '';
+    if (isOnCooldown && !activeOp) {
+      const cdEnd = (player.gang.operationCooldowns || {})[operation.id] || 0;
+      const cdRemaining = Math.max(0, cdEnd - Date.now());
+      cooldownStatus = `<div style="margin:4px 0;"><small style="color:#8b3a3a;">Cooldown: ${formatCountdown(cdRemaining)}</small></div>`;
+    }
 
     html += `
       <div style="margin: 10px 0; padding: 10px; background: rgba(20, 18, 10, 0.4); border-radius: 5px;">
@@ -4744,6 +4783,8 @@ function generateGangOperationsHTML() {
           <small><strong>Duration:</strong> ${operation.duration} hours</small><br>
           <small><strong>Reward:</strong> $${operation.rewards.money[0]}-${operation.rewards.money[1]}</small>
         </div>
+        ${activeOpStatus}
+        ${cooldownStatus}
         <select id="member-select-${operation.id}" style="margin: 5px 0; padding: 5px; width: 100%;">
           <option value="">Select a member</option>
           ${availableMembers.map(member => {
@@ -4753,8 +4794,8 @@ function generateGangOperationsHTML() {
         </select>
         <button onclick="startGangOperation('${operation.id}')"
             style="background: #8b3a3a; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; margin-top: 5px; width: 100%;"
-            ${availableMembers.length === 0 || isOnCooldown ? 'disabled' : ''}>
-          ${isOnCooldown ? 'On Cooldown' : (availableMembers.length === 0 ? 'No Available Members' : 'Start Operation')}
+            ${availableMembers.length === 0 || isOnCooldown || activeOp ? 'disabled' : ''}>
+          ${activeOp ? 'In Progress' : (isOnCooldown ? 'On Cooldown' : (availableMembers.length === 0 ? 'No Available Members' : 'Start Operation'))}
         </button>
       </div>
     `;
@@ -4779,11 +4820,25 @@ function getAvailableMembersForOperation(requiredRole) {
 
 // Check if operation is on cooldown
 function isOperationOnCooldown(operationId) {
-  const now = Date.now();
-  return player.gang.activeOperations.some(op =>
-    op.operationId === operationId &&
-    (now - op.startTime) < (op.cooldown * 60 * 60 * 1000)
-  );
+  if (!player.gang.operationCooldowns) player.gang.operationCooldowns = {};
+  const cooldownEnd = player.gang.operationCooldowns[operationId];
+  if (!cooldownEnd) return false;
+  if (Date.now() < cooldownEnd) return true;
+  // Cooldown expired -- clean up
+  delete player.gang.operationCooldowns[operationId];
+  return false;
+}
+
+// Format milliseconds into a human-readable countdown string
+function formatCountdown(ms) {
+  if (ms <= 0) return 'Done';
+  const totalSec = Math.floor(ms / 1000);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
 }
 
 // Generate gang members HTML
@@ -4800,10 +4855,34 @@ function generateGangMembersHTML() {
     const expandedRole = member.role ? GANG_MEMBER_ROLES[member.role] : null;
     const roleName = expandedRole ? `${expandedRole.icon || ''} ${expandedRole.name}`.trim() : (role ? role.name : 'Unassigned');
     const perkText = expandedRole && expandedRole.perk ? `<br><strong>Perk:</strong> <em>${expandedRole.perk.name}</em> -- ${expandedRole.perk.effect}` : '';
-    const statusText = member.arrested ? 'Arrested' :
+    let statusText = member.arrested ? 'Arrested' :
              member.onOperation ? 'On Operation' :
              member.inTraining ? 'In Training' :
              'Available';
+
+    // Add countdown timer to status
+    if (member.onOperation) {
+      const opData = player.gang.activeOperations.find(op => op.memberName === member.name);
+      if (opData) {
+        const remaining = Math.max(0, (opData.startTime + opData.duration) - Date.now());
+        if (remaining > 0) {
+          statusText += ` (${formatCountdown(remaining)})`;
+        } else {
+          statusText += ' (Completing...)';
+        }
+      }
+    }
+    if (member.inTraining) {
+      const trainData = player.gang.trainingQueue.find(t => t.memberName === member.name);
+      if (trainData) {
+        const remaining = Math.max(0, (trainData.startTime + trainData.duration) - Date.now());
+        if (remaining > 0) {
+          statusText += ` (${formatCountdown(remaining)})`;
+        } else {
+          statusText += ' (Completing...)';
+        }
+      }
+    }
 
     const loyaltyColor = '#c0a062';
 
@@ -4996,8 +5075,10 @@ function completeGangOperation(operationData) {
   member.experienceLevel = Math.min(10, member.experienceLevel + 0.1);
   gainExperience(Math.floor(operation.rewards.experience * 0.7)); // Reduce XP for operations
 
-  // Remove from active operations
+  // Remove from active operations and record cooldown
   player.gang.activeOperations = player.gang.activeOperations.filter(op => op !== operationData);
+  if (!player.gang.operationCooldowns) player.gang.operationCooldowns = {};
+  player.gang.operationCooldowns[operationData.operationId] = Date.now() + (operation.cooldown * 60 * 60 * 1000);
 
   const moneyTag = (operation.rewards && operation.rewards.cleanMoney) ? '' : ' (dirty)';
   showBriefNotification(`${member.name} successfully completed the ${operation.name}! Earned $${moneyEarned.toLocaleString()}${moneyTag}.`, 'success');
@@ -5016,6 +5097,9 @@ function handleOperationBetrayal(member, operation) {
   player.money = Math.max(0, player.money - moneyLoss);
   player.wantedLevel += 5;
 
+  // Clean up active operation for this member
+  player.gang.activeOperations = player.gang.activeOperations.filter(op => op.memberName !== member.name);
+
   // Remove the betraying member
   player.gang.gangMembers = player.gang.gangMembers.filter(m => m.name !== member.name);
   player.gang.members = Math.max(0, player.gang.members - 1);
@@ -5030,8 +5114,12 @@ function handleOperationBetrayal(member, operation) {
 function handleOperationArrest(member, operation) {
   // Member gets arrested, operation fails
   member.arrested = true;
+  member.onOperation = false;
   member.arrestTime = Date.now() + (Math.random() * 72 + 24) * 60 * 60 * 1000; // 1-3 days
   player.wantedLevel += 3;
+
+  // Clean up active operation for this member
+  player.gang.activeOperations = player.gang.activeOperations.filter(op => op.memberName !== member.name);
 
   showBriefNotification(`${member.name} was arrested during the ${operation.name}! They'll be in custody for a while.`, 'danger');
   logAction(`The operation goes sideways! ${member.name} gets pinched by the law and hauled away in handcuffs. The heat is rising.`);
@@ -5081,8 +5169,10 @@ async function startTraining(memberIndex) {
   const member = player.gang.gangMembers[memberIndex];
   if (!member || member.inTraining) return;
 
+  // Check both legacy specialization and expanded role mapping
+  const memberSpec = member.specialization || (member.role ? EXPANDED_TO_SPECIALIZATION[member.role] : null);
   const availablePrograms = trainingPrograms.filter(program =>
-    program.availableFor.includes(member.specialization)
+    memberSpec && program.availableFor.includes(memberSpec)
   );
 
   if (availablePrograms.length === 0) {
@@ -7848,8 +7938,42 @@ function refreshCurrentScreen() {
   }
 
   // Skills -- no per-second refresh needed (points update in HUD bar)
-  // Gang -- no per-second refresh needed
   // Business -- no per-second refresh needed
+
+  // Gang screen -- refresh timer countdowns for operations and training
+  const gangScreen = document.getElementById("gang-screen");
+  if (gangScreen && gangScreen.style.display !== "none") {
+    refreshGangTimers();
+    return;
+  }
+}
+
+// Lightweight per-second gang timer refresh -- re-renders the gang screen
+// only when operations or training are active to keep countdowns live.
+// Throttled to every 5 seconds to avoid scroll/interaction disruption.
+let _lastGangTimerRefresh = 0;
+function refreshGangTimers() {
+  const hasActiveTimers =
+    (player.gang.activeOperations && player.gang.activeOperations.length > 0) ||
+    (player.gang.trainingQueue && player.gang.trainingQueue.length > 0);
+  if (!hasActiveTimers) return;
+
+  const now = Date.now();
+  if (now - _lastGangTimerRefresh < 5000) return;
+  _lastGangTimerRefresh = now;
+
+  // Only re-render if the main gang content is showing (not crew details sub-screen)
+  const gangContent = document.getElementById("gang-content");
+  if (!gangContent) return;
+  // Detect if we're on the Crew Details sub-screen by checking for a heading
+  const heading = gangContent.querySelector('h2');
+  if (heading && heading.textContent.includes('Crew Details')) {
+    // On crew details -- full rebuild to update all timer text
+    showGangManagementScreen();
+  } else {
+    // On main gang screen -- just rebuild the operations and members sections
+    showGang();
+  }
 }
 
 // Lightweight per-second refresh: only patch job button text / color / disabled
@@ -7915,8 +8039,9 @@ function refreshJobsList() {
   }
 
   let jobListHTML = jobs.map((job, index) => {
-    const hasRequirements = hasRequiredItems(job.requiredItems) && player.reputation >= job.reputation;
-    const requirementsText = job.requiredItems.length > 0 ? `Required Items: ${job.requiredItems.join(", ")}` : "No required items";
+    const hasReputation = player.reputation >= job.reputation;
+    const hasItems = hasRequiredItems(job.requiredItems);
+    const hasRequirements = hasItems && hasReputation;
     const actualEnergyCost = Math.max(1, job.energyCost - player.skillTree.endurance.vitality);
 
     let payoutText = "";
@@ -7958,14 +8083,36 @@ function refreshJobsList() {
       `${actualEnergyCost} (reduced from ${job.energyCost})` :
       `${actualEnergyCost}`;
 
+    // Build inline details visible without hover
+    let detailParts = [];
+    if (job.reputation > 0) {
+      const repColor = hasReputation ? '#8a9a6a' : '#ff6b6b';
+      const repIcon = hasReputation ? '\u2713' : '\u2717';
+      detailParts.push(`<span style="color:${repColor};">${repIcon} Rep: ${job.reputation}</span>`);
+    }
+    if (job.requiredItems.length > 0) {
+      const itemParts = job.requiredItems.map(item => {
+        const hasIt = player.inventory && player.inventory.some(inv => inv.name === item);
+        const color = hasIt ? '#8a9a6a' : '#ff6b6b';
+        const icon = hasIt ? '\u2713' : '\u2717';
+        return `<span style="color:${color};">${icon} ${item}</span>`;
+      });
+      detailParts.push(...itemParts);
+    }
+    let detailsHTML = '';
+    if (detailParts.length > 0) {
+      detailsHTML += `<br><small style="line-height:1.6;">${detailParts.join(' &nbsp; ')}</small>`;
+    }
+    detailsHTML += `<br><small style="color:#8a7a5a;">Jail: ${job.jailChance}% | Damage: ${job.healthLoss} | Wanted: +${job.wantedLevelGain}</small>`;
+
     return `
       <li>
         <strong>${job.name}</strong> - ${payoutText}
-        <br><small>Risk: ${job.risk.toUpperCase()} | Energy Cost: ${energyDisplay}</small>
+        <br><small>Risk: ${job.risk.toUpperCase()} | Energy: ${energyDisplay}</small>
+        ${detailsHTML}
         <button data-job-index="${index}" style="background-color: ${buttonColor};"
             onclick="startJob(${index})"
-            ${isDisabled ? 'disabled' : ''}
-            title="Reputation Required: ${job.reputation}\n${requirementsText}\nJail Chance: ${job.jailChance}%\nHealth Loss: Up to ${job.healthLoss}\nWanted Level Gain: ${job.wantedLevelGain}\nEnergy Cost: ${actualEnergyCost}">
+            ${isDisabled ? 'disabled' : ''}>
           ${buttonText}
         </button>
       </li>
@@ -8807,7 +8954,7 @@ const HELP_TOPICS = [
     </ul>
     <p style="color:#8a7a5a; font-style:italic;">Tip: On mobile, access quick actions from the hamburger menu or swipe panel.</p>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Navigation Buttons</h4>
-    <p>The main SafeHouse screen has buttons for every area of the game. Buttons are locked (greyed out) until you reach the required level. Hover over a locked button to see what level unlocks it.</p>
+    <p>The main SafeHouse screen has buttons for every area of the game. Buttons are locked (greyed out) until you reach the required level.</p>
   `},
   { id: 'safehouse-help', icon: '', title: 'SafeHouse', content: `
     <p>Your home base and central hub. All navigation starts here.</p>
@@ -9323,8 +9470,9 @@ function showJobs() {
     <h3>Available Jobs</h3>
     <ul>
       ${jobs.map((job, index) => {
-        const hasRequirements = hasRequiredItems(job.requiredItems) && player.reputation >= job.reputation;
-        const requirementsText = job.requiredItems.length > 0 ? `Required Items: ${job.requiredItems.join(", ")}` : "No required items";
+        const hasReputation = player.reputation >= job.reputation;
+        const hasItems = hasRequiredItems(job.requiredItems);
+        const hasRequirements = hasItems && hasReputation;
 
         // Calculate actual energy cost with endurance skill
         const actualEnergyCost = Math.max(1, job.energyCost - player.skillTree.endurance.vitality);
@@ -9368,14 +9516,36 @@ function showJobs() {
           `${actualEnergyCost} (reduced from ${job.energyCost})` :
           `${actualEnergyCost}`;
 
+        // Build inline details visible without hover
+        let detailParts = [];
+        if (job.reputation > 0) {
+          const repColor = hasReputation ? '#8a9a6a' : '#ff6b6b';
+          const repIcon = hasReputation ? '\u2713' : '\u2717';
+          detailParts.push(`<span style="color:${repColor};">${repIcon} Rep: ${job.reputation}</span>`);
+        }
+        if (job.requiredItems.length > 0) {
+          const itemParts = job.requiredItems.map(item => {
+            const hasIt = player.inventory && player.inventory.some(inv => inv.name === item);
+            const color = hasIt ? '#8a9a6a' : '#ff6b6b';
+            const icon = hasIt ? '\u2713' : '\u2717';
+            return `<span style="color:${color};">${icon} ${item}</span>`;
+          });
+          detailParts.push(...itemParts);
+        }
+        let detailsHTML = '';
+        if (detailParts.length > 0) {
+          detailsHTML += `<br><small style="line-height:1.6;">${detailParts.join(' &nbsp; ')}</small>`;
+        }
+        detailsHTML += `<br><small style="color:#8a7a5a;">Jail: ${job.jailChance}% | Damage: ${job.healthLoss} | Wanted: +${job.wantedLevelGain}</small>`;
+
         return `
           <li>
             <strong>${job.name}</strong> - ${payoutText}
-            <br><small>Risk: ${job.risk.toUpperCase()} | Energy Cost: ${energyDisplay}</small>
+            <br><small>Risk: ${job.risk.toUpperCase()} | Energy: ${energyDisplay}</small>
+            ${detailsHTML}
             <button data-job-index="${index}" style="background-color: ${buttonColor};"
                 onclick="startJob(${index})"
-                ${isDisabled ? 'disabled' : ''}
-                title="Reputation Required: ${job.reputation}\n${requirementsText}\nJail Chance: ${job.jailChance}%\nHealth Loss: Up to ${job.healthLoss}\nWanted Level Gain: ${job.wantedLevelGain}\nEnergy Cost: ${actualEnergyCost}">
+                ${isDisabled ? 'disabled' : ''}>
               ${buttonText}
             </button>
           </li>
@@ -14680,6 +14850,7 @@ function resetPlayerForNewGame() {
       gangMembers: [],
       activeOperations: [],
       trainingQueue: [],
+      operationCooldowns: {},
       betrayalHistory: [],
       lastBetrayalCheck: 0
     },
@@ -15997,8 +16168,31 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = "1.12.1";
+const CURRENT_VERSION = "1.13.0";
 const VERSION_UPDATES = {
+  "1.13.0": {
+    title: "Mobile QoL, Gang Timers & Offline Progress",
+    date: "March 2026",
+    changes: [
+      "Jobs screen shows all requirements inline (rep, items, jail%, damage, wanted) — no hover needed",
+      "Missing requirements highlighted red with \u2717, met requirements green with \u2713",
+      "Gang operations show live countdown timers (e.g. 'On Operation (2h 15m)')",
+      "Gang training shows live countdown timers on member status",
+      "Operations panel shows in-progress bar with member name and time remaining",
+      "Cooldown timer displayed on recently completed operations",
+      "Operations and training resume correctly after page reload / save-load",
+      "Cooldown system fixed — now uses persistent timestamps instead of stale array entries",
+      "Arrest and betrayal during operations properly clean up active operation data",
+      "startTraining() now recognises expanded gang roles (bruiser, fixer, etc.)",
+      "Offline progress: operations and training complete while away, with welcome-back summary",
+      "Gang screen auto-refreshes every 5s to keep countdown timers live",
+      "XP curve lowered ~40% for faster levelling",
+      "Energy regen doubled (2/tick, 30s base interval, min 15s)",
+      "Energy regenerates while in jail",
+      "Offline catch-up for jail timer and energy regen",
+      "Removed hover-only help text references",
+    ]
+  },
   "1.12.1": {
     title: "Save System Hardening & Tutorial Accuracy",
     date: "March 2026",
@@ -20547,10 +20741,117 @@ function applySaveData(saveData) {
     window.eventHistory = saveData.eventHistory;
   }
 
-  // Handle jail state restoration
+  // ==================== OFFLINE PROGRESS CATCH-UP ====================
+  // Calculate elapsed time since last save to advance timers that should tick offline
+  const lastSaveTime = saveData.saveTimestamp || player.lastSaved || Date.now();
+  const elapsedMs = Math.max(0, Date.now() - lastSaveTime);
+  const elapsedSeconds = Math.floor(elapsedMs / 1000);
+
+  const offlineSummary = [];
+
+  // --- Offline Jail Timer ---
+  if (player.inJail && player.jailTime > 0) {
+    if (elapsedSeconds >= player.jailTime) {
+      // Sentence fully served while offline
+      const servedTime = player.jailTime;
+      player.inJail = false;
+      player.jailTime = 0;
+      stopJailTimer();
+      if (window.EventBus) {
+        try { EventBus.emit('jailStatusChanged', { inJail: false, jailTime: 0 }); } catch (e) {}
+      }
+      offlineSummary.push(`Jail sentence served (${servedTime}s) — you're free!`);
+      logAction("Your jail sentence was completed while you were away. Welcome back to the streets.");
+    } else {
+      // Partially served
+      player.jailTime -= elapsedSeconds;
+      offlineSummary.push(`Jail time reduced by ${elapsedSeconds}s (${player.jailTime}s remaining)`);
+      logAction(`Time passed while you were away. Jail sentence reduced by ${elapsedSeconds}s. ${player.jailTime}s remaining.`);
+    }
+  }
+
+  // --- Offline Energy Regeneration ---
+  if (player.energy < (player.maxEnergy || 100)) {
+    // Calculate how many regen ticks would have occurred offline
+    // Base regen: 2 energy every 30 seconds (matching current regen settings)
+    const recoveryLevel = (player.skillTree && player.skillTree.endurance && player.skillTree.endurance.recovery) || 0;
+    const extraPerTick = Math.floor(recoveryLevel / 2);
+    const energyPerTick = Math.max(2, 2 + extraPerTick);
+    const regenIntervalSecs = Math.max(15, 30 - Math.floor(recoveryLevel / 2));
+
+    const ticksElapsed = Math.floor(elapsedSeconds / regenIntervalSecs);
+    const energyGained = ticksElapsed * energyPerTick;
+
+    if (energyGained > 0) {
+      const maxEnergy = player.maxEnergy || 100;
+      const oldEnergy = player.energy;
+      player.energy = Math.min(maxEnergy, player.energy + energyGained);
+      const actualGain = player.energy - oldEnergy;
+      if (actualGain > 0) {
+        offlineSummary.push(`+${actualGain} energy regenerated`);
+        logAction(`You rested while away. Energy restored by ${actualGain}.`);
+      }
+    }
+  }
+
+  // --- Offline Tribute Collection (via bookie, if hired) ---
+  // Already handled by bookieAutoCollect on next tick, no extra work needed.
+
+  // --- Resume Gang Operations & Training ---
+  // Complete any operations/training that should have finished while offline,
+  // and reschedule timeouts for ones still in progress.
+  if (player.gang && player.gang.activeOperations) {
+    const completedOps = [];
+    player.gang.activeOperations.forEach(opData => {
+      const endTime = opData.startTime + opData.duration;
+      if (Date.now() >= endTime) {
+        completedOps.push(opData);
+      } else {
+        // Still in progress -- reschedule timeout for remaining time
+        const remaining = endTime - Date.now();
+        setTimeout(() => { completeGangOperation(opData); }, remaining);
+      }
+    });
+    completedOps.forEach(opData => {
+      completeGangOperation(opData);
+      offlineSummary.push(`${opData.memberName} completed operation`);
+    });
+  }
+  if (player.gang && player.gang.trainingQueue) {
+    const completedTraining = [];
+    player.gang.trainingQueue.forEach(trainData => {
+      const endTime = trainData.startTime + trainData.duration;
+      if (Date.now() >= endTime) {
+        completedTraining.push(trainData);
+      } else {
+        // Still in progress -- reschedule timeout for remaining time
+        const remaining = endTime - Date.now();
+        setTimeout(() => { completeTraining(trainData); }, remaining);
+      }
+    });
+    completedTraining.forEach(trainData => {
+      completeTraining(trainData);
+      offlineSummary.push(`${trainData.memberName} completed training`);
+    });
+  }
+  // Initialize operationCooldowns if missing (older saves)
+  if (player.gang && !player.gang.operationCooldowns) {
+    player.gang.operationCooldowns = {};
+  }
+
+  // Show offline progress summary if anything happened
+  if (offlineSummary.length > 0 && elapsedSeconds >= 60) {
+    const mins = Math.floor(elapsedSeconds / 60);
+    const timeLabel = mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins}m`;
+    const summaryText = `Welcome back! (away ${timeLabel})\n${offlineSummary.join('\n')}`;
+    setTimeout(() => {
+      showBriefNotification(summaryText, 'success', 6000);
+    }, 500);
+  }
+
+  // Handle jail state restoration (if still in jail after offline deduction)
   if (player.inJail) {
     if (player.jailTime > 0) {
-      // Player was in jail when saved, restart the jail timer and show jail screen
       setTimeout(() => {
         hideAllScreens();
         showJailScreen();
@@ -20558,9 +20859,7 @@ function applySaveData(saveData) {
       }, 100);
 
       updateJailTimer();
-      logAction("Resuming jail sentence...");
     } else {
-      // Jail time expired, release player
       player.inJail = false;
       logAction("Jail sentence completed while away.");
     }

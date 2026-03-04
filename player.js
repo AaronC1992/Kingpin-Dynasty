@@ -316,7 +316,7 @@ export function checkLevelUp() {
  * Called by the energy regeneration interval
  */
 export function regenerateEnergy() {
-  if (player.energy < player.maxEnergy && !player.inJail) {
+  if (player.energy < player.maxEnergy) {
     player.energyRegenTimer--;
     
     if (player.energyRegenTimer <= 0) {
