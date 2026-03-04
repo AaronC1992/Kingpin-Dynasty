@@ -1114,6 +1114,7 @@ const GANG_MEMBER_ROLES = {
         icon: "\uD83D\uDCAA",
         description: "Muscle for hire. Excels in combat and intimidation.",
         baseStat: { violence: 15, stealth: 5, intelligence: 5 },
+        cleanCashTribute: true,
         perk: {
             name: "Enforcer",
             effect: "Reduces arrest chance on violent jobs by 10%"
@@ -1124,6 +1125,7 @@ const GANG_MEMBER_ROLES = {
         icon: "\uD83E\uDD1D",
         description: "Smooth talker who knows everyone worth knowing.",
         baseStat: { violence: 5, stealth: 10, intelligence: 15 },
+        cleanCashTribute: false,
         perk: {
             name: "Connected",
             effect: "Reduces heat gain by 15%"
@@ -1134,6 +1136,7 @@ const GANG_MEMBER_ROLES = {
         icon: "\uD83D\uDCBB",
         description: "Tech wizard specializing in breaking electronic security.",
         baseStat: { violence: 3, stealth: 15, intelligence: 20 },
+        cleanCashTribute: false,
         perk: {
             name: "Digital Ghost",
             effect: "+20% success on intelligence-based jobs"
@@ -1144,6 +1147,7 @@ const GANG_MEMBER_ROLES = {
         icon: "\uD83D\uDD2B",
         description: "Professional killer who handles the wet work.",
         baseStat: { violence: 18, stealth: 12, intelligence: 8 },
+        cleanCashTribute: true,
         perk: {
             name: "Assassin",
             effect: "+15% damage in territory wars"
@@ -1154,6 +1158,7 @@ const GANG_MEMBER_ROLES = {
         icon: "\uD83D\uDE97",
         description: "Master behind the wheel, perfect for getaways.",
         baseStat: { violence: 8, stealth: 15, intelligence: 10 },
+        cleanCashTribute: true,
         perk: {
             name: "Fast & Furious",
             effect: "+25% escape chance when heat is high"
@@ -1164,6 +1169,7 @@ const GANG_MEMBER_ROLES = {
         icon: "\uD83D\uDD75\uFE0F",
         description: "Expert at gathering intelligence on targets.",
         baseStat: { violence: 6, stealth: 18, intelligence: 15 },
+        cleanCashTribute: false,
         perk: {
             name: "Eyes Everywhere",
             effect: "Reveals territory attack warnings 30 seconds early"
@@ -1174,12 +1180,33 @@ const GANG_MEMBER_ROLES = {
         icon: "\uD83D\uDCB0",
         description: "Numbers genius who maximizes profits.",
         baseStat: { violence: 2, stealth: 10, intelligence: 22 },
+        cleanCashTribute: true,
         perk: {
             name: "Money Launderer",
             effect: "+10% income from businesses and territories"
         }
     }
 };
+
+// Determine if a gang member pays clean or dirty tribute based on their role/specialization
+function memberPaysCleanCash(member) {
+  // Check expanded role first
+  if (member.role && GANG_MEMBER_ROLES[member.role]) {
+    return !!GANG_MEMBER_ROLES[member.role].cleanCashTribute;
+  }
+  // Fallback: check specialization via the SPECIALIZATION_TO_EXPANDED mapping
+  const spec = member.specialization;
+  if (spec) {
+    const expandedKey = SPECIALIZATION_TO_EXPANDED[spec];
+    if (expandedKey && GANG_MEMBER_ROLES[expandedKey]) {
+      return !!GANG_MEMBER_ROLES[expandedKey].cleanCashTribute;
+    }
+    // Direct match on specialization keywords
+    const cleanSpecs = ['muscle', 'enforcer', 'driver'];
+    return cleanSpecs.includes(spec.toLowerCase());
+  }
+  return false; // default to dirty
+}
 
 // Generate a gang member with role, stats, and traits
 function generateExpandedGangMember(role = null, name = null) {
@@ -4627,7 +4654,7 @@ function showGangManagementScreen() {
             </div>
             <div style="display:flex; justify-content:space-between;">
               <span>Power: ${member.power || 5}</span>
-              <span>Tribute: $${tribute}/cycle</span>
+              <span>Tribute: $${tribute}/cycle <span style="color: ${memberPaysCleanCash(member) ? '#4CAF50' : '#e67e22'}; font-weight: bold;">(${memberPaysCleanCash(member) ? 'Clean' : 'Dirty'})</span></span>
             </div>
             <div style="font-size:0.85em; color:#6a5a3a;">${daysActive > 0 ? daysActive + ' day' + (daysActive > 1 ? 's' : '') + ' in crew' : 'Just joined'}</div>
           </div>
@@ -4788,6 +4815,7 @@ function generateGangMembersHTML() {
           <strong>Level:</strong> ${member.experienceLevel}<br>
           <strong>Status:</strong> ${statusText}<br>
           <strong>Tribute:</strong> $${Math.floor(member.tributeMultiplier * 100)}/collection
+          <span style="color: ${memberPaysCleanCash(member) ? '#4CAF50' : '#e67e22'}; font-weight: bold;">(${memberPaysCleanCash(member) ? 'Clean' : 'Dirty'})</span>
         </div>
 
         <div style="margin-top: 10px;">
@@ -7415,7 +7443,7 @@ function updateUI() {
     document.getElementById("level-display").innerText = `Rank: ${player.level}`;
   }
   if (document.getElementById("experience-display")) {
-    const xpNeeded = Math.floor(player.level * 600 + Math.pow(player.level, 2) * 120 + Math.pow(player.level, 3) * 8);
+    const xpNeeded = Math.floor(player.level * 350 + Math.pow(player.level, 2) * 75 + Math.pow(player.level, 3) * 5);
     document.getElementById("experience-display").innerText = `XP: ${player.experience}/${xpNeeded}`;
   }
   if (document.getElementById("skill-points-display")) {
@@ -11179,38 +11207,51 @@ function collectTribute() {
 
   // Calculate tribute based on individual gang member experience levels
   const baseTributePerMember = 200;
-  let tribute = 0;
+  let cleanTribute = 0;
+  let dirtyTribute = 0;
 
   // Calculate tribute from each gang member individually
   if (player.gang.gangMembers.length > 0) {
     player.gang.gangMembers.forEach(member => {
       const memberTribute = Math.floor(baseTributePerMember * member.tributeMultiplier);
-      tribute += memberTribute;
+      if (memberPaysCleanCash(member)) {
+        cleanTribute += memberTribute;
+      } else {
+        dirtyTribute += memberTribute;
+      }
     });
   } else {
     // Fallback for old save files without individual gang members
-    tribute = player.gang.members * 250;
+    dirtyTribute = player.gang.members * 250;
   }
 
-  // Bonus based on territory controlled
+  // Bonus based on territory controlled (dirty cash)
   const territoryBonus = player.territory * 50;
-  tribute += territoryBonus;
+  dirtyTribute += territoryBonus;
 
-  // Tribute is dirty cash
-  player.dirtyMoney = (player.dirtyMoney || 0) + tribute;
+  const totalTribute = cleanTribute + dirtyTribute;
+
+  // Add clean cash to wallet, dirty cash to dirty money
+  if (cleanTribute > 0) player.money += cleanTribute;
+  if (dirtyTribute > 0) player.dirtyMoney = (player.dirtyMoney || 0) + dirtyTribute;
   player.gang.lastTributeTime = currentTime;
 
   // Track statistics
   updateStatistic('tributeCollected');
-  updateStatistic('totalMoneyEarned', tribute);
+  updateStatistic('totalMoneyEarned', totalTribute);
 
   let bonusText = "";
   if (territoryBonus > 0) {
     bonusText += ` (+$${territoryBonus} territory bonus)`;
   }
 
-  showBriefNotification(`Collected $${tribute.toLocaleString()} in tribute (dirty)!${bonusText}`, 'success');
-  logAction(`Your crew comes through! Envelopes stuffed with cash find their way to you. The family business is paying dividends (+$${tribute.toLocaleString()} dirty${bonusText}).`);
+  const breakdownParts = [];
+  if (cleanTribute > 0) breakdownParts.push(`$${cleanTribute.toLocaleString()} clean`);
+  if (dirtyTribute > 0) breakdownParts.push(`$${dirtyTribute.toLocaleString()} dirty`);
+  const breakdownText = breakdownParts.join(', ');
+
+  showBriefNotification(`Collected $${totalTribute.toLocaleString()} in tribute (${breakdownText})!${bonusText}`, 'success');
+  logAction(`Your crew comes through! Envelopes stuffed with cash find their way to you. The family business is paying dividends (+${breakdownText}${bonusText}).`);
   updateUI();
   showGang(); // Refresh the gang screen to show new cooldown
 }
@@ -11639,6 +11680,8 @@ function breakoutPrisoner(prisonerIndex) {
 // Recruitment event variables
 let activeRecruitment = null;
 let recruitmentTimer = null;
+// Special recruit that appears on the recruitment screen (set by gangRecruitment())
+window._pendingSpecialRecruit = null;
 
 // ==================== EVENTS & RANDOMIZATION SYSTEM ====================
 
@@ -13366,6 +13409,39 @@ function showRecruitment() {
     </div>
 
     <h3 style="text-align: center; color: #c0a062; margin-bottom: 20px; font-family: 'Georgia', serif;">Available Recruits (${availableRecruits.length} found):</h3>
+
+    ${window._pendingSpecialRecruit ? (() => {
+      const sr = window._pendingSpecialRecruit;
+      const canAffordSR = player.money >= sr.cost;
+      return `
+      <div style="margin-bottom: 25px; padding: 20px; background: linear-gradient(135deg, #1a1500 0%, #0d0b07 100%); border-radius: 12px; border: 2px solid #f0c040; box-shadow: 0 0 15px rgba(240,192,64,0.25);">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+          <span style="background: #f0c040; color: #1a1a1a; padding: 4px 10px; border-radius: 4px; font-weight: bold; font-size: 0.9em;">SPECIAL RECRUIT</span>
+          <span style="color: #f0c040; font-size: 0.9em;">Word-of-mouth referral</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+          <div style="flex: 1; min-width: 220px;">
+            <h4 style="color: #f0c040; margin: 0 0 8px 0; font-size: 1.25em; font-family: 'Georgia', serif;">${sr.name}</h4>
+            <div style="margin-bottom: 8px;">
+              <span style="background: #c0a062; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.9em; font-weight: bold;">Level ${sr.experienceLevel} Experienced</span>
+              <span style="background: rgba(20,18,10,0.8); color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.9em; margin-left: 8px;">${sr.skill}</span>
+            </div>
+            <div style="font-size: 0.95em; color: #ccc;"><strong>Power:</strong> +${sr.power} &nbsp; <strong>Tribute:</strong> ${(sr.tributeMultiplier * 100).toFixed(0)}%</div>
+          </div>
+          <div style="text-align: right; margin-left: 15px;">
+            <div style="font-size: 1.2em; font-weight: bold; color: #f0c040; margin-bottom: 10px;">$${sr.cost.toLocaleString()}</div>
+            <button onclick="hireSpecialRecruit()"
+                ${canAffordSR ? '' : 'disabled'}
+                style="background: ${canAffordSR ? 'linear-gradient(180deg, #c0a040, #8b7340)' : '#555'};
+                    color: white; padding: 12px 20px; border: none; border-radius: 8px;
+                    font-weight: bold; cursor: ${canAffordSR ? 'pointer' : 'not-allowed'};
+                    font-size: 15px; font-family: 'Georgia', serif; transition: all 0.3s ease;">
+              ${canAffordSR ? 'Recruit' : 'Too Expensive'}
+            </button>
+          </div>
+        </div>
+      </div>`;
+    })() : ''}
     <ul style="list-style: none; padding: 0; margin: 0;">
       ${availableRecruits.map((recruit, index) => {
         const canAfford = player.money >= recruit.cost;
@@ -17944,11 +18020,8 @@ function triggerRandomEvent() {
   const events = [
     { name: "Black Market Sale", action: randomSale, message: null, weight: 8 },
     { name: "Lucky Find", action: luckyFind, message: null, weight: 12 },
-    { name: "Gang Recruitment", action: gangRecruitment, message: null, weight: 10 },
     { name: "Mysterious Tip", action: mysteriousTip, message: null, weight: 10 },
-    { name: "Rival Offer", action: rivalOffer, message: null, weight: 6 },
-    { name: "Street Cred", action: streetCredEvent, message: null, weight: 8 },
-    { name: "Equipment Bonus", action: equipmentBonus, message: null, weight: 5 }
+    { name: "Street Cred", action: streetCredEvent, message: null, weight: 8 }
   ];
 
   // Weighted random selection
@@ -18040,17 +18113,6 @@ function healthScare() {
   updateUI();
 }
 
-function rivalOffer() {
-  // A rival offers you a quick cash deal - take it and lose some rep, or ignore it
-  const cashOffer = Math.floor(5000 + player.level * 1500 + Math.random() * 5000);
-  const repCost = Math.floor(Math.random() * 3) + 2;
-  player.money += cashOffer;
-  player.reputation = Math.max(0, player.reputation - repCost);
-  showBriefNotification(` Rival offer: +$${cashOffer.toLocaleString()}, -${repCost} rep`, 3000);
-  logAction(` A rival gang approaches with a cash offer you can't refuse. You pocket $${cashOffer.toLocaleString()}, but it costs you ${repCost} reputation on the streets.`);
-  updateUI();
-}
-
 function streetCredEvent() {
   // Pure reputation boost based on current standing
   const repGain = Math.floor(Math.random() * 5) + 2 + Math.floor(player.level / 5);
@@ -18060,108 +18122,48 @@ function streetCredEvent() {
   updateUI();
 }
 
-function equipmentBonus() {
-  // Free ammo or gas based on what the player has
-  const roll = Math.random();
-  if (roll < 0.5) {
-    const ammoGain = Math.floor(Math.random() * 5) + 2;
-    player.ammo += ammoGain;
-    showBriefNotification(`Supply drop! +${ammoGain} ammo`, 3000);
-    logAction(`One of your contacts leaves a package at the dead drop. Inside: ${ammoGain} rounds of ammunition.`);
-  } else {
-    const gasGain = Math.floor(Math.random() * 3) + 1;
-    player.gas += gasGain;
-    showBriefNotification(`Supply drop! +${gasGain} gas`, 3000);
-    logAction(`A friendly mechanic tops off your fuel reserves. +${gasGain} gasoline.`);
-  }
-  updateUI();
-}
-
+// Gang recruitment now adds a special discounted recruit to the recruitment screen
+// instead of popping up randomly. Triggered periodically; check when opening recruitment.
 function gangRecruitment() {
-  if (player.reputation >= 20 && Math.random() < 0.3) {
-    // Clear any existing recruitment event
-    if (activeRecruitment) {
-      clearInterval(recruitmentTimer);
-      activeRecruitment = null;
-    }
+  if (player.reputation < 20) return;
 
-    // Generate a random recruit
-    const recruitNames = [
-      "Tony 'The Hammer'", "Silky Sullivan", "Mad Dog Martinez", "Fast Eddie",
-      "Lucky Lucia", "Ice Cold Ivan", "Smoky Joe", "Diamond Diana",
-      "Razor Ramon", "Ghost Garcia", "Knuckles Kelly", "Viper Vince"
-    ];
+  const specialNames = [
+    "Tony 'The Hammer'", "Silky Sullivan", "Mad Dog Martinez", "Fast Eddie",
+    "Lucky Lucia", "Ice Cold Ivan", "Smoky Joe", "Diamond Diana",
+    "Razor Ramon", "Ghost Garcia", "Knuckles Kelly", "Viper Vince"
+  ];
+  const skills = ['lockpicking', 'getaway driving', 'intimidation', 'street smarts', 'connections', 'muscle'];
 
-    const skills = ['lockpicking', 'getaway driving', 'intimidation', 'street smarts', 'connections', 'muscle'];
+  const name = specialNames[Math.floor(Math.random() * specialNames.length)];
+  const skill = skills[Math.floor(Math.random() * skills.length)];
+  const cost = Math.floor(Math.random() * 3000) + 1000; // $1,000 – $4,000
+  const power = Math.floor(Math.random() * 15) + 5;     // 5–20 power
+  const expLevel = Math.min(10, Math.floor(Math.random() * 3) + 4); // 4-6 experienced tier
 
-    const recruit = {
-      name: recruitNames[Math.floor(Math.random() * recruitNames.length)],
-      skill: skills[Math.floor(Math.random() * skills.length)],
-      cost: Math.floor(Math.random() * 3000) + 1000, // $1,000 - $4,000
-      power: Math.floor(Math.random() * 15) + 5 // 5-20 power
-    };
+  // Store as a pending special recruit visible on the recruitment screen
+  window._pendingSpecialRecruit = {
+    name,
+    skill,
+    cost,
+    power,
+    experienceLevel: expLevel,
+    tributeMultiplier: 1 + (expLevel - 1) * 0.2,
+    specialization: skill,
+    isSpecial: true,
+    createdAt: Date.now()
+  };
 
-    activeRecruitment = recruit;
-
-    // Create clickable action log entry
-    const recruitmentId = 'recruitment-' + Date.now();
-    logAction(` <strong>${recruit.name}</strong> approaches you in the shadows. They've heard about your reputation and want to join your crew for <strong>$${recruit.cost.toLocaleString()}</strong>.
-          Specializes in <em>${recruit.skill}</em> (+${recruit.power} power).
-          <button id="${recruitmentId}" onclick="hireRandomRecruit('${recruitmentId}')" style="background: #7a8a5a; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; margin-left: 10px; font-weight: bold;">
-            Hire for $${recruit.cost.toLocaleString()}
-          </button>
-          <span id="${recruitmentId}-timer" style="color: #8b3a3a; margin-left: 10px; font-weight: bold;">2:00</span>`);
-
-    // Start 2-minute countdown
-    let timeLeft = 120; // 2 minutes in seconds
-    recruitmentTimer = setInterval(() => {
-      timeLeft--;
-      const minutes = Math.floor(timeLeft / 60);
-      const seconds = timeLeft % 60;
-      const timerElement = document.getElementById(`${recruitmentId}-timer`);
-
-      if (timerElement) {
-        timerElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-
-        if (timeLeft <= 30) {
-          timerElement.style.color = '#8b3a3a'; // Red for last 30 seconds
-        } else if (timeLeft <= 60) {
-          timerElement.style.color = '#c0a040'; // Orange for last minute
-        }
-      }
-
-      if (timeLeft <= 0) {
-        clearInterval(recruitmentTimer);
-        activeRecruitment = null;
-
-        // Disable button and show expired message
-        const buttonElement = document.getElementById(recruitmentId);
-        if (buttonElement) {
-          buttonElement.disabled = true;
-          buttonElement.style.background = '#6a5a3a';
-          buttonElement.style.cursor = 'not-allowed';
-          buttonElement.textContent = 'Opportunity Expired';
-        }
-
-        if (timerElement) {
-          timerElement.textContent = 'EXPIRED';
-          timerElement.style.color = '#6a5a3a';
-        }
-
-        logAction(`${recruit.name} grows impatient and disappears into the night. The opportunity has passed.`);
-      }
-    }, 1000);
-  }
+  showBriefNotification('A special recruit is waiting on the recruitment board!', 3000);
+  logAction(`Word on the street: <strong>${name}</strong> is looking for a crew. Check the <em>Recruitment</em> screen before they move on.`);
 }
 
-// Function to hire a random recruit from the action log
-async function hireRandomRecruit(buttonId) {
-  if (!activeRecruitment) {
+// Function to hire a special recruit from the recruitment screen
+function hireSpecialRecruit() {
+  const recruit = window._pendingSpecialRecruit;
+  if (!recruit) {
     showBriefNotification("This recruitment opportunity has expired.", 'danger');
     return;
   }
-
-  const recruit = activeRecruitment;
 
   // Check if player can afford
   if (player.money < recruit.cost) {
@@ -18182,41 +18184,47 @@ async function hireRandomRecruit(buttonId) {
   // Track statistics
   updateStatistic('gangMembersRecruited');
 
-  // Add to gang
-  const newMember = {
-    name: recruit.name,
-    skill: recruit.skill,
-    power: recruit.power,
-    joinedDate: Date.now()
-  };
+  // Create gang member from special recruit
+  let newMember;
+  if (EXPANDED_SYSTEMS_CONFIG.gangRolesEnabled) {
+    newMember = generateExpandedGangMember(null, recruit.name);
+    newMember.experienceLevel = recruit.experienceLevel;
+    newMember.tributeMultiplier = recruit.tributeMultiplier;
+    newMember.specialization = recruit.specialization;
+    newMember.onOperation = false;
+    newMember.inTraining = false;
+    newMember.arrested = false;
+  } else {
+    newMember = {
+      name: recruit.name,
+      experienceLevel: recruit.experienceLevel,
+      tributeMultiplier: recruit.tributeMultiplier,
+      specialization: recruit.specialization,
+      skill: recruit.skill,
+      power: recruit.power,
+      onOperation: false,
+      inTraining: false,
+      arrested: false,
+      joinedDate: Date.now()
+    };
+  }
+
   player.gang.gangMembers.push(newMember);
-  player.gang.members = player.gang.gangMembers.length; // Keep count in sync
+  player.gang.members = player.gang.gangMembers.length;
+
+  const powerGain = Math.floor(recruit.experienceLevel * 2) + 5;
+  player.territoryPower += powerGain;
   recalculatePower();
 
-  // Clear the recruitment event
-  clearInterval(recruitmentTimer);
-  activeRecruitment = null;
-
-  // Update button to show hired
-  const buttonElement = document.getElementById(buttonId);
-  if (buttonElement) {
-    buttonElement.disabled = true;
-    buttonElement.style.background = '#8a9a6a';
-    buttonElement.style.cursor = 'not-allowed';
-    buttonElement.textContent = ' HIRED';
-  }
-
-  // Update timer display
-  const timerElement = document.getElementById(`${buttonId}-timer`);
-  if (timerElement) {
-    timerElement.textContent = 'HIRED';
-    timerElement.style.color = '#8a9a6a';
-  }
+  // Clear special recruit
+  window._pendingSpecialRecruit = null;
 
   updateUI();
+  showBriefNotification(`${recruit.name} joins your crew! +${recruit.power} power`, 'success', 4000);
   logAction(`${recruit.name} joins your crew! Their expertise in ${recruit.skill} will serve you well. (+${recruit.power} power)`);
 
-  // Check achievements
+  // Refresh recruitment screen
+  showRecruitment();
   checkAchievements();
 }
 
@@ -18389,18 +18397,26 @@ function autoCollectBusinessesAndTribute() {
     if (now - last >= tributeCooldownMs) {
       // replicate collectTribute math without UI
       const baseTributePerMember = 200;
-      let tribute = 0;
+      let cleanTribute = 0;
+      let dirtyTribute = 0;
       if (player.gang.gangMembers && player.gang.gangMembers.length > 0) {
         player.gang.gangMembers.forEach(member => {
-          tribute += Math.floor(baseTributePerMember * member.tributeMultiplier);
+          const amt = Math.floor(baseTributePerMember * member.tributeMultiplier);
+          if (memberPaysCleanCash(member)) {
+            cleanTribute += amt;
+          } else {
+            dirtyTribute += amt;
+          }
         });
       } else {
-        tribute = (player.gang.members || 0) * 250;
+        dirtyTribute = (player.gang.members || 0) * 250;
       }
       const territoryBonus = player.territory * 50;
-      tribute += territoryBonus;
+      dirtyTribute += territoryBonus;
+      const tribute = cleanTribute + dirtyTribute;
       if (tribute > 0) {
-        player.dirtyMoney = (player.dirtyMoney || 0) + tribute;
+        if (cleanTribute > 0) player.money += cleanTribute;
+        if (dirtyTribute > 0) player.dirtyMoney = (player.dirtyMoney || 0) + dirtyTribute;
         player.gang.lastTributeTime = now;
         collected += tribute;
       }
@@ -18436,6 +18452,10 @@ function startRandomEventChecker() {
     if (!gameplayActive) return;
     if (Math.random() < 0.05) { // 5% chance every minute for better balance
       triggerRandomEvent();
+    }
+    // 3% chance per minute to generate a special recruit (if none pending)
+    if (!window._pendingSpecialRecruit && Math.random() < 0.03) {
+      gangRecruitment();
     }
   }, 60000)); // Check every minute
 }
@@ -22362,7 +22382,7 @@ window.fireGangMember = fireGangMember;
 window.dealWithDisloyalty = dealWithDisloyalty;
 window.startTraining = startTraining;
 window.assignRole = assignRole;
-window.hireRandomRecruit = hireRandomRecruit;
+window.hireSpecialRecruit = hireSpecialRecruit;
 window.showGangManagementScreen = showGangManagementScreen;
 window.deleteGameSlot = deleteGameSlot;
 

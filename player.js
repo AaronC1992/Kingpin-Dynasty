@@ -287,8 +287,8 @@ export function gainExperience(amount) {
  * Check if player has enough XP to level up and process the level up
  */
 export function checkLevelUp() {
-  // v1.11.0 Rebalance: Even steeper XP curve — Omerta-style slow grind progression
-  let requiredXP = Math.floor(player.level * 600 + Math.pow(player.level, 2) * 120 + Math.pow(player.level, 3) * 8);
+  // v1.12 Rebalance: Lowered XP curve for faster level-ups
+  let requiredXP = Math.floor(player.level * 350 + Math.pow(player.level, 2) * 75 + Math.pow(player.level, 3) * 5);
   if (player.experience >= requiredXP) {
     player.level++;
     player.experience -= requiredXP;
@@ -320,10 +320,10 @@ export function regenerateEnergy() {
     player.energyRegenTimer--;
     
     if (player.energyRegenTimer <= 0) {
-      // Base 1 energy per tick; Recovery skill increases energy gained per tick
+      // Base 2 energy per tick; Recovery skill increases energy gained per tick
       const recoveryLevel = (player.skillTree && player.skillTree.endurance && player.skillTree.endurance.recovery) || 0;
-      const extraPerTick = Math.floor(recoveryLevel / 3); // +1 energy per 3 recovery levels
-      const energyGain = Math.max(1, 1 + extraPerTick);
+      const extraPerTick = Math.floor(recoveryLevel / 2); // +1 energy per 2 recovery levels
+      const energyGain = Math.max(2, 2 + extraPerTick);
       
       // Max energy scales with conditioning skill (base 100 + 3 per conditioning rank)
       const conditioningLevel = (player.skillTree && player.skillTree.endurance && player.skillTree.endurance.conditioning) || 0;
@@ -331,9 +331,9 @@ export function regenerateEnergy() {
       
       player.energy = Math.min(player.energy + energyGain, player.maxEnergy);
       
-      // v1.11.0 Rebalance: Regen interval 45s base (was 20s) — Omerta-style energy scarcity
-      // Reduced by 1s per 2 recovery levels (min 25s)
-      let regenInterval = Math.max(25, 45 - Math.floor(recoveryLevel / 2));
+      // v1.12 Rebalance: Regen interval 30s base (was 45s) — faster energy recovery
+      // Reduced by 1s per 2 recovery levels (min 15s)
+      let regenInterval = Math.max(15, 30 - Math.floor(recoveryLevel / 2));
       // Family buff: energyRegenBonus (e.g. Morales Cartel Supply Line: +20% energy regen speed)
       const famBuff = (typeof window.getChosenFamilyBuff === 'function') ? window.getChosenFamilyBuff() : null;
       if (famBuff && famBuff.energyRegenBonus) {
