@@ -13806,7 +13806,7 @@ function showStore(activeTab) {
   const topTabs = [
     { id: 'buy', label: 'Buy', tip: 'Browse weapons, armor & supplies' },
     { id: 'fence', label: 'The Fence', tip: 'Sell stolen goods at premium rates' },
-    { id: 'market', label: 'Player Market', tip: 'Trade vehicles & bullets with other players' }
+    { id: 'market', label: 'Player Market', tip: 'Trade items with other players' }
   ];
   const topTabsHTML = topTabs.map(tab => {
     const isActive = tab.id === _currentBlackMarketTab;
@@ -14056,16 +14056,16 @@ function buildPlayerMarketTabContent() {
   }
   return `
     <div class="content-card" style="text-align: center; padding: 40px 20px;">
-      <h3 style="color: #a08850; margin-bottom: 15px;">Player Marketplace</h3>
-      <p style="color: #d4c4a0; margin-bottom: 20px;">Trade vehicles and ammunition with other players in real-time through The Commission's underground network.</p>
+      <h3 style="color: #a08850; margin-bottom: 15px;">Player Market</h3>
+      <p style="color: #d4c4a0; margin-bottom: 20px;">Trade vehicles, weapons, armor, ammo, gas, utility items, and goods with other players through The Commission's underground network.</p>
       <div style="background: rgba(41, 128, 185, 0.15); padding: 20px; border-radius: 12px; border: 1px solid #a08850; margin-bottom: 20px;">
         <p style="color: #f5e6c8; margin: 0 0 15px 0;"><strong>Features:</strong></p>
         <ul style="color: #d4c4a0; text-align: left; list-style: none; padding: 0;">
-          <li style="margin: 8px 0;">🚗 List your stolen vehicles for sale to other players</li>
-          <li style="margin: 8px 0;">🔫 <strong style="color: #e67e22;">Sell bullets on the Ammo Exchange</strong> — set your own price</li>
-          <li style="margin: 8px 0;">🔫 <strong style="color: #e67e22;">Buy bullets from other players</strong> — bypass the daily shop limit</li>
+          <li style="margin: 8px 0;">🚗 List stolen vehicles for sale</li>
+          <li style="margin: 8px 0;">⚔️ Sell weapons, armor & utility items</li>
+          <li style="margin: 8px 0;">🔫 Trade <strong style="color: #e67e22;">bullets</strong> & <strong style="color: #f39c12;">gasoline</strong></li>
           <li style="margin: 8px 0;">💰 Set your own asking prices</li>
-          <li style="margin: 8px 0;">📊 Real-time market listings</li>
+          <li style="margin: 8px 0;">📊 Real-time listings from all players</li>
         </ul>
       </div>
       <p style="color: #c0a040; margin-bottom: 20px;">You must be connected to The Commission to access the Player Market.</p>
@@ -17474,7 +17474,7 @@ function buildMotorPoolHTML() {
       <button onclick="showFence()" style="background: linear-gradient(45deg, #7a5a3a, #6c3483); color: white; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">
         Sell at The Fence
       </button>
-      ${(typeof showVehicleMarketplace === 'function' || window.showVehicleMarketplace) ? '<button onclick="showVehicleMarketplace()" style="background: linear-gradient(45deg, #a08850, #1a5276); color: white; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">Player Marketplace</button>' : ''}
+      ${(typeof showVehicleMarketplace === 'function' || window.showVehicleMarketplace) ? '<button onclick="showVehicleMarketplace()" style="background: linear-gradient(45deg, #a08850, #1a5276); color: white; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">Player Market</button>' : ''}
     </div>
   `;
 

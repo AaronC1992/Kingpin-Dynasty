@@ -1763,27 +1763,21 @@ async function handleServerMessage(message) {
             }
             break;
 
-        // -- Vehicle Marketplace messages --
-        case 'marketplace_listings':
-        case 'marketplace_listed':
-        case 'marketplace_sold':
-        case 'marketplace_purchased':
-        case 'marketplace_cancelled':
-        case 'marketplace_error':
-            handleMarketplaceMessage(message);
+        // -- Unified Player Market messages --
+        case 'market_listings':
+        case 'market_listed':
+        case 'market_sold':
+        case 'market_purchased':
+        case 'market_cancelled':
+        case 'market_error':
+            handlePlayerMarketMessage(message);
             break;
 
-        // -- Bullet Shop & Ammo Marketplace messages --
+        // -- Bullet Shop messages (store purchase, not player market) --
         case 'bullets_purchased':
         case 'bullets_error':
         case 'bullet_stock_update':
-        case 'ammo_market_listings':
-        case 'ammo_market_listed':
-        case 'ammo_market_sold':
-        case 'ammo_market_purchased':
-        case 'ammo_market_cancelled':
-        case 'ammo_market_error':
-            handleBulletMarketMessage(message);
+            handleBulletShopMessage(message);
             break;
 
         // -- Player connect / disconnect notifications --
@@ -1809,100 +1803,137 @@ async function handleServerMessage(message) {
     }
 }
 
-// -- Marketplace message sub-handler --
-function handleMarketplaceMessage(message) {
+// ==================== UNIFIED PLAYER MARKET MESSAGE HANDLER ====================
+
+function handlePlayerMarketMessage(message) {
     switch (message.type) {
-        case 'marketplace_listings':
-            marketplaceListings = message.listings || [];
-            // If we're on the market tab, refresh it
+        case 'market_listings':
+            playerMarketListings = message.listings || [];
+            // Refresh market tab if active
             if (document.querySelector('[onclick="showOnlineWorld(\'market\')"]')?.style?.background?.includes('#c0a062')) {
                 showOnlineWorld('market');
             }
             break;
-            
-        case 'marketplace_listed':
-            if (typeof showBriefNotification === 'function') showBriefNotification(`${message.vehicleName} is now listed on the marketplace!`, 'success');
-            marketplaceListings = message.listings || marketplaceListings;
-            window._pendingMarketplaceListing = null; // Clear rollback data on success
+
+        case 'market_listed':
+            if (typeof showBriefNotification === 'function') showBriefNotification(`${message.itemName} listed on the Player Market!`, 'success');
+            playerMarketListings = message.listings || playerMarketListings;
+            window._pendingMarketListing = null;
+            if (typeof updateUI === 'function') updateUI();
             break;
-            
-        case 'marketplace_sold':
-            // We sold a vehicle — we receive the money
+
+        case 'market_sold':
+            // We sold something — receive money
             player.money += message.amount;
-            if (typeof showBriefNotification === 'function') showBriefNotification(`${message.buyerName} bought your ${message.vehicleName} for $${message.amount.toLocaleString()}!`, 'success');
-            if (typeof logAction === 'function') logAction(`${message.buyerName} purchased your ${message.vehicleName} from the marketplace for $${message.amount.toLocaleString()}!`);
+            if (typeof showBriefNotification === 'function') showBriefNotification(`${message.buyerName} bought your ${message.itemName} for $${message.amount.toLocaleString()}!`, 'success');
+            if (typeof logAction === 'function') logAction(`${message.buyerName} purchased your ${message.itemName} from the Player Market for $${message.amount.toLocaleString()}!`);
             if (typeof playNotificationSound === 'function') playNotificationSound('cash');
-            marketplaceListings = message.listings || marketplaceListings;
+            playerMarketListings = message.listings || playerMarketListings;
             if (typeof updateUI === 'function') updateUI();
             break;
-            
-        case 'marketplace_purchased':
-            // We bought a vehicle — add it to our garage
-            player.money -= message.amount;
-            const newCar = {
-                name: message.vehicle.vehicleName,
-                baseValue: message.vehicle.baseValue,
-                currentValue: message.vehicle.currentValue,
-                damagePercentage: message.vehicle.damagePercentage,
-                usageCount: message.vehicle.usageCount || 0,
-                image: message.vehicle.image || `vehicles/${message.vehicle.vehicleName}.png`
-            };
-            player.stolenCars.push(newCar);
-            if (typeof showBriefNotification === 'function') showBriefNotification(`Bought ${message.vehicle.vehicleName} from ${message.sellerName} for $${message.amount.toLocaleString()}!`, 'success');
-            if (typeof logAction === 'function') logAction(`Purchased ${message.vehicle.vehicleName} from ${message.sellerName} for $${message.amount.toLocaleString()}. Vehicle added to your garage.`);
-            if (typeof playNotificationSound === 'function') playNotificationSound('cash');
-            marketplaceListings = message.listings || marketplaceListings;
-            if (typeof updateUI === 'function') updateUI();
-            showOnlineWorld('market');
-            break;
-            
-        case 'marketplace_cancelled':
-            // Our listing was cancelled — car returns to garage
-            if (message.vehicle) {
-                const returnedCar = {
-                    name: message.vehicle.vehicleName,
-                    baseValue: message.vehicle.baseValue,
-                    currentValue: message.vehicle.currentValue,
-                    damagePercentage: message.vehicle.damagePercentage,
-                    usageCount: message.vehicle.usageCount || 0,
-                    image: message.vehicle.image || `vehicles/${message.vehicle.vehicleName}.png`
-                };
-                player.stolenCars.push(returnedCar);
+
+        case 'market_purchased': {
+            // We bought something — add to inventory
+            player.money -= message.price;
+            const cat = message.category;
+
+            if (cat === 'vehicle') {
+                // Add vehicle to garage
+                const vd = message.itemData || {};
+                player.stolenCars.push({
+                    name: message.itemName,
+                    baseValue: vd.baseValue || 0,
+                    currentValue: vd.currentValue || 0,
+                    damagePercentage: vd.damagePercentage || 0,
+                    usageCount: vd.usageCount || 0,
+                    image: vd.image || `vehicles/${message.itemName}.png`
+                });
+            } else if (cat === 'ammo') {
+                player.ammo = (player.ammo || 0) + (message.quantity || 1);
+            } else if (cat === 'gas') {
+                player.gas = (player.gas || 0) + (message.quantity || 1);
+            } else {
+                // weapon, armor, utility, drug — add to inventory
+                const itemObj = Object.assign({}, message.itemData || {});
+                itemObj.name = message.itemName;
+                for (let i = 0; i < (message.quantity || 1); i++) {
+                    player.inventory.push(Object.assign({}, itemObj));
+                }
             }
-            if (typeof showBriefNotification === 'function') showBriefNotification('Listing cancelled. Vehicle returned to your garage.', 'success');
-            marketplaceListings = message.listings || marketplaceListings;
+
+            if (typeof showBriefNotification === 'function') showBriefNotification(`Bought ${message.itemName} from ${message.sellerName} for $${message.price.toLocaleString()}!`, 'success');
+            if (typeof logAction === 'function') logAction(`Purchased ${message.itemName} from ${message.sellerName} on the Player Market for $${message.price.toLocaleString()}.`);
+            if (typeof playNotificationSound === 'function') playNotificationSound('cash');
+            playerMarketListings = message.listings || playerMarketListings;
             if (typeof updateUI === 'function') updateUI();
             showOnlineWorld('market');
             break;
-            
-        case 'marketplace_error':
-            if (typeof showBriefNotification === 'function') showBriefNotification(message.error || 'Marketplace error!', 'error');
-            // Rollback optimistic vehicle removal if listing was rejected
-            if (window._pendingMarketplaceListing) {
-                const rollback = window._pendingMarketplaceListing;
-                player.stolenCars.splice(rollback.index, 0, rollback.car);
-                player.selectedCar = rollback.previousSelectedCar;
-                window._pendingMarketplaceListing = null;
+        }
+
+        case 'market_cancelled': {
+            // Listing cancelled — return item to inventory
+            const cat = message.category;
+            if (cat === 'vehicle') {
+                const vd = message.itemData || {};
+                player.stolenCars.push({
+                    name: message.itemName,
+                    baseValue: vd.baseValue || 0,
+                    currentValue: vd.currentValue || 0,
+                    damagePercentage: vd.damagePercentage || 0,
+                    usageCount: vd.usageCount || 0,
+                    image: vd.image || `vehicles/${message.itemName}.png`
+                });
+            } else if (cat === 'ammo') {
+                player.ammo = (player.ammo || 0) + (message.quantity || 1);
+            } else if (cat === 'gas') {
+                player.gas = (player.gas || 0) + (message.quantity || 1);
+            } else {
+                const itemObj = Object.assign({}, message.itemData || {});
+                itemObj.name = message.itemName;
+                for (let i = 0; i < (message.quantity || 1); i++) {
+                    player.inventory.push(Object.assign({}, itemObj));
+                }
+            }
+            if (typeof showBriefNotification === 'function') showBriefNotification(`Listing cancelled. ${message.itemName} returned to your inventory.`, 'success');
+            playerMarketListings = message.listings || playerMarketListings;
+            if (typeof updateUI === 'function') updateUI();
+            showOnlineWorld('market');
+            break;
+        }
+
+        case 'market_error':
+            if (typeof showBriefNotification === 'function') showBriefNotification(message.error || 'Market error!', 'error');
+            // Rollback optimistic removal
+            if (window._pendingMarketListing) {
+                const rb = window._pendingMarketListing;
+                if (rb.category === 'vehicle' && rb.car) {
+                    player.stolenCars.splice(rb.index, 0, rb.car);
+                    player.selectedCar = rb.previousSelectedCar;
+                } else if (rb.category === 'ammo') {
+                    player.ammo = (player.ammo || 0) + (rb.quantity || 0);
+                } else if (rb.category === 'gas') {
+                    player.gas = (player.gas || 0) + (rb.quantity || 0);
+                } else if (rb.item) {
+                    player.inventory.splice(rb.index, 0, rb.item);
+                }
+                window._pendingMarketListing = null;
                 if (typeof updateUI === 'function') updateUI();
             }
-            // If a buy failed, refresh listings
-            requestMarketplaceListings();
+            requestMarketListings();
             break;
     }
 }
 
-// ==================== BULLET SHOP & AMMO MARKETPLACE HANDLER ====================
+// ==================== BULLET SHOP MESSAGE HANDLER (store, not market) ====================
 
-function handleBulletMarketMessage(message) {
+function handleBulletShopMessage(message) {
     switch (message.type) {
         case 'bullets_purchased':
-            // Server confirmed bullet purchase — complete the transaction
             player.ammo++;
             window._serverBulletStock = message.remaining;
             window._pendingBulletPurchase = null;
             if (typeof showBriefNotification === 'function') showBriefNotification(`Bought 1 Bullet! ${message.remaining} left in today's server supply.`, 'success');
             if (typeof logAction === 'function') logAction(`The dealer slides a single round across the table. ${message.remaining} bullets remain in today's citywide supply.`);
-            // Boost underground rep
             if (player.streetReputation) {
                 player.streetReputation.underground = Math.min(100, (player.streetReputation.underground || 0) + 1);
             }
@@ -1911,7 +1942,6 @@ function handleBulletMarketMessage(message) {
             break;
 
         case 'bullets_error':
-            // Server rejected bullet purchase — refund money
             if (window._pendingBulletPurchase) {
                 player.money += window._pendingBulletPurchase.price;
                 window._pendingBulletPurchase = null;
@@ -1922,165 +1952,114 @@ function handleBulletMarketMessage(message) {
             break;
 
         case 'bullet_stock_update':
-            // Server broadcasting current bullet stock
             window._serverBulletStock = message.remaining;
-            // Refresh store if viewing it
             if (typeof refreshStoreAfterPurchase === 'function') refreshStoreAfterPurchase();
-            break;
-
-        case 'ammo_market_listings':
-            ammoMarketListings = message.listings || [];
-            if (document.querySelector('[onclick="showOnlineWorld(\'market\')"]')?.style?.background?.includes('#c0a062')) {
-                showOnlineWorld('market');
-            }
-            break;
-
-        case 'ammo_market_listed':
-            if (typeof showBriefNotification === 'function') showBriefNotification(`Listed ${message.quantity} bullet(s) on the Ammo Exchange!`, 'success');
-            ammoMarketListings = message.listings || ammoMarketListings;
-            window._pendingAmmoListing = null;
-            if (typeof updateUI === 'function') updateUI();
-            break;
-
-        case 'ammo_market_sold':
-            // We sold ammo — receive money
-            player.money += message.amount;
-            if (typeof showBriefNotification === 'function') showBriefNotification(`${message.buyerName} bought ${message.quantity} bullet(s) from you for $${message.amount.toLocaleString()}!`, 'success');
-            if (typeof logAction === 'function') logAction(`${message.buyerName} purchased ${message.quantity} bullet(s) from your ammo listing for $${message.amount.toLocaleString()}!`);
-            if (typeof playNotificationSound === 'function') playNotificationSound('cash');
-            ammoMarketListings = message.listings || ammoMarketListings;
-            if (typeof updateUI === 'function') updateUI();
-            break;
-
-        case 'ammo_market_purchased':
-            // We bought ammo — add to inventory
-            player.ammo = (player.ammo || 0) + message.quantity;
-            player.money -= message.totalPrice;
-            if (typeof showBriefNotification === 'function') showBriefNotification(`Bought ${message.quantity} bullet(s) from ${message.sellerName} for $${message.totalPrice.toLocaleString()}!`, 'success');
-            if (typeof logAction === 'function') logAction(`Purchased ${message.quantity} bullet(s) from ${message.sellerName} on the Ammo Exchange for $${message.totalPrice.toLocaleString()}.`);
-            if (typeof playNotificationSound === 'function') playNotificationSound('cash');
-            ammoMarketListings = message.listings || ammoMarketListings;
-            if (typeof updateUI === 'function') updateUI();
-            showOnlineWorld('market');
-            break;
-
-        case 'ammo_market_cancelled':
-            // Our listing was cancelled — return bullets
-            player.ammo = (player.ammo || 0) + message.quantity;
-            if (typeof showBriefNotification === 'function') showBriefNotification(`Listing cancelled. ${message.quantity} bullet(s) returned to your stash.`, 'success');
-            ammoMarketListings = message.listings || ammoMarketListings;
-            if (typeof updateUI === 'function') updateUI();
-            showOnlineWorld('market');
-            break;
-
-        case 'ammo_market_error':
-            if (typeof showBriefNotification === 'function') showBriefNotification(message.error || 'Ammo Exchange error!', 'error');
-            // Rollback optimistic ammo removal if listing was rejected
-            if (window._pendingAmmoListing) {
-                player.ammo = (player.ammo || 0) + window._pendingAmmoListing.quantity;
-                window._pendingAmmoListing = null;
-                if (typeof updateUI === 'function') updateUI();
-            }
             break;
     }
 }
 
-// ==================== AMMO MARKETPLACE FUNCTIONS ====================
+// ==================== UNIFIED PLAYER MARKET FUNCTIONS ====================
 
-function listAmmoForSale(quantity, pricePerBullet) {
+function listItemForSale(category, itemIdentifier, price, quantity, pricePerUnit) {
     if (!onlineWorldState.isConnected || !onlineWorldState.socket || onlineWorldState.socket.readyState !== WebSocket.OPEN) {
         if (typeof showBriefNotification === 'function') showBriefNotification('Not connected to server!', 'error');
         return;
     }
 
-    quantity = parseInt(quantity);
-    pricePerBullet = parseInt(pricePerBullet);
+    price = parseInt(price) || 0;
+    quantity = parseInt(quantity) || 1;
+    pricePerUnit = parseInt(pricePerUnit) || price;
 
-    if (!quantity || quantity < 1) {
-        if (typeof showBriefNotification === 'function') showBriefNotification('Enter a valid quantity!', 'error');
-        return;
-    }
-    if (quantity > (player.ammo || 0)) {
-        if (typeof showBriefNotification === 'function') showBriefNotification(`You only have ${player.ammo || 0} bullets!`, 'error');
-        return;
-    }
-    if (quantity > 100) {
-        if (typeof showBriefNotification === 'function') showBriefNotification('Max 100 bullets per listing!', 'error');
-        return;
-    }
-    if (!pricePerBullet || pricePerBullet < 10000) {
-        if (typeof showBriefNotification === 'function') showBriefNotification('Minimum price is $10,000 per bullet!', 'error');
-        return;
-    }
-    if (pricePerBullet > 1000000) {
-        if (typeof showBriefNotification === 'function') showBriefNotification('Maximum price is $1,000,000 per bullet!', 'error');
-        return;
+    const msg = { type: 'market_list', category: category, quantity: quantity, price: price, pricePerUnit: pricePerUnit };
+
+    if (category === 'vehicle') {
+        const carIndex = parseInt(itemIdentifier);
+        const car = player.stolenCars[carIndex];
+        if (!car) return;
+        if (price < 100) { if (typeof showBriefNotification === 'function') showBriefNotification('Set a price of at least $100!', 'error'); return; }
+        if (price > car.baseValue * 3) { if (typeof showBriefNotification === 'function') showBriefNotification('Price too high! Max 3x base value.', 'error'); return; }
+
+        msg.itemName = car.name;
+        msg.baseValue = car.baseValue;
+        msg.itemData = { baseValue: car.baseValue, currentValue: car.currentValue, damagePercentage: car.damagePercentage, image: car.image || `vehicles/${car.name}.png`, usageCount: car.usageCount || 0 };
+
+        // Optimistic removal
+        const removedCar = player.stolenCars[carIndex];
+        const prevSelected = player.selectedCar;
+        if (player.selectedCar === carIndex) player.selectedCar = null;
+        else if (player.selectedCar > carIndex) player.selectedCar--;
+        player.stolenCars.splice(carIndex, 1);
+        window._pendingMarketListing = { category: 'vehicle', car: removedCar, index: carIndex, previousSelectedCar: prevSelected };
+
+    } else if (category === 'ammo' || category === 'gas') {
+        const counter = category === 'ammo' ? 'ammo' : 'gas';
+        const label = category === 'ammo' ? 'Bullets' : 'Gasoline';
+        if (quantity < 1 || quantity > 100) { if (typeof showBriefNotification === 'function') showBriefNotification('List 1-100 units at a time!', 'error'); return; }
+        if ((player[counter] || 0) < quantity) { if (typeof showBriefNotification === 'function') showBriefNotification(`You only have ${player[counter] || 0} ${label.toLowerCase()}!`, 'error'); return; }
+        if (pricePerUnit < 10000) { if (typeof showBriefNotification === 'function') showBriefNotification('Minimum price is $10,000 per unit!', 'error'); return; }
+        if (pricePerUnit > 1000000) { if (typeof showBriefNotification === 'function') showBriefNotification('Maximum price is $1,000,000 per unit!', 'error'); return; }
+
+        msg.itemName = label;
+        msg.price = quantity * pricePerUnit;
+
+        // Optimistic removal
+        player[counter] -= quantity;
+        window._pendingMarketListing = { category: category, quantity: quantity };
+
+    } else {
+        // weapon, armor, utility, drug — from player.inventory
+        const invIndex = parseInt(itemIdentifier);
+        const item = player.inventory[invIndex];
+        if (!item) return;
+        if (price < 100) { if (typeof showBriefNotification === 'function') showBriefNotification('Set a price of at least $100!', 'error'); return; }
+        if (price > 5000000) { if (typeof showBriefNotification === 'function') showBriefNotification('Maximum listing price is $5,000,000!', 'error'); return; }
+
+        msg.itemName = item.name;
+        msg.itemData = Object.assign({}, item);
+
+        // Optimistic removal
+        const removedItem = player.inventory.splice(invIndex, 1)[0];
+        // Unequip if this was equipped
+        if (player.equippedWeapon === removedItem) player.equippedWeapon = null;
+        if (player.equippedArmor === removedItem) player.equippedArmor = null;
+        if (player.equippedVehicle === removedItem) player.equippedVehicle = null;
+        window._pendingMarketListing = { category: category, item: removedItem, index: invIndex };
     }
 
-    // Optimistically remove ammo
-    player.ammo -= quantity;
-    window._pendingAmmoListing = { quantity: quantity };
-
-    onlineWorldState.socket.send(JSON.stringify({
-        type: 'ammo_market_list',
-        quantity: quantity,
-        pricePerBullet: pricePerBullet
-    }));
-
-    if (typeof showBriefNotification === 'function') showBriefNotification(`Listing ${quantity} bullet(s) at $${pricePerBullet.toLocaleString()}/ea...`, 'info');
-    if (typeof logAction === 'function') logAction(`Listed ${quantity} bullet(s) on the Ammo Exchange at $${pricePerBullet.toLocaleString()} each.`);
+    onlineWorldState.socket.send(JSON.stringify(msg));
+    if (typeof showBriefNotification === 'function') showBriefNotification(`Listing ${msg.itemName} on the Player Market...`, 'info');
+    if (typeof logAction === 'function') logAction(`Listed ${msg.itemName} on the Player Market for $${(msg.price || 0).toLocaleString()}.`);
     if (typeof updateUI === 'function') updateUI();
-
     setTimeout(() => showOnlineWorld('market'), 500);
 }
 
-function buyAmmoListing(listingId) {
+function buyMarketListing(listingId) {
     if (!onlineWorldState.isConnected || !onlineWorldState.socket || onlineWorldState.socket.readyState !== WebSocket.OPEN) {
         if (typeof showBriefNotification === 'function') showBriefNotification('Not connected to server!', 'error');
         return;
     }
 
-    const listing = ammoMarketListings.find(l => l.id === listingId);
-    if (!listing) {
-        if (typeof showBriefNotification === 'function') showBriefNotification('Listing no longer available!', 'error');
-        return;
-    }
+    const listing = playerMarketListings.find(l => l.id === listingId);
+    if (!listing) { if (typeof showBriefNotification === 'function') showBriefNotification('Listing no longer available!', 'error'); return; }
+    if (player.money < listing.price) { if (typeof showBriefNotification === 'function') showBriefNotification('Not enough money!', 'error'); return; }
 
-    if (player.money < listing.totalPrice) {
-        if (typeof showBriefNotification === 'function') showBriefNotification('Not enough money!', 'error');
-        return;
-    }
-
-    onlineWorldState.socket.send(JSON.stringify({
-        type: 'ammo_market_buy',
-        listingId: listingId
-    }));
-
-    if (typeof showBriefNotification === 'function') showBriefNotification(`Purchasing ${listing.quantity} bullet(s)...`, 'info');
+    onlineWorldState.socket.send(JSON.stringify({ type: 'market_buy', listingId: listingId }));
+    if (typeof showBriefNotification === 'function') showBriefNotification(`Purchasing ${listing.itemName}...`, 'info');
 }
 
-function cancelAmmoListing(listingId) {
+function cancelMarketListing(listingId) {
     if (!onlineWorldState.isConnected || !onlineWorldState.socket || onlineWorldState.socket.readyState !== WebSocket.OPEN) {
         if (typeof showBriefNotification === 'function') showBriefNotification('Not connected to server!', 'error');
         return;
     }
 
-    onlineWorldState.socket.send(JSON.stringify({
-        type: 'ammo_market_cancel',
-        listingId: listingId
-    }));
-
-    if (typeof showBriefNotification === 'function') showBriefNotification('Cancelling ammo listing...', 'info');
+    onlineWorldState.socket.send(JSON.stringify({ type: 'market_cancel', listingId: listingId }));
+    if (typeof showBriefNotification === 'function') showBriefNotification('Cancelling listing...', 'info');
 }
 
-function requestAmmoMarketListings() {
-    if (!onlineWorldState.isConnected || !onlineWorldState.socket || onlineWorldState.socket.readyState !== WebSocket.OPEN) {
-        return;
-    }
-
-    onlineWorldState.socket.send(JSON.stringify({
-        type: 'ammo_market_get_listings'
-    }));
+function requestMarketListings() {
+    if (!onlineWorldState.isConnected || !onlineWorldState.socket || onlineWorldState.socket.readyState !== WebSocket.OPEN) return;
+    onlineWorldState.socket.send(JSON.stringify({ type: 'market_get_listings' }));
 }
 
 // Update jail visibility — no longer renders a separate section.
@@ -2234,12 +2213,12 @@ async function attemptBotJailbreak(botId, botName) {
 window.attemptPlayerJailbreak = attemptPlayerJailbreak;
 window.attemptBotJailbreak = attemptBotJailbreak;
 
-// Vehicle Marketplace exports
-window.listVehicleForSale = listVehicleForSale;
-window.buyMarketplaceVehicle = buyMarketplaceVehicle;
-window.cancelMarketplaceListing = cancelMarketplaceListing;
-window.requestMarketplaceListings = requestMarketplaceListings;
-window.showVehicleMarketplace = showVehicleMarketplace;
+// Unified Player Market exports
+window.listItemForSale = listItemForSale;
+window.buyMarketListing = buyMarketListing;
+window.cancelMarketListing = cancelMarketListing;
+window.requestMarketListings = requestMarketListings;
+window.showVehicleMarketplace = showVehicleMarketplace; // Legacy alias from garage button
 
 // Show "You've been freed!" popup with option to send a gift
 function showFreedFromJailPopup(helperName, helperId) {
@@ -3178,8 +3157,7 @@ function showOnlineWorld(activeTab) {
         loadWorldActivityFeed();
     }
     if (tab === 'market') {
-        requestMarketplaceListings();
-        requestAmmoMarketListings();
+        requestMarketListings();
     }
     
     // Request updated world state from server
@@ -3190,340 +3168,200 @@ function showOnlineWorld(activeTab) {
     }
 }
 
-// ==================== VEHICLE MARKETPLACE ====================
-// Player-to-player vehicle trading through The Commission
+// ==================== UNIFIED PLAYER MARKET ====================
+// Player-to-player trading of vehicles, weapons, armor, ammo, gas, utility, drugs
 
-// In-memory cache of marketplace listings
-let marketplaceListings = [];
-
-// In-memory cache of ammo market listings
-let ammoMarketListings = [];
+// In-memory cache of all market listings
+let playerMarketListings = [];
 
 function renderMarketplaceTab() {
-    const myListings = marketplaceListings.filter(l => l.sellerId === onlineWorldState.playerId);
-    const otherListings = marketplaceListings.filter(l => l.sellerId !== onlineWorldState.playerId);
+    const myId = onlineWorldState.playerId;
+    const myListings = playerMarketListings.filter(l => l.sellerId === myId);
+    const otherListings = playerMarketListings.filter(l => l.sellerId !== myId);
     const playerCars = (typeof player !== 'undefined' && player.stolenCars) ? player.stolenCars : [];
-    
-    let html = `
-        <h3 style="color: #a08850; text-align: center; font-family: 'Georgia', serif; margin-top: 0;">Player Marketplace</h3>
-        <p style="color: #ccc; text-align: center; margin: 0 0 20px 0;">Trade vehicles and ammunition with other players. All sales are final.</p>
-    `;
-    
-    // === LIST A VEHICLE SECTION ===
-    html += `
-        <div style="background: rgba(41, 128, 185, 0.15); padding: 15px; border-radius: 12px; border: 1px solid #a08850; margin-bottom: 20px;">
-            <h4 style="color: #a08850; margin: 0 0 10px 0;">List a Vehicle for Sale</h4>
-    `;
-    
-    if (playerCars.length === 0) {
-        html += `<p style="color: #6a5a3a; text-align: center;">You don't have any vehicles to list. Steal some cars first!</p>`;
-    } else {
-        html += `<div style="display: grid; gap: 8px;">`;
-        playerCars.forEach((car, idx) => {
-            const condition = 100 - car.damagePercentage;
-            const condColor = car.damagePercentage < 30 ? '#8a9a6a' : car.damagePercentage < 60 ? '#c0a040' : '#8b3a3a';
-            const suggestedPrice = Math.floor(car.baseValue * (condition / 100) * 0.8);
-            const alreadyListed = myListings.some(l => l.vehicleName === car.name && l.vehicleIndex === idx);
-            
-            html += `<div style="padding: 10px; background: rgba(0,0,0,0.4); border-radius: 8px; border: 1px solid #1a1610; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-                <div>
-                    <strong style="color: #f5e6c8;">${car.name}</strong><br>
-                    <small style="color: #d4c4a0;">Base: $${car.baseValue.toLocaleString()} | <span style="color: ${condColor};">${car.damagePercentage}% damaged</span></small>
-                </div>
-                <div style="display: flex; gap: 8px; align-items: center;">
-                    ${alreadyListed ? '<span style="color: #c0a040; font-size: 0.9em;">Already Listed</span>' : `
-                    <input type="number" id="market-price-${idx}" placeholder="$${suggestedPrice.toLocaleString()}" 
-                           value="${suggestedPrice}" min="100" max="${car.baseValue * 2}"
-                           style="width: 100px; padding: 6px; border-radius: 5px; border: 1px solid #c0a062; background: #222; color: #f5e6c8; font-size: 0.9em;">
-                    <button onclick="listVehicleForSale(${idx})" 
-                            style="background: #a08850; color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: bold; white-space: nowrap;">
-                        List
-                    </button>`}
-                </div>
-            </div>`;
-        });
-        html += `</div>`;
-    }
-    html += `</div>`;
-    
-    // === YOUR ACTIVE LISTINGS ===
-    if (myListings.length > 0) {
-        html += `
-            <div style="background: rgba(230, 126, 34, 0.15); padding: 15px; border-radius: 12px; border: 1px solid #e67e22; margin-bottom: 20px;">
-                <h4 style="color: #e67e22; margin: 0 0 10px 0;">Your Active Listings (${myListings.length})</h4>
-                <div style="display: grid; gap: 8px;">
-        `;
-        myListings.forEach(listing => {
-            html += `<div style="padding: 10px; background: rgba(0,0,0,0.4); border-radius: 8px; border: 1px solid #e67e22; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-                <div>
-                    <strong style="color: #f5e6c8;">${listing.vehicleName}</strong><br>
-                    <small style="color: #d4c4a0;">Asking: <span style="color: #8a9a6a; font-weight: bold;">$${listing.price.toLocaleString()}</span> | ${listing.damagePercentage}% damaged</small>
-                </div>
-                <button onclick="cancelMarketplaceListing('${listing.id}')" 
-                        style="background: #7a2a2a; color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: bold;">
-                    ? Cancel
-                </button>
-            </div>`;
-        });
-        html += `</div></div>`;
-    }
-    
-    // === AVAILABLE LISTINGS FROM OTHER PLAYERS ===
-    html += `
-        <div style="background: rgba(138, 154, 106, 0.1); padding: 15px; border-radius: 12px; border: 1px solid #8a9a6a; margin-bottom: 20px;">
-            <h4 style="color: #8a9a6a; margin: 0 0 10px 0;">Available Vehicles (${otherListings.length})</h4>
-    `;
-    
-    if (otherListings.length === 0) {
-        html += `<p style="color: #6a5a3a; text-align: center;">No vehicles listed by other players right now. Check back later!</p>`;
-    } else {
-        html += `<div style="display: grid; gap: 8px;">`;
-        otherListings.forEach(listing => {
-            const condColor = listing.damagePercentage < 30 ? '#8a9a6a' : listing.damagePercentage < 60 ? '#c0a040' : '#8b3a3a';
-            const canAfford = (typeof player !== 'undefined') && player.money >= listing.price;
-            
-            html += `<div style="padding: 12px; background: rgba(0,0,0,0.4); border-radius: 10px; border: 1px solid ${canAfford ? '#8a9a6a' : '#6a5a3a'}; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-                <div>
-                    <strong style="color: #f5e6c8;">${listing.vehicleName}</strong>
-                    <span style="color: #6a5a3a; font-size: 0.85em;"> — sold by ${escapeHTML(listing.sellerName)}</span><br>
-                    <small style="color: #d4c4a0;">
-                        Base Value: $${listing.baseValue.toLocaleString()} | <span style="color: ${condColor};">${listing.damagePercentage}% damaged</span>
-                    </small><br>
-                    <small style="color: #8a9a6a; font-weight: bold; font-size: 1.05em;">Price: $${listing.price.toLocaleString()}</small>
-                </div>
-                <button onclick="buyMarketplaceVehicle('${listing.id}')" 
-                        ${!canAfford ? 'disabled' : ''}
-                        style="background: ${canAfford ? '#7a8a5a' : '#6a5a3a'}; color: white; border: none; padding: 10px 18px; border-radius: 8px; 
-                               cursor: ${canAfford ? 'pointer' : 'not-allowed'}; font-weight: bold; white-space: nowrap; font-size: 1em;">
-                    ${canAfford ? 'Buy' : 'Can\'t Afford'}
-                </button>
-            </div>`;
-        });
-        html += `</div>`;
-    }
-    html += `</div>`;
-    
-    // ==================== AMMO EXCHANGE SECTION ====================
-    html += `<hr style="border: 1px solid #333; margin: 25px 0;">`;
-    html += `<h3 style="color: #e67e22; text-align: center; font-family: 'Georgia', serif; margin-top: 0;">🔫 Ammo Exchange</h3>`;
-    html += `<p style="color: #ccc; text-align: center; margin: 0 0 20px 0;">Buy and sell bullets with other players. Bullets are scarce — only 10 hit the streets each day.</p>`;
-
-    // === LIST BULLETS FOR SALE ===
+    const playerInv = (typeof player !== 'undefined' && player.inventory) ? player.inventory : [];
     const playerAmmo = (typeof player !== 'undefined') ? (player.ammo || 0) : 0;
-    html += `
-        <div style="background: rgba(230, 126, 34, 0.15); padding: 15px; border-radius: 12px; border: 1px solid #e67e22; margin-bottom: 20px;">
-            <h4 style="color: #e67e22; margin: 0 0 10px 0;">🔫 Sell Your Bullets</h4>
+    const playerGas = (typeof player !== 'undefined') ? (player.gas || 0) : 0;
+
+    // Category icons & colors
+    const catMeta = {
+        vehicle: { icon: '\ud83d\ude97', label: 'Vehicle', color: '#3498db' },
+        weapon: { icon: '\u2694\ufe0f', label: 'Weapon', color: '#e74c3c' },
+        armor: { icon: '\ud83d\udee1\ufe0f', label: 'Armor', color: '#9b59b6' },
+        ammo: { icon: '\ud83d\udd2b', label: 'Bullets', color: '#e67e22' },
+        gas: { icon: '\u26fd', label: 'Gasoline', color: '#f39c12' },
+        utility: { icon: '\ud83d\udee0\ufe0f', label: 'Utility', color: '#1abc9c' },
+        drug: { icon: '\ud83d\udcb0', label: 'Trade Goods', color: '#8e44ad' }
+    };
+
+    let html = `
+        <h3 style="color: #a08850; text-align: center; font-family: 'Georgia', serif; margin-top: 0;">Player Market</h3>
+        <p style="color: #ccc; text-align: center; margin: 0 0 20px 0;">Trade vehicles, weapons, armor, ammo, gas, utility items, and goods with other players. All sales are final.</p>
     `;
 
-    if (playerAmmo === 0) {
-        html += `<p style="color: #6a5a3a; text-align: center;">You don't have any bullets to sell.</p>`;
-    } else {
-        html += `
-            <div style="padding: 10px; background: rgba(0,0,0,0.4); border-radius: 8px; border: 1px solid #1a1610;">
-                <div style="margin-bottom: 8px;">
-                    <strong style="color: #f5e6c8;">Your Stash:</strong> <span style="color: #e67e22; font-weight: bold;">${playerAmmo} bullet${playerAmmo > 1 ? 's' : ''}</span>
+    // ==================== LIST ITEMS FOR SALE ====================
+    html += `<div style="background: rgba(41, 128, 185, 0.12); padding: 15px; border-radius: 12px; border: 1px solid #a08850; margin-bottom: 20px;">
+        <h4 style="color: #a08850; margin: 0 0 12px 0;">List Items for Sale</h4>`;
+
+    // --- Vehicles ---
+    if (playerCars.length > 0) {
+        html += `<h5 style="color: #3498db; margin: 10px 0 6px;">Vehicles</h5><div style="display: grid; gap: 6px;">`;
+        playerCars.forEach((car, idx) => {
+            const cond = 100 - car.damagePercentage;
+            const condColor = car.damagePercentage < 30 ? '#8a9a6a' : car.damagePercentage < 60 ? '#c0a040' : '#8b3a3a';
+            const suggested = Math.floor(car.baseValue * (cond / 100) * 0.8);
+            const listed = myListings.some(l => l.category === 'vehicle' && l.itemName === car.name);
+            html += `<div style="padding: 8px; background: rgba(0,0,0,0.4); border-radius: 8px; border: 1px solid #1a1610; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+                <div><strong style="color: #f5e6c8;">\ud83d\ude97 ${car.name}</strong><br><small style="color: #d4c4a0;">Base: $${car.baseValue.toLocaleString()} | <span style="color: ${condColor};">${car.damagePercentage}% dmg</span></small></div>
+                <div style="display: flex; gap: 6px; align-items: center;">${listed ? '<span style="color: #c0a040; font-size: 0.85em;">Listed</span>' : `
+                    <input type="number" id="mkt-veh-${idx}" value="${suggested}" min="100" max="${car.baseValue * 3}" style="width: 90px; padding: 5px; border-radius: 5px; border: 1px solid #c0a062; background: #222; color: #f5e6c8; font-size: 0.85em;">
+                    <button onclick="listItemForSale('vehicle', ${idx}, document.getElementById('mkt-veh-${idx}').value)" style="background: #a08850; color: #fff; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold;">List</button>`}
                 </div>
-                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                    <div>
-                        <label style="color: #d4c4a0; font-size: 0.85em;">Qty:</label><br>
-                        <input type="number" id="ammo-sell-qty" value="1" min="1" max="${Math.min(playerAmmo, 100)}"
-                            style="width: 60px; padding: 6px; border-radius: 5px; border: 1px solid #e67e22; background: #222; color: #f5e6c8; font-size: 0.9em;">
-                    </div>
-                    <div>
-                        <label style="color: #d4c4a0; font-size: 0.85em;">Price/bullet:</label><br>
-                        <input type="number" id="ammo-sell-price" value="150000" min="10000" max="1000000" step="10000"
-                            style="width: 120px; padding: 6px; border-radius: 5px; border: 1px solid #e67e22; background: #222; color: #f5e6c8; font-size: 0.9em;">
-                    </div>
-                    <div style="padding-top: 16px;">
-                        <button onclick="listAmmoForSale(document.getElementById('ammo-sell-qty').value, document.getElementById('ammo-sell-price').value)"
-                                style="background: #e67e22; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; white-space: nowrap;">
-                            List for Sale
-                        </button>
-                    </div>
-                </div>
-                <small style="color: #8a7a5a; margin-top: 6px; display: block;">Min $10K/bullet, Max $1M/bullet. Max 100 per listing.</small>
             </div>`;
+        });
+        html += `</div>`;
+    }
+
+    // --- Inventory items (weapons, armor, utility, drugs) ---
+    const sellableTypes = [
+        { type: 'weapon', cat: 'weapon' },
+        { type: 'armor', cat: 'armor' },
+        { type: 'utility', cat: 'utility' },
+        { type: 'highLevelDrug', cat: 'drug' },
+        { type: 'vehicle', cat: 'vehicle' }
+    ];
+    const sellableItems = playerInv.filter(i => sellableTypes.some(st => st.type === i.type));
+    if (sellableItems.length > 0) {
+        html += `<h5 style="color: #e74c3c; margin: 12px 0 6px;">Inventory Items</h5><div style="display: grid; gap: 6px;">`;
+        playerInv.forEach((item, idx) => {
+            const st = sellableTypes.find(s => s.type === item.type);
+            if (!st) return;
+            const meta = catMeta[st.cat] || catMeta.utility;
+            const suggested = Math.floor((item.price || 10000) * 0.7);
+            const isEquipped = (player.equippedWeapon === item || player.equippedArmor === item || player.equippedVehicle === item);
+            html += `<div style="padding: 8px; background: rgba(0,0,0,0.4); border-radius: 8px; border: 1px solid #1a1610; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+                <div><strong style="color: #f5e6c8;">${meta.icon} ${item.name}</strong>${isEquipped ? ' <span style="color:#c0a040; font-size:0.8em;">(Equipped)</span>' : ''}
+                <br><small style="color: #d4c4a0;">${meta.label}${item.power ? ' | +' + item.power + ' power' : ''}${item.durability !== undefined ? ' | ' + item.durability + '/' + item.maxDurability + ' dur' : ''}</small></div>
+                <div style="display: flex; gap: 6px; align-items: center;">
+                    <input type="number" id="mkt-inv-${idx}" value="${suggested}" min="100" max="5000000" style="width: 90px; padding: 5px; border-radius: 5px; border: 1px solid #c0a062; background: #222; color: #f5e6c8; font-size: 0.85em;">
+                    <button onclick="listItemForSale('${st.cat}', ${idx}, document.getElementById('mkt-inv-${idx}').value)" style="background: ${meta.color}; color: #fff; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold;">List</button>
+                </div>
+            </div>`;
+        });
+        html += `</div>`;
+    }
+
+    // --- Ammo & Gas ---
+    if (playerAmmo > 0 || playerGas > 0) {
+        html += `<h5 style="color: #e67e22; margin: 12px 0 6px;">Supplies</h5>`;
+        if (playerAmmo > 0) {
+            html += `<div style="padding: 8px; background: rgba(0,0,0,0.4); border-radius: 8px; border: 1px solid #1a1610; margin-bottom: 6px;">
+                <div style="margin-bottom: 6px;"><strong style="color: #f5e6c8;">\ud83d\udd2b Bullets:</strong> <span style="color: #e67e22; font-weight: bold;">${playerAmmo}</span></div>
+                <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                    <div><small style="color: #d4c4a0;">Qty:</small><br><input type="number" id="mkt-ammo-qty" value="1" min="1" max="${Math.min(playerAmmo, 100)}" style="width: 55px; padding: 5px; border-radius: 5px; border: 1px solid #e67e22; background: #222; color: #f5e6c8; font-size: 0.85em;"></div>
+                    <div><small style="color: #d4c4a0;">$/bullet:</small><br><input type="number" id="mkt-ammo-price" value="150000" min="10000" max="1000000" step="10000" style="width: 100px; padding: 5px; border-radius: 5px; border: 1px solid #e67e22; background: #222; color: #f5e6c8; font-size: 0.85em;"></div>
+                    <div style="padding-top: 14px;"><button onclick="listItemForSale('ammo', null, 0, document.getElementById('mkt-ammo-qty').value, document.getElementById('mkt-ammo-price').value)" style="background: #e67e22; color: #fff; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-weight: bold;">List</button></div>
+                </div>
+            </div>`;
+        }
+        if (playerGas > 0) {
+            html += `<div style="padding: 8px; background: rgba(0,0,0,0.4); border-radius: 8px; border: 1px solid #1a1610; margin-bottom: 6px;">
+                <div style="margin-bottom: 6px;"><strong style="color: #f5e6c8;">\u26fd Gasoline:</strong> <span style="color: #f39c12; font-weight: bold;">${playerGas}</span></div>
+                <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                    <div><small style="color: #d4c4a0;">Qty:</small><br><input type="number" id="mkt-gas-qty" value="1" min="1" max="${Math.min(playerGas, 100)}" style="width: 55px; padding: 5px; border-radius: 5px; border: 1px solid #f39c12; background: #222; color: #f5e6c8; font-size: 0.85em;"></div>
+                    <div><small style="color: #d4c4a0;">$/can:</small><br><input type="number" id="mkt-gas-price" value="75000" min="10000" max="1000000" step="10000" style="width: 100px; padding: 5px; border-radius: 5px; border: 1px solid #f39c12; background: #222; color: #f5e6c8; font-size: 0.85em;"></div>
+                    <div style="padding-top: 14px;"><button onclick="listItemForSale('gas', null, 0, document.getElementById('mkt-gas-qty').value, document.getElementById('mkt-gas-price').value)" style="background: #f39c12; color: #fff; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-weight: bold;">List</button></div>
+                </div>
+            </div>`;
+        }
+    }
+
+    if (playerCars.length === 0 && sellableItems.length === 0 && playerAmmo === 0 && playerGas === 0) {
+        html += `<p style="color: #6a5a3a; text-align: center;">You don't have any items to list. Buy from the Black Market or steal some goods first!</p>`;
     }
     html += `</div>`;
 
-    // === YOUR ACTIVE AMMO LISTINGS ===
-    const myAmmoListings = ammoMarketListings.filter(l => l.sellerId === onlineWorldState.playerId);
-    if (myAmmoListings.length > 0) {
-        html += `
-            <div style="background: rgba(230, 126, 34, 0.1); padding: 15px; border-radius: 12px; border: 1px solid #c0a040; margin-bottom: 20px;">
-                <h4 style="color: #c0a040; margin: 0 0 10px 0;">Your Ammo Listings (${myAmmoListings.length})</h4>
-                <div style="display: grid; gap: 8px;">
-        `;
-        myAmmoListings.forEach(listing => {
-            html += `<div style="padding: 10px; background: rgba(0,0,0,0.4); border-radius: 8px; border: 1px solid #c0a040; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-                <div>
-                    <strong style="color: #f5e6c8;">🔫 ${listing.quantity} Bullet${listing.quantity > 1 ? 's' : ''}</strong><br>
-                    <small style="color: #d4c4a0;">$${listing.pricePerBullet.toLocaleString()}/ea — Total: <span style="color: #8a9a6a; font-weight: bold;">$${listing.totalPrice.toLocaleString()}</span></small>
-                </div>
-                <button onclick="cancelAmmoListing('${listing.id}')"
-                        style="background: #7a2a2a; color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: bold;">
-                    Cancel
-                </button>
+    // ==================== YOUR ACTIVE LISTINGS ====================
+    if (myListings.length > 0) {
+        html += `<div style="background: rgba(230, 126, 34, 0.12); padding: 15px; border-radius: 12px; border: 1px solid #e67e22; margin-bottom: 20px;">
+            <h4 style="color: #e67e22; margin: 0 0 10px 0;">Your Active Listings (${myListings.length})</h4><div style="display: grid; gap: 6px;">`;
+        myListings.forEach(listing => {
+            const meta = catMeta[listing.category] || catMeta.utility;
+            const qtyLabel = listing.quantity > 1 ? `${listing.quantity}x ` : '';
+            html += `<div style="padding: 8px; background: rgba(0,0,0,0.4); border-radius: 8px; border: 1px solid #e67e22; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+                <div><strong style="color: #f5e6c8;">${meta.icon} ${qtyLabel}${listing.itemName}</strong><br>
+                <small style="color: #d4c4a0;">${meta.label} | Asking: <span style="color: #8a9a6a; font-weight: bold;">$${listing.price.toLocaleString()}</span>${listing.quantity > 1 ? ` ($${listing.pricePerUnit.toLocaleString()}/ea)` : ''}</small></div>
+                <button onclick="cancelMarketListing('${listing.id}')" style="background: #7a2a2a; color: #fff; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold;">Cancel</button>
             </div>`;
         });
         html += `</div></div>`;
     }
 
-    // === AVAILABLE AMMO FROM OTHER PLAYERS ===
-    const otherAmmoListings = ammoMarketListings.filter(l => l.sellerId !== onlineWorldState.playerId);
-    html += `
-        <div style="background: rgba(138, 154, 106, 0.1); padding: 15px; border-radius: 12px; border: 1px solid #8a9a6a; margin-bottom: 20px;">
-            <h4 style="color: #8a9a6a; margin: 0 0 10px 0;">🔫 Bullets for Sale (${otherAmmoListings.length})</h4>
-    `;
+    // ==================== AVAILABLE LISTINGS FROM OTHER PLAYERS ====================
+    html += `<div style="background: rgba(138, 154, 106, 0.08); padding: 15px; border-radius: 12px; border: 1px solid #8a9a6a; margin-bottom: 20px;">
+        <h4 style="color: #8a9a6a; margin: 0 0 10px 0;">Available Items (${otherListings.length})</h4>`;
 
-    if (otherAmmoListings.length === 0) {
-        html += `<p style="color: #6a5a3a; text-align: center;">No bullets listed by other players. The streets are dry!</p>`;
+    if (otherListings.length === 0) {
+        html += `<p style="color: #6a5a3a; text-align: center;">No items listed by other players right now. Check back later!</p>`;
     } else {
-        html += `<div style="display: grid; gap: 8px;">`;
-        otherAmmoListings.forEach(listing => {
-            const canAfford = (typeof player !== 'undefined') && player.money >= listing.totalPrice;
-            html += `<div style="padding: 12px; background: rgba(0,0,0,0.4); border-radius: 10px; border: 1px solid ${canAfford ? '#8a9a6a' : '#6a5a3a'}; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-                <div>
-                    <strong style="color: #f5e6c8;">🔫 ${listing.quantity} Bullet${listing.quantity > 1 ? 's' : ''}</strong>
-                    <span style="color: #6a5a3a; font-size: 0.85em;"> — from ${escapeHTML(listing.sellerName)}</span><br>
-                    <small style="color: #d4c4a0;">
-                        $${listing.pricePerBullet.toLocaleString()}/ea
-                    </small><br>
-                    <small style="color: #8a9a6a; font-weight: bold; font-size: 1.05em;">Total: $${listing.totalPrice.toLocaleString()}</small>
-                </div>
-                <button onclick="buyAmmoListing('${listing.id}')"
-                        ${!canAfford ? 'disabled' : ''}
-                        style="background: ${canAfford ? '#7a8a5a' : '#6a5a3a'}; color: white; border: none; padding: 10px 18px; border-radius: 8px;
-                               cursor: ${canAfford ? 'pointer' : 'not-allowed'}; font-weight: bold; white-space: nowrap; font-size: 1em;">
-                    ${canAfford ? 'Buy' : "Can't Afford"}
-                </button>
-            </div>`;
+        // Group by category for cleaner display
+        const grouped = {};
+        otherListings.forEach(l => {
+            if (!grouped[l.category]) grouped[l.category] = [];
+            grouped[l.category].push(l);
         });
-        html += `</div>`;
+
+        const catOrder = ['vehicle', 'weapon', 'armor', 'ammo', 'gas', 'utility', 'drug'];
+        catOrder.forEach(cat => {
+            if (!grouped[cat] || grouped[cat].length === 0) return;
+            const meta = catMeta[cat] || catMeta.utility;
+            html += `<h5 style="color: ${meta.color}; margin: 10px 0 6px;">${meta.icon} ${meta.label}s</h5><div style="display: grid; gap: 6px;">`;
+
+            grouped[cat].forEach(listing => {
+                const canAfford = (typeof player !== 'undefined') && player.money >= listing.price;
+                const qtyLabel = listing.quantity > 1 ? `${listing.quantity}x ` : '';
+                let details = '';
+                if (listing.itemData) {
+                    if (cat === 'vehicle' && listing.itemData.damagePercentage !== undefined) {
+                        const condColor = listing.itemData.damagePercentage < 30 ? '#8a9a6a' : listing.itemData.damagePercentage < 60 ? '#c0a040' : '#8b3a3a';
+                        details = `Base: $${(listing.itemData.baseValue || 0).toLocaleString()} | <span style="color: ${condColor};">${listing.itemData.damagePercentage}% dmg</span>`;
+                    } else if (listing.itemData.power) {
+                        details = `+${listing.itemData.power} power`;
+                        if (listing.itemData.durability !== undefined) details += ` | ${listing.itemData.durability}/${listing.itemData.maxDurability} dur`;
+                    }
+                }
+                if (listing.quantity > 1 && listing.pricePerUnit) {
+                    details += (details ? ' | ' : '') + `$${listing.pricePerUnit.toLocaleString()}/ea`;
+                }
+
+                html += `<div style="padding: 10px; background: rgba(0,0,0,0.4); border-radius: 8px; border: 1px solid ${canAfford ? '#8a9a6a' : '#6a5a3a'}; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+                    <div><strong style="color: #f5e6c8;">${meta.icon} ${qtyLabel}${listing.itemName}</strong>
+                    <span style="color: #6a5a3a; font-size: 0.85em;"> \u2014 from ${escapeHTML(listing.sellerName)}</span><br>
+                    ${details ? `<small style="color: #d4c4a0;">${details}</small><br>` : ''}
+                    <small style="color: #8a9a6a; font-weight: bold; font-size: 1em;">$${listing.price.toLocaleString()}</small></div>
+                    <button onclick="buyMarketListing('${listing.id}')" ${!canAfford ? 'disabled' : ''}
+                        style="background: ${canAfford ? '#7a8a5a' : '#6a5a3a'}; color: #fff; border: none; padding: 8px 16px; border-radius: 8px;
+                        cursor: ${canAfford ? 'pointer' : 'not-allowed'}; font-weight: bold; white-space: nowrap; font-size: 1em;">
+                        ${canAfford ? 'Buy' : "Can't Afford"}
+                    </button>
+                </div>`;
+            });
+            html += `</div>`;
+        });
     }
     html += `</div>`;
-    
+
     // Refresh button
-    html += `
-        <div style="text-align: center; margin-top: 10px;">
-            <button onclick="requestMarketplaceListings(); requestAmmoMarketListings();"
-                    style="background: rgba(52, 152, 219, 0.3); color: #c0a062; border: 1px solid #c0a062; padding: 8px 20px; border-radius: 6px; cursor: pointer;">
-                Refresh All Listings
-            </button>
-        </div>
-    `;
-    
+    html += `<div style="text-align: center; margin-top: 10px;">
+        <button onclick="requestMarketListings()" style="background: rgba(52, 152, 219, 0.3); color: #c0a062; border: 1px solid #c0a062; padding: 8px 20px; border-radius: 6px; cursor: pointer;">
+            Refresh Listings
+        </button>
+    </div>`;
+
     return html;
 }
 
-function listVehicleForSale(carIndex) {
-    if (!onlineWorldState.isConnected || !onlineWorldState.socket || onlineWorldState.socket.readyState !== WebSocket.OPEN) {
-        if (typeof showBriefNotification === 'function') showBriefNotification('Not connected to server!', 'error');
-        return;
-    }
-    
-    const car = player.stolenCars[carIndex];
-    if (!car) return;
-    
-    const priceInput = document.getElementById(`market-price-${carIndex}`);
-    const askingPrice = priceInput ? parseInt(priceInput.value) : 0;
-    
-    if (!askingPrice || askingPrice < 100) {
-        if (typeof showBriefNotification === 'function') showBriefNotification('Set a price of at least $100!', 'error');
-        return;
-    }
-    
-    if (askingPrice > car.baseValue * 3) {
-        if (typeof showBriefNotification === 'function') showBriefNotification('Price too high! Max 3x base value.', 'error');
-        return;
-    }
-    
-    onlineWorldState.socket.send(JSON.stringify({
-        type: 'marketplace_list_vehicle',
-        vehicleIndex: carIndex,
-        vehicleName: car.name,
-        baseValue: car.baseValue,
-        currentValue: car.currentValue,
-        damagePercentage: car.damagePercentage,
-        image: car.image || `vehicles/${car.name}.png`,
-        usageCount: car.usageCount || 0,
-        price: askingPrice
-    }));
-    
-    // Store car data for rollback if server rejects
-    const removedCar = player.stolenCars[carIndex];
-    const previousSelectedCar = player.selectedCar;
-    
-    // Remove the car from local inventory optimistically (server will confirm)
-    if (player.selectedCar === carIndex) player.selectedCar = null;
-    else if (player.selectedCar > carIndex) player.selectedCar--;
-    player.stolenCars.splice(carIndex, 1);
-    
-    // Store rollback data on window in case server rejects
-    window._pendingMarketplaceListing = {
-        car: removedCar,
-        index: carIndex,
-        previousSelectedCar: previousSelectedCar
-    };
-    
-    if (typeof showBriefNotification === 'function') showBriefNotification(`Listed ${car.name} for $${askingPrice.toLocaleString()}!`, 'success');
-    if (typeof logAction === 'function') logAction(`Listed ${car.name} on the marketplace for $${askingPrice.toLocaleString()}.`);
-    if (typeof updateUI === 'function') updateUI();
-    
-    // Refresh the tab after a short delay for server response
-    setTimeout(() => showOnlineWorld('market'), 500);
-}
-
-function buyMarketplaceVehicle(listingId) {
-    if (!onlineWorldState.isConnected || !onlineWorldState.socket || onlineWorldState.socket.readyState !== WebSocket.OPEN) {
-        if (typeof showBriefNotification === 'function') showBriefNotification('Not connected to server!', 'error');
-        return;
-    }
-    
-    const listing = marketplaceListings.find(l => l.id === listingId);
-    if (!listing) {
-        if (typeof showBriefNotification === 'function') showBriefNotification('Listing no longer available!', 'error');
-        return;
-    }
-    
-    if (player.money < listing.price) {
-        if (typeof showBriefNotification === 'function') showBriefNotification('Not enough money!', 'error');
-        return;
-    }
-    
-    onlineWorldState.socket.send(JSON.stringify({
-        type: 'marketplace_buy_vehicle',
-        listingId: listingId
-    }));
-    
-    if (typeof showBriefNotification === 'function') showBriefNotification(`Purchasing ${listing.vehicleName}...`, 'info');
-}
-
-function cancelMarketplaceListing(listingId) {
-    if (!onlineWorldState.isConnected || !onlineWorldState.socket || onlineWorldState.socket.readyState !== WebSocket.OPEN) {
-        if (typeof showBriefNotification === 'function') showBriefNotification('Not connected to server!', 'error');
-        return;
-    }
-    
-    onlineWorldState.socket.send(JSON.stringify({
-        type: 'marketplace_cancel_listing',
-        listingId: listingId
-    }));
-    
-    if (typeof showBriefNotification === 'function') showBriefNotification('Cancelling listing...', 'info');
-}
-
-function requestMarketplaceListings() {
-    if (!onlineWorldState.isConnected || !onlineWorldState.socket || onlineWorldState.socket.readyState !== WebSocket.OPEN) {
-        return;
-    }
-    
-    onlineWorldState.socket.send(JSON.stringify({
-        type: 'marketplace_get_listings'
-    }));
-}
-
-// Standalone page version for use from the Garage
+// Legacy convenience function — opens the market tab
 function showVehicleMarketplace() {
     if (!onlineWorldState.isConnected) {
         if (typeof showBriefNotification === 'function') showBriefNotification('Connect to The Commission first!', 'error');

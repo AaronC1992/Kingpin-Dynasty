@@ -5,6 +5,18 @@ All notable changes to From Dusk To Don (Mafia Born) will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.14.0] - 2025-06-24
+
+### Changed — Unified Player Market
+- **Merged Vehicle Marketplace & Ammo Exchange** into a single **Player Market**
+- Players can now list **vehicles, weapons, armor, ammo, gas, utility items, and trade goods** all in one place
+- Unified server handlers: `market_list`, `market_buy`, `market_cancel`, `market_get_listings`
+- Single `playerMarket` data store replaces separate `marketplace` and `ammoMarket` arrays
+- Legacy `ammo_market_*` messages auto-forwarded to unified handler for backwards compatibility
+- Old vehicle/ammo persistence migrated automatically on first load
+- Black Market store tab tooltip and Player Market feature list updated for all item types
+- Garage "Player Market" button preserved as convenience shortcut
+
 ## [1.13.0] - 2026-03-04
 
 ### Added — Mobile & QoL
