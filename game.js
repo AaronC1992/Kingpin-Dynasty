@@ -12890,7 +12890,7 @@ function showCommandCenter() {
 
   let html = '';
   menuUnlockConfig.forEach(item => {
-    html += `<button class="menu-btn-unlocked" onclick="${item.fn}">
+    html += `<button class="menu-btn-unlocked" data-badge-id="${item.id}" onclick="${item.fn}">
       <span class="menu-btn-label">${item.label}</span>
       <span class="menu-btn-tip">${item.tip}</span>
     </button>`;
@@ -22938,7 +22938,7 @@ function processEconomySinks() {
   const details = [];
 
   // Gang member wages ($50/member/hour)
-  const gangSize = (player.gangMembers || []).length;
+  const gangSize = (player.gang && player.gang.gangMembers ? player.gang.gangMembers : []).length;
   if (gangSize > 0) {
     const gangWages = gangSize * 50 * Math.floor(hoursSinceLastUpkeep);
     totalUpkeep += gangWages;
@@ -23140,12 +23140,14 @@ function respecSkillTree() {
   // Count total invested skill points
   let refundedPoints = 0;
   if (player.skillTree) {
-    player.skillTree.forEach(node => {
-      if (node.currentLevel > 0) {
-        refundedPoints += node.currentLevel;
-        node.currentLevel = 0;
+    for (const [treeName, nodes] of Object.entries(player.skillTree)) {
+      for (const [nodeName, rank] of Object.entries(nodes)) {
+        if (rank > 0) {
+          refundedPoints += rank;
+          player.skillTree[treeName][nodeName] = 0;
+        }
       }
-    });
+    }
   }
 
   if (refundedPoints === 0) {

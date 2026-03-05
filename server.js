@@ -4626,6 +4626,11 @@ function handleFriendAdd(clientId, message) {
     if (!targetName) return ws.send(JSON.stringify({ type: 'friend_result', success: false, error: 'Invalid name.' }));
     if (targetName === player.name) return ws.send(JSON.stringify({ type: 'friend_result', success: false, error: 'Cannot add yourself.' }));
     
+    // Check if already friends (client-side list, but prevent duplicate server notifications)
+    if (player.friends && player.friends.includes(targetName)) {
+        return ws.send(JSON.stringify({ type: 'friend_result', success: false, error: 'Already friends with this player.' }));
+    }
+    
     // Check target exists online
     let targetId = null;
     for (const [id, p] of gameState.players) {
@@ -4956,7 +4961,12 @@ function handleCrewUpdate(clientId, message) {
     // Promote/demote officers
     if (message.promote) {
         const m = playerCrew.members.find(m => m.name === message.promote);
-        if (m && m.role === 'member') { m.role = 'officer'; playerCrew.officers.push(m.playerId); }
+        if (m && m.role === 'member') {
+            m.role = 'officer';
+            if (!playerCrew.officers.includes(m.playerId)) {
+                playerCrew.officers.push(m.playerId);
+            }
+        }
     }
     
     ws.send(JSON.stringify({ type: 'crew_result', success: true, action: 'updated', crew: playerCrew }));
@@ -5087,6 +5097,7 @@ function handleGamblingCreateTable(clientId, message) {
     if (bet < 1000) return ws.send(JSON.stringify({ type: 'gambling_result', success: false, error: 'Minimum bet is $1,000.' }));
     if (bet > 500000) return ws.send(JSON.stringify({ type: 'gambling_result', success: false, error: 'Maximum bet is $500,000.' }));
     if (!['dice', 'coinflip', 'highcard'].includes(gameType)) return ws.send(JSON.stringify({ type: 'gambling_result', success: false, error: 'Invalid game type.' }));
+    if ((player.money || 0) < bet) return ws.send(JSON.stringify({ type: 'gambling_result', success: false, error: 'Not enough money.' }));
     
     const tableId = 'table_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
     const table = {
@@ -5119,6 +5130,8 @@ function handleGamblingJoinTable(clientId, message) {
     if (!table) return ws.send(JSON.stringify({ type: 'gambling_result', success: false, error: 'Table not found.' }));
     if (table.state !== 'waiting') return ws.send(JSON.stringify({ type: 'gambling_result', success: false, error: 'Game already in progress.' }));
     if (table.hostId === clientId) return ws.send(JSON.stringify({ type: 'gambling_result', success: false, error: 'Cannot join your own table.' }));
+    if (table.guestId) return ws.send(JSON.stringify({ type: 'gambling_result', success: false, error: 'Table already has an opponent.' }));
+    if ((player.money || 0) < table.bet) return ws.send(JSON.stringify({ type: 'gambling_result', success: false, error: 'Not enough money to match the bet.' }));
     
     table.guestId = clientId;
     table.guestName = player.name;

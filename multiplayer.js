@@ -2535,7 +2535,7 @@ function syncPlayerState() {
             territory: player.territory,
             playerState: {
                 // Display-sync stats for other players to see
-                gangMembers: (player.gangMembers || []).length,
+                gangMembers: (player.gang && player.gang.gangMembers ? player.gang.gangMembers : []).length,
                 power: typeof calculatePower === 'function' ? calculatePower() : 0
             }
         }));
@@ -4543,7 +4543,7 @@ function executePvpChallenge(playerName, energyCost) {
             level: player.level,
             reputation: player.reputation,
             power: typeof calculatePower === 'function' ? calculatePower() : 0,
-            gangMembers: (player.gangMembers || []).length
+            gangMembers: (player.gang && player.gang.gangMembers ? player.gang.gangMembers : []).length
         }));
 
         // Show a "waiting" notification
