@@ -433,7 +433,7 @@ export const MobileSystem = {
                     Talents
                 </button>
                 
-                <button onclick="buyEnergy(); MobileSystem.toggleMobileMenu();" 
+                <button onclick="buyEnergyDrink(); MobileSystem.toggleMobileMenu();" 
                         style="width: 100%; margin: 5px 0; padding: 12px; background: linear-gradient(45deg, #c0a040, #d35400); 
                                color: white; border: 1px solid #c0a040; border-radius: 6px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
                     Boost

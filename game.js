@@ -8065,7 +8065,7 @@ function refreshJobsButtons() {
     const job = jobs[index];
     if (!job) return;
 
-    const hasRequirements = hasRequiredItems(job.requiredItems) && player.reputation >= job.reputation;
+    const hasRequirements = hasRequiredItems(job.requiredItems);
     const actualEnergyCost = Math.max(1, job.energyCost - player.skillTree.endurance.vitality);
 
     let buttonColor = "green";
@@ -8116,9 +8116,8 @@ function refreshJobsList() {
   }
 
   let jobListHTML = jobs.map((job, index) => {
-    const hasReputation = player.reputation >= job.reputation;
     const hasItems = hasRequiredItems(job.requiredItems);
-    const hasRequirements = hasItems && hasReputation;
+    const hasRequirements = hasItems;
     const actualEnergyCost = Math.max(1, job.energyCost - player.skillTree.endurance.vitality);
 
     let payoutText = "";
@@ -8162,11 +8161,6 @@ function refreshJobsList() {
 
     // Build inline details visible without hover
     let detailParts = [];
-    if (job.reputation > 0) {
-      const repColor = hasReputation ? '#8a9a6a' : '#ff6b6b';
-      const repIcon = hasReputation ? '\u2713' : '\u2717';
-      detailParts.push(`<span style="color:${repColor};">${repIcon} Rep: ${job.reputation}</span>`);
-    }
     if (job.requiredItems.length > 0) {
       const itemParts = job.requiredItems.map(item => {
         const hasIt = player.inventory && player.inventory.some(inv => inv.name === item);
@@ -9550,9 +9544,8 @@ function showJobs() {
     <h3>Available Jobs</h3>
     <ul>
       ${jobs.map((job, index) => {
-        const hasReputation = player.reputation >= job.reputation;
         const hasItems = hasRequiredItems(job.requiredItems);
-        const hasRequirements = hasItems && hasReputation;
+        const hasRequirements = hasItems;
 
         // Calculate actual energy cost with endurance skill
         const actualEnergyCost = Math.max(1, job.energyCost - player.skillTree.endurance.vitality);
@@ -9598,11 +9591,6 @@ function showJobs() {
 
         // Build inline details visible without hover
         let detailParts = [];
-        if (job.reputation > 0) {
-          const repColor = hasReputation ? '#8a9a6a' : '#ff6b6b';
-          const repIcon = hasReputation ? '\u2713' : '\u2717';
-          detailParts.push(`<span style="color:${repColor};">${repIcon} Rep: ${job.reputation}</span>`);
-        }
         if (job.requiredItems.length > 0) {
           const itemParts = job.requiredItems.map(item => {
             const hasIt = player.inventory && player.inventory.some(inv => inv.name === item);
@@ -9896,11 +9884,7 @@ async function startJob(index) {
     return;
   }
 
-  // Check reputation requirement
-  if (player.reputation < job.reputation) {
-    showBriefNotification(`You need ${job.reputation} reputation to perform this job. You currently have ${Math.floor(player.reputation)}.`, 'danger');
-    return;
-  }
+
 
   // ---- JOB DEPTH: Approach choices for mid & elite tier jobs ----
   let approachBonus = 0;
