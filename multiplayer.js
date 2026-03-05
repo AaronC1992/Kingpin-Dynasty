@@ -5699,18 +5699,6 @@ function refreshPoliticsTab() {
     showOnlineWorld('politics');
 }
 
-// ==================== UTILITY HELPERS ====================
-
-function _safeLogAction(msg, category) {
-    if (typeof logAction === 'function') logAction(msg, category);
-}
-function _safeUpdateUI() {
-    if (typeof updateUI === 'function') updateUI();
-}
-function _safeGainExperience(xp) {
-    if (typeof gainExperience === 'function') gainExperience(xp);
-}
-
 // ==================== FRIENDS & SOCIAL SYSTEM ====================
 
 function handleFriendResult(message) {
