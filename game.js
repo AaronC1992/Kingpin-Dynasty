@@ -5654,7 +5654,7 @@ function showTurfMap() {
           <div style="font-size:0.85em; color:#d4c4a0;">Active Crew</div>
         </div>
       </div>
-      <p style="color:#aaa; text-align:center; margin:10px 0 0 0; font-size:0.8em;">You need Attack Power \u2265 a zone's Defense to attack it. Zones you can take are highlighted green.</p>
+      <p style="color:#aaa; text-align:center; margin:10px 0 0 0; font-size:0.8em;">You can attack any zone! Higher Attack Power vs Defense = better odds. Match their Defense for ~50% chance.</p>
     </div>
     <div style="background:rgba(52,152,219,0.2);padding:15px;border-radius:10px;margin-bottom:20px;">
       <h3 style="color:#c0a062; margin:0 0 10px 0;">Legend</h3>
@@ -5707,15 +5707,15 @@ function showTurfMap() {
     } else if (isAllied) {
       html += `<div style="color:#c0a062;font-size:0.9em;padding:10px;">Allied territory</div>`;
     } else {
-      const canAttack = playerAtkPower >= zone.defenseRequired;
-      const defColor = canAttack ? '#2ecc71' : '#e74c3c';
+      const winChance = calculateTurfWinChance(playerAtkPower, zone.defenseRequired);
+      const chanceColor = winChance >= 70 ? '#2ecc71' : winChance >= 40 ? '#f1c40f' : winChance >= 15 ? '#e67e22' : '#e74c3c';
       html += `
         <div style="margin-bottom:8px;font-size:0.8em;text-align:center;">
-          <div style="color:${defColor};font-weight:bold;">Defense: ${zone.defenseRequired}</div>
-          <div style="font-size:0.7em;color:#888;">${canAttack ? '✓ You can attack' : '✗ Need more power'}</div>
+          <div style="color:#d4c4a0;font-weight:bold;">Their Defense: ${zone.defenseRequired}</div>
+          <div style="font-size:0.9em;font-weight:bold;color:${chanceColor};">${winChance}% Win Chance</div>
         </div>
         <button onclick="attackTurfZone('${zone.id}')"
-          style="width:100%;padding:10px;background:linear-gradient(135deg,#8b3a3a,#7a2a2a);border:none;border-radius:8px;color:white;font-weight:bold;cursor:pointer;font-size:0.9em;${!canAttack?'opacity:0.6;cursor:not-allowed;':''}">
+          style="width:100%;padding:10px;background:linear-gradient(135deg,#8b3a3a,#7a2a2a);border:none;border-radius:8px;color:white;font-weight:bold;cursor:pointer;font-size:0.9em;">
           Attack
         </button>`;
     }
@@ -5774,6 +5774,20 @@ function calculateTurfAttackPower() {
 }
 window.calculateTurfAttackPower = calculateTurfAttackPower;
 
+// -- Calculate win chance for turf attacks --
+// At equal power: ~50%. Below: scales down to a minimum of 1%. Above: scales up toward 99%.
+function calculateTurfWinChance(attackPower, defense) {
+  if (defense <= 0) return 99;
+  const ratio = attackPower / defense;
+  // Sigmoid-style curve: 50% at ratio=1, min 1%, max 99%
+  // Using logistic function: chance = 1 / (1 + e^(-k*(ratio-1)))
+  const k = 4; // steepness — how fast chance changes around the 50% point
+  const raw = 1 / (1 + Math.exp(-k * (ratio - 1)));
+  const chance = Math.round(raw * 100);
+  return Math.max(1, Math.min(99, chance));
+}
+window.calculateTurfWinChance = calculateTurfWinChance;
+
 // -- Process casualties among gang members after a turf fight --
 // deathChance / injuryChance are base rates; actual chance per member is randomised.
 function processTurfAttackCasualties(won, gangMembers, zoneName) {
@@ -5814,11 +5828,10 @@ async function attackTurfZone(zoneId) {
   if ((player.turf.owned || []).includes(zoneId)) { showBriefNotification('You already own this turf!', 'danger'); return; }
 
   const powerNeeded = zone.defenseRequired;
-  const playerPower = player.turf.power || 100;
-  if (playerPower < powerNeeded) { showBriefNotification(`Not enough power! Need ${powerNeeded}, have ${playerPower}.`, 'danger'); return; }
 
   // Calculate full attack strength (player power + gang members + gear)
   const attackPower = calculateTurfAttackPower();
+  const winChance = calculateTurfWinChance(attackPower, powerNeeded);
   const activeGang = (player.gang?.gangMembers || []).filter(m => m.status === 'active');
   const gangStr = activeGang.length > 0 ? `\nGang Backup: ${activeGang.length} member${activeGang.length > 1 ? 's' : ''}` : '\n No gang backup -- this will be much harder solo!';
 
@@ -5829,7 +5842,8 @@ async function attackTurfZone(zoneId) {
 
   let confirmMsg = `Attack ${zone.name}?`;
   if (bossAlive) confirmMsg += `\n\n ${bossInfo.name} guards this zone! (Power: ${bossInfo.power})`;
-  confirmMsg += `\n\nYour Attack Power: ${attackPower} vs Zone Defense: ${powerNeeded}${gangStr}`;
+  confirmMsg += `\n\nYour Attack: ${attackPower} vs Their Defense: ${powerNeeded}\nWin Chance: ${winChance}%${gangStr}`;
+  if (winChance < 20) confirmMsg += `\n\n This is a risky attack! You only have a ${winChance}% chance of winning.`;
   if (activeGang.length > 0) confirmMsg += `\n\n Warning: Gang members may be killed or injured in the assault.`;
 
   if (await ui.confirm(confirmMsg)) {
@@ -5875,24 +5889,21 @@ async function attackTurfZone(zoneId) {
       }
     }
 
-    // -- TURF COMBAT ROLL --
-    // Even without a boss, taking turf requires winning a fight against the zone's garrison.
-    // Attack power includes gang members; defense is the zone's defenseRequired with variance.
-    const attackRoll = attackPower + Math.floor(Math.random() * 60) - 30; // ±30 variance
-    const defenseRoll = powerNeeded + Math.floor(Math.random() * 40) - 10; // slightly favours defense
-
-    // Solo penalty: without gang members, player takes a 25% attack penalty
-    const soloPenalty = activeGang.length === 0 ? 0.75 : 1.0;
-    // Corruption: zonePermits boosts attack effectiveness for territory capture
+    // -- TURF COMBAT ROLL (chance-based) --
+    // Win chance is based on attack vs defense ratio. Player can always attempt.
+    // Solo penalty and corruption bonuses adjust the effective chance.
+    const soloPenalty = activeGang.length === 0 ? 0.85 : 1.0;
     const zonePermitBonus = 1 + getCorruptionBenefit('zonePermits');
-    const finalAttack = Math.floor(attackRoll * soloPenalty * zonePermitBonus);
+    const effectiveAttack = Math.floor(attackPower * soloPenalty * zonePermitBonus);
+    const effectiveChance = calculateTurfWinChance(effectiveAttack, powerNeeded);
+    const roll = Math.random() * 100;
 
-    if (finalAttack <= defenseRoll) {
+    if (roll >= effectiveChance) {
       // Attack FAILED -- zone not taken
       player.health = Math.max(1, player.health - Math.floor(Math.random() * 15 + 10));
       player.turf.power = Math.max(10, (player.turf.power || 100) - 10);
       const { casualties, injured } = processTurfAttackCasualties(false, player.gang?.gangMembers || [], zone.name);
-      let failMsg = `Attack on ${zone.name} failed! (${finalAttack} vs ${defenseRoll}) Lost 10 power.`;
+      let failMsg = `Attack on ${zone.name} failed! (${effectiveChance}% chance) Lost 10 power.`;
       if (casualties.length) failMsg += ` KILLED: ${casualties.join(', ')}.`;
       if (injured.length) failMsg += ` Injured: ${injured.join(', ')}.`;
       showBriefNotification(failMsg, 'danger');
