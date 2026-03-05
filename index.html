@@ -456,7 +456,7 @@
             <div style="display:flex;justify-content:center;gap:8px;margin-bottom:18px;flex-wrap:wrap;">
                 <button id="casino-tab-gambling" onclick="showCasinoTab('gambling')" style="background:#d4af37;color:#14120a;padding:8px 20px;border:none;border-radius:2px 2px 0 0;cursor:pointer;font-weight:bold;font-size:1em;">Gambling</button>
                 <button id="casino-tab-minigames" onclick="showCasinoTab('minigames')" style="background:rgba(192,160,98,0.3);color:#c0a062;padding:8px 20px;border:1px solid #c0a062;border-radius: 2px 2px 0 0;cursor:pointer;font-weight:bold;font-size:1em;">Mini Games</button>
-                <button id="casino-tab-backroom" onclick="showCasinoTab('backroom')" style="background:rgba(192,160,98,0.3);color:#c0a062;padding:8px 20px;border:1px solid #c0a062;border-radius: 2px 2px 0 0;cursor:pointer;font-weight:bold;font-size:1em;">&#127183; The Back Room</button>
+                <button id="casino-tab-backroom" onclick="showCasinoTab('backroom')" style="background:rgba(192,160,98,0.3);color:#c0a062;padding:8px 20px;border:1px solid #c0a062;border-radius: 2px 2px 0 0;cursor:pointer;font-weight:bold;font-size:1em;">&#127183; PvP Gambling</button>
             </div>
 
             <!-- Gambling Tab (default) -->
@@ -558,10 +558,10 @@
                 </div>
             </div>
 
-            <!-- Back Room Tab (Player vs Player Gambling) -->
+            <!-- PvP Gambling Tab (Player vs Player Gambling) -->
             <div id="panel-backroom" style="display:none;">
                 <div id="player-gambling-content">
-                    <p style="color:#8a7a5a;">Connect to multiplayer to access The Back Room.</p>
+                    <p style="color:#8a7a5a;">Connect to multiplayer to access PvP Gambling.</p>
                 </div>
             </div>
 
@@ -926,14 +926,14 @@
             </div>
         </div>
 
-        <!-- Friends & Social Screen -->
+        <!-- Friends & Social Screen (redirects to Commission → Friends tab) -->
         <div id="friends-screen" class="game-screen" style="display:none;">
             <div class="page-header">
                 <h1><span class="icon">&#128101;</span> Friends & Social</h1>
                 <div class="breadcrumb">
                     <a href="#" onclick="goBackToMainMenu(); return false;">SafeHouse</a>
                     <span class="separator">&#9670;</span>
-                    <span class="current">Friends</span>
+                    <a href="#" onclick="showOnlineWorld('friends'); return false;">Commission → Friends</a>
                 </div>
             </div>
             <div id="friends-content">

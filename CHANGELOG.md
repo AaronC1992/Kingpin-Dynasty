@@ -5,6 +5,19 @@ All notable changes to From Dusk To Don (Mafia Born) will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.16.0] - 2026-03-05
+
+### Changed — UI Consolidation & Cleanup
+- **Back Room → Casino tab** — PvP gambling moved from standalone screen into the Casino as a third tab
+- **Crew → Commission tab** — Crew screen consolidated into The Commission hub
+- **Friends → Commission tab** — Friends & Social moved from standalone SafeHouse button into The Commission as a tab
+- **Superboss → Operations tab** — Superboss fights moved into Operations screen as a secondary tab alongside Story
+- **Dark Board removed** — entire Dark Board system removed; anonymous bounty option added to Bounty Board at 2x cost
+- **Broken emoji fix** — replaced all 26 broken `??` placeholder emojis across multiplayer systems with correct Unicode characters
+- **Friends SafeHouse button removed** — Friends now accessed exclusively via The Commission → Friends tab
+- **Commission tab bar** — now has 9 tabs: Overview, PVP, Territories, Politics, Activities, Crew, Friends, Market, Chat
+- **Tutorial tips updated** — contextual help entries reflect new tab locations for Friends, Crew, Casino, and Superboss
+
 ## [1.15.0] - 2026-03-04
 
 ### Added — Massive Story Expansion

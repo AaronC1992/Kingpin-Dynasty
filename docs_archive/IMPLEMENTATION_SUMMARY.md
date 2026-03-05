@@ -13,7 +13,7 @@ I've successfully implemented **7 major gameplay expansion systems** for "From D
 - 4 core stats (Violence, Stealth, Intelligence, Loyalty)
 - Random traits and perks
 - Status system (Active, Injured, Jailed, Dead)
-- **Access via:** Command Center → "👥 Crew Details"
+- **Access via:** The Commission → Crew tab
 
 ### 2. **🗺️ Territory Wars & Defense**
 - 5 conquerable territories with income
@@ -109,7 +109,7 @@ export const EXPANDED_SYSTEMS_CONFIG = {
 ## 🎨 NEW UI BUTTONS (Main Menu)
 
 Added to Command Center menu grid:
-1. **👥 Crew Details** - Gang management with roles/stats
+1. **Crew tab** (in The Commission) - Gang management with roles/stats
 2. **🗺️ Territory Map** - Territory defense & control
 3. **⭐ Relationships** - Faction respect viewer
 4. **🎯 Crime Board** - Rival kingpin tracker
@@ -143,7 +143,7 @@ These run in the background automatically:
 
 ### Test Gang Roles
 1. Start game
-2. Go to Command Center → "👥 Crew Details"
+2. Go to The Commission → Crew tab
 3. Click "🎯 Recruit New Member ($5,000)"
 4. View the generated member with role, stats, perks, traits
 5. Assign them to a territory

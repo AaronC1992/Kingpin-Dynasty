@@ -218,7 +218,7 @@ const server = http.createServer(async (req, res) => {
                     empireRating: body.empireRating || 0,
                     playtime: body.playtime || '0:00',
                     saveDate: new Date().toISOString(),
-                    gameVersion: body.gameVersion || '1.15.0',
+                    gameVersion: body.gameVersion || '1.16.0',
                     data: body.data
                 };
                 userDB.setUserSave(username, saveEntry);
@@ -5074,7 +5074,7 @@ function handleGamblingJoinTable(clientId, message) {
     if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(payload));
     
     if (winnerName) {
-        addGlobalChatMessage('The Back Room', `${winnerName} won $${table.bet.toLocaleString()} playing ${table.type} against ${winnerId === table.hostId ? table.guestName : table.hostName}!`, '#d4af37');
+        addGlobalChatMessage('PvP Gambling', `${winnerName} won $${table.bet.toLocaleString()} playing ${table.type} against ${winnerId === table.hostId ? table.guestName : table.hostName}!`, '#d4af37');
     }
     
     // Clean up table after 10s

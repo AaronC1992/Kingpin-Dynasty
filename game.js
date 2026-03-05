@@ -16331,8 +16331,20 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = "1.15.0";
+const CURRENT_VERSION = "1.16.0";
 const VERSION_UPDATES = {
+  "1.16.0": {
+    title: "UI Consolidation & Dark Board Removal",
+    date: "March 2026",
+    changes: [
+      "Back Room → Casino tab, Crew & Friends → Commission tabs, Superboss → Operations tab",
+      "Dark Board removed — anonymous bounty option added to Bounty Board (2x cost)",
+      "Friends moved from SafeHouse button to Commission → Friends tab",
+      "Commission now has 9 tabs: Overview, PVP, Territories, Politics, Activities, Crew, Friends, Market, Chat",
+      "Fixed all broken placeholder emojis across multiplayer systems",
+      "Tutorial tips updated to reflect new screen locations",
+    ]
+  },
   "1.15.0": {
     title: "Story Expansion — 100 Missions",
     date: "March 2026",
@@ -23027,11 +23039,11 @@ function respecSkillTree() {
 // ==================== CONTEXTUAL TUTORIALS (EXPANDED) ====================
 // Additional tutorial entries for new screens
 const NEW_TUTORIAL_CONTENT = {
-  friends: { title: 'Friends & Social', tip: 'Add friends to see when they\'re online. You can invite friends to Superboss fights and crew activities.' },
-  crew: { title: 'Crews', tip: 'Create or join a crew of up to 10 players. Leaders can invite members, set mottos, and promote officers.' },
+  friends: { title: 'Friends & Social', tip: 'Add friends to see when they\'re online. Access via The Commission → Friends tab. Invite friends to Superboss fights and crew activities.' },
+  crew: { title: 'Crews', tip: 'Create or join a crew of up to 10 players. Access via The Commission → Crew tab. Leaders can invite members, set mottos, and promote officers.' },
   hitcontracts: { title: 'Bounty Board', tip: 'Place bounties on rival players. Post anonymously for 2x the cost to keep your identity hidden. Kill the target in PvP to auto-collect the reward.' },
-  playergambling: { title: 'The Back Room', tip: 'Gamble against other players with dice, coin flip, or high card. The server resolves all games fairly.' },
-  superboss: { title: 'Superboss Fights', tip: 'Challenge legendary crime lords. Invite up to 4 friends to help. Higher level bosses drop better rewards and unique buffs.' },
+  playergambling: { title: 'PvP Gambling', tip: 'Gamble against other players with dice, coin flip, or high card. Access via Casino → PvP Gambling tab. The server resolves all games fairly.' },
+  superboss: { title: 'Superboss Fights', tip: 'Challenge legendary crime lords via Operations → Superboss tab. Invite up to 4 friends to help. Higher level bosses drop better rewards and unique buffs.' },
   dailylogin: { title: 'Daily Rewards', tip: 'Log in every day to earn increasing rewards. Keep your streak going for 7 days to earn the best prizes!' }
 };
 

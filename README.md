@@ -1,6 +1,6 @@
 # Mafia Born
 
-**v1.15.0** | A deep criminal empire-building browser game where you rise from street thug to legendary kingpin. Build your crew, claim territory, run businesses, and outmanoeuvre rival crime families — all from your browser.
+**v1.16.0** | A deep criminal empire-building browser game where you rise from street thug to legendary kingpin. Build your crew, claim territory, run businesses, and outmanoeuvre rival crime families — all from your browser.
 
 ## **[PLAY NOW](https://mafiaborn.com/)**
 
@@ -59,7 +59,7 @@ The game features persistent progression via local storage and cloud saves, a fu
 
 ### Mini-Games & Casino
 - 6 arcade mini-games playable in jail or at the arcade
-- Casino with slot machines, roulette, blackjack, dice, and horse racing
+- Casino with slot machines, roulette, blackjack, dice, horse racing, and PvP gambling
 
 ### Customisation
 - **Customisable quick actions panel** — choose which shortcut buttons appear on your screen via Settings > Personalization
@@ -74,7 +74,10 @@ The game features persistent progression via local storage and cloud saves, a fu
 ### Multiplayer
 - **Local multiplayer** — 2-4 players on the same device with competitive, cooperative, and territory war modes
 - **Online multiplayer** — real-time rooms via Node.js/WebSocket server with chat, trading, alliances, and leaderboards
+- **The Commission** — unified multiplayer hub with tabs for PVP, Territories, Politics, Activities, Crew, Friends, Market, and Chat
 - **Unified Player Market** — buy and sell vehicles, weapons, armor, ammo, gas, utility items, and trade goods with other players
+- **Bounty Board** — place bounties on rival players, with optional anonymous posting for 2x the cost
+- **Friends & Social** — add friends, see online status, and manage blocked players — all inside the Commission
 
 ---
 
@@ -114,14 +117,14 @@ Compatible with Chrome, Firefox, Safari, Edge, and their mobile counterparts.
 
 ---
 
-## Recent Changes (v1.15.0)
+## Recent Changes (v1.16.0)
 
+- **UI Consolidation** — Back Room → Casino tab, Crew & Friends → Commission tabs, Superboss → Operations tab
+- **Dark Board removed** — anonymous bounty option added to Bounty Board (2x cost, hidden poster)
+- **Friends moved to Commission** — no more standalone SafeHouse button; Friends is now a tab in The Commission
+- **Broken emoji cleanup** — fixed all placeholder emojis across multiplayer systems
 - **Massive Story Expansion** — each crime family now has 25 chapters (up from 8), totalling 100 unique story missions
-- **New rank progression** — Associate (ch1-6) → Soldier (ch7) → Capo (ch13) → Underboss (ch19) → Don (ch25)
 - **5 acts per family** — deeper narrative arcs with more boss fights, choices, and character development
-- **Smooth objective scaling** — gradual difficulty curve across all 25 chapters per storyline
-- **Vehicle condition job bonus** — equipped vehicle durability affects job success chance
-- **Mini game balance** — removed XP rewards from all mini games (cash/stamina only)
 
 ---
 

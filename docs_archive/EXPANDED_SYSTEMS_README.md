@@ -34,7 +34,7 @@ Gang members now have **unique roles**, **detailed stats**, and **special perks*
   - Active, Injured (heals in 5 minutes), Jailed, Dead
 
 ### How to Use
-1. Navigate to **👥 Crew Details** from main menu
+1. Navigate to **The Commission → Crew** tab from the SafeHouse
 2. Recruit new members with randomized roles
 3. View each member's stats, perks, and traits
 4. Assign members to territories or operations

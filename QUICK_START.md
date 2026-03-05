@@ -12,7 +12,7 @@ I just added **7 MASSIVE new features** to your game. Here's how to use them:
 Just refresh your browser. Everything loads automatically.
 
 ### 2. Look for These NEW Buttons in Command Center:
-- **👥 Crew Details** - See your gang's roles, stats, and perks
+- **💼 The Commission** - Multiplayer hub with Crew, Friends, PVP, Territories, Market & more
 - **🗺️ Territory Map** - Defend and conquer territories
 - **⭐ Relationships** - Track respect with all factions  
 - **🎯 Crime Board** - Monitor rival kingpins
@@ -81,7 +81,7 @@ Just refresh your browser. Everything loads automatically.
 1. Go to Command Center
 2. Click "The Family" (existing button)
 3. Recruit someone new
-4. Then click "👥 Crew Details" to see their role, stats, and perk!
+4. Then open **The Commission → Crew** tab to see their role, stats, and perk!
 
 ### ✅ Step 2: Claim a Territory
 1. Click "🗺️ Territory Map"
