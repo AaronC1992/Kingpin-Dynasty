@@ -2950,6 +2950,7 @@ function showOnlineWorld(activeTab) {
             <button onclick="showOnlineWorld('politics')" style="${tabStyle('politics')}">Politics</button>
             <button onclick="showOnlineWorld('activities')" style="${tabStyle('activities')}">Activities</button>
             <button onclick="showOnlineWorld('crew')" style="${tabStyle('crew')}">Crew</button>
+            <button onclick="showOnlineWorld('friends')" style="${tabStyle('friends')}">Friends</button>
             <button onclick="showOnlineWorld('market')" style="${tabStyle('market')}">Market</button>
             <button onclick="showOnlineWorld('chat')" style="${tabStyle('chat')}">Chat</button>
         </div>
@@ -3191,6 +3192,11 @@ function showOnlineWorld(activeTab) {
         worldHTML += `<div id="crew-content"><p style="color:#8a7a5a;">Loading crew data...</p></div>`;
     }
 
+    // -- FRIENDS TAB --
+    if (tab === 'friends') {
+        worldHTML += `<div id="friends-tab-content"><p style="color:#8a7a5a;">Loading friends...</p></div>`;
+    }
+
     // -- MARKETPLACE TAB --
     if (tab === 'market') {
         worldHTML += renderMarketplaceTab();
@@ -3270,6 +3276,10 @@ function showOnlineWorld(activeTab) {
     }
     if (tab === 'crew') {
         sendMP({ type: 'crew_info' });
+    }
+    if (tab === 'friends') {
+        renderFriendsTabContent();
+        sendMP({ type: 'get_friends_list' });
     }
 
     
@@ -5703,6 +5713,83 @@ function refreshPoliticsTab() {
 
 // ==================== FRIENDS & SOCIAL SYSTEM ====================
 
+function renderFriendsTabContent() {
+    const container = document.getElementById('friends-tab-content');
+    if (!container) return;
+
+    const onlineData = window._onlineFriendsData || [];
+    const friends = player.friends || [];
+    const blocked = player.blocked || [];
+    const style = 'style="background:rgba(20,18,10,0.4);border:1px solid #3a3520;border-radius:8px;padding:16px;margin:10px 0;"';
+
+    let html = '';
+
+    // Add friend form
+    html += `<div ${style}>
+      <h4 style="color:#c0a062;">Add Friend</h4>
+      <div style="display:flex;gap:8px;margin:8px 0;">
+        <input type="text" id="add-friend-input" placeholder="Player name" style="flex:1;padding:8px;background:#1a1810;border:1px solid #3a3520;color:#d4c4a0;border-radius:4px;">
+        <button onclick="addFriend(document.getElementById('add-friend-input').value.trim())" style="background:linear-gradient(135deg,#d4af37,#b8962e);color:#14120a;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-weight:bold;">Add</button>
+      </div>
+    </div>`;
+
+    // Friends list
+    html += `<div ${style}>
+      <h4 style="color:#c0a062;">Friends (${friends.length})</h4>`;
+    if (friends.length === 0) {
+      html += '<p style="color:#8a7a5a;">No friends yet. Add some!</p>';
+    } else {
+      friends.forEach(f => {
+        const onlineInfo = onlineData.find(o => o.name === f.name);
+        const isOnline = !!onlineInfo;
+        html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border-bottom:1px solid #2a2518;">
+          <span style="color:#d4c4a0;">
+            <span style="color:${isOnline ? '#27ae60' : '#8a7a5a'};">●</span> ${escapeHTML(f.name)}
+            ${isOnline ? '<span style="color:#27ae60;font-size:0.8em;"> Online</span>' : '<span style="color:#8a7a5a;font-size:0.8em;"> Offline</span>'}
+          </span>
+          <div>
+            <button onclick="removeFriend('${escapeHTML(f.name)}')" style="background:#8b3a3a;color:#f5e6c8;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:0.85em;margin-right:4px;">Remove</button>
+            <button onclick="blockPlayer('${escapeHTML(f.name)}')" style="background:#555;color:#f5e6c8;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:0.85em;">Block</button>
+          </div>
+        </div>`;
+      });
+    }
+    html += '</div>';
+
+    // Online players (non-friends, non-blocked)
+    if (onlineData.length > 0) {
+      const nonFriendOnline = onlineData.filter(o => !friends.find(f => f.name === o.name) && !blocked.find(b => b.name === o.name) && o.name !== player.name);
+      if (nonFriendOnline.length > 0) {
+        html += `<div ${style}><h4 style="color:#c0a062;">Online Players</h4>`;
+        nonFriendOnline.forEach(o => {
+          html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border-bottom:1px solid #2a2518;">
+            <span style="color:#d4c4a0;"><span style="color:#27ae60;">●</span> ${escapeHTML(o.name)} <span style="color:#8a7a5a;font-size:0.8em;">Lv.${o.level || '?'}</span></span>
+            <div>
+              <button onclick="addFriend('${escapeHTML(o.name)}')" style="background:#27ae60;color:#fff;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:0.85em;margin-right:4px;">Add Friend</button>
+              <button onclick="blockPlayer('${escapeHTML(o.name)}')" style="background:#555;color:#f5e6c8;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:0.85em;">Block</button>
+            </div>
+          </div>`;
+        });
+        html += '</div>';
+      }
+    }
+
+    // Blocked players
+    if (blocked.length > 0) {
+      html += `<div ${style}><h4 style="color:#c0a062;">Blocked Players (${blocked.length})</h4>`;
+      blocked.forEach(b => {
+        html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border-bottom:1px solid #2a2518;">
+          <span style="color:#8a7a5a;">\ud83d\udeab ${escapeHTML(b.name)}</span>
+          <button onclick="unblockPlayer('${escapeHTML(b.name)}')" style="background:#3a3520;color:#d4c4a0;border:1px solid #5a4a30;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:0.85em;">Unblock</button>
+        </div>`;
+      });
+      html += '</div>';
+    }
+
+    html += `<button onclick="requestFriendsList()" style="background:#3a3520;color:#d4c4a0;border:1px solid #5a4a30;padding:8px 16px;border-radius:6px;cursor:pointer;margin-top:8px;">Refresh</button>`;
+    container.innerHTML = html;
+}
+
 function handleFriendResult(message) {
     if (message.success) {
         if (message.action === 'added') {
@@ -5716,7 +5803,7 @@ function handleFriendResult(message) {
             player.friends = (player.friends || []).filter(f => f.name !== message.targetName);
             if (typeof showBriefNotification === 'function') showBriefNotification(`${message.targetName} removed from friends.`, 'info');
         }
-        if (typeof showFriendsScreen === 'function') showFriendsScreen();
+        renderFriendsTabContent();
     } else {
         if (typeof showBriefNotification === 'function') showBriefNotification(message.error || 'Friend action failed.', 'error');
     }
@@ -5744,7 +5831,7 @@ function handleBlockResult(message) {
 
 function handleFriendsListResult(message) {
     window._onlineFriendsData = message.onlinePlayers || [];
-    if (typeof showFriendsScreen === 'function') showFriendsScreen();
+    renderFriendsTabContent();
 }
 
 // Global functions for friends screen buttons
@@ -5754,7 +5841,7 @@ window.addFriend = function(name) {
 window.removeFriend = function(name) {
     sendMP({ type: 'friend_remove', targetName: name });
     player.friends = (player.friends || []).filter(f => f.name !== name);
-    if (typeof showFriendsScreen === 'function') showFriendsScreen();
+    renderFriendsTabContent();
 };
 window.blockPlayer = function(name) {
     sendMP({ type: 'block_player', targetName: name });
@@ -5762,12 +5849,12 @@ window.blockPlayer = function(name) {
     player.blocked.push({ name, blockedAt: Date.now() });
     // Also remove from friends
     player.friends = (player.friends || []).filter(f => f.name !== name);
-    if (typeof showFriendsScreen === 'function') showFriendsScreen();
+    renderFriendsTabContent();
 };
 window.unblockPlayer = function(name) {
     sendMP({ type: 'unblock_player', targetName: name });
     player.blocked = (player.blocked || []).filter(b => b.name !== name);
-    if (typeof showFriendsScreen === 'function') showFriendsScreen();
+    renderFriendsTabContent();
 };
 window.requestFriendsList = function() {
     sendMP({ type: 'get_friends_list' });

@@ -12801,7 +12801,6 @@ const menuUnlockConfig = [
   // === SOCIAL / ONLINE ===
   { id: 'worldchat', fn: 'showWorldChat()', label: 'World Chat', tip: 'Chat with other players online', level: 0 },
   { id: 'onlineworld', fn: 'showOnlineWorld()', label: 'The Commission', tip: 'Enter the online underworld', level: 5 },
-  { id: 'friends', fn: 'showFriendsScreen()', label: 'Friends', tip: 'Friends list, blocked list & social', level: 0 },
 
   // === SETTINGS (Always last) ===
   { id: 'options', fn: 'showOptions()', label: 'Settings', tip: 'Save, load & game options', level: 0 },
@@ -22762,89 +22761,7 @@ function completeLoading() {
 
 // ==================== FRIENDS SCREEN ====================
 function showFriendsScreen() {
-  hideAllScreens();
-  const screen = document.getElementById('friends-screen');
-  if (!screen) return;
-  screen.style.display = 'block';
-
-  const container = document.getElementById('friends-content');
-  if (!container) return;
-
-  const onlineData = window._onlineFriendsData || [];
-  const friends = player.friends || [];
-  const blocked = player.blocked || [];
-  const style = 'style="background:rgba(20,18,10,0.4);border:1px solid #3a3520;border-radius:8px;padding:16px;margin:10px 0;"';
-
-  let html = '';
-
-  // Add friend form
-  html += `<div ${style}>
-    <h4 style="color:#c0a062;">Add Friend</h4>
-    <div style="display:flex;gap:8px;margin:8px 0;">
-      <input type="text" id="add-friend-input" placeholder="Player name" style="flex:1;padding:8px;background:#1a1810;border:1px solid #3a3520;color:#d4c4a0;border-radius:4px;">
-      <button onclick="addFriend(document.getElementById('add-friend-input').value.trim())" style="background:linear-gradient(135deg,#d4af37,#b8962e);color:#14120a;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-weight:bold;">Add</button>
-    </div>
-  </div>`;
-
-  // Friends list
-  html += `<div ${style}>
-    <h4 style="color:#c0a062;">Friends (${friends.length})</h4>`;
-  if (friends.length === 0) {
-    html += '<p style="color:#8a7a5a;">No friends yet. Add some!</p>';
-  } else {
-    friends.forEach(f => {
-      const onlineInfo = onlineData.find(o => o.name === f.name);
-      const isOnline = !!onlineInfo;
-      html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border-bottom:1px solid #2a2518;">
-        <span style="color:#d4c4a0;">
-          <span style="color:${isOnline ? '#27ae60' : '#8a7a5a'};">●</span> ${escapeHTML(f.name)}
-          ${isOnline ? '<span style="color:#27ae60;font-size:0.8em;"> Online</span>' : '<span style="color:#8a7a5a;font-size:0.8em;"> Offline</span>'}
-        </span>
-        <div>
-          <button onclick="removeFriend('${escapeHTML(f.name)}')" style="background:#8b3a3a;color:#f5e6c8;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:0.85em;margin-right:4px;">Remove</button>
-          <button onclick="blockPlayer('${escapeHTML(f.name)}')" style="background:#555;color:#f5e6c8;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:0.85em;">Block</button>
-        </div>
-      </div>`;
-    });
-  }
-  html += '</div>';
-
-  // Online players (non-friends, non-blocked)
-  if (onlineData.length > 0) {
-    const nonFriendOnline = onlineData.filter(o => !friends.find(f => f.name === o.name) && !blocked.find(b => b.name === o.name) && o.name !== player.name);
-    if (nonFriendOnline.length > 0) {
-      html += `<div ${style}><h4 style="color:#c0a062;">Online Players</h4>`;
-      nonFriendOnline.forEach(o => {
-        html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border-bottom:1px solid #2a2518;">
-          <span style="color:#d4c4a0;"><span style="color:#27ae60;">●</span> ${escapeHTML(o.name)} <span style="color:#8a7a5a;font-size:0.8em;">Lv.${o.level || '?'}</span></span>
-          <div>
-            <button onclick="addFriend('${escapeHTML(o.name)}')" style="background:#27ae60;color:#fff;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:0.85em;margin-right:4px;">Add Friend</button>
-            <button onclick="blockPlayer('${escapeHTML(o.name)}')" style="background:#555;color:#f5e6c8;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:0.85em;">Block</button>
-          </div>
-        </div>`;
-      });
-      html += '</div>';
-    }
-  }
-
-  // Blocked players
-  if (blocked.length > 0) {
-    html += `<div ${style}><h4 style="color:#c0a062;">Blocked Players (${blocked.length})</h4>`;
-    blocked.forEach(b => {
-      html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border-bottom:1px solid #2a2518;">
-        <span style="color:#8a7a5a;">🚫 ${escapeHTML(b.name)}</span>
-        <button onclick="unblockPlayer('${escapeHTML(b.name)}')" style="background:#3a3520;color:#d4c4a0;border:1px solid #5a4a30;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:0.85em;">Unblock</button>
-      </div>`;
-    });
-    html += '</div>';
-  }
-
-  html += `<button onclick="requestFriendsList()" style="background:#3a3520;color:#d4c4a0;border:1px solid #5a4a30;padding:8px 16px;border-radius:6px;cursor:pointer;margin-top:8px;">Refresh</button> `;
-  html += `<button onclick="goBackToMainMenu()" style="background:#3a3520;color:#d4c4a0;border:1px solid #5a4a30;padding:10px 20px;border-radius:6px;cursor:pointer;margin-top:12px;">← Back to SafeHouse</button>`;
-  container.innerHTML = html;
-
-  // Request fresh online data
-  if (typeof requestFriendsList === 'function') requestFriendsList();
+  showOnlineWorld('friends');
 }
 
 // ==================== CREW SCREEN ====================
