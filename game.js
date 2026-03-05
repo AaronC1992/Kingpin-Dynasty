@@ -16331,8 +16331,17 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = "1.16.0";
+const CURRENT_VERSION = "1.16.1";
 const VERSION_UPDATES = {
+  "1.16.1": {
+    title: "Encoding Bug Fixes",
+    date: "March 2026",
+    changes: [
+      "Fixed 620 corrupted characters in story mission text across all 4 crime families",
+      "Fixed broken characters in World Chat status bar and multiplayer UI",
+      "Restored proper em dashes, diamonds, and accented characters throughout",
+    ]
+  },
   "1.16.0": {
     title: "UI Consolidation & Dark Board Removal",
     date: "March 2026",

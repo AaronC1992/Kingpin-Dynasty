@@ -5,6 +5,14 @@ All notable changes to From Dusk To Don (Mafia Born) will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.16.1] - 2026-03-05
+
+### Fixed — Encoding Bug Fixes
+- Fixed 620 mojibake characters in missions.js story text across all 4 crime families (corrupted em dashes → proper `—`)
+- Fixed 2 corrupted `omertà` spellings in missions.js
+- Fixed 68 broken replacement characters in multiplayer.js — restored em dashes and diamond separators
+- World Chat status bar now displays proper `◆` diamond instead of `?`
+
 ## [1.16.0] - 2026-03-05
 
 ### Changed — UI Consolidation & Cleanup

@@ -1,6 +1,6 @@
 # Mafia Born
 
-**v1.16.0** | A deep criminal empire-building browser game where you rise from street thug to legendary kingpin. Build your crew, claim territory, run businesses, and outmanoeuvre rival crime families — all from your browser.
+**v1.16.1** | A deep criminal empire-building browser game where you rise from street thug to legendary kingpin. Build your crew, claim territory, run businesses, and outmanoeuvre rival crime families — all from your browser.
 
 ## **[PLAY NOW](https://mafiaborn.com/)**
 
@@ -117,7 +117,7 @@ Compatible with Chrome, Firefox, Safari, Edge, and their mobile counterparts.
 
 ---
 
-## Recent Changes (v1.16.0)
+## Recent Changes (v1.16.1)
 
 - **UI Consolidation** — Back Room → Casino tab, Crew & Friends → Commission tabs, Superboss → Operations tab
 - **Dark Board removed** — anonymous bounty option added to Bounty Board (2x cost, hidden poster)
