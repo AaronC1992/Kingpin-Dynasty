@@ -2959,7 +2959,7 @@ function showOnlineWorld(activeTab) {
             <button onclick="showOnlineWorld('overview')" style="${tabStyle('overview')}">Overview</button>
             <button onclick="showOnlineWorld('pvp')" style="${tabStyle('pvp')}">PVP</button>
             <button onclick="showOnlineWorld('territories')" style="${tabStyle('territories')}">Territories</button>
-            <button onclick="showOnlineWorld('politics')" style="${tabStyle('politics')}">??? Politics</button>
+            <button onclick="showOnlineWorld('politics')" style="${tabStyle('politics')}">Politics</button>
             <button onclick="showOnlineWorld('activities')" style="${tabStyle('activities')}">Activities</button>
             <button onclick="showOnlineWorld('crew')" style="${tabStyle('crew')}">Crew</button>
             <button onclick="showOnlineWorld('darkboard')" style="${tabStyle('darkboard')}">Dark Board</button>
@@ -2977,7 +2977,6 @@ function showOnlineWorld(activeTab) {
         const pol = onlineWorldState.politics;
         const topDonBanner = pol && pol.topDonName
             ? `<div style="background: linear-gradient(90deg, rgba(255,215,0,0.1) 0%, rgba(0,0,0,0.6) 50%, rgba(255,215,0,0.1) 100%); padding: 10px 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #ffd700; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer;" onclick="showOnlineWorld('politics')">
-                    <span style="font-size: 1.3em;">??</span>
                     <span style="color: #ffd700; font-weight: bold; font-family: 'Georgia', serif;">Top Don: ${escapeHTML(pol.topDonName)}</span>
                     ${pol.isAlliance ? `<span style="color: #c0a062;">[${escapeHTML(pol.allianceTag)}]</span>` : ''}
                     <span style="color: #888; font-size: 0.85em;">| ${pol.territoryCount} territories</span>
@@ -5508,7 +5507,6 @@ function renderPoliticsTab() {
 
     let html = `
         <div style="text-align: center; margin-bottom: 20px;">
-            <div style="font-size: 3em; margin-bottom: 5px;">???</div>
             <h3 style="color: #ffd700; font-family: 'Georgia', serif; margin: 0; font-size: 1.5em; text-shadow: 2px 2px 6px rgba(255,215,0,0.5);">City Politics</h3>
             <p style="color: #ccc; margin: 5px 0 0 0;">The player controlling the most territories rules as <strong style="color: #ffd700;">Top Don</strong> and sets policies for the entire city.</p>
         </div>
