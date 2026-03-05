@@ -16294,8 +16294,20 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = "1.14.2";
+const CURRENT_VERSION = "1.15.0";
 const VERSION_UPDATES = {
+  "1.15.0": {
+    title: "Story Expansion — 100 Missions",
+    date: "March 2026",
+    changes: [
+      "Each crime family now has 25 chapters (up from 8) — 100 total story missions",
+      "New 5-act structure per family with deeper narrative arcs",
+      "Rank progression spread across 25 chapters: Soldier@ch7, Capo@ch13, Underboss@ch19, Don@ch25",
+      "3-4 boss fights per family with unique dialogue and scaled difficulty",
+      "13-15 meaningful choices per storyline affecting respect and reputation",
+      "Smooth objective scaling from ch1 (5 jobs, $1K) to ch25 (90 jobs, $250K, L35)",
+    ]
+  },
   "1.14.2": {
     title: "Vehicle Condition & Mini Game Balance",
     date: "March 2026",

@@ -1,6 +1,6 @@
 # Mafia Born
 
-**v1.14.2** | A deep criminal empire-building browser game where you rise from street thug to legendary kingpin. Build your crew, claim territory, run businesses, and outmanoeuvre rival crime families — all from your browser.
+**v1.15.0** | A deep criminal empire-building browser game where you rise from street thug to legendary kingpin. Build your crew, claim territory, run businesses, and outmanoeuvre rival crime families — all from your browser.
 
 ## **[PLAY NOW](https://mafiaborn.com/)**
 
@@ -114,17 +114,14 @@ Compatible with Chrome, Firefox, Safari, Edge, and their mobile counterparts.
 
 ---
 
-## Recent Changes (v1.14.2)
+## Recent Changes (v1.15.0)
 
-- **Unified Player Market** — merged Vehicle Marketplace & Ammo Exchange into a single market supporting all item types
-- **Audit & dead code cleanup** — removed ~440 lines of dead server/client handlers, unused exports, and stale systems
-- **Safe typeof guards** — WebSocket message handlers now use safe wrappers to prevent race condition crashes
-- **Job result handler** — client wired to receive server-authoritative job results
-- **Scarce economy** — gas and bullet prices now scale with demand, daily bullet purchase limit, Ammo Exchange
-- **Offline progress** — gang operations and training complete while away, with welcome-back summary
-- **Mobile QoL** — inline job requirements, gang operation/training countdown timers
-- **Territory Management** — alliance territories tab, territory power and defense mechanics
-- **Political System** — Top Don sets server-wide policies: world tax, market fees, crime bonus, jail time mod, heist bonus
+- **Massive Story Expansion** — each crime family now has 25 chapters (up from 8), totalling 100 unique story missions
+- **New rank progression** — Associate (ch1-6) → Soldier (ch7) → Capo (ch13) → Underboss (ch19) → Don (ch25)
+- **5 acts per family** — deeper narrative arcs with more boss fights, choices, and character development
+- **Smooth objective scaling** — gradual difficulty curve across all 25 chapters per storyline
+- **Vehicle condition job bonus** — equipped vehicle durability affects job success chance
+- **Mini game balance** — removed XP rewards from all mini games (cash/stamina only)
 
 ---
 

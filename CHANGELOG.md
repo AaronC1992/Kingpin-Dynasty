@@ -5,6 +5,20 @@ All notable changes to From Dusk To Don (Mafia Born) will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.15.0] - 2026-03-04
+
+### Added — Massive Story Expansion
+- Each crime family now has **25 chapters** (up from 8) — 100 total story missions
+- New 5-act structure per family: deeper narrative arcs with more boss fights, choices, and character development
+- Torrino: "Blood & Honor" — 5 acts (The Streets, Made Man, The Inner Circle, Blood Ties, The Succession)
+- Kozlov: "Iron & Ice" — 5 acts (The Proving Ground, Blood Brothers, Viktor's Shadow, The Fracture, The Coup)
+- Chen: "Shadow & Silk" — 5 acts (The Test, The Dragon's Mark, The Inner Sanctum, The Long Game, Checkmate)
+- Morales: "Fire & Blood" — 5 acts (La Prueba, Soldado, El Teniente, Sangre y Fuego, La Corona)
+- Rank progression redistributed: Soldier@ch7, Capo@ch13, Underboss@ch19, Don@ch25
+- 3-4 boss fights per family with unique dialogue (intro/victory/defeat)
+- 13-15 meaningful player choices per storyline
+- Smooth objective scaling from ch1 (5 jobs, $1K) through ch25 (90 jobs, $250K, L35, 15 gang, 5 properties, 80 rep)
+
 ## [1.14.2] - 2026-03-04
 
 ### Added — Vehicle Condition Job Bonus
