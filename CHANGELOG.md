@@ -5,6 +5,24 @@ All notable changes to From Dusk To Don (Mafia Born) will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.14.1] - 2026-03-04
+
+### Fixed — Audit & Dead Code Cleanup
+- Added `_safeUpdateUI` / `_safeLogAction` wrappers in multiplayer.js to guard against race conditions
+- Replaced all bare `updateUI()` / `logAction()` calls with safe typeof-guarded wrappers
+- Removed ~440 lines of dead server code: `handleTerritoryClaim`, `handleTerritoryClaimOwnership`, `handleWarBet`, `handleSiegeDeclare`, `notifySiegeDefender`, `handleSiegeFortify` + associated constants
+- Removed 5 dead switch cases from server message routing
+- Removed dead client handlers: `territory_claim_ownership_result`, `war_bet_result`
+- Wired `job_result` client handler for future server-authoritative job processing
+- Cleaned unused exports: `storyCampaigns`, `turfMissions`, `bossBattles` (missions.js)
+- De-exported internal-only symbols: `NPC_TERRITORY_BOSSES`, `getLaunderingMultiplier`, `getDistrictIds`, `buildInitialTerritoryState` (territories.js)
+- De-exported unused `resetCasinoWins` (casino.js)
+
+### Changed — Content Updates
+- Updated help guide & tutorials: Player Market descriptions now reflect all item types (vehicles, weapons, armor, ammo, gas, utility, trade goods)
+- Fixed README: corrected district count from 12 to 8, updated rival system description, refreshed Recent Changes section
+- README now mentions unified Player Market in Multiplayer features
+
 ## [1.14.0] - 2026-03-04
 
 ### Changed — Unified Player Market

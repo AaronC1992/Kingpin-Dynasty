@@ -8651,7 +8651,7 @@ const TUTORIAL_CONTENT = {
     sections: [
       { heading: 'Buy Tab', text: 'Browse weapons, armour, and consumables. Equipping better gear directly increases your Attack and Defence stats in combat.' },
       { heading: 'The Fence', text: 'Sell stolen goods from heists and jobs at premium rates. Fence prices fluctuate based on your Heat level -- riskier sales can be more profitable.' },
-      { heading: 'Player Market', text: 'Buy and sell vehicles with other real players. List your rides for sale or snap up someone else\'s wheels.' },
+      { heading: 'Player Market', text: 'Buy and sell vehicles, weapons, armor, ammo, gas, utility items, and trade goods with other real players through The Commission.' },
       { heading: 'Consumables', text: 'Coffee, Energy Drinks, and Steroids restore your energy. Medkits restore health. Stock up before long grinding sessions.' },
     ]
   },
@@ -9003,8 +9003,8 @@ const HELP_TOPICS = [
     </ul>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Player Market</h4>
     <ul>
-      <li>Buy and sell vehicles with other real players.</li>
-      <li>List your vehicles for a price, or browse listings to find a deal.</li>
+      <li>Buy and sell vehicles, weapons, armor, ammo, gas, utility items, and trade goods with other real players.</li>
+      <li>List items for a price, or browse listings by category to find a deal.</li>
     </ul>
   `},
   { id: 'missions-help', icon: '', title: 'Missions & Story', content: `
@@ -9097,7 +9097,7 @@ const HELP_TOPICS = [
     <h4 style="color:#c0a062; margin:14px 0 6px;">Motor Pool</h4>
     <ul>
       <li>Browse your vehicle collection. Vehicles provide speed bonuses and are used in heists and getaways.</li>
-      <li>Sell unwanted vehicles on the Player Market, or buy new rides there.</li>
+      <li>Sell unwanted vehicles on the Player Market, or buy items from other players there.</li>
     </ul>
   `},
   { id: 'hospital-help', icon: '', title: 'Hospital', content: `
@@ -9287,7 +9287,7 @@ const HELP_TOPICS = [
     <ul>
       <li><strong>Cloud Save</strong> -- Sign in from Settings to sync your save across browsers and devices.</li>
       <li><strong>World Chat</strong> -- Chat with other players in real time. Coordinate, trade tips, or talk trash.</li>
-      <li><strong>Player Market</strong> -- Buy and sell vehicles with other real players via the Black Market.</li>
+      <li><strong>Player Market</strong> -- Buy and sell vehicles, weapons, armor, ammo, and more with other real players via the Black Market.</li>
       <li><strong>PvP Combat</strong> -- Attack other players, steal their cash, and climb the leaderboard.</li>
       <li><strong>Families</strong> -- Create or join a crime family (gang) for group play, territory wars, and shared bonuses.</li>
     </ul>
@@ -16281,8 +16281,22 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = "1.14.0";
+const CURRENT_VERSION = "1.14.1";
 const VERSION_UPDATES = {
+  "1.14.1": {
+    title: "Audit Fixes & Content Updates",
+    date: "March 2026",
+    changes: [
+      "Added safe typeof guards on all WebSocket updateUI/logAction calls to prevent race condition crashes",
+      "Removed ~440 lines of dead server code: territory_claim, territory_claim_ownership, war_bet, siege_declare, siege_fortify handlers",
+      "Removed dead client handlers: territory_claim_ownership_result, war_bet_result",
+      "Wired job_result client handler for future server-authoritative job processing",
+      "Cleaned unused exports from missions.js, territories.js, casino.js",
+      "Updated help guide and tutorials to reflect unified Player Market (all item types, not just vehicles)",
+      "Fixed README: corrected district count (8), updated rival system description, refreshed Recent Changes",
+      "Server cloud-save default version updated to 1.14.1",
+    ]
+  },
   "1.14.0": {
     title: "Unified Player Market",
     date: "March 2026",

@@ -1,6 +1,6 @@
 # Mafia Born
 
-**v1.14.0** | A deep criminal empire-building browser game where you rise from street thug to legendary kingpin. Build your crew, claim territory, run businesses, and outmanoeuvre rival crime families — all from your browser.
+**v1.14.1** | A deep criminal empire-building browser game where you rise from street thug to legendary kingpin. Build your crew, claim territory, run businesses, and outmanoeuvre rival crime families — all from your browser.
 
 ## **[PLAY NOW](https://mafiaborn.com/)**
 
@@ -27,13 +27,13 @@ The game features persistent progression via local storage and cloud saves, a fu
 ### Empire Building
 - **9 businesses** (6 legitimate fronts and 3 illegal operations) generating passive income, each upgradeable to level 5
 - **7 properties** from hideouts to private islands, expanding gang capacity and unlocking new jobs
-- **12 map districts** to capture and control, with protection rackets and territory events
+- **8 map districts** to capture and control, with protection rackets and territory events
 - **Money laundering** — clean your dirty cash through casino chips, shell companies, crypto, art galleries, and more
 
 ### Gang & Factions
 - Recruit and manage gang members with unique specializations and roles
 - **4 crime families** with reputation systems and faction missions
-- **5 rival gangs** to challenge in boss battles with unique rewards
+- **8 NPC rival bosses** controlling districts at game start — fight to conquer their territory
 - Dangerous operations where gang members can be killed, arrested, or betray you
 - Gang wars with high stakes — members die frequently in the criminal underworld
 
@@ -55,7 +55,7 @@ The game features persistent progression via local storage and cloud saves, a fu
 - **Dynamic weather** affecting stealth, police response, and accidents
 - **Seasonal events** tied to real-world seasons
 - **Random events** — police raids, lucky finds, gang disputes, news headlines
-- **Story campaign** guiding you from street hustler to empire builder
+- **Story chapters** guiding you from street hustler to empire builder
 
 ### Mini-Games & Casino
 - 6 arcade mini-games playable in jail or at the arcade
@@ -74,6 +74,7 @@ The game features persistent progression via local storage and cloud saves, a fu
 ### Multiplayer
 - **Local multiplayer** — 2-4 players on the same device with competitive, cooperative, and territory war modes
 - **Online multiplayer** — real-time rooms via Node.js/WebSocket server with chat, trading, alliances, and leaderboards
+- **Unified Player Market** — buy and sell vehicles, weapons, armor, ammo, gas, utility items, and trade goods with other players
 
 ---
 
@@ -113,21 +114,17 @@ Compatible with Chrome, Firefox, Safari, Edge, and their mobile counterparts.
 
 ---
 
-## Recent Changes (v1.8.1)
+## Recent Changes (v1.14.1)
 
-- **Political System** — Top Don (most territories) sets server-wide policies: world tax, market fees, crime bonus, jail time mod, heist bonus
-- **Alliance Discipline** — leaders can warn, fine, demote, or kick members with audit logging
-- **Energy items in mobile navbar** — quick access to energy consumables
-- **Bug fix** — gang member dismissal now correctly recalculates player power
-- **Bug fix** — political tax rate above 10% now works (server-authoritative tax computation)
-- **Dead code cleanup** — removed stale TAX_RATE constants
-- **Expertise screen** simplified to 3 tabs: Basic Skills, Skill Trees, Reputation
-- **Vehicle System Overhaul** — buy/sell/upgrade vehicles from a dedicated garage, car degradation and repair
+- **Unified Player Market** — merged Vehicle Marketplace & Ammo Exchange into a single market supporting all item types
+- **Audit & dead code cleanup** — removed ~440 lines of dead server/client handlers, unused exports, and stale systems
+- **Safe typeof guards** — WebSocket message handlers now use safe wrappers to prevent race condition crashes
+- **Job result handler** — client wired to receive server-authoritative job results
+- **Scarce economy** — gas and bullet prices now scale with demand, daily bullet purchase limit, Ammo Exchange
+- **Offline progress** — gang operations and training complete while away, with welcome-back summary
+- **Mobile QoL** — inline job requirements, gang operation/training countdown timers
 - **Territory Management** — alliance territories tab, territory power and defense mechanics
-- **Unified popup styling** — all screens and popups follow a consistent dark theme
-- **Alert/confirm overhaul** — all browser dialogs replaced with themed in-game modals
-- **Horse Racing** — casino game with 6 horses, varied odds, animated racetrack
-- **Dynamic weather** — weather buffs/debuffs on jobs with narrative flavour
+- **Political System** — Top Don sets server-wide policies: world tax, market fees, crime bonus, jail time mod, heist bonus
 
 ---
 
