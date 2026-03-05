@@ -1796,6 +1796,124 @@ async function handleServerMessage(message) {
             }
             break;
 
+        // ==================== NEW SYSTEM MESSAGES ====================
+        // Friends & Social
+        case 'friend_result':
+            handleFriendResult(message);
+            break;
+        case 'friend_request':
+            handleFriendRequest(message);
+            break;
+        case 'block_result':
+            handleBlockResult(message);
+            break;
+        case 'friends_list_result':
+            handleFriendsListResult(message);
+            break;
+
+        // Server-side leaderboards
+        case 'leaderboards_result':
+            handleLeaderboardsResult(message);
+            break;
+
+        // Heist matchmaking queue
+        case 'heist_queue_result':
+            handleHeistQueueResult(message);
+            break;
+        case 'heist_queue_matched':
+            handleHeistQueueMatched(message);
+            break;
+
+        // Crews
+        case 'crew_result':
+            handleCrewResult(message);
+            break;
+        case 'crew_invite':
+            handleCrewInviteReceived(message);
+            break;
+        case 'crew_info_result':
+            handleCrewInfoResult(message);
+            break;
+        case 'crew_member_joined':
+            if (typeof showBriefNotification === 'function') showBriefNotification(`${message.playerName} joined your crew!`, 'success');
+            break;
+        case 'crew_kicked':
+            if (typeof showBriefNotification === 'function') showBriefNotification(`You were kicked from ${message.crewName}.`, 'error');
+            player.crewId = null;
+            player.crewRole = null;
+            break;
+
+        // Hit contracts
+        case 'hit_contract_result':
+            handleHitContractResult(message);
+            break;
+        case 'hit_contract_warning':
+            if (typeof showBriefNotification === 'function') showBriefNotification('⚠️ ' + message.message, 'error');
+            if (typeof logAction === 'function') _safeLogAction('⚠️ ' + message.message, 'combat');
+            break;
+        case 'hit_contract_list_result':
+            handleHitContractListResult(message);
+            break;
+
+        // Player gambling
+        case 'gambling_result':
+            handleGamblingResult(message);
+            break;
+        case 'gambling_resolved':
+            handleGamblingResolved(message);
+            break;
+        case 'gambling_tables_list':
+            handleGamblingTablesList(message);
+            break;
+        case 'gambling_table_update':
+            // A new table was created — refresh if gambling screen is open
+            if (document.getElementById('player-gambling-content')?.innerHTML) {
+                sendMP({ type: 'gambling_list_tables' });
+            }
+            break;
+
+        // Superboss
+        case 'superboss_result':
+            handleSuperbossResult(message);
+            break;
+        case 'superboss_invite':
+            handleSuperbossInviteReceived(message);
+            break;
+        case 'superboss_update':
+        case 'superboss_attack_result':
+            handleSuperbossUpdate(message);
+            break;
+        case 'superboss_victory':
+            handleSuperbossVictory(message);
+            break;
+        case 'superboss_list_result':
+            handleSuperbossListResult(message);
+            break;
+
+        // Seasonal events
+        case 'seasonal_event_result':
+            handleSeasonalEventResult(message);
+            break;
+        case 'seasonal_event_started':
+            if (typeof showBriefNotification === 'function') showBriefNotification(`🎉 ${message.event.name} has begun!`, 'success');
+            if (typeof logAction === 'function') _safeLogAction(`🎉 SEASONAL EVENT: ${message.event.name} — ${message.event.description}`, 'event');
+            break;
+        case 'seasonal_objective_complete':
+            if (typeof showBriefNotification === 'function') showBriefNotification(`🏆 Seasonal objective complete! +$${(message.reward?.money || 0).toLocaleString()}`, 'success');
+            if (message.reward) {
+                player.money += message.reward.money || 0;
+                if (typeof gainExperience === 'function') gainExperience(message.reward.xp || 0);
+                _safeUpdateUI();
+            }
+            break;
+
+        // Daily login
+        case 'daily_login_result':
+            if (message.success && typeof showBriefNotification === 'function') {
+                showBriefNotification(`✅ Daily login claimed! Streak: ${message.streak} days`, 'success');
+            }
+            break;
+
         default:
             console.log('Unknown message type:', message.type);
     }
@@ -5580,6 +5698,688 @@ function refreshPoliticsTab() {
     if (!policiesList) return;
     showOnlineWorld('politics');
 }
+
+// ==================== UTILITY HELPERS ====================
+
+function _safeLogAction(msg, category) {
+    if (typeof logAction === 'function') logAction(msg, category);
+}
+function _safeUpdateUI() {
+    if (typeof updateUI === 'function') updateUI();
+}
+function _safeGainExperience(xp) {
+    if (typeof gainExperience === 'function') gainExperience(xp);
+}
+
+// ==================== FRIENDS & SOCIAL SYSTEM ====================
+
+function handleFriendResult(message) {
+    if (message.success) {
+        if (message.action === 'added') {
+            // Add to local friends list
+            if (!player.friends) player.friends = [];
+            if (!player.friends.find(f => f.name === message.targetName)) {
+                player.friends.push({ name: message.targetName, addedAt: Date.now() });
+            }
+            if (typeof showBriefNotification === 'function') showBriefNotification(`${message.targetName} added as friend!`, 'success');
+        } else if (message.action === 'removed') {
+            player.friends = (player.friends || []).filter(f => f.name !== message.targetName);
+            if (typeof showBriefNotification === 'function') showBriefNotification(`${message.targetName} removed from friends.`, 'info');
+        }
+        if (typeof showFriendsScreen === 'function') showFriendsScreen();
+    } else {
+        if (typeof showBriefNotification === 'function') showBriefNotification(message.error || 'Friend action failed.', 'error');
+    }
+}
+
+function handleFriendRequest(message) {
+    if (typeof showBriefNotification === 'function') showBriefNotification(`${message.fromName} added you as a friend!`, 'success');
+    if (typeof logAction === 'function') _safeLogAction(`${message.fromName} added you as a friend!`, 'social');
+}
+
+function handleBlockResult(message) {
+    if (message.success) {
+        if (message.action === 'blocked') {
+            if (!player.blocked) player.blocked = [];
+            if (!player.blocked.find(b => b.name === message.targetName)) {
+                player.blocked.push({ name: message.targetName, blockedAt: Date.now() });
+            }
+            if (typeof showBriefNotification === 'function') showBriefNotification(`${message.targetName} blocked.`, 'info');
+        } else if (message.action === 'unblocked') {
+            player.blocked = (player.blocked || []).filter(b => b.name !== message.targetName);
+            if (typeof showBriefNotification === 'function') showBriefNotification(`${message.targetName} unblocked.`, 'info');
+        }
+    }
+}
+
+function handleFriendsListResult(message) {
+    window._onlineFriendsData = message.onlinePlayers || [];
+    if (typeof showFriendsScreen === 'function') showFriendsScreen();
+}
+
+// Global functions for friends screen buttons
+window.addFriend = function(name) {
+    sendMP({ type: 'friend_add', targetName: name });
+};
+window.removeFriend = function(name) {
+    sendMP({ type: 'friend_remove', targetName: name });
+    player.friends = (player.friends || []).filter(f => f.name !== name);
+    if (typeof showFriendsScreen === 'function') showFriendsScreen();
+};
+window.blockPlayer = function(name) {
+    sendMP({ type: 'block_player', targetName: name });
+    if (!player.blocked) player.blocked = [];
+    player.blocked.push({ name, blockedAt: Date.now() });
+    // Also remove from friends
+    player.friends = (player.friends || []).filter(f => f.name !== name);
+    if (typeof showFriendsScreen === 'function') showFriendsScreen();
+};
+window.unblockPlayer = function(name) {
+    sendMP({ type: 'unblock_player', targetName: name });
+    player.blocked = (player.blocked || []).filter(b => b.name !== name);
+    if (typeof showFriendsScreen === 'function') showFriendsScreen();
+};
+window.requestFriendsList = function() {
+    sendMP({ type: 'get_friends_list' });
+};
+
+// ==================== LEADERBOARDS (SERVER-SIDE) ====================
+
+let _cachedLeaderboards = null;
+
+function handleLeaderboardsResult(message) {
+    _cachedLeaderboards = message.leaderboards;
+    // If the leaderboard tab is visible, refresh it
+    const container = document.getElementById('server-leaderboards-container');
+    if (container) renderServerLeaderboards(container);
+}
+
+function renderServerLeaderboards(container) {
+    if (!_cachedLeaderboards) {
+        container.innerHTML = '<p style="color:#8a7a5a;">Loading leaderboards...</p>';
+        sendMP({ type: 'get_leaderboards' });
+        return;
+    }
+    const lb = _cachedLeaderboards;
+    let html = '';
+
+    const sections = [
+        { title: '🏆 Reputation Leaders', data: lb.reputation, cols: ['Name', 'Rep', 'Territory'], render: p => `<td>${escapeHTML(p.name)}</td><td>${p.reputation}</td><td>${p.territory || 0}</td>` },
+        { title: '💰 Wealthiest', data: lb.wealth, cols: ['Name', 'Money'], render: p => `<td>${escapeHTML(p.name)}</td><td>$${(p.money||0).toLocaleString()}</td>` },
+        { title: '⚔️ Top Fighters', data: lb.combat, cols: ['Name', 'Wins', 'Losses'], render: p => `<td>${escapeHTML(p.name)}</td><td>${p.pvpWins}</td><td>${p.pvpLosses}</td>` },
+        { title: '🏰 Territory Lords', data: lb.territories, cols: ['Name', 'Territories'], render: p => `<td>${escapeHTML(p.name)}</td><td>${p.territories}</td>` },
+        { title: '🎖️ Ranked (ELO)', data: lb.ranked, cols: ['Name', 'ELO', 'Tier', 'W/L'], render: p => `<td>${escapeHTML(p.name)}</td><td>${p.elo}</td><td>${p.icon||''} ${p.tier}</td><td>${p.wins}/${p.losses}</td>` }
+    ];
+
+    sections.forEach(s => {
+        if (!s.data || s.data.length === 0) return;
+        html += `<h4 style="color:#c0a062;margin:12px 0 6px;">${s.title}</h4>`;
+        html += `<table style="width:100%;border-collapse:collapse;font-size:0.9em;"><tr>${s.cols.map(c => `<th style="text-align:left;padding:4px 8px;border-bottom:1px solid #3a3520;color:#8a7a5a;">${c}</th>`).join('')}</tr>`;
+        s.data.forEach((p, i) => {
+            html += `<tr style="background:${i%2===0?'rgba(20,18,10,0.3)':'transparent'};">${s.render(p)}</tr>`;
+        });
+        html += '</table>';
+    });
+
+    container.innerHTML = html || '<p style="color:#8a7a5a;">No leaderboard data yet.</p>';
+}
+
+window.requestServerLeaderboards = function() {
+    sendMP({ type: 'get_leaderboards' });
+};
+
+// ==================== HEIST MATCHMAKING ====================
+
+function handleHeistQueueResult(message) {
+    if (message.success) {
+        if (message.action === 'left') {
+            if (typeof showBriefNotification === 'function') showBriefNotification('Left heist queue.', 'info');
+        } else {
+            if (typeof showBriefNotification === 'function') showBriefNotification(`Joined heist queue! Position: ${message.position}`, 'success');
+        }
+    } else {
+        if (typeof showBriefNotification === 'function') showBriefNotification(message.error || 'Queue error.', 'error');
+    }
+}
+
+function handleHeistQueueMatched(message) {
+    if (typeof showBriefNotification === 'function') showBriefNotification('🎯 Heist crew assembled! Check the Heist tab!', 'success');
+    if (typeof logAction === 'function') _safeLogAction('🎯 Your matchmade heist crew has assembled!', 'heist');
+}
+
+window.joinHeistQueue = function() { sendMP({ type: 'heist_queue_join' }); };
+window.leaveHeistQueue = function() { sendMP({ type: 'heist_queue_leave' }); };
+
+// ==================== CREW SYSTEM CLIENT ====================
+
+let _crewInfoCache = null;
+
+function handleCrewResult(message) {
+    if (message.success) {
+        if (message.action === 'created') {
+            player.crewId = message.crew.id;
+            player.crewRole = 'leader';
+            if (typeof showBriefNotification === 'function') showBriefNotification(`Crew "${message.crew.name}" created!`, 'success');
+        } else if (message.action === 'joined') {
+            player.crewId = message.crew.id;
+            player.crewRole = 'member';
+            if (typeof showBriefNotification === 'function') showBriefNotification(`Joined crew "${message.crew.name}"!`, 'success');
+        } else if (message.action === 'left') {
+            player.crewId = null;
+            player.crewRole = null;
+            if (typeof showBriefNotification === 'function') showBriefNotification('Left your crew.', 'info');
+        } else if (message.action === 'kicked') {
+            if (typeof showBriefNotification === 'function') showBriefNotification(`${message.targetName} kicked from crew.`, 'info');
+        } else if (message.action === 'invited') {
+            if (typeof showBriefNotification === 'function') showBriefNotification(`Invite sent to ${message.targetName}.`, 'success');
+        } else if (message.action === 'updated') {
+            if (typeof showBriefNotification === 'function') showBriefNotification('Crew updated.', 'success');
+        }
+        // Refresh crew screen
+        sendMP({ type: 'crew_info' });
+    } else {
+        if (typeof showBriefNotification === 'function') showBriefNotification(message.error || 'Crew action failed.', 'error');
+    }
+}
+
+function handleCrewInviteReceived(message) {
+    if (typeof showBriefNotification === 'function') showBriefNotification(`[${message.crewTag}] ${message.fromName} invited you to join ${message.crewName}!`, 'success');
+    // Store pending invite
+    window._pendingCrewInvite = { crewId: message.crewId, crewName: message.crewName };
+    if (typeof logAction === 'function') _safeLogAction(`Crew invite from ${message.fromName}: Join [${message.crewTag}] ${message.crewName}`, 'social');
+}
+
+function handleCrewInfoResult(message) {
+    _crewInfoCache = message;
+    const container = document.getElementById('crew-content');
+    if (container) renderCrewScreen(container, message);
+}
+
+function renderCrewScreen(container, data) {
+    let html = '';
+    const style = 'style="background:rgba(20,18,10,0.4);border:1px solid #3a3520;border-radius:8px;padding:16px;margin:10px 0;"';
+
+    if (data.myCrew) {
+        const c = data.myCrew;
+        const isLeader = c.leader === onlineWorldState.playerId;
+        html += `<div ${style}>
+            <h3 style="color:#c0a062;margin:0 0 8px;">${c.emblem} [${escapeHTML(c.tag)}] ${escapeHTML(c.name)}</h3>
+            ${c.motto ? `<p style="color:#8a7a5a;font-style:italic;margin:4px 0;">"${escapeHTML(c.motto)}"</p>` : ''}
+            <p style="color:#d4c4a0;">Members: ${c.members.length}/10</p>
+            <div style="margin:8px 0;">
+            ${c.members.map(m => `<div style="padding:4px 8px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #2a2518;">
+                <span style="color:#d4c4a0;">${escapeHTML(m.name)} <span style="color:#8a7a5a;font-size:0.85em;">(${m.role})</span></span>
+                ${isLeader && m.role === 'member' ? `<div><button onclick="window.crewPromote('${escapeHTML(m.name)}')" style="background:#27ae60;color:#fff;border:none;padding:2px 8px;border-radius:4px;cursor:pointer;font-size:0.8em;margin-right:4px;">Promote</button><button onclick="window.crewKick('${escapeHTML(m.name)}')" style="background:#8b3a3a;color:#fff;border:none;padding:2px 8px;border-radius:4px;cursor:pointer;font-size:0.8em;">Kick</button></div>` : ''}
+            </div>`).join('')}
+            </div>
+            ${isLeader ? `
+            <div style="margin-top:12px;">
+                <input type="text" id="crew-motto-input" placeholder="Crew motto..." maxlength="64" value="${escapeHTML(c.motto || '')}" style="width:70%;padding:6px;background:#1a1810;border:1px solid #3a3520;color:#d4c4a0;border-radius:4px;">
+                <button onclick="window.crewUpdateMotto()" style="background:linear-gradient(135deg,#d4af37,#b8962e);color:#14120a;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;font-weight:bold;">Set Motto</button>
+            </div>
+            <div style="margin-top:8px;">
+                <input type="text" id="crew-invite-input" placeholder="Player name to invite..." style="width:70%;padding:6px;background:#1a1810;border:1px solid #3a3520;color:#d4c4a0;border-radius:4px;">
+                <button onclick="window.crewInvitePlayer()" style="background:linear-gradient(135deg,#d4af37,#b8962e);color:#14120a;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;font-weight:bold;">Invite</button>
+            </div>` : ''}
+            <button onclick="window.crewLeave()" style="background:#8b3a3a;color:#f5e6c8;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;margin-top:12px;font-weight:bold;">Leave Crew</button>
+        </div>`;
+    } else {
+        // No crew — show create form and pending invite
+        html += `<div ${style}>
+            <h3 style="color:#c0a062;">Create a Crew</h3>
+            <div style="display:grid;gap:8px;margin:12px 0;">
+                <input type="text" id="crew-name-input" placeholder="Crew name (3-24 chars)" maxlength="24" style="padding:8px;background:#1a1810;border:1px solid #3a3520;color:#d4c4a0;border-radius:4px;">
+                <input type="text" id="crew-tag-input" placeholder="Tag (2-5 chars, e.g. MFB)" maxlength="5" style="padding:8px;background:#1a1810;border:1px solid #3a3520;color:#d4c4a0;border-radius:4px;">
+                <input type="text" id="crew-motto-create" placeholder="Motto (optional)" maxlength="64" style="padding:8px;background:#1a1810;border:1px solid #3a3520;color:#d4c4a0;border-radius:4px;">
+                <button onclick="window.crewCreate()" style="background:linear-gradient(135deg,#d4af37,#b8962e);color:#14120a;border:none;padding:10px;border-radius:6px;cursor:pointer;font-weight:bold;font-size:1em;">Create Crew ($10,000)</button>
+            </div>
+        </div>`;
+
+        if (window._pendingCrewInvite) {
+            html += `<div ${style} style="border-color:#d4af37;">
+                <h4 style="color:#d4af37;">Pending Invite</h4>
+                <p style="color:#d4c4a0;">You've been invited to join <strong>${escapeHTML(window._pendingCrewInvite.crewName)}</strong></p>
+                <button onclick="window.crewAcceptInvite()" style="background:#27ae60;color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-weight:bold;">Accept</button>
+            </div>`;
+        }
+    }
+
+    // All crews list
+    if (data.allCrews && data.allCrews.length > 0) {
+        html += `<div ${style}><h3 style="color:#c0a062;">All Crews</h3>`;
+        data.allCrews.forEach(c => {
+            html += `<div style="padding:6px 8px;border-bottom:1px solid #2a2518;display:flex;justify-content:space-between;align-items:center;">
+                <span style="color:#d4c4a0;">${c.emblem} [${escapeHTML(c.tag)}] ${escapeHTML(c.name)} <span style="color:#8a7a5a;">(${c.memberCount}/10) — Led by ${escapeHTML(c.leaderName)}</span></span>
+            </div>`;
+        });
+        html += '</div>';
+    }
+
+    html += `<button onclick="goBackToMainMenu()" style="background:#3a3520;color:#d4c4a0;border:1px solid #5a4a30;padding:10px 20px;border-radius:6px;cursor:pointer;margin-top:12px;">← Back to SafeHouse</button>`;
+    container.innerHTML = html;
+}
+
+window.crewCreate = function() {
+    const name = document.getElementById('crew-name-input')?.value?.trim();
+    const tag = document.getElementById('crew-tag-input')?.value?.trim();
+    const motto = document.getElementById('crew-motto-create')?.value?.trim();
+    sendMP({ type: 'crew_create', name, tag, motto });
+};
+window.crewInvitePlayer = function() {
+    const name = document.getElementById('crew-invite-input')?.value?.trim();
+    if (name) sendMP({ type: 'crew_invite', targetName: name });
+};
+window.crewKick = function(name) { sendMP({ type: 'crew_kick', targetName: name }); };
+window.crewPromote = function(name) { sendMP({ type: 'crew_update', promote: name }); };
+window.crewUpdateMotto = function() {
+    const motto = document.getElementById('crew-motto-input')?.value?.trim();
+    sendMP({ type: 'crew_update', motto });
+};
+window.crewLeave = function() { sendMP({ type: 'crew_leave' }); };
+window.crewAcceptInvite = function() {
+    if (window._pendingCrewInvite) {
+        sendMP({ type: 'crew_join', crewId: window._pendingCrewInvite.crewId });
+        window._pendingCrewInvite = null;
+    }
+};
+
+// ==================== HIT CONTRACTS CLIENT ====================
+
+let _hitContractsCache = [];
+
+function handleHitContractResult(message) {
+    if (message.success) {
+        if (message.action === 'posted') {
+            if (typeof showBriefNotification === 'function') showBriefNotification(`Contract posted on ${message.contract.targetName} for $${message.contract.reward.toLocaleString()}.`, 'success');
+        } else if (message.action === 'claimed') {
+            if (typeof showBriefNotification === 'function') showBriefNotification(`You claimed the contract on ${message.contract.targetName}. Hunt them down.`, 'success');
+        } else if (message.action === 'completed') {
+            if (typeof showBriefNotification === 'function') showBriefNotification(`Contract completed! +$${message.reward.toLocaleString()}`, 'success');
+            player.money += message.reward;
+            // Track for achievement
+            if (!player._hitContractsCompleted) player._hitContractsCompleted = 0;
+            player._hitContractsCompleted++;
+            _safeUpdateUI();
+        }
+        sendMP({ type: 'hit_contract_list' });
+    } else {
+        if (typeof showBriefNotification === 'function') showBriefNotification(message.error || 'Contract action failed.', 'error');
+    }
+}
+
+function handleHitContractListResult(message) {
+    _hitContractsCache = message.contracts || [];
+    const container = document.getElementById('hit-contracts-content');
+    if (container) renderHitContracts(container);
+}
+
+function renderHitContracts(container) {
+    const style = 'style="background:rgba(20,18,10,0.4);border:1px solid #3a3520;border-radius:8px;padding:16px;margin:10px 0;"';
+    let html = `<p style="color:#8a7a5a;font-style:italic;margin-bottom:12px;">Anonymous hit contracts. The poster's identity is never revealed.</p>`;
+
+    // Post new contract form
+    html += `<div ${style}>
+        <h4 style="color:#c0a062;">Post a Contract</h4>
+        <div style="display:grid;gap:8px;margin:8px 0;">
+            <input type="text" id="hit-target-input" placeholder="Target player name" style="padding:8px;background:#1a1810;border:1px solid #3a3520;color:#d4c4a0;border-radius:4px;">
+            <input type="number" id="hit-reward-input" placeholder="Reward ($5,000 — $1,000,000)" min="5000" max="1000000" style="padding:8px;background:#1a1810;border:1px solid #3a3520;color:#d4c4a0;border-radius:4px;">
+            <button onclick="window.postHitContract()" style="background:linear-gradient(135deg,#8b0000,#660000);color:#f5e6c8;border:none;padding:10px;border-radius:6px;cursor:pointer;font-weight:bold;">Post Anonymous Contract</button>
+        </div>
+    </div>`;
+
+    // Active contracts
+    if (_hitContractsCache.length > 0) {
+        html += `<h4 style="color:#c0a062;margin:12px 0 6px;">Active Contracts</h4>`;
+        _hitContractsCache.forEach(c => {
+            const timeLeft = Math.max(0, Math.floor((c.expiresAt - Date.now()) / 3600000));
+            html += `<div ${style} style="border-color:${c.claimedByYou ? '#d4af37' : '#3a3520'};">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <div>
+                        <strong style="color:#e74c3c;">Target: ${escapeHTML(c.targetName)}</strong>
+                        <p style="color:#d4af37;margin:4px 0;">Reward: $${c.reward.toLocaleString()}</p>
+                        <small style="color:#8a7a5a;">Expires in ${timeLeft}h</small>
+                    </div>
+                    <div>
+                        ${c.claimed ? (c.claimedByYou ? '<span style="color:#d4af37;font-weight:bold;">YOUR CONTRACT</span>' : '<span style="color:#8a7a5a;">Claimed</span>') : `<button onclick="window.claimHitContract('${c.id}')" style="background:#8b0000;color:#f5e6c8;border:none;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:bold;">Claim Contract</button>`}
+                    </div>
+                </div>
+            </div>`;
+        });
+    } else {
+        html += `<p style="color:#8a7a5a;text-align:center;margin:20px 0;">No active contracts. The streets are quiet... for now.</p>`;
+    }
+
+    html += `<button onclick="goBackToMainMenu()" style="background:#3a3520;color:#d4c4a0;border:1px solid #5a4a30;padding:10px 20px;border-radius:6px;cursor:pointer;margin-top:12px;">← Back to SafeHouse</button>`;
+    container.innerHTML = html;
+}
+
+window.postHitContract = function() {
+    const target = document.getElementById('hit-target-input')?.value?.trim();
+    const reward = parseInt(document.getElementById('hit-reward-input')?.value) || 0;
+    if (!target || reward < 5000) {
+        if (typeof showBriefNotification === 'function') showBriefNotification('Enter a valid target and reward ($5,000+).', 'error');
+        return;
+    }
+    if (player.money < reward) {
+        if (typeof showBriefNotification === 'function') showBriefNotification('Not enough cash for the bounty.', 'error');
+        return;
+    }
+    player.money -= reward;
+    _safeUpdateUI();
+    sendMP({ type: 'hit_contract_post', targetName: target, reward });
+};
+window.claimHitContract = function(id) { sendMP({ type: 'hit_contract_claim', contractId: id }); };
+
+// ==================== PLAYER GAMBLING CLIENT ====================
+
+let _gamblingTablesCache = [];
+
+function handleGamblingResult(message) {
+    if (message.success) {
+        if (message.action === 'created') {
+            if (typeof showBriefNotification === 'function') showBriefNotification(`Gambling table created! Bet: $${message.table.bet.toLocaleString()}`, 'success');
+        } else if (message.action === 'left') {
+            if (typeof showBriefNotification === 'function') showBriefNotification('Left the table.', 'info');
+        }
+        sendMP({ type: 'gambling_list_tables' });
+    } else {
+        if (typeof showBriefNotification === 'function') showBriefNotification(message.error || 'Gambling error.', 'error');
+    }
+}
+
+function handleGamblingResolved(message) {
+    const isWinner = message.winnerId === onlineWorldState.playerId;
+    const isTie = message.isTie;
+
+    if (isTie) {
+        if (typeof showBriefNotification === 'function') showBriefNotification(`It's a tie! Bets returned. ${message.result.description}`, 'info');
+    } else if (isWinner) {
+        player.money += message.bet;
+        if (typeof showBriefNotification === 'function') showBriefNotification(`You WON $${message.bet.toLocaleString()}! ${message.result.description}`, 'success');
+        // Track for achievement
+        if (!player._pokerWins) player._pokerWins = 0;
+        player._pokerWins++;
+    } else {
+        player.money -= message.bet;
+        if (typeof showBriefNotification === 'function') showBriefNotification(`You LOST $${message.bet.toLocaleString()}. ${message.result.description}`, 'error');
+    }
+    _safeUpdateUI();
+    if (typeof logAction === 'function') _safeLogAction(`🎲 ${message.result.description} — ${isWinner ? 'You won!' : isTie ? 'Tie!' : 'You lost.'}`, 'casino');
+
+    // Refresh tables
+    sendMP({ type: 'gambling_list_tables' });
+}
+
+function handleGamblingTablesList(message) {
+    _gamblingTablesCache = message.tables || [];
+    const container = document.getElementById('player-gambling-content');
+    if (container) renderPlayerGambling(container);
+}
+
+function renderPlayerGambling(container) {
+    const style = 'style="background:rgba(20,18,10,0.4);border:1px solid #3a3520;border-radius:8px;padding:16px;margin:10px 0;"';
+    const typeIcons = { dice: '🎲', coinflip: '🪙', highcard: '🃏' };
+    const typeNames = { dice: 'Dice Roll', coinflip: 'Coin Flip', highcard: 'High Card' };
+
+    let html = `<p style="color:#8a7a5a;font-style:italic;">Gamble against other players. Create a table or join one. Winner takes all.</p>`;
+
+    // Create table form
+    html += `<div ${style}>
+        <h4 style="color:#c0a062;">Open a Table</h4>
+        <div style="display:grid;gap:8px;margin:8px 0;">
+            <select id="gambling-type-select" style="padding:8px;background:#1a1810;border:1px solid #3a3520;color:#d4c4a0;border-radius:4px;">
+                <option value="dice">🎲 Dice Roll (2d6 each)</option>
+                <option value="coinflip">🪙 Coin Flip</option>
+                <option value="highcard">🃏 High Card</option>
+            </select>
+            <input type="number" id="gambling-bet-input" placeholder="Bet amount ($1,000 — $500,000)" min="1000" max="500000" style="padding:8px;background:#1a1810;border:1px solid #3a3520;color:#d4c4a0;border-radius:4px;">
+            <button onclick="window.createGamblingTable()" style="background:linear-gradient(135deg,#d4af37,#b8962e);color:#14120a;border:none;padding:10px;border-radius:6px;cursor:pointer;font-weight:bold;">Open Table</button>
+        </div>
+    </div>`;
+
+    // Open tables
+    if (_gamblingTablesCache.length > 0) {
+        html += `<h4 style="color:#c0a062;margin:12px 0 6px;">Open Tables</h4>`;
+        _gamblingTablesCache.forEach(t => {
+            html += `<div ${style}>
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <div>
+                        <strong style="color:#d4c4a0;">${typeIcons[t.type] || '🎲'} ${typeNames[t.type] || t.type}</strong>
+                        <p style="color:#d4af37;margin:4px 0;">Bet: $${t.bet.toLocaleString()}</p>
+                        <small style="color:#8a7a5a;">Hosted by ${escapeHTML(t.hostName)}</small>
+                    </div>
+                    <button onclick="window.joinGamblingTable('${t.id}')" style="background:linear-gradient(135deg,#d4af37,#b8962e);color:#14120a;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-weight:bold;">Sit Down ($${t.bet.toLocaleString()})</button>
+                </div>
+            </div>`;
+        });
+    } else {
+        html += `<p style="color:#8a7a5a;text-align:center;margin:20px 0;">No open tables. Be the first to open one.</p>`;
+    }
+
+    html += `<button onclick="sendMP({type:'gambling_list_tables'})" style="background:#3a3520;color:#d4c4a0;border:1px solid #5a4a30;padding:8px 16px;border-radius:6px;cursor:pointer;margin-top:8px;">Refresh Tables</button>`;
+    html += ` <button onclick="goBackToMainMenu()" style="background:#3a3520;color:#d4c4a0;border:1px solid #5a4a30;padding:10px 20px;border-radius:6px;cursor:pointer;margin-top:12px;">← Back to SafeHouse</button>`;
+    container.innerHTML = html;
+}
+
+window.createGamblingTable = function() {
+    const gameType = document.getElementById('gambling-type-select')?.value || 'dice';
+    const bet = parseInt(document.getElementById('gambling-bet-input')?.value) || 0;
+    if (bet < 1000) { if (typeof showBriefNotification === 'function') showBriefNotification('Minimum bet is $1,000.', 'error'); return; }
+    if (player.money < bet) { if (typeof showBriefNotification === 'function') showBriefNotification('Not enough cash.', 'error'); return; }
+    sendMP({ type: 'gambling_create_table', gameType, bet });
+};
+window.joinGamblingTable = function(tableId) {
+    const table = _gamblingTablesCache.find(t => t.id === tableId);
+    if (table && player.money < table.bet) { if (typeof showBriefNotification === 'function') showBriefNotification('Not enough cash to match the bet.', 'error'); return; }
+    sendMP({ type: 'gambling_join_table', tableId });
+};
+
+// ==================== SUPERBOSS CLIENT ====================
+
+let _superbossListCache = null;
+let _activeSuperbossFight = null;
+
+function handleSuperbossResult(message) {
+    if (message.success) {
+        if (message.action === 'started') {
+            _activeSuperbossFight = message.fight;
+            if (typeof showBriefNotification === 'function') showBriefNotification(`Superboss fight started: ${message.fight.bossName}!`, 'success');
+        } else if (message.action === 'joined') {
+            _activeSuperbossFight = message.fight;
+            if (typeof showBriefNotification === 'function') showBriefNotification(`Joined the fight against ${message.fight.bossName}!`, 'success');
+        } else if (message.action === 'invited') {
+            if (typeof showBriefNotification === 'function') showBriefNotification(`Invite sent to ${message.targetName}.`, 'success');
+        }
+        renderSuperbossScreen();
+    } else {
+        if (typeof showBriefNotification === 'function') showBriefNotification(message.error || 'Superboss error.', 'error');
+    }
+}
+
+function handleSuperbossInviteReceived(message) {
+    if (typeof showBriefNotification === 'function') showBriefNotification(`⚔️ ${message.fromName} invites you to fight ${message.bossName}!`, 'success');
+    window._pendingSuperbossInvite = { fightId: message.fightId, bossName: message.bossName };
+    if (typeof logAction === 'function') _safeLogAction(`⚔️ ${message.fromName} invites you to fight ${message.bossName}! Go to the Superboss screen to join.`, 'combat');
+}
+
+function handleSuperbossUpdate(message) {
+    if (_activeSuperbossFight && _activeSuperbossFight.id === message.fightId) {
+        if (message.type === 'superboss_update') {
+            _activeSuperbossFight = message.fight;
+        } else {
+            _activeSuperbossFight.bossHP = message.bossHP;
+            _activeSuperbossFight.bossMaxHP = message.bossMaxHP;
+            _activeSuperbossFight.phase = message.phase;
+        }
+        renderSuperbossScreen();
+    }
+    
+    // Log the attack
+    if (message.attackerName) {
+        const critText = message.isCrit ? ' (CRITICAL!)' : '';
+        if (typeof logAction === 'function') _safeLogAction(`⚔️ ${message.attackerName} hit the boss for ${message.damage} damage${critText}!`, 'combat');
+        if (message.bossAttack) {
+            const downText = message.bossAttack.downed ? ' — DOWNED!' : '';
+            _safeLogAction(`💀 Boss counter-attacks ${message.bossAttack.targetName} for ${message.bossAttack.damage} damage${downText}!`, 'combat');
+        }
+    }
+}
+
+function handleSuperbossVictory(message) {
+    _activeSuperbossFight = null;
+    player.money += message.moneyReward;
+    if (typeof gainExperience === 'function') gainExperience(message.xpReward);
+    
+    // Apply buff
+    if (message.buff) {
+        if (!player.activeBuffs) player.activeBuffs = [];
+        player.activeBuffs.push({
+            ...message.buff,
+            expiresAt: Date.now() + (message.buff.duration || 3600000)
+        });
+    }
+    
+    // Track for achievement
+    if (!player.superbossesDefeated) player.superbossesDefeated = [];
+    const bossId = message.bossName; // Use name as fallback ID
+    if (!player.superbossesDefeated.includes(bossId)) player.superbossesDefeated.push(bossId);
+    
+    _safeUpdateUI();
+    
+    if (typeof showBriefNotification === 'function') showBriefNotification(`🏆 ${message.bossName} DEFEATED! +$${message.moneyReward.toLocaleString()} +${message.xpReward} XP (${message.damageShare}% contribution)`, 'success');
+    if (typeof logAction === 'function') _safeLogAction(`🏆 SUPERBOSS DEFEATED: ${message.bossName}! You dealt ${message.damageDealt} damage (${message.damageShare}% share). Reward: $${message.moneyReward.toLocaleString()} + ${message.xpReward} XP`, 'combat');
+    
+    renderSuperbossScreen();
+}
+
+function handleSuperbossListResult(message) {
+    _superbossListCache = message;
+    renderSuperbossScreen();
+}
+
+function renderSuperbossScreen() {
+    const container = document.getElementById('superboss-content');
+    if (!container) return;
+    
+    const style = 'style="background:rgba(20,18,10,0.4);border:1px solid #3a3520;border-radius:8px;padding:16px;margin:10px 0;"';
+    let html = '';
+
+    // Active fight
+    if (_activeSuperbossFight && _activeSuperbossFight.phase !== 'resolved') {
+        const f = _activeSuperbossFight;
+        const hpPct = Math.max(0, (f.bossHP / f.bossMaxHP) * 100);
+        const hpColor = hpPct > 50 ? '#27ae60' : hpPct > 25 ? '#e67e22' : '#e74c3c';
+        
+        html += `<div style="background:rgba(139,0,0,0.2);border:2px solid #8b0000;border-radius:12px;padding:20px;margin:10px 0;">
+            <h3 style="color:#e74c3c;text-align:center;margin:0 0 12px;">⚔️ ${escapeHTML(f.bossName)}</h3>
+            <div style="background:#1a1810;border:1px solid #3a3520;border-radius:8px;overflow:hidden;height:32px;margin:8px 0;">
+                <div style="background:${hpColor};height:100%;width:${hpPct}%;transition:width 0.5s;display:flex;align-items:center;justify-content:center;">
+                    <span style="color:#fff;font-weight:bold;font-size:0.85em;text-shadow:1px 1px 2px #000;">${f.bossHP.toLocaleString()} / ${f.bossMaxHP.toLocaleString()} HP</span>
+                </div>
+            </div>
+            <div style="margin:12px 0;">
+                <h4 style="color:#c0a062;">Participants:</h4>
+                ${f.participants.map(p => `<div style="padding:4px 8px;color:${p.alive ? '#d4c4a0' : '#8a7a5a'};"><span>${p.alive ? '✅' : '💀'} ${escapeHTML(p.name)}</span> <span style="color:#8a7a5a;">— ${p.damage} dmg</span></div>`).join('')}
+            </div>
+            ${f.phase === 'recruiting' ? `
+                <p style="color:#d4af37;text-align:center;">Recruiting phase — invite friends before attacking!</p>
+                <div style="margin:8px 0;">
+                    <input type="text" id="superboss-invite-input" placeholder="Player name to invite" style="padding:6px;background:#1a1810;border:1px solid #3a3520;color:#d4c4a0;border-radius:4px;width:60%;">
+                    <button onclick="window.superbossInvite()" style="background:#d4af37;color:#14120a;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;font-weight:bold;">Invite</button>
+                </div>` : ''}
+            <button onclick="window.superbossAttack()" style="background:linear-gradient(135deg,#e74c3c,#c0392b);color:#fff;border:none;padding:12px 24px;border-radius:8px;cursor:pointer;font-weight:bold;font-size:1.1em;width:100%;margin-top:8px;">⚔️ ATTACK</button>
+        </div>`;
+    }
+
+    // Pending invite
+    if (window._pendingSuperbossInvite && !_activeSuperbossFight) {
+        html += `<div ${style} style="border-color:#d4af37;">
+            <h4 style="color:#d4af37;">⚔️ Fight Invitation</h4>
+            <p style="color:#d4c4a0;">You've been invited to fight <strong>${escapeHTML(window._pendingSuperbossInvite.bossName)}</strong>!</p>
+            <button onclick="window.superbossJoinInvite()" style="background:#27ae60;color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-weight:bold;">Join Fight</button>
+        </div>`;
+    }
+
+    // Boss list
+    if (_superbossListCache) {
+        html += `<h3 style="color:#c0a062;margin:16px 0 8px;">Legendary Crime Lords</h3>`;
+        _superbossListCache.bosses.forEach(b => {
+            const canFight = (player.level || 1) >= b.level;
+            const defeated = (player.superbossesDefeated || []).includes(b.id);
+            html += `<div ${style} style="opacity:${canFight?1:0.5};">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <div>
+                        <strong style="color:#e74c3c;">${defeated?'✅':''} ${escapeHTML(b.name)}</strong>
+                        <p style="color:#8a7a5a;margin:4px 0;">${escapeHTML(b.description)}</p>
+                        <small style="color:#8a7a5a;">Level ${b.level} required — HP: ${b.hp.toLocaleString()}</small>
+                    </div>
+                    ${canFight && !_activeSuperbossFight ? `<button onclick="window.startSuperbossFight('${b.id}')" style="background:linear-gradient(135deg,#e74c3c,#c0392b);color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-weight:bold;">Challenge</button>` : `<span style="color:#8a7a5a;">${!canFight ? 'Locked' : 'In fight'}</span>`}
+                </div>
+            </div>`;
+        });
+
+        // Active fights
+        if (_superbossListCache.activeFights && _superbossListCache.activeFights.length > 0) {
+            html += `<h4 style="color:#c0a062;margin:12px 0 6px;">Active Superboss Fights</h4>`;
+            _superbossListCache.activeFights.forEach(f => {
+                const hpPct = Math.round((f.bossHP / f.bossMaxHP) * 100);
+                html += `<div ${style}>
+                    <strong style="color:#e74c3c;">${escapeHTML(f.bossName)}</strong> — ${hpPct}% HP
+                    <br><small style="color:#8a7a5a;">Fighters: ${f.participants.map(p => escapeHTML(p.name)).join(', ')}</small>
+                </div>`;
+            });
+        }
+    } else {
+        html += `<p style="color:#8a7a5a;">Loading superboss data...</p>`;
+        sendMP({ type: 'superboss_list' });
+    }
+
+    html += `<button onclick="goBackToMainMenu()" style="background:#3a3520;color:#d4c4a0;border:1px solid #5a4a30;padding:10px 20px;border-radius:6px;cursor:pointer;margin-top:12px;">← Back to SafeHouse</button>`;
+    container.innerHTML = html;
+}
+
+window.startSuperbossFight = function(bossId) { sendMP({ type: 'superboss_start', bossId }); };
+window.superbossAttack = function() {
+    if (_activeSuperbossFight) {
+        sendMP({ type: 'superboss_attack', fightId: _activeSuperbossFight.id });
+    }
+};
+window.superbossInvite = function() {
+    const name = document.getElementById('superboss-invite-input')?.value?.trim();
+    if (name && _activeSuperbossFight) {
+        sendMP({ type: 'superboss_invite', fightId: _activeSuperbossFight.id, targetName: name });
+    }
+};
+window.superbossJoinInvite = function() {
+    if (window._pendingSuperbossInvite) {
+        sendMP({ type: 'superboss_join', fightId: window._pendingSuperbossInvite.fightId });
+        window._pendingSuperbossInvite = null;
+    }
+};
+
+// ==================== SEASONAL EVENT CLIENT ====================
+
+function handleSeasonalEventResult(message) {
+    window._seasonalEventData = message;
+    // If a screen is rendering this, it will pick it up
+}
+
+window.requestSeasonalEvent = function() { sendMP({ type: 'seasonal_event_info' }); };
+window.reportSeasonalProgress = function(objId, amount) { sendMP({ type: 'seasonal_event_progress', objectiveId: objId, amount }); };
+
+// ==================== ANTI-CHEAT SNAPSHOTS ====================
+
+// Send a snapshot of critical values every 60 seconds
+setInterval(() => {
+    if (onlineWorldState.isConnected && typeof player !== 'undefined') {
+        sendMP({
+            type: 'anticheat_snapshot',
+            money: player.money || 0,
+            level: player.level || 1,
+            reputation: player.reputation || 0
+        });
+    }
+}, 60000);
 
 // ==================== SERVER STATUS TOOLTIP ====================
 // Periodically ping the server and update the sign-in button tooltip

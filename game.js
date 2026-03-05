@@ -79,6 +79,13 @@ window.showAuthModal = showAuthModal;
 window.getAuthState = getAuthState;
 window.updateAuthStatusUI = updateAuthStatusUI;
 
+// HTML escape utility (mirrors the one in multiplayer.js for use in ES module scope)
+function escapeHTML(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+window.escapeHTML = escapeHTML;
+
 // ==================== POWER RECALCULATION ====================
 // Power is derived from: equipped weapon + equipped armor + equipped vehicle + real estate + gang members
 // Items sitting in inventory but NOT equipped contribute NOTHING to power.
@@ -7390,6 +7397,15 @@ function generateTerritoryEvent() {
   logAction(`Turf Event in <strong>${zone?.name || 'your turf'}</strong>: ${evt.name} -- ${evt.description}`);
 }
 function updateUI() {
+  // Process economy sinks (hourly upkeep)
+  if (typeof processEconomySinks === 'function') processEconomySinks();
+
+  // Check new achievements
+  if (typeof checkNewAchievements === 'function') checkNewAchievements();
+
+  // Render notification badges
+  if (typeof renderNotificationBadges === 'function') renderNotificationBadges();
+
   // Synchronize gang member counts to prevent drift
   if (player.gang && player.gang.gangMembers) {
     // Ensure legacy count matches actual array length
@@ -7406,7 +7422,7 @@ function updateUI() {
   if (player.name) {
     const nameDisplay = document.getElementById("player-name-display");
     if (nameDisplay) {
-      nameDisplay.textContent = player.name;
+      nameDisplay.textContent = player.title ? `${player.name} — "${player.title}"` : player.name;
     }
   }
 
@@ -7576,6 +7592,20 @@ function updateUI() {
   const reputationDisplay = document.getElementById("reputation-display");
   if (reputationDisplay) {
     reputationDisplay.innerText = `Rep: ${Math.floor(player.reputation || 0)}`;
+  }
+  const jailStatusDisplay = document.getElementById("jail-status-display");
+  if (jailStatusDisplay) {
+    jailStatusDisplay.innerText = player.inJail ? `Jail: ${player.jailTime}s` : 'Jail: Free';
+  }
+  const familyRankDisplay = document.getElementById("family-rank-display");
+  if (familyRankDisplay) {
+    if (player.chosenFamily) {
+      const famLabels = { torrino: 'Torrino', kozlov: 'Kozlov', chen: 'Chen', morales: 'Morales' };
+      const rankLabel = player.familyRank ? player.familyRank.charAt(0).toUpperCase() + player.familyRank.slice(1) : 'Associate';
+      familyRankDisplay.innerText = `${famLabels[player.chosenFamily] || player.chosenFamily} — ${rankLabel}`;
+    } else {
+      familyRankDisplay.innerText = 'Family: None';
+    }
   }
 
   // Apply user stat-bar visibility preferences (hides toggled-off stats)
@@ -8407,11 +8437,11 @@ const STAT_BAR_ITEMS = [
   'power-display', 'territory-display',
   'current-territory-display', 'experience-display', 'skill-points-display',
   'season-display', 'weather-display', 'ammo-display', 'gas-display',
-  'reputation-display'
+  'reputation-display', 'jail-status-display', 'family-rank-display'
 ];
 
 // Stats that default to HIDDEN (player must opt-in)
-const STAT_BAR_DEFAULTS_OFF = ['ammo-display', 'gas-display', 'reputation-display'];
+const STAT_BAR_DEFAULTS_OFF = ['ammo-display', 'gas-display', 'reputation-display', 'jail-status-display', 'family-rank-display'];
 
 function toggleStatDisplay(checkbox) {
   const statId = checkbox.getAttribute('data-stat');
@@ -8612,7 +8642,9 @@ function hideAllScreens(skipScroll) {
     "casino-screen", "missions-screen", "business-screen", "loan-shark-screen",
     "money-laundering-screen", "territory-control-screen", "territories-screen",
     "events-screen", "map-screen", "calendar-screen", "statistics-screen",
-    "options-screen", "player-stats-screen", "safehouse", "multiplayer-screen"
+    "options-screen", "player-stats-screen", "safehouse", "multiplayer-screen",
+    "friends-screen", "crew-screen", "superboss-screen", "hit-contracts-screen",
+    "player-gambling-screen"
   ];
   screenIds.forEach(id => {
     const el = document.getElementById(id);
@@ -11309,6 +11341,7 @@ function renderSkillTreeUI() {
       </div>
 
       <div style="text-align:center;margin-top:20px;">
+        <button class="nav-btn-back" onclick="respecSkillTree()" style="background:#8b3a3a;color:#f5e6c8;border:none;padding:10px 20px;border-radius:6px;cursor:pointer;margin-right:8px;font-weight:bold;">🔄 Respec Skills ($${(10000 * Math.pow(2, player.respecCount || 0)).toLocaleString()})</button>
         <button class="nav-btn-back" onclick="goBackToMainMenu()"><- Back to SafeHouse</button>
       </div>
     </div>
@@ -12753,6 +12786,11 @@ const menuUnlockConfig = [
   // === SOCIAL / ONLINE ===
   { id: 'worldchat', fn: 'showWorldChat()', label: 'World Chat', tip: 'Chat with other players online', level: 0 },
   { id: 'onlineworld', fn: 'showOnlineWorld()', label: 'The Commission', tip: 'Enter the online underworld', level: 5 },
+  { id: 'friends', fn: 'showFriendsScreen()', label: 'Friends', tip: 'Friends list, blocked list & social', level: 0 },
+  { id: 'crew', fn: 'showCrewScreen()', label: 'Crew', tip: 'Create or manage your crew', level: 5 },
+  { id: 'hitcontracts', fn: 'showHitContracts()', label: 'Dark Board', tip: 'Anonymous hit contracts on players', level: 10 },
+  { id: 'playergambling', fn: 'showPlayerGambling()', label: 'Back Room', tip: 'Gamble against other players', level: 5 },
+  { id: 'superboss', fn: 'showSuperbossScreen()', label: 'Superboss', tip: 'Challenge legendary crime lords', level: 15 },
 
   // === SETTINGS (Always last) ===
   { id: 'options', fn: 'showOptions()', label: 'Settings', tip: 'Save, load & game options', level: 0 },
@@ -12860,6 +12898,11 @@ function showCommandCenter() {
 
   grid.innerHTML = html;
 
+  // Check for daily login reward
+  setTimeout(() => {
+    if (typeof checkDailyLogin === 'function') checkDailyLogin();
+  }, 600);
+
   // Show a one-time beginner tip after the safehouse loads
   if (!localStorage.getItem('safehouseTipSeen')) {
     setTimeout(() => showSafehouseTip(), 400);
@@ -12951,17 +12994,31 @@ function showPlayerStats() {
 
   // ---- SECTION 1: Core Stats ----
   const maxEnergy = 100 + ((st.endurance?.vitality || 0) * 2) + ((st.endurance?.conditioning || 0) * 3);
+  const familyNames = { torrino: 'Torrino Family', kozlov: 'Kozlov Bratva', chen: 'Chen Triad', morales: 'Morales Cartel' };
+  const familyDisplay = player.chosenFamily ? familyNames[player.chosenFamily] || player.chosenFamily : 'None';
+  const rankDisplay = player.familyRank ? player.familyRank.charAt(0).toUpperCase() + player.familyRank.slice(1) : 'Associate';
+  const totalChapters = player.chosenFamily && typeof familyStories !== 'undefined' && familyStories[player.chosenFamily] ? familyStories[player.chosenFamily].chapters.length : '—';
+  const chapterDisplay = player.chosenFamily ? `${(player.missions?.currentChapter || 0) + 1} / ${totalChapters}` : '—';
   const coreHTML = [
     row('Level', player.level, '#d4af37'),
-    row('XP', `${player.experience} / ${player.level * 600 + Math.pow(player.level, 2) * 120 + Math.pow(player.level, 3) * 8}`, '#c0a062'),
+    row('XP', `${player.experience} / ${Math.floor(player.level * 350 + Math.pow(player.level, 2) * 75 + Math.pow(player.level, 3) * 5)}`, '#c0a062'),
     row('Health', `${player.health !== undefined ? player.health : 100} / 100`, '#8b3a3a'),
     row('Energy', `${player.energy !== undefined ? player.energy : maxEnergy} / ${maxEnergy}`, '#8a9a6a'),
     row('Cash', `$${(player.money || 0).toLocaleString()}`, '#7a8a5a'),
     row('Dirty Money', `$${(player.dirtyMoney || 0).toLocaleString()}`, '#7a2a2a'),
+    row('Ammo', player.ammo || 0, '#8b3a3a'),
+    row('Gas', player.gas || 0, '#f39c12'),
     row('Power', player.power || 0, '#e67e22'),
     row('Reputation', player.reputation || 0, '#8b6a4a'),
     row('Wanted Level', `${player.wantedLevel || 0} / 100`, '#8b3a3a'),
     row('Skill Points', player.skillPoints || 0, '#d4af37'),
+    row('Breakout Chance', `${player.breakoutChance || 45}%`, '#c0a062'),
+    row('Jail Status', player.inJail ? `In Jail (${player.jailTime}s)` : 'Free', player.inJail ? '#8b3a3a' : '#8a9a6a'),
+    row('Family', familyDisplay, '#d4af37'),
+    row('Family Rank', rankDisplay, '#c0a062'),
+    row('Story Chapter', chapterDisplay, '#e67e22'),
+    row('Active Laundering', (player.activeLaundering || []).length, '#7a2a2a'),
+    row('Corrupted Officials', (player.corruptedOfficials || []).length, '#8b6a4a'),
   ].join('');
 
   // ---- SECTION 2: Skill Trees Overview ----
@@ -18343,15 +18400,24 @@ function showAchievements() {
   const categories = [
     { name: 'Early Game', icon: '', ids: ['first_job','first_blood','wheels','armed_dangerous','property_owner'] },
     { name: 'Money Milestones', icon: '[$]', ids: ['millionaire','half_mil','true_millionaire','multi_millionaire','billionaire'] },
-    { name: 'Gang & Social', icon: '', ids: ['first_recruit','gang_leader','crime_family','army','faction_friend','faction_ally'] },
-    { name: 'Combat & Crime', icon: '[!!]', ids: ['jail_break','most_wanted','ghost','boss_slayer'] },
-    { name: 'Progression', icon: '', ids: ['reputation_max','level_10','level_25','level_50','skill_master'] },
+    { name: 'Gang & Social', icon: '', ids: ['first_recruit','gang_leader','crime_family','army','faction_friend','faction_ally','first_friend','crew_founder'] },
+    { name: 'Combat & Crime', icon: '[!!]', ids: ['jail_break','most_wanted','ghost','boss_slayer','superboss_first','superboss_all','hit_man'] },
+    { name: 'Progression', icon: '', ids: ['reputation_max','level_10','level_25','level_50','skill_master','daily_7','daily_30'] },
     { name: 'Empire', icon: '', ids: ['territory_3','territory_10','business_owner','jobs_50','jobs_200'] },
-    { name: 'Mini-Games', icon: '', ids: ['lucky_streak','gambler','snake_king','quick_draw'] }
+    { name: 'Mini-Games', icon: '', ids: ['lucky_streak','gambler','snake_king','quick_draw','poker_shark'] }
   ];
 
   let achievementsHTML = `
     <h2>Achievements</h2>
+
+    <!-- Current Title -->
+    ${player.title ? `<div style="text-align:center;margin:10px 0;padding:10px;background:rgba(212,175,55,0.15);border:1px solid #d4af37;border-radius:8px;">
+      <span style="color:#8a7a5a;">Equipped Title:</span> <strong style="color:#d4af37;font-size:1.1em;">"${escapeHTML(player.title)}"</strong>
+      <button onclick="player.title='';updateUI();showAchievements();" style="margin-left:12px;background:#3a3520;color:#d4c4a0;border:1px solid #5a4a30;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:0.8em;">Remove</button>
+    </div>` : '<p style="color:#8a7a5a;text-align:center;margin:8px 0;">No title equipped. Unlock achievements to earn titles!</p>'}
+
+    <!-- Active Buffs -->
+    ${typeof renderActiveBuffs === 'function' ? renderActiveBuffs() : ''}
 
     <!-- Progress bar -->
     <div style="margin: 15px 0 25px; background: rgba(0,0,0,0.3); border-radius: 10px; padding: 15px;">
@@ -18376,6 +18442,7 @@ function showAchievements() {
         </h3>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px;">
           ${catAchievements.map(a => {
+            const titleHTML = a.title ? `<div style="color:#d4af37;font-size:0.8em;margin-top:4px;">Title: "${escapeHTML(a.title)}"${a.unlocked && player.title !== a.title ? ` <button onclick="equipTitle('${a.id}')" style="background:#d4af37;color:#14120a;border:none;padding:1px 8px;border-radius:3px;cursor:pointer;font-size:0.85em;">Equip</button>` : (player.title === a.title ? ' <span style="color:#27ae60;">✓ Equipped</span>' : '')}</div>` : '';
             return `
               <div style="background: ${a.unlocked ? 'rgba(138, 154, 106, 0.15)' : 'rgba(0,0,0,0.3)'};
                     padding: 12px; border-radius: 8px;
@@ -18386,6 +18453,7 @@ function showAchievements() {
                   <span style="font-size: 1.2em;">${a.unlocked ? '' : ''}</span>
                 </div>
                 <p style="color: #d4c4a0; font-size: 0.85em; margin: 5px 0 3px;">${a.description}</p>
+                ${titleHTML}
               </div>
             `;
           }).join('')}
@@ -19593,25 +19661,7 @@ function resetGame() {
 
 // Removed duplicate initialization - now using window.onload initGame() function
 
-// Add some quality of life improvements
-document.addEventListener('keydown', function(event) {
-  // Quick navigation
-  if (event.key === 'j' || event.key === 'J') {
-    const cmdCenter = document.getElementById("safehouse");
-    if (cmdCenter && cmdCenter.style.display === "block") {
-      showJobs();
-    }
-  }
-  if (event.key === 's' || event.key === 'S') {
-    const cmdCenter = document.getElementById("safehouse");
-    if (cmdCenter && cmdCenter.style.display === "block") {
-      showStore();
-    }
-  }
-  if (event.key === 'Escape') {
-    goBackToMainMenu();
-  }
-});
+// Keyboard shortcuts removed
 
 // Initialize the game when the page loads
 function initGame() {
@@ -19721,54 +19771,17 @@ function activateGameplaySystems() {
 // Call initialization when page loads
 // ==================== INTERFACE IMPROVEMENTS SYSTEM ====================
 
-// Interface Improvements and Hotkey System
+// Interface Improvements (hotkeys removed)
 function initializeInterfaceImprovements() {
-  // Initialize hotkey system
-  initializeHotkeys();
-
   // Initialize player statistics if not exists
   if (!player.statistics) {
     player.statistics = initializePlayerStatistics();
   }
-
-  if (gameplayActive) {
-    logAction("Interface improvements activated - hotkeys available!");
-  }
 }
 
-// Hotkey system
+// Hotkey system removed
 function initializeHotkeys() {
-  document.addEventListener('keydown', function(event) {
-    // Don't trigger hotkeys if user is typing in an input field
-    if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
-      return;
-    }
-
-    const key = event.key.toLowerCase();
-
-    // Prevent default behavior for our hotkeys
-    const hotkeyMap = {
-      'j': () => showJobs(),
-      's': () => showStore(),
-      'g': () => showGang(),
-      'b': () => { showRealEstate('fronts'); },
-      't': () => showTerritoryControl(),
-      'l': () => showCalendar(),
-      'm': () => showMap(),
-      'z': () => showStatistics(),
-      'r': () => { showPlayerStats(); setTimeout(() => showPlayerStatsTab('empire'), 50); },
-      'o': () => { showPlayerStats(); setTimeout(() => showPlayerStatsTab('overview'), 50); },
-      'f5': () => showSaveSystem(),
-      'f7': () => showCompetition(),
-      'e': () => buyEnergyDrink(),
-      'escape': () => goBackToMainMenu()
-    };
-
-    if (hotkeyMap[key]) {
-      event.preventDefault();
-      hotkeyMap[key]();
-    }
-  });
+  // No-op: keyboard shortcuts have been removed
 }
 
 // Map System -- uses TURF_ZONES (the real SP turf data)
@@ -22770,6 +22783,518 @@ function completeLoading() {
   }, 800);
 }
 
+// ==================== FRIENDS SCREEN ====================
+function showFriendsScreen() {
+  hideAllScreens();
+  const screen = document.getElementById('friends-screen');
+  if (!screen) return;
+  screen.style.display = 'block';
+
+  const container = document.getElementById('friends-content');
+  if (!container) return;
+
+  const onlineData = window._onlineFriendsData || [];
+  const friends = player.friends || [];
+  const blocked = player.blocked || [];
+  const style = 'style="background:rgba(20,18,10,0.4);border:1px solid #3a3520;border-radius:8px;padding:16px;margin:10px 0;"';
+
+  let html = '';
+
+  // Add friend form
+  html += `<div ${style}>
+    <h4 style="color:#c0a062;">Add Friend</h4>
+    <div style="display:flex;gap:8px;margin:8px 0;">
+      <input type="text" id="add-friend-input" placeholder="Player name" style="flex:1;padding:8px;background:#1a1810;border:1px solid #3a3520;color:#d4c4a0;border-radius:4px;">
+      <button onclick="addFriend(document.getElementById('add-friend-input').value.trim())" style="background:linear-gradient(135deg,#d4af37,#b8962e);color:#14120a;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-weight:bold;">Add</button>
+    </div>
+  </div>`;
+
+  // Friends list
+  html += `<div ${style}>
+    <h4 style="color:#c0a062;">Friends (${friends.length})</h4>`;
+  if (friends.length === 0) {
+    html += '<p style="color:#8a7a5a;">No friends yet. Add some!</p>';
+  } else {
+    friends.forEach(f => {
+      const onlineInfo = onlineData.find(o => o.name === f.name);
+      const isOnline = !!onlineInfo;
+      html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border-bottom:1px solid #2a2518;">
+        <span style="color:#d4c4a0;">
+          <span style="color:${isOnline ? '#27ae60' : '#8a7a5a'};">●</span> ${escapeHTML(f.name)}
+          ${isOnline ? '<span style="color:#27ae60;font-size:0.8em;"> Online</span>' : '<span style="color:#8a7a5a;font-size:0.8em;"> Offline</span>'}
+        </span>
+        <div>
+          <button onclick="removeFriend('${escapeHTML(f.name)}')" style="background:#8b3a3a;color:#f5e6c8;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:0.85em;margin-right:4px;">Remove</button>
+          <button onclick="blockPlayer('${escapeHTML(f.name)}')" style="background:#555;color:#f5e6c8;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:0.85em;">Block</button>
+        </div>
+      </div>`;
+    });
+  }
+  html += '</div>';
+
+  // Online players (non-friends, non-blocked)
+  if (onlineData.length > 0) {
+    const nonFriendOnline = onlineData.filter(o => !friends.find(f => f.name === o.name) && !blocked.find(b => b.name === o.name) && o.name !== player.name);
+    if (nonFriendOnline.length > 0) {
+      html += `<div ${style}><h4 style="color:#c0a062;">Online Players</h4>`;
+      nonFriendOnline.forEach(o => {
+        html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border-bottom:1px solid #2a2518;">
+          <span style="color:#d4c4a0;"><span style="color:#27ae60;">●</span> ${escapeHTML(o.name)} <span style="color:#8a7a5a;font-size:0.8em;">Lv.${o.level || '?'}</span></span>
+          <div>
+            <button onclick="addFriend('${escapeHTML(o.name)}')" style="background:#27ae60;color:#fff;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:0.85em;margin-right:4px;">Add Friend</button>
+            <button onclick="blockPlayer('${escapeHTML(o.name)}')" style="background:#555;color:#f5e6c8;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:0.85em;">Block</button>
+          </div>
+        </div>`;
+      });
+      html += '</div>';
+    }
+  }
+
+  // Blocked players
+  if (blocked.length > 0) {
+    html += `<div ${style}><h4 style="color:#c0a062;">Blocked Players (${blocked.length})</h4>`;
+    blocked.forEach(b => {
+      html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border-bottom:1px solid #2a2518;">
+        <span style="color:#8a7a5a;">🚫 ${escapeHTML(b.name)}</span>
+        <button onclick="unblockPlayer('${escapeHTML(b.name)}')" style="background:#3a3520;color:#d4c4a0;border:1px solid #5a4a30;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:0.85em;">Unblock</button>
+      </div>`;
+    });
+    html += '</div>';
+  }
+
+  html += `<button onclick="requestFriendsList()" style="background:#3a3520;color:#d4c4a0;border:1px solid #5a4a30;padding:8px 16px;border-radius:6px;cursor:pointer;margin-top:8px;">Refresh</button> `;
+  html += `<button onclick="goBackToMainMenu()" style="background:#3a3520;color:#d4c4a0;border:1px solid #5a4a30;padding:10px 20px;border-radius:6px;cursor:pointer;margin-top:12px;">← Back to SafeHouse</button>`;
+  container.innerHTML = html;
+
+  // Request fresh online data
+  if (typeof requestFriendsList === 'function') requestFriendsList();
+}
+
+// ==================== CREW SCREEN ====================
+function showCrewScreen() {
+  hideAllScreens();
+  const screen = document.getElementById('crew-screen');
+  if (!screen) return;
+  screen.style.display = 'block';
+
+  const container = document.getElementById('crew-content');
+  if (container) container.innerHTML = '<p style="color:#8a7a5a;">Loading crew data...</p>';
+
+  // Request crew info from server
+  if (typeof sendMP === 'function') sendMP({ type: 'crew_info' });
+}
+
+// ==================== HIT CONTRACTS SCREEN ====================
+function showHitContracts() {
+  hideAllScreens();
+  const screen = document.getElementById('hit-contracts-screen');
+  if (!screen) return;
+  screen.style.display = 'block';
+
+  const container = document.getElementById('hit-contracts-content');
+  if (container) container.innerHTML = '<p style="color:#8a7a5a;">Loading contracts...</p>';
+
+  // Request hit contract list from server
+  if (typeof sendMP === 'function') sendMP({ type: 'hit_contract_list' });
+}
+
+// ==================== PLAYER GAMBLING SCREEN ====================
+function showPlayerGambling() {
+  hideAllScreens();
+  const screen = document.getElementById('player-gambling-screen');
+  if (!screen) return;
+  screen.style.display = 'block';
+
+  const container = document.getElementById('player-gambling-content');
+  if (container) container.innerHTML = '<p style="color:#8a7a5a;">Loading tables...</p>';
+
+  // Request available tables
+  if (typeof sendMP === 'function') sendMP({ type: 'gambling_list_tables' });
+}
+
+// ==================== SUPERBOSS SCREEN ====================
+function showSuperbossScreen() {
+  hideAllScreens();
+  const screen = document.getElementById('superboss-screen');
+  if (!screen) return;
+  screen.style.display = 'block';
+
+  // Request boss list from server
+  if (typeof sendMP === 'function') sendMP({ type: 'superboss_list' });
+}
+
+// ==================== ECONOMY SINKS: DAILY UPKEEP ====================
+// Deducts maintenance costs periodically (checked each updateUI cycle)
+function processEconomySinks() {
+  if (!player.lastUpkeepCollection) player.lastUpkeepCollection = Date.now();
+
+  const now = Date.now();
+  const hoursSinceLastUpkeep = (now - player.lastUpkeepCollection) / 3600000;
+
+  // Check once per hour
+  if (hoursSinceLastUpkeep < 1) return;
+
+  let totalUpkeep = 0;
+  const details = [];
+
+  // Gang member wages ($50/member/hour)
+  const gangSize = (player.gangMembers || []).length;
+  if (gangSize > 0) {
+    const gangWages = gangSize * 50 * Math.floor(hoursSinceLastUpkeep);
+    totalUpkeep += gangWages;
+    if (gangWages > 0) details.push(`Gang wages: $${gangWages.toLocaleString()}`);
+  }
+
+  // Business upkeep ($100-500/business/hour based on level)
+  const businesses = player.businesses || [];
+  businesses.forEach(b => {
+    if (b.owned) {
+      const bCost = (100 + (b.level || 1) * 50) * Math.floor(hoursSinceLastUpkeep);
+      totalUpkeep += bCost;
+      if (bCost > 0) details.push(`${b.name}: $${bCost.toLocaleString()}`);
+    }
+  });
+
+  // Territory upkeep ($200/territory/hour)
+  const territoryCount = (player.territories || []).length;
+  if (territoryCount > 0) {
+    const tCost = territoryCount * 200 * Math.floor(hoursSinceLastUpkeep);
+    totalUpkeep += tCost;
+    if (tCost > 0) details.push(`Territory defense: $${tCost.toLocaleString()}`);
+  }
+
+  // Vehicle maintenance ($25/vehicle/hour)
+  const vehicles = (player.vehicles || []).filter(v => v.owned);
+  if (vehicles.length > 0) {
+    const vCost = vehicles.length * 25 * Math.floor(hoursSinceLastUpkeep);
+    totalUpkeep += vCost;
+    if (vCost > 0) details.push(`Vehicle upkeep: $${vCost.toLocaleString()}`);
+  }
+
+  if (totalUpkeep > 0) {
+    // Cap at 10% of wealth to prevent total wipeout
+    const cap = Math.floor(player.money * 0.1);
+    const finalUpkeep = Math.min(totalUpkeep, cap);
+
+    if (finalUpkeep > 0 && player.money > finalUpkeep) {
+      player.money -= finalUpkeep;
+      player.lastUpkeepCollection = now;
+      logAction(`💸 Hourly upkeep deducted: $${finalUpkeep.toLocaleString()} (${details.join(', ')})`, 'economy');
+    } else {
+      player.lastUpkeepCollection = now; // Still reset timer
+    }
+  } else {
+    player.lastUpkeepCollection = now;
+  }
+}
+
+// ==================== DAILY LOGIN REWARDS ====================
+const DAILY_LOGIN_REWARDS = [
+  { day: 1, money: 2000, xp: 100, label: '$2,000 + 100 XP' },
+  { day: 2, money: 3500, xp: 150, label: '$3,500 + 150 XP' },
+  { day: 3, money: 5000, xp: 200, buff: { type: 'energy_regen', multiplier: 1.5, duration: 3600000, name: 'Energy Boost' }, label: '$5K + 200 XP + Energy Boost (1h)' },
+  { day: 4, money: 7500, xp: 300, label: '$7,500 + 300 XP' },
+  { day: 5, money: 10000, xp: 400, buff: { type: 'job_pay', multiplier: 1.25, duration: 3600000, name: 'Pay Day' }, label: '$10K + 400 XP + Job Pay Boost (1h)' },
+  { day: 6, money: 15000, xp: 500, label: '$15,000 + 500 XP' },
+  { day: 7, money: 25000, xp: 750, buff: { type: 'xp_boost', multiplier: 1.5, duration: 7200000, name: 'XP Surge' }, label: '$25K + 750 XP + 1.5x XP (2h)' }
+];
+
+function checkDailyLogin() {
+  if (!player.dailyLogin) player.dailyLogin = { lastClaimDate: null, streak: 0, totalDays: 0 };
+
+  const today = new Date().toDateString();
+  if (player.dailyLogin.lastClaimDate === today) return; // Already claimed
+
+  // Show daily login popup
+  const dayIndex = (player.dailyLogin.streak || 0) % 7;
+  const reward = DAILY_LOGIN_REWARDS[dayIndex];
+
+  let html = `<div style="text-align:center;padding:20px;">
+    <h2 style="color:#d4af37;margin-bottom:16px;">🎁 Daily Login Reward</h2>
+    <p style="color:#d4c4a0;margin-bottom:8px;">Day ${dayIndex + 1} of 7 — Streak: ${player.dailyLogin.streak || 0} days</p>
+    <div style="background:rgba(20,18,10,0.6);border:2px solid #d4af37;border-radius:12px;padding:20px;margin:16px auto;max-width:300px;">
+      <p style="color:#d4af37;font-size:1.3em;font-weight:bold;">${reward.label}</p>
+    </div>
+    <div style="margin:16px 0;">`;
+
+  // Show future rewards preview
+  DAILY_LOGIN_REWARDS.forEach((r, i) => {
+    const isCurrent = i === dayIndex;
+    const isPast = i < dayIndex;
+    html += `<div style="display:inline-block;width:40px;height:40px;line-height:40px;margin:4px;border-radius:50%;font-size:0.8em;font-weight:bold;${isCurrent ? 'background:#d4af37;color:#14120a;border:2px solid #fff;' : isPast ? 'background:#27ae60;color:#fff;' : 'background:#3a3520;color:#8a7a5a;'}">${i + 1}</div>`;
+  });
+
+  html += `</div>
+    <button onclick="claimDailyLogin()" style="background:linear-gradient(135deg,#d4af37,#b8962e);color:#14120a;border:none;padding:14px 32px;border-radius:8px;cursor:pointer;font-weight:bold;font-size:1.1em;margin-top:12px;">Claim Reward</button>
+  </div>`;
+
+  // Use an overlay div
+  const existing = document.getElementById('daily-login-overlay');
+  if (existing) existing.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'daily-login-overlay';
+  overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:99999;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;';
+  overlay.innerHTML = `<div style="background:linear-gradient(135deg,#14120a,#0d0b07);border:2px solid #c0a062;border-radius:16px;padding:30px;max-width:480px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.8);">${html}</div>`;
+  document.body.appendChild(overlay);
+}
+
+function claimDailyLogin() {
+  if (!player.dailyLogin) player.dailyLogin = { lastClaimDate: null, streak: 0, totalDays: 0 };
+
+  const today = new Date().toDateString();
+  if (player.dailyLogin.lastClaimDate === today) {
+    showBriefNotification('Already claimed today!', 'error');
+    return;
+  }
+
+  // Check if streak is broken (more than 48h since last claim)
+  const yesterday = new Date(Date.now() - 86400000).toDateString();
+  if (player.dailyLogin.lastClaimDate && player.dailyLogin.lastClaimDate !== yesterday) {
+    player.dailyLogin.streak = 0; // Reset streak
+  }
+
+  const dayIndex = player.dailyLogin.streak % 7;
+  const reward = DAILY_LOGIN_REWARDS[dayIndex];
+
+  player.money += reward.money;
+  gainExperience(reward.xp);
+
+  if (reward.buff) {
+    if (!player.activeBuffs) player.activeBuffs = [];
+    player.activeBuffs.push({
+      ...reward.buff,
+      expiresAt: Date.now() + reward.buff.duration
+    });
+    showBriefNotification(`Buff activated: ${reward.buff.name} (${Math.round(reward.buff.duration / 60000)}min)`, 'success');
+  }
+
+  player.dailyLogin.streak++;
+  player.dailyLogin.totalDays++;
+  player.dailyLogin.lastClaimDate = today;
+
+  showBriefNotification(`Daily reward claimed: ${reward.label}`, 'success');
+  logAction(`🎁 Daily login reward (Day ${dayIndex + 1}): ${reward.label}`, 'reward');
+
+  // Notify server
+  if (typeof sendMP === 'function') sendMP({ type: 'daily_login_claim' });
+
+  // Close overlay
+  const overlay = document.getElementById('daily-login-overlay');
+  if (overlay) overlay.remove();
+
+  updateUI();
+}
+
+// ==================== BUFF SYSTEM ====================
+function getActiveBuff(type) {
+  if (!player.activeBuffs) return null;
+  // Clean expired buffs
+  player.activeBuffs = player.activeBuffs.filter(b => b.expiresAt > Date.now());
+  return player.activeBuffs.find(b => b.type === type) || null;
+}
+
+function getBuffMultiplier(type) {
+  const buff = getActiveBuff(type);
+  return buff ? buff.multiplier : 1;
+}
+
+function renderActiveBuffs() {
+  if (!player.activeBuffs || player.activeBuffs.length === 0) return '';
+  player.activeBuffs = player.activeBuffs.filter(b => b.expiresAt > Date.now());
+  if (player.activeBuffs.length === 0) return '';
+
+  let html = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:4px 0;">';
+  player.activeBuffs.forEach(b => {
+    const timeLeft = Math.max(0, Math.round((b.expiresAt - Date.now()) / 60000));
+    html += `<span style="background:rgba(212,175,55,0.2);border:1px solid #d4af37;border-radius:4px;padding:2px 8px;font-size:0.8em;color:#d4af37;">⚡ ${b.name} (${timeLeft}m)</span>`;
+  });
+  html += '</div>';
+  return html;
+}
+
+// ==================== TITLE SYSTEM ====================
+function equipTitle(achievementId) {
+  const achievement = player.achievements.find(a => a.id === achievementId);
+  if (achievement && achievement.unlocked && achievement.title) {
+    player.title = achievement.title;
+    showBriefNotification(`Title equipped: "${achievement.title}"`, 'success');
+    updateUI();
+  }
+}
+
+function getPlayerTitle() {
+  return player.title || '';
+}
+
+// ==================== SKILL TREE RESPEC ====================
+function respecSkillTree() {
+  if (!player.respecCount) player.respecCount = 0;
+  const cost = 10000 * Math.pow(2, player.respecCount); // Doubles each time
+
+  if (player.money < cost) {
+    showBriefNotification(`Not enough money! Respec costs $${cost.toLocaleString()}.`, 'error');
+    return;
+  }
+
+  // Count total invested skill points
+  let refundedPoints = 0;
+  if (player.skillTree) {
+    player.skillTree.forEach(node => {
+      if (node.currentLevel > 0) {
+        refundedPoints += node.currentLevel;
+        node.currentLevel = 0;
+      }
+    });
+  }
+
+  if (refundedPoints === 0) {
+    showBriefNotification('No skill points to refund.', 'error');
+    return;
+  }
+
+  player.money -= cost;
+  player.skillPoints = (player.skillPoints || 0) + refundedPoints;
+  player.respecCount++;
+
+  showBriefNotification(`Skills reset! ${refundedPoints} points refunded. Cost: $${cost.toLocaleString()}`, 'success');
+  logAction(`🔄 Skill tree reset! ${refundedPoints} points refunded for $${cost.toLocaleString()}.`, 'skills');
+  updateUI();
+}
+
+// ==================== CONTEXTUAL TUTORIALS (EXPANDED) ====================
+// Additional tutorial entries for new screens
+const NEW_TUTORIAL_CONTENT = {
+  friends: { title: 'Friends & Social', tip: 'Add friends to see when they\'re online. You can invite friends to Superboss fights and crew activities.' },
+  crew: { title: 'Crews', tip: 'Create or join a crew of up to 10 players. Leaders can invite members, set mottos, and promote officers.' },
+  hitcontracts: { title: 'The Dark Board', tip: 'Post anonymous hit contracts on other players. Claim a contract to hunt the target. Rewards are paid on completion.' },
+  playergambling: { title: 'The Back Room', tip: 'Gamble against other players with dice, coin flip, or high card. The server resolves all games fairly.' },
+  superboss: { title: 'Superboss Fights', tip: 'Challenge legendary crime lords. Invite up to 4 friends to help. Higher level bosses drop better rewards and unique buffs.' },
+  dailylogin: { title: 'Daily Rewards', tip: 'Log in every day to earn increasing rewards. Keep your streak going for 7 days to earn the best prizes!' }
+};
+
+// Merge into existing tutorials if they exist
+if (typeof TUTORIAL_CONTENT !== 'undefined') {
+  Object.assign(TUTORIAL_CONTENT, NEW_TUTORIAL_CONTENT);
+}
+
+// ==================== NOTIFICATION BADGES ====================
+function getNotificationBadges() {
+  const badges = {};
+
+  // Friends: check for pending friend requests
+  // (We don't have a pending queue client-side, but we can badge if screen is new)
+
+  // Daily login: badge if unclaimed
+  if (!player.dailyLogin || player.dailyLogin.lastClaimDate !== new Date().toDateString()) {
+    badges.dailylogin = true;
+  }
+
+  // Seasonal event: badge if active event
+  if (window._seasonalEventData && window._seasonalEventData.active) {
+    badges.seasonal = true;
+  }
+
+  // Superboss invite pending
+  if (window._pendingSuperbossInvite) {
+    badges.superboss = true;
+  }
+
+  // Crew invite pending
+  if (window._pendingCrewInvite) {
+    badges.crew = true;
+  }
+
+  return badges;
+}
+
+// Render badge dots on SafeHouse buttons
+function renderNotificationBadges() {
+  const badges = getNotificationBadges();
+  Object.keys(badges).forEach(key => {
+    const btn = document.querySelector(`[data-badge-id="${key}"]`);
+    if (btn && badges[key]) {
+      // Add dot if not already present
+      if (!btn.querySelector('.notification-dot')) {
+        const dot = document.createElement('span');
+        dot.className = 'notification-dot';
+        dot.style.cssText = 'position:absolute;top:4px;right:4px;width:10px;height:10px;background:#e74c3c;border-radius:50%;border:2px solid #14120a;';
+        btn.style.position = 'relative';
+        btn.appendChild(dot);
+      }
+    } else if (btn) {
+      const dot = btn.querySelector('.notification-dot');
+      if (dot) dot.remove();
+    }
+  });
+}
+
+// ==================== NEW ACHIEVEMENTS CHECKS ====================
+function checkNewAchievements() {
+  if (!player.achievements) return;
+
+  // Superboss achievements
+  const superbossFirst = player.achievements.find(a => a.id === 'superboss_first');
+  if (superbossFirst && !superbossFirst.unlocked && (player.superbossesDefeated || []).length >= 1) {
+    superbossFirst.unlocked = true;
+    showBriefNotification(`🏆 Achievement: "${superbossFirst.title}" — ${superbossFirst.name}`, 'success');
+    logAction(`🏆 Achievement unlocked: ${superbossFirst.name}`, 'achievement');
+  }
+
+  const superbossAll = player.achievements.find(a => a.id === 'superboss_all');
+  if (superbossAll && !superbossAll.unlocked && (player.superbossesDefeated || []).length >= 4) {
+    superbossAll.unlocked = true;
+    showBriefNotification(`🏆 Achievement: "${superbossAll.title}" — ${superbossAll.name}`, 'success');
+    logAction(`🏆 Achievement unlocked: ${superbossAll.name}`, 'achievement');
+  }
+
+  // Social achievements
+  const firstFriend = player.achievements.find(a => a.id === 'first_friend');
+  if (firstFriend && !firstFriend.unlocked && (player.friends || []).length >= 1) {
+    firstFriend.unlocked = true;
+    showBriefNotification(`🏆 Achievement: "${firstFriend.title}" — ${firstFriend.name}`, 'success');
+    logAction(`🏆 Achievement unlocked: ${firstFriend.name}`, 'achievement');
+  }
+
+  const crewFounder = player.achievements.find(a => a.id === 'crew_founder');
+  if (crewFounder && !crewFounder.unlocked && player.crewId && player.crewRole === 'leader') {
+    crewFounder.unlocked = true;
+    showBriefNotification(`🏆 Achievement: "${crewFounder.title}" — ${crewFounder.name}`, 'success');
+    logAction(`🏆 Achievement unlocked: ${crewFounder.name}`, 'achievement');
+  }
+
+  // Daily login streaks
+  const daily7 = player.achievements.find(a => a.id === 'daily_7');
+  if (daily7 && !daily7.unlocked && (player.dailyLogin?.streak || 0) >= 7) {
+    daily7.unlocked = true;
+    showBriefNotification(`🏆 Achievement: "${daily7.title}" — ${daily7.name}`, 'success');
+    logAction(`🏆 Achievement unlocked: ${daily7.name}`, 'achievement');
+  }
+
+  const daily30 = player.achievements.find(a => a.id === 'daily_30');
+  if (daily30 && !daily30.unlocked && (player.dailyLogin?.totalDays || 0) >= 30) {
+    daily30.unlocked = true;
+    showBriefNotification(`🏆 Achievement: "${daily30.title}" — ${daily30.name}`, 'success');
+    logAction(`🏆 Achievement unlocked: ${daily30.name}`, 'achievement');
+  }
+
+  // Hit contracts
+  const hitMan = player.achievements.find(a => a.id === 'hit_man');
+  if (hitMan && !hitMan.unlocked && (player._hitContractsCompleted || 0) >= 5) {
+    hitMan.unlocked = true;
+    showBriefNotification(`🏆 Achievement: "${hitMan.title}" — ${hitMan.name}`, 'success');
+    logAction(`🏆 Achievement unlocked: ${hitMan.name}`, 'achievement');
+  }
+
+  // Poker/gambling wins  
+  const pokerShark = player.achievements.find(a => a.id === 'poker_shark');
+  if (pokerShark && !pokerShark.unlocked && (player._pokerWins || 0) >= 10) {
+    pokerShark.unlocked = true;
+    showBriefNotification(`🏆 Achievement: "${pokerShark.title}" — ${pokerShark.name}`, 'success');
+    logAction(`🏆 Achievement unlocked: ${pokerShark.name}`, 'achievement');
+  }
+}
+
 // ==================== EXPOSE FUNCTIONS TO GLOBAL SCOPE ====================
 // This is required because this file is now a module, but the HTML onclick handlers
 // expect these functions to be available on the window object.
@@ -23110,6 +23635,31 @@ window.showDayDetails = showDayDetails;
 
 // Auth & Cloud Save
 window.showAuthModal = showAuthModal;
+
+// New Feature Screens
+window.showFriendsScreen = showFriendsScreen;
+window.showCrewScreen = showCrewScreen;
+window.showHitContracts = showHitContracts;
+window.showPlayerGambling = showPlayerGambling;
+window.showSuperbossScreen = showSuperbossScreen;
+
+// Economy Sinks & Daily Login
+window.processEconomySinks = processEconomySinks;
+window.checkDailyLogin = checkDailyLogin;
+window.claimDailyLogin = claimDailyLogin;
+window.getActiveBuff = getActiveBuff;
+window.getBuffMultiplier = getBuffMultiplier;
+window.renderActiveBuffs = renderActiveBuffs;
+
+// Title & Respec
+window.equipTitle = equipTitle;
+window.getPlayerTitle = getPlayerTitle;
+window.respecSkillTree = respecSkillTree;
+
+// Badges & New Achievements
+window.getNotificationBadges = getNotificationBadges;
+window.renderNotificationBadges = renderNotificationBadges;
+window.checkNewAchievements = checkNewAchievements;
 
 
 

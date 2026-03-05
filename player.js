@@ -254,7 +254,37 @@ export const player = {
     businessPower: 0,
     reputationPower: 0,
     skillPower: 0
-  }
+  },
+
+  // === Social System ===
+  friends: [],          // Array of { name, addedAt }
+  blocked: [],          // Array of { name, blockedAt }
+  crewId: null,         // Crew the player belongs to (ID)
+  crewRole: null,       // 'leader' | 'officer' | 'member'
+  title: null,          // Currently equipped achievement title string
+
+  // === Daily Login Rewards ===
+  dailyLogin: {
+    lastClaimDate: null,  // ISO date string of last claim
+    streak: 0,            // Current consecutive days
+    totalDays: 0          // Total days claimed ever
+  },
+
+  // === Active Buffs (from daily rewards / consumables) ===
+  activeBuffs: [],  // Array of { id, name, effect, value, expiresAt (timestamp) }
+
+  // === Skill Respec ===
+  respecCount: 0,  // Number of times player has respecced (cost scales)
+
+  // === Economy Upkeep ===
+  lastUpkeepCollection: null,  // ISO date string for daily upkeep deductions
+
+  // === Superboss System ===
+  superbossesDefeated: [],  // Array of superboss IDs defeated
+  superbossInvites: [],     // Pending superboss fight invites from other players
+
+  // === Seasonal Event Participation ===
+  seasonalEventProgress: {} // { eventId: { score, completedObjectives[] } }
 };
 
 /**
@@ -524,44 +554,54 @@ export function isNodeAccessible(treeName, nodeId) {
 // Achievements system
 export const achievements = [
   // === Early Game ===
-  { id: "first_job", name: "First Day on the Job", description: "Complete your first job", unlocked: false, reward: { money: 500, xp: 25 } },
-  { id: "first_blood", name: "First Blood", description: "Win your first fight or heist", unlocked: false, reward: { money: 1000, xp: 50 } },
-  { id: "wheels", name: "Hot Wheels", description: "Steal your first car", unlocked: false, reward: { money: 2000, xp: 50 } },
-  { id: "armed_dangerous", name: "Armed & Dangerous", description: "Buy your first weapon", unlocked: false, reward: { money: 1000, xp: 30 } },
-  { id: "property_owner", name: "Property Mogul", description: "Buy your first property", unlocked: false, reward: { money: 5000, xp: 100 } },
+  { id: "first_job", name: "First Day on the Job", description: "Complete your first job", unlocked: false, reward: { money: 500, xp: 25 }, title: "The Rookie" },
+  { id: "first_blood", name: "First Blood", description: "Win your first fight or heist", unlocked: false, reward: { money: 1000, xp: 50 }, title: "Blooded" },
+  { id: "wheels", name: "Hot Wheels", description: "Steal your first car", unlocked: false, reward: { money: 2000, xp: 50 }, title: "Wheelman" },
+  { id: "armed_dangerous", name: "Armed & Dangerous", description: "Buy your first weapon", unlocked: false, reward: { money: 1000, xp: 30 }, title: "Armed" },
+  { id: "property_owner", name: "Property Mogul", description: "Buy your first property", unlocked: false, reward: { money: 5000, xp: 100 }, title: "Landlord" },
   // === Money Milestones ===
-  { id: "millionaire", name: "Big Shot", description: "Have $100,000", unlocked: false, reward: { money: 10000, xp: 100 } },
-  { id: "half_mil", name: "High Roller", description: "Have $500,000", unlocked: false, reward: { money: 25000, xp: 200 } },
-  { id: "true_millionaire", name: "Millionaire", description: "Have $1,000,000", unlocked: false, reward: { money: 50000, xp: 500 } },
-  { id: "multi_millionaire", name: "Multi-Millionaire", description: "Have $10,000,000", unlocked: false, reward: { money: 500000, xp: 1000 } },
-  { id: "billionaire", name: "Criminal Tycoon", description: "Have $100,000,000", unlocked: false, reward: { money: 5000000, xp: 5000 } },
+  { id: "millionaire", name: "Big Shot", description: "Have $100,000", unlocked: false, reward: { money: 10000, xp: 100 }, title: "Big Shot" },
+  { id: "half_mil", name: "High Roller", description: "Have $500,000", unlocked: false, reward: { money: 25000, xp: 200 }, title: "High Roller" },
+  { id: "true_millionaire", name: "Millionaire", description: "Have $1,000,000", unlocked: false, reward: { money: 50000, xp: 500 }, title: "Millionaire" },
+  { id: "multi_millionaire", name: "Multi-Millionaire", description: "Have $10,000,000", unlocked: false, reward: { money: 500000, xp: 1000 }, title: "Tycoon" },
+  { id: "billionaire", name: "Criminal Tycoon", description: "Have $100,000,000", unlocked: false, reward: { money: 5000000, xp: 5000 }, title: "Criminal Tycoon" },
   // === Gang & Social ===
-  { id: "first_recruit", name: "Right Hand Man", description: "Recruit your first gang member", unlocked: false, reward: { money: 2000, xp: 75 } },
-  { id: "gang_leader", name: "Gang Leader", description: "Have 10 gang members", unlocked: false, reward: { money: 15000, xp: 200 } },
-  { id: "crime_family", name: "Crime Family", description: "Have 25 gang members", unlocked: false, reward: { money: 50000, xp: 500 } },
-  { id: "army", name: "Criminal Army", description: "Have 50 gang members", unlocked: false, reward: { money: 200000, xp: 1000 } },
-  { id: "faction_friend", name: "Friend of the Family", description: "Reach 25 reputation with any faction", unlocked: false, reward: { money: 10000, xp: 150 } },
-  { id: "faction_ally", name: "Made Man", description: "Reach 50 reputation with any faction", unlocked: false, reward: { money: 50000, xp: 300 } },
+  { id: "first_recruit", name: "Right Hand Man", description: "Recruit your first gang member", unlocked: false, reward: { money: 2000, xp: 75 }, title: "Recruiter" },
+  { id: "gang_leader", name: "Gang Leader", description: "Have 10 gang members", unlocked: false, reward: { money: 15000, xp: 200 }, title: "Gang Leader" },
+  { id: "crime_family", name: "Crime Family", description: "Have 25 gang members", unlocked: false, reward: { money: 50000, xp: 500 }, title: "Crime Boss" },
+  { id: "army", name: "Criminal Army", description: "Have 50 gang members", unlocked: false, reward: { money: 200000, xp: 1000 }, title: "Warlord" },
+  { id: "faction_friend", name: "Friend of the Family", description: "Reach 25 reputation with any faction", unlocked: false, reward: { money: 10000, xp: 150 }, title: "Connected" },
+  { id: "faction_ally", name: "Made Man", description: "Reach 50 reputation with any faction", unlocked: false, reward: { money: 50000, xp: 300 }, title: "Made Man" },
   // === Combat & Crime ===
-  { id: "jail_break", name: "Great Escape", description: "Successfully break out of jail", unlocked: false, reward: { money: 5000, xp: 100 } },
-  { id: "most_wanted", name: "Most Wanted", description: "Reach wanted level 50", unlocked: false, reward: { money: 25000, xp: 300 } },
-  { id: "ghost", name: "Ghost", description: "Complete 10 jobs without getting arrested", unlocked: false, reward: { money: 20000, xp: 250 } },
-  { id: "boss_slayer", name: "Boss Slayer", description: "Defeat your first rival boss", unlocked: false, reward: { money: 100000, xp: 500 } },
+  { id: "jail_break", name: "Great Escape", description: "Successfully break out of jail", unlocked: false, reward: { money: 5000, xp: 100 }, title: "Escape Artist" },
+  { id: "most_wanted", name: "Most Wanted", description: "Reach wanted level 50", unlocked: false, reward: { money: 25000, xp: 300 }, title: "Most Wanted" },
+  { id: "ghost", name: "Ghost", description: "Complete 10 jobs without getting arrested", unlocked: false, reward: { money: 20000, xp: 250 }, title: "The Ghost" },
+  { id: "boss_slayer", name: "Boss Slayer", description: "Defeat your first rival boss", unlocked: false, reward: { money: 100000, xp: 500 }, title: "Boss Slayer" },
   // === Progression ===
-  { id: "reputation_max", name: "Legendary Criminal", description: "Reach 100 reputation", unlocked: false, reward: { money: 100000, xp: 500 } },
-  { id: "level_10", name: "Rising Star", description: "Reach level 10", unlocked: false, reward: { money: 15000, xp: 200 } },
-  { id: "level_25", name: "Veteran", description: "Reach level 25", unlocked: false, reward: { money: 100000, xp: 500 } },
-  { id: "level_50", name: "Kingpin", description: "Reach level 50", unlocked: false, reward: { money: 500000, xp: 2000 } },
-  { id: "skill_master", name: "Skill Master", description: "Max out any base skill (20+)", unlocked: false, reward: { money: 25000, xp: 300 } },
+  { id: "reputation_max", name: "Legendary Criminal", description: "Reach 100 reputation", unlocked: false, reward: { money: 100000, xp: 500 }, title: "Legendary" },
+  { id: "level_10", name: "Rising Star", description: "Reach level 10", unlocked: false, reward: { money: 15000, xp: 200 }, title: "Rising Star" },
+  { id: "level_25", name: "Veteran", description: "Reach level 25", unlocked: false, reward: { money: 100000, xp: 500 }, title: "Veteran" },
+  { id: "level_50", name: "Kingpin", description: "Reach level 50", unlocked: false, reward: { money: 500000, xp: 2000 }, title: "Kingpin" },
+  { id: "skill_master", name: "Skill Master", description: "Max out any base skill (20+)", unlocked: false, reward: { money: 25000, xp: 300 }, title: "Specialist" },
   // === Empire ===
-  { id: "territory_3", name: "Neighborhood Boss", description: "Control 3 territories", unlocked: false, reward: { money: 30000, xp: 200 } },
-  { id: "territory_10", name: "District King", description: "Control 10 territories", unlocked: false, reward: { money: 200000, xp: 500 } },
-  { id: "business_owner", name: "Legitimate Businessman", description: "Own your first business front", unlocked: false, reward: { money: 50000, xp: 200 } },
-  { id: "jobs_50", name: "Workhorse", description: "Complete 50 jobs", unlocked: false, reward: { money: 25000, xp: 300 } },
-  { id: "jobs_200", name: "Professional", description: "Complete 200 jobs", unlocked: false, reward: { money: 100000, xp: 500 } },
+  { id: "territory_3", name: "Neighborhood Boss", description: "Control 3 territories", unlocked: false, reward: { money: 30000, xp: 200 }, title: "Block Captain" },
+  { id: "territory_10", name: "District King", description: "Control 10 territories", unlocked: false, reward: { money: 200000, xp: 500 }, title: "District King" },
+  { id: "business_owner", name: "Legitimate Businessman", description: "Own your first business front", unlocked: false, reward: { money: 50000, xp: 200 }, title: "Businessman" },
+  { id: "jobs_50", name: "Workhorse", description: "Complete 50 jobs", unlocked: false, reward: { money: 25000, xp: 300 }, title: "Workhorse" },
+  { id: "jobs_200", name: "Professional", description: "Complete 200 jobs", unlocked: false, reward: { money: 100000, xp: 500 }, title: "Professional" },
   // === Mini-games ===
-  { id: "lucky_streak", name: "Lucky Streak", description: "Win at the casino 3 times", unlocked: false, reward: { money: 10000, xp: 100 } },
-  { id: "gambler", name: "High Stakes Gambler", description: "Win at the casino 10 times", unlocked: false, reward: { money: 50000, xp: 250 } },
-  { id: "snake_king", name: "Snake King", description: "Score 20+ in Snake mini-game", unlocked: false, reward: { money: 15000, xp: 150 } },
-  { id: "quick_draw", name: "Fastest Gun", description: "React under 200ms in Quick Draw", unlocked: false, reward: { money: 20000, xp: 200 } }
+  { id: "lucky_streak", name: "Lucky Streak", description: "Win at the casino 3 times", unlocked: false, reward: { money: 10000, xp: 100 }, title: "Lucky" },
+  { id: "gambler", name: "High Stakes Gambler", description: "Win at the casino 10 times", unlocked: false, reward: { money: 50000, xp: 250 }, title: "Gambler" },
+  { id: "snake_king", name: "Snake King", description: "Score 20+ in Snake mini-game", unlocked: false, reward: { money: 15000, xp: 150 }, title: "Snake King" },
+  { id: "quick_draw", name: "Fastest Gun", description: "React under 200ms in Quick Draw", unlocked: false, reward: { money: 20000, xp: 200 }, title: "Quickdraw" },
+  // === Superboss ===
+  { id: "superboss_first", name: "Giant Slayer", description: "Defeat your first Superboss", unlocked: false, reward: { money: 500000, xp: 3000 }, title: "Giant Slayer" },
+  { id: "superboss_all", name: "Unstoppable", description: "Defeat all Superbosses", unlocked: false, reward: { money: 2000000, xp: 10000 }, title: "The Unstoppable" },
+  // === Social/Multiplayer ===
+  { id: "first_friend", name: "Networking", description: "Add your first friend", unlocked: false, reward: { money: 1000, xp: 50 }, title: "Social" },
+  { id: "crew_founder", name: "Crew Founder", description: "Create a crew", unlocked: false, reward: { money: 10000, xp: 200 }, title: "Founder" },
+  { id: "daily_7", name: "Dedicated", description: "Login 7 days in a row", unlocked: false, reward: { money: 25000, xp: 500 }, title: "Dedicated" },
+  { id: "daily_30", name: "Loyal Soldier", description: "Login 30 days in a row", unlocked: false, reward: { money: 100000, xp: 2000 }, title: "Loyal Soldier" },
+  { id: "hit_man", name: "Contract Killer", description: "Complete 5 anonymous hit contracts", unlocked: false, reward: { money: 50000, xp: 500 }, title: "Contract Killer" },
+  { id: "poker_shark", name: "Card Shark", description: "Win 10 player poker hands", unlocked: false, reward: { money: 50000, xp: 300 }, title: "Card Shark" }
 ];

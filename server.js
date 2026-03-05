@@ -544,7 +544,38 @@ const gameState = {
         messagesSent: 0,
         jailbreakAttempts: 0,
         successfulJailbreaks: 0
-    }
+    },
+    // === NEW SYSTEMS ===
+    // Server-side leaderboards (persisted, not client-side localStorage)
+    leaderboards: {
+        lastGenerated: 0,
+        cached: null // populated by generateLeaderboard()
+    },
+    // Heist matchmaking queue — players waiting for auto-match
+    heistQueue: [], // { playerId, playerName, level, joinedAt }
+    // Crews — player-created social groups
+    crews: new Map(), // crewId -> { id, name, tag, motto, emblem, leader, officers[], members[], createdAt }
+    // Anonymous hit contracts (dark board)
+    hitContracts: [], // { id, clientId, posterName, targetName, reward, anonymous, postedAt, expiresAt, claimedBy, completedBy }
+    // Player gambling tables
+    gamblingTables: new Map(), // tableId -> { id, type, hostId, hostName, guestId, guestName, bet, state, gameData, createdAt }
+    // Seasonal events
+    seasonalEvent: {
+        active: false,
+        id: null,
+        name: null,
+        description: null,
+        theme: null,
+        startedAt: 0,
+        endsAt: 0,
+        objectives: [],
+        rewards: [],
+        playerProgress: new Map() // playerId -> { score, completed[] }
+    },
+    // Superboss state
+    activeSuperbossFights: new Map(), // fightId -> { bossId, participants[], bossHP, startedAt }
+    // Anti-cheat snapshots
+    playerSnapshots: new Map() // playerId -> { money, level, reputation, lastSnapshotAt }
 };
 
 // ── Unified Territory Constants (mirror of territories.js for CommonJS) ──
@@ -1006,6 +1037,126 @@ function handleClientMessage(clientId, message, ws) {
 
         case 'admin_kill_player':
             handleAdminKillPlayer(clientId, message);
+            break;
+
+        // ==================== NEW SYSTEMS ====================
+        // Friends & Social
+        case 'friend_add':
+            handleFriendAdd(clientId, message);
+            break;
+        case 'friend_remove':
+            handleFriendRemove(clientId, message);
+            break;
+        case 'block_player':
+            handleBlockPlayer(clientId, message);
+            break;
+        case 'unblock_player':
+            handleUnblockPlayer(clientId, message);
+            break;
+        case 'get_friends_list':
+            handleGetFriendsList(clientId);
+            break;
+
+        // Server-side leaderboards
+        case 'get_leaderboards':
+            handleGetLeaderboards(clientId);
+            break;
+
+        // Heist matchmaking queue
+        case 'heist_queue_join':
+            handleHeistQueueJoin(clientId, message);
+            break;
+        case 'heist_queue_leave':
+            handleHeistQueueLeave(clientId);
+            break;
+
+        // Anti-cheat validation
+        case 'anticheat_snapshot':
+            handleAnticheatSnapshot(clientId, message);
+            break;
+
+        // Crews
+        case 'crew_create':
+            handleCrewCreate(clientId, message);
+            break;
+        case 'crew_invite':
+            handleCrewInvite(clientId, message);
+            break;
+        case 'crew_join':
+            handleCrewJoin(clientId, message);
+            break;
+        case 'crew_leave':
+            handleCrewLeave(clientId);
+            break;
+        case 'crew_kick':
+            handleCrewKick(clientId, message);
+            break;
+        case 'crew_info':
+            handleCrewInfo(clientId);
+            break;
+        case 'crew_update':
+            handleCrewUpdate(clientId, message);
+            break;
+
+        // Hit contracts (dark board)
+        case 'hit_contract_post':
+            handleHitContractPost(clientId, message);
+            break;
+        case 'hit_contract_claim':
+            handleHitContractClaim(clientId, message);
+            break;
+        case 'hit_contract_complete':
+            handleHitContractComplete(clientId, message);
+            break;
+        case 'hit_contract_list':
+            handleHitContractList(clientId);
+            break;
+
+        // Player gambling
+        case 'gambling_create_table':
+            handleGamblingCreateTable(clientId, message);
+            break;
+        case 'gambling_join_table':
+            handleGamblingJoinTable(clientId, message);
+            break;
+        case 'gambling_action':
+            handleGamblingAction(clientId, message);
+            break;
+        case 'gambling_list_tables':
+            handleGamblingListTables(clientId);
+            break;
+        case 'gambling_leave_table':
+            handleGamblingLeaveTable(clientId);
+            break;
+
+        // Superboss
+        case 'superboss_start':
+            handleSuperbossStart(clientId, message);
+            break;
+        case 'superboss_invite':
+            handleSuperbossInvite(clientId, message);
+            break;
+        case 'superboss_join':
+            handleSuperbossJoin(clientId, message);
+            break;
+        case 'superboss_attack':
+            handleSuperbossAttack(clientId, message);
+            break;
+        case 'superboss_list':
+            handleSuperbossList(clientId);
+            break;
+
+        // Seasonal events
+        case 'seasonal_event_info':
+            handleSeasonalEventInfo(clientId);
+            break;
+        case 'seasonal_event_progress':
+            handleSeasonalEventProgress(clientId, message);
+            break;
+
+        // Daily login
+        case 'daily_login_claim':
+            handleDailyLoginClaim(clientId, message);
             break;
 
         default:
@@ -4407,7 +4558,9 @@ function handleBuyBullets(clientId, message) {
 
     resetBulletShopIfNewDay();
 
-    const MAX_BULLETS_PER_DAY = 10;
+    // Scale bullet supply with active player count (base 10, +3 per online player, capped at 100)
+    const onlineCount = clients.size || 1;
+    const MAX_BULLETS_PER_DAY = Math.min(100, 10 + (onlineCount * 3));
     if (gameState.bulletShop.soldToday >= MAX_BULLETS_PER_DAY) {
         return fail(`Today's supply is sold out! All ${MAX_BULLETS_PER_DAY} bullets have been bought. Check the Player Market or try again tomorrow.`);
     }
@@ -4452,7 +4605,8 @@ function handleGetBulletStock(clientId) {
     if (!ws || ws.readyState !== WebSocket.OPEN) return;
 
     resetBulletShopIfNewDay();
-    const MAX_BULLETS_PER_DAY = 10;
+    const onlineCount = clients.size || 1;
+    const MAX_BULLETS_PER_DAY = Math.min(100, 10 + (onlineCount * 3));
     const remaining = MAX_BULLETS_PER_DAY - gameState.bulletShop.soldToday;
 
     ws.send(JSON.stringify({
@@ -4460,6 +4614,970 @@ function handleGetBulletStock(clientId) {
         remaining: remaining,
         soldToday: gameState.bulletShop.soldToday
     }));
+}
+
+// ==================== FRIENDS & SOCIAL SYSTEM ====================
+
+function handleFriendAdd(clientId, message) {
+    const ws = clients.get(clientId);
+    const player = gameState.players.get(clientId);
+    if (!ws || !player) return;
+    const targetName = (message.targetName || '').trim();
+    if (!targetName) return ws.send(JSON.stringify({ type: 'friend_result', success: false, error: 'Invalid name.' }));
+    if (targetName === player.name) return ws.send(JSON.stringify({ type: 'friend_result', success: false, error: 'Cannot add yourself.' }));
+    
+    // Check target exists online
+    let targetId = null;
+    for (const [id, p] of gameState.players) {
+        if (p.name === targetName) { targetId = id; break; }
+    }
+    if (!targetId) return ws.send(JSON.stringify({ type: 'friend_result', success: false, error: 'Player not found online.' }));
+    
+    ws.send(JSON.stringify({ type: 'friend_result', success: true, action: 'added', targetName }));
+    // Notify target
+    const targetWs = clients.get(targetId);
+    if (targetWs && targetWs.readyState === WebSocket.OPEN) {
+        targetWs.send(JSON.stringify({ type: 'friend_request', fromName: player.name }));
+    }
+    scheduleWorldSave();
+}
+
+function handleFriendRemove(clientId, message) {
+    const ws = clients.get(clientId);
+    if (!ws) return;
+    ws.send(JSON.stringify({ type: 'friend_result', success: true, action: 'removed', targetName: message.targetName }));
+}
+
+function handleBlockPlayer(clientId, message) {
+    const ws = clients.get(clientId);
+    if (!ws) return;
+    ws.send(JSON.stringify({ type: 'block_result', success: true, action: 'blocked', targetName: message.targetName }));
+}
+
+function handleUnblockPlayer(clientId, message) {
+    const ws = clients.get(clientId);
+    if (!ws) return;
+    ws.send(JSON.stringify({ type: 'block_result', success: true, action: 'unblocked', targetName: message.targetName }));
+}
+
+function handleGetFriendsList(clientId) {
+    const ws = clients.get(clientId);
+    if (!ws) return;
+    // Return list of online players so client can cross-reference its local friends list
+    const onlinePlayers = [];
+    for (const [id, p] of gameState.players) {
+        if (id !== clientId) {
+            onlinePlayers.push({ name: p.name, level: p.level || 1, playerId: id });
+        }
+    }
+    ws.send(JSON.stringify({ type: 'friends_list_result', onlinePlayers }));
+}
+
+// ==================== SERVER-SIDE LEADERBOARDS ====================
+
+function handleGetLeaderboards(clientId) {
+    const ws = clients.get(clientId);
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    
+    // Cache leaderboard for 60s to avoid recalculating every request
+    const now = Date.now();
+    if (!gameState.leaderboards.cached || now - gameState.leaderboards.lastGenerated > 60000) {
+        gameState.leaderboards.cached = generateLeaderboard();
+        gameState.leaderboards.lastGenerated = now;
+    }
+    
+    ws.send(JSON.stringify({
+        type: 'leaderboards_result',
+        leaderboards: gameState.leaderboards.cached
+    }));
+}
+
+// ==================== HEIST MATCHMAKING QUEUE ====================
+
+function handleHeistQueueJoin(clientId, message) {
+    const ws = clients.get(clientId);
+    const player = gameState.players.get(clientId);
+    if (!ws || !player) return;
+    
+    // Check not already in queue
+    if (gameState.heistQueue.find(q => q.playerId === clientId)) {
+        return ws.send(JSON.stringify({ type: 'heist_queue_result', success: false, error: 'Already in queue.' }));
+    }
+    
+    gameState.heistQueue.push({ playerId: clientId, playerName: player.name, level: player.level || 1, joinedAt: Date.now() });
+    ws.send(JSON.stringify({ type: 'heist_queue_result', success: true, position: gameState.heistQueue.length }));
+    
+    // Auto-match: if 3+ players in queue, form a heist
+    if (gameState.heistQueue.length >= 3) {
+        const team = gameState.heistQueue.splice(0, 3);
+        const districts = Object.keys(NPC_TERRITORY_BOSSES);
+        const target = districts[Math.floor(Math.random() * districts.length)];
+        
+        const heist = {
+            id: 'heist_' + Date.now(),
+            leader: team[0].playerId,
+            leaderName: team[0].playerName,
+            target: target,
+            participants: team.map(t => ({ playerId: t.playerId, name: t.playerName, ready: true })),
+            status: 'ready',
+            createdAt: Date.now(),
+            isMatchmade: true
+        };
+        gameState.activeHeists.push(heist);
+        
+        // Notify all team members
+        team.forEach(t => {
+            const tWs = clients.get(t.playerId);
+            if (tWs && tWs.readyState === WebSocket.OPEN) {
+                tWs.send(JSON.stringify({ type: 'heist_queue_matched', heist }));
+            }
+        });
+        
+        addGlobalChatMessage('System', `A matchmade heist crew has assembled! ${team.map(t => t.playerName).join(', ')} are hitting ${target}.`, '#27ae60');
+    }
+    scheduleWorldSave();
+}
+
+function handleHeistQueueLeave(clientId) {
+    const ws = clients.get(clientId);
+    gameState.heistQueue = gameState.heistQueue.filter(q => q.playerId !== clientId);
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'heist_queue_result', success: true, action: 'left' }));
+    }
+}
+
+// ==================== ANTI-CHEAT VALIDATION ====================
+
+function handleAnticheatSnapshot(clientId, message) {
+    const player = gameState.players.get(clientId);
+    if (!player) return;
+    
+    const snapshot = gameState.playerSnapshots.get(clientId);
+    const now = Date.now();
+    
+    if (snapshot) {
+        const timeDelta = (now - snapshot.lastSnapshotAt) / 1000; // seconds
+        const moneyGain = (message.money || 0) - snapshot.money;
+        const levelGain = (message.level || 0) - snapshot.level;
+        const repGain = (message.reputation || 0) - snapshot.reputation;
+        
+        // Flag suspicious gains (earning more than $500k/minute or 5 levels/minute)
+        if (timeDelta > 0) {
+            const moneyPerMinute = (moneyGain / timeDelta) * 60;
+            const levelsPerMinute = (levelGain / timeDelta) * 60;
+            
+            if (moneyPerMinute > 500000 && moneyGain > 0) {
+                console.log(`\u26a0\ufe0f ANTICHEAT: ${player.name} gained $${moneyGain.toLocaleString()} in ${Math.round(timeDelta)}s (${Math.round(moneyPerMinute).toLocaleString()}/min)`);
+                addGlobalChatMessage('System', `\u26a0\ufe0f Suspicious activity detected from ${player.name}. The authorities are watching...`, '#e74c3c');
+            }
+            if (levelsPerMinute > 5 && levelGain > 0) {
+                console.log(`\u26a0\ufe0f ANTICHEAT: ${player.name} gained ${levelGain} levels in ${Math.round(timeDelta)}s`);
+            }
+        }
+    }
+    
+    // Store new snapshot
+    gameState.playerSnapshots.set(clientId, {
+        money: message.money || 0,
+        level: message.level || 0,
+        reputation: message.reputation || 0,
+        lastSnapshotAt: now
+    });
+}
+
+// ==================== CREW SYSTEM ====================
+
+function handleCrewCreate(clientId, message) {
+    const ws = clients.get(clientId);
+    const player = gameState.players.get(clientId);
+    if (!ws || !player) return;
+    
+    const crewName = (message.name || '').trim().substring(0, 24);
+    const crewTag = (message.tag || '').trim().substring(0, 5).toUpperCase();
+    if (!crewName || crewName.length < 3) return ws.send(JSON.stringify({ type: 'crew_result', success: false, error: 'Crew name must be 3-24 characters.' }));
+    if (!crewTag || crewTag.length < 2) return ws.send(JSON.stringify({ type: 'crew_result', success: false, error: 'Crew tag must be 2-5 characters.' }));
+    
+    // Check duplicate name
+    for (const [, c] of gameState.crews) {
+        if (c.name.toLowerCase() === crewName.toLowerCase()) {
+            return ws.send(JSON.stringify({ type: 'crew_result', success: false, error: 'Crew name taken.' }));
+        }
+    }
+    
+    const crewId = 'crew_' + Date.now();
+    const crew = {
+        id: crewId,
+        name: crewName,
+        tag: crewTag,
+        motto: message.motto || '',
+        emblem: message.emblem || '🔱',
+        leader: clientId,
+        leaderName: player.name,
+        officers: [],
+        members: [{ playerId: clientId, name: player.name, role: 'leader', joinedAt: Date.now() }],
+        createdAt: Date.now()
+    };
+    gameState.crews.set(crewId, crew);
+    
+    ws.send(JSON.stringify({ type: 'crew_result', success: true, action: 'created', crew }));
+    addGlobalChatMessage('System', `[${crewTag}] ${crewName} crew founded by ${player.name}!`, '#c0a062');
+    scheduleWorldSave();
+}
+
+function handleCrewInvite(clientId, message) {
+    const ws = clients.get(clientId);
+    const player = gameState.players.get(clientId);
+    if (!ws || !player) return;
+    
+    // Find player's crew
+    let playerCrew = null;
+    for (const [, c] of gameState.crews) {
+        if (c.leader === clientId || c.officers.includes(clientId)) { playerCrew = c; break; }
+    }
+    if (!playerCrew) return ws.send(JSON.stringify({ type: 'crew_result', success: false, error: 'You are not a crew leader or officer.' }));
+    if (playerCrew.members.length >= 10) return ws.send(JSON.stringify({ type: 'crew_result', success: false, error: 'Crew is full (max 10).' }));
+    
+    const targetName = (message.targetName || '').trim();
+    let targetId = null;
+    for (const [id, p] of gameState.players) {
+        if (p.name === targetName) { targetId = id; break; }
+    }
+    if (!targetId) return ws.send(JSON.stringify({ type: 'crew_result', success: false, error: 'Player not found online.' }));
+    
+    const targetWs = clients.get(targetId);
+    if (targetWs && targetWs.readyState === WebSocket.OPEN) {
+        targetWs.send(JSON.stringify({ type: 'crew_invite', crewId: playerCrew.id, crewName: playerCrew.name, crewTag: playerCrew.tag, fromName: player.name }));
+    }
+    ws.send(JSON.stringify({ type: 'crew_result', success: true, action: 'invited', targetName }));
+}
+
+function handleCrewJoin(clientId, message) {
+    const ws = clients.get(clientId);
+    const player = gameState.players.get(clientId);
+    if (!ws || !player) return;
+    
+    const crew = gameState.crews.get(message.crewId);
+    if (!crew) return ws.send(JSON.stringify({ type: 'crew_result', success: false, error: 'Crew not found.' }));
+    if (crew.members.length >= 10) return ws.send(JSON.stringify({ type: 'crew_result', success: false, error: 'Crew is full.' }));
+    if (crew.members.find(m => m.playerId === clientId)) return ws.send(JSON.stringify({ type: 'crew_result', success: false, error: 'Already in this crew.' }));
+    
+    crew.members.push({ playerId: clientId, name: player.name, role: 'member', joinedAt: Date.now() });
+    ws.send(JSON.stringify({ type: 'crew_result', success: true, action: 'joined', crew }));
+    
+    // Notify crew leader
+    const leaderWs = clients.get(crew.leader);
+    if (leaderWs && leaderWs.readyState === WebSocket.OPEN) {
+        leaderWs.send(JSON.stringify({ type: 'crew_member_joined', playerName: player.name }));
+    }
+    scheduleWorldSave();
+}
+
+function handleCrewLeave(clientId) {
+    const ws = clients.get(clientId);
+    if (!ws) return;
+    
+    for (const [crewId, c] of gameState.crews) {
+        const idx = c.members.findIndex(m => m.playerId === clientId);
+        if (idx !== -1) {
+            c.members.splice(idx, 1);
+            if (c.leader === clientId) {
+                // Transfer leadership or disband
+                if (c.members.length > 0) {
+                    c.leader = c.members[0].playerId;
+                    c.leaderName = c.members[0].name;
+                    c.members[0].role = 'leader';
+                } else {
+                    gameState.crews.delete(crewId);
+                }
+            }
+            ws.send(JSON.stringify({ type: 'crew_result', success: true, action: 'left' }));
+            scheduleWorldSave();
+            return;
+        }
+    }
+    ws.send(JSON.stringify({ type: 'crew_result', success: false, error: 'Not in a crew.' }));
+}
+
+function handleCrewKick(clientId, message) {
+    const ws = clients.get(clientId);
+    if (!ws) return;
+    
+    let playerCrew = null;
+    for (const [, c] of gameState.crews) {
+        if (c.leader === clientId) { playerCrew = c; break; }
+    }
+    if (!playerCrew) return ws.send(JSON.stringify({ type: 'crew_result', success: false, error: 'Only the leader can kick.' }));
+    
+    const targetName = (message.targetName || '').trim();
+    const idx = playerCrew.members.findIndex(m => m.name === targetName);
+    if (idx === -1) return ws.send(JSON.stringify({ type: 'crew_result', success: false, error: 'Member not found.' }));
+    
+    const kicked = playerCrew.members.splice(idx, 1)[0];
+    ws.send(JSON.stringify({ type: 'crew_result', success: true, action: 'kicked', targetName }));
+    
+    const targetWs = clients.get(kicked.playerId);
+    if (targetWs && targetWs.readyState === WebSocket.OPEN) {
+        targetWs.send(JSON.stringify({ type: 'crew_kicked', crewName: playerCrew.name }));
+    }
+    scheduleWorldSave();
+}
+
+function handleCrewInfo(clientId) {
+    const ws = clients.get(clientId);
+    if (!ws) return;
+    
+    let playerCrew = null;
+    for (const [, c] of gameState.crews) {
+        if (c.members.find(m => m.playerId === clientId)) { playerCrew = c; break; }
+    }
+    
+    // Also send list of all crews
+    const allCrews = [];
+    for (const [, c] of gameState.crews) {
+        allCrews.push({ id: c.id, name: c.name, tag: c.tag, emblem: c.emblem, memberCount: c.members.length, leaderName: c.leaderName });
+    }
+    
+    ws.send(JSON.stringify({ type: 'crew_info_result', myCrew: playerCrew, allCrews }));
+}
+
+function handleCrewUpdate(clientId, message) {
+    const ws = clients.get(clientId);
+    if (!ws) return;
+    
+    let playerCrew = null;
+    for (const [, c] of gameState.crews) {
+        if (c.leader === clientId) { playerCrew = c; break; }
+    }
+    if (!playerCrew) return ws.send(JSON.stringify({ type: 'crew_result', success: false, error: 'Only the leader can update crew.' }));
+    
+    if (message.motto !== undefined) playerCrew.motto = (message.motto || '').substring(0, 64);
+    if (message.emblem !== undefined) playerCrew.emblem = (message.emblem || '🔱').substring(0, 4);
+    
+    // Promote/demote officers
+    if (message.promote) {
+        const m = playerCrew.members.find(m => m.name === message.promote);
+        if (m && m.role === 'member') { m.role = 'officer'; playerCrew.officers.push(m.playerId); }
+    }
+    
+    ws.send(JSON.stringify({ type: 'crew_result', success: true, action: 'updated', crew: playerCrew }));
+    scheduleWorldSave();
+}
+
+// ==================== HIT CONTRACTS (DARK BOARD) ====================
+
+function handleHitContractPost(clientId, message) {
+    const ws = clients.get(clientId);
+    const player = gameState.players.get(clientId);
+    if (!ws || !player) return;
+    
+    const targetName = (message.targetName || '').trim();
+    const reward = parseInt(message.reward) || 0;
+    
+    if (!targetName) return ws.send(JSON.stringify({ type: 'hit_contract_result', success: false, error: 'Must specify a target.' }));
+    if (targetName === player.name) return ws.send(JSON.stringify({ type: 'hit_contract_result', success: false, error: 'Cannot put a hit on yourself.' }));
+    if (reward < 5000) return ws.send(JSON.stringify({ type: 'hit_contract_result', success: false, error: 'Minimum bounty is $5,000.' }));
+    if (reward > 1000000) return ws.send(JSON.stringify({ type: 'hit_contract_result', success: false, error: 'Maximum bounty is $1,000,000.' }));
+    if (gameState.hitContracts.length >= 30) return ws.send(JSON.stringify({ type: 'hit_contract_result', success: false, error: 'The Dark Board is full. Try again later.' }));
+    
+    // Verify target exists
+    let targetFound = false;
+    for (const [, p] of gameState.players) {
+        if (p.name === targetName) { targetFound = true; break; }
+    }
+    if (!targetFound) return ws.send(JSON.stringify({ type: 'hit_contract_result', success: false, error: 'Target not found.' }));
+    
+    const contract = {
+        id: 'hit_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+        clientId: clientId,
+        posterName: player.name,
+        targetName: targetName,
+        reward: reward,
+        anonymous: true,
+        postedAt: Date.now(),
+        expiresAt: Date.now() + (48 * 60 * 60 * 1000), // 48h
+        claimedBy: null,
+        completedBy: null
+    };
+    gameState.hitContracts.push(contract);
+    
+    ws.send(JSON.stringify({ type: 'hit_contract_result', success: true, action: 'posted', contract }));
+    
+    // Warn the target anonymously
+    for (const [id, p] of gameState.players) {
+        if (p.name === targetName) {
+            const tWs = clients.get(id);
+            if (tWs && tWs.readyState === WebSocket.OPEN) {
+                tWs.send(JSON.stringify({ type: 'hit_contract_warning', message: 'Someone has put a price on your head. Watch your back...' }));
+            }
+            break;
+        }
+    }
+    
+    addGlobalChatMessage('The Dark Board', `A new anonymous contract has been posted. $${reward.toLocaleString()} for a hit on ${targetName}.`, '#8b0000');
+    scheduleWorldSave();
+}
+
+function handleHitContractClaim(clientId, message) {
+    const ws = clients.get(clientId);
+    const player = gameState.players.get(clientId);
+    if (!ws || !player) return;
+    
+    const contract = gameState.hitContracts.find(c => c.id === message.contractId);
+    if (!contract) return ws.send(JSON.stringify({ type: 'hit_contract_result', success: false, error: 'Contract not found.' }));
+    if (contract.claimedBy) return ws.send(JSON.stringify({ type: 'hit_contract_result', success: false, error: 'Contract already claimed.' }));
+    if (contract.clientId === clientId) return ws.send(JSON.stringify({ type: 'hit_contract_result', success: false, error: 'Cannot claim your own contract.' }));
+    
+    contract.claimedBy = clientId;
+    contract.claimedByName = player.name;
+    
+    ws.send(JSON.stringify({ type: 'hit_contract_result', success: true, action: 'claimed', contract }));
+    scheduleWorldSave();
+}
+
+function handleHitContractComplete(clientId, message) {
+    const ws = clients.get(clientId);
+    const player = gameState.players.get(clientId);
+    if (!ws || !player) return;
+    
+    const contract = gameState.hitContracts.find(c => c.id === message.contractId);
+    if (!contract) return ws.send(JSON.stringify({ type: 'hit_contract_result', success: false, error: 'Contract not found.' }));
+    if (contract.claimedBy !== clientId) return ws.send(JSON.stringify({ type: 'hit_contract_result', success: false, error: 'You did not claim this contract.' }));
+    
+    contract.completedBy = clientId;
+    // Remove from active list
+    gameState.hitContracts = gameState.hitContracts.filter(c => c.id !== contract.id);
+    
+    ws.send(JSON.stringify({ type: 'hit_contract_result', success: true, action: 'completed', reward: contract.reward }));
+    addGlobalChatMessage('The Dark Board', `A contract on ${contract.targetName} has been fulfilled. The streets grow colder...`, '#8b0000');
+    scheduleWorldSave();
+}
+
+function handleHitContractList(clientId) {
+    const ws = clients.get(clientId);
+    if (!ws) return;
+    
+    // Clean expired contracts
+    const now = Date.now();
+    gameState.hitContracts = gameState.hitContracts.filter(c => now < c.expiresAt);
+    
+    // Send sanitized list (hide poster identity since contracts are anonymous)
+    const contracts = gameState.hitContracts.map(c => ({
+        id: c.id,
+        targetName: c.targetName,
+        reward: c.reward,
+        postedAt: c.postedAt,
+        expiresAt: c.expiresAt,
+        claimed: !!c.claimedBy,
+        claimedByYou: c.claimedBy === clientId
+    }));
+    
+    ws.send(JSON.stringify({ type: 'hit_contract_list_result', contracts }));
+}
+
+// ==================== PLAYER GAMBLING ====================
+
+function handleGamblingCreateTable(clientId, message) {
+    const ws = clients.get(clientId);
+    const player = gameState.players.get(clientId);
+    if (!ws || !player) return;
+    
+    const bet = parseInt(message.bet) || 0;
+    const gameType = message.gameType || 'dice'; // dice, coinflip, highcard
+    
+    if (bet < 1000) return ws.send(JSON.stringify({ type: 'gambling_result', success: false, error: 'Minimum bet is $1,000.' }));
+    if (bet > 500000) return ws.send(JSON.stringify({ type: 'gambling_result', success: false, error: 'Maximum bet is $500,000.' }));
+    if (!['dice', 'coinflip', 'highcard'].includes(gameType)) return ws.send(JSON.stringify({ type: 'gambling_result', success: false, error: 'Invalid game type.' }));
+    
+    const tableId = 'table_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+    const table = {
+        id: tableId,
+        type: gameType,
+        hostId: clientId,
+        hostName: player.name,
+        guestId: null,
+        guestName: null,
+        bet: bet,
+        state: 'waiting', // waiting, playing, resolved
+        gameData: {},
+        createdAt: Date.now()
+    };
+    gameState.gamblingTables.set(tableId, table);
+    
+    ws.send(JSON.stringify({ type: 'gambling_result', success: true, action: 'created', table }));
+    
+    // Broadcast to all players
+    broadcastToAll({ type: 'gambling_table_update', table: { id: tableId, type: gameType, hostName: player.name, bet, state: 'waiting' } });
+    scheduleWorldSave();
+}
+
+function handleGamblingJoinTable(clientId, message) {
+    const ws = clients.get(clientId);
+    const player = gameState.players.get(clientId);
+    if (!ws || !player) return;
+    
+    const table = gameState.gamblingTables.get(message.tableId);
+    if (!table) return ws.send(JSON.stringify({ type: 'gambling_result', success: false, error: 'Table not found.' }));
+    if (table.state !== 'waiting') return ws.send(JSON.stringify({ type: 'gambling_result', success: false, error: 'Game already in progress.' }));
+    if (table.hostId === clientId) return ws.send(JSON.stringify({ type: 'gambling_result', success: false, error: 'Cannot join your own table.' }));
+    
+    table.guestId = clientId;
+    table.guestName = player.name;
+    table.state = 'playing';
+    
+    // Resolve the game immediately based on type
+    let result;
+    if (table.type === 'dice') {
+        const hostRoll = Math.floor(Math.random() * 6) + 1 + Math.floor(Math.random() * 6) + 1;
+        const guestRoll = Math.floor(Math.random() * 6) + 1 + Math.floor(Math.random() * 6) + 1;
+        result = {
+            hostRoll, guestRoll,
+            winner: hostRoll > guestRoll ? 'host' : (guestRoll > hostRoll ? 'guest' : 'tie'),
+            description: `${table.hostName} rolled ${hostRoll} vs ${player.name} rolled ${guestRoll}`
+        };
+    } else if (table.type === 'coinflip') {
+        const flip = Math.random() < 0.5 ? 'heads' : 'tails';
+        const hostCall = Math.random() < 0.5 ? 'heads' : 'tails';
+        result = {
+            flip, hostCall,
+            winner: flip === hostCall ? 'host' : 'guest',
+            description: `Coin landed ${flip}. ${table.hostName} called ${hostCall}.`
+        };
+    } else if (table.type === 'highcard') {
+        const cards = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
+        const suits = ['♠','♥','♦','♣'];
+        const hostCard = Math.floor(Math.random() * 13);
+        const guestCard = Math.floor(Math.random() * 13);
+        const hostSuit = suits[Math.floor(Math.random() * 4)];
+        const guestSuit = suits[Math.floor(Math.random() * 4)];
+        result = {
+            hostCard: cards[hostCard] + hostSuit,
+            guestCard: cards[guestCard] + guestSuit,
+            winner: hostCard > guestCard ? 'host' : (guestCard > hostCard ? 'guest' : 'tie'),
+            description: `${table.hostName} drew ${cards[hostCard]}${hostSuit} vs ${player.name} drew ${cards[guestCard]}${guestSuit}`
+        };
+    }
+    
+    table.state = 'resolved';
+    table.gameData = result;
+    
+    const winnerId = result.winner === 'host' ? table.hostId : (result.winner === 'guest' ? table.guestId : null);
+    const winnerName = result.winner === 'host' ? table.hostName : (result.winner === 'guest' ? table.guestName : null);
+    
+    // Notify both players
+    const hostWs = clients.get(table.hostId);
+    const payload = {
+        type: 'gambling_resolved',
+        tableId: table.id,
+        gameType: table.type,
+        bet: table.bet,
+        result,
+        winnerId,
+        winnerName,
+        isTie: result.winner === 'tie'
+    };
+    
+    if (hostWs && hostWs.readyState === WebSocket.OPEN) hostWs.send(JSON.stringify(payload));
+    if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(payload));
+    
+    if (winnerName) {
+        addGlobalChatMessage('The Back Room', `${winnerName} won $${table.bet.toLocaleString()} playing ${table.type} against ${winnerId === table.hostId ? table.guestName : table.hostName}!`, '#d4af37');
+    }
+    
+    // Clean up table after 10s
+    setTimeout(() => gameState.gamblingTables.delete(table.id), 10000);
+    scheduleWorldSave();
+}
+
+function handleGamblingAction(clientId, message) {
+    // Reserved for future interactive game types (poker rounds, etc.)
+    const ws = clients.get(clientId);
+    if (ws) ws.send(JSON.stringify({ type: 'gambling_result', success: false, error: 'Not implemented for this game type.' }));
+}
+
+function handleGamblingListTables(clientId) {
+    const ws = clients.get(clientId);
+    if (!ws) return;
+    
+    // Clean stale tables (older than 10 minutes with no guest)
+    const now = Date.now();
+    for (const [id, t] of gameState.gamblingTables) {
+        if (t.state === 'waiting' && now - t.createdAt > 600000) gameState.gamblingTables.delete(id);
+    }
+    
+    const tables = [];
+    for (const [, t] of gameState.gamblingTables) {
+        if (t.state === 'waiting') {
+            tables.push({ id: t.id, type: t.type, hostName: t.hostName, bet: t.bet, createdAt: t.createdAt });
+        }
+    }
+    
+    ws.send(JSON.stringify({ type: 'gambling_tables_list', tables }));
+}
+
+function handleGamblingLeaveTable(clientId) {
+    const ws = clients.get(clientId);
+    for (const [id, t] of gameState.gamblingTables) {
+        if (t.hostId === clientId && t.state === 'waiting') {
+            gameState.gamblingTables.delete(id);
+            if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'gambling_result', success: true, action: 'left' }));
+            return;
+        }
+    }
+    if (ws) ws.send(JSON.stringify({ type: 'gambling_result', success: false, error: 'No table to leave.' }));
+}
+
+// ==================== SUPERBOSS SYSTEM ====================
+
+const SUPERBOSSES = [
+    { id: 'don_sanguine', name: 'Don Sanguine, The Blood King', level: 30, hp: 10000, power: 8000, reward: { money: 1000000, xp: 5000, buff: { id: 'blood_king_fury', name: 'Blood King\'s Fury', effect: 'power', value: 500, duration: 3600000 } }, description: 'The crimson tyrant who ruled the underworld for decades.' },
+    { id: 'iron_widow', name: 'The Iron Widow', level: 40, hp: 15000, power: 12000, reward: { money: 2500000, xp: 10000, buff: { id: 'widow_veil', name: 'Widow\'s Veil', effect: 'stealth', value: 50, duration: 3600000 } }, description: 'A legendary assassin who has never been seen twice.' },
+    { id: 'ghost_of_alcatraz', name: 'Ghost of Alcatraz', level: 50, hp: 25000, power: 20000, reward: { money: 5000000, xp: 25000, buff: { id: 'ghost_form', name: 'Spectral Form', effect: 'evasion', value: 30, duration: 7200000 } }, description: 'The spirit of the most dangerous prisoner to ever live.' },
+    { id: 'the_commissioner', name: 'The Commissioner', level: 60, hp: 40000, power: 30000, reward: { money: 10000000, xp: 50000, buff: { id: 'untouchable', name: 'Untouchable', effect: 'immunity', value: 100, duration: 3600000 } }, description: 'The corrupt police chief who controls everything from the shadows.' }
+];
+
+function handleSuperbossStart(clientId, message) {
+    const ws = clients.get(clientId);
+    const player = gameState.players.get(clientId);
+    if (!ws || !player) return;
+    
+    const bossId = message.bossId;
+    const boss = SUPERBOSSES.find(b => b.id === bossId);
+    if (!boss) return ws.send(JSON.stringify({ type: 'superboss_result', success: false, error: 'Unknown superboss.' }));
+    if ((player.level || 1) < boss.level) return ws.send(JSON.stringify({ type: 'superboss_result', success: false, error: `Requires level ${boss.level}.` }));
+    
+    // Check not already in a fight
+    for (const [, f] of gameState.activeSuperbossFights) {
+        if (f.participants.find(p => p.playerId === clientId)) {
+            return ws.send(JSON.stringify({ type: 'superboss_result', success: false, error: 'Already in a superboss fight.' }));
+        }
+    }
+    
+    const fightId = 'sbfight_' + Date.now();
+    const fight = {
+        id: fightId,
+        bossId: bossId,
+        bossName: boss.name,
+        bossHP: boss.hp,
+        bossMaxHP: boss.hp,
+        bossPower: boss.power,
+        participants: [{ playerId: clientId, name: player.name, damage: 0, alive: true }],
+        startedAt: Date.now(),
+        phase: 'recruiting', // recruiting -> fighting -> resolved
+        reward: boss.reward
+    };
+    gameState.activeSuperbossFights.set(fightId, fight);
+    
+    ws.send(JSON.stringify({ type: 'superboss_result', success: true, action: 'started', fight }));
+    addGlobalChatMessage('System', `${player.name} has challenged ${boss.name}! Join the fight before it's too late!`, '#ff4444');
+    scheduleWorldSave();
+}
+
+function handleSuperbossInvite(clientId, message) {
+    const ws = clients.get(clientId);
+    const player = gameState.players.get(clientId);
+    if (!ws || !player) return;
+    
+    const fight = gameState.activeSuperbossFights.get(message.fightId);
+    if (!fight) return ws.send(JSON.stringify({ type: 'superboss_result', success: false, error: 'Fight not found.' }));
+    if (fight.phase !== 'recruiting') return ws.send(JSON.stringify({ type: 'superboss_result', success: false, error: 'Fight already in progress.' }));
+    
+    const targetName = (message.targetName || '').trim();
+    for (const [id, p] of gameState.players) {
+        if (p.name === targetName) {
+            const tWs = clients.get(id);
+            if (tWs && tWs.readyState === WebSocket.OPEN) {
+                tWs.send(JSON.stringify({
+                    type: 'superboss_invite',
+                    fightId: fight.id,
+                    bossName: fight.bossName,
+                    fromName: player.name,
+                    currentParticipants: fight.participants.length
+                }));
+            }
+            ws.send(JSON.stringify({ type: 'superboss_result', success: true, action: 'invited', targetName }));
+            return;
+        }
+    }
+    ws.send(JSON.stringify({ type: 'superboss_result', success: false, error: 'Player not found online.' }));
+}
+
+function handleSuperbossJoin(clientId, message) {
+    const ws = clients.get(clientId);
+    const player = gameState.players.get(clientId);
+    if (!ws || !player) return;
+    
+    const fight = gameState.activeSuperbossFights.get(message.fightId);
+    if (!fight) return ws.send(JSON.stringify({ type: 'superboss_result', success: false, error: 'Fight not found.' }));
+    if (fight.phase !== 'recruiting') return ws.send(JSON.stringify({ type: 'superboss_result', success: false, error: 'Fight already started.' }));
+    if (fight.participants.length >= 5) return ws.send(JSON.stringify({ type: 'superboss_result', success: false, error: 'Fight is full (max 5).' }));
+    if (fight.participants.find(p => p.playerId === clientId)) return ws.send(JSON.stringify({ type: 'superboss_result', success: false, error: 'Already in this fight.' }));
+    
+    fight.participants.push({ playerId: clientId, name: player.name, damage: 0, alive: true });
+    
+    // Notify all participants
+    fight.participants.forEach(p => {
+        const pWs = clients.get(p.playerId);
+        if (pWs && pWs.readyState === WebSocket.OPEN) {
+            pWs.send(JSON.stringify({ type: 'superboss_update', fight }));
+        }
+    });
+    
+    ws.send(JSON.stringify({ type: 'superboss_result', success: true, action: 'joined', fight }));
+}
+
+function handleSuperbossAttack(clientId, message) {
+    const ws = clients.get(clientId);
+    const player = gameState.players.get(clientId);
+    if (!ws || !player) return;
+    
+    const fight = gameState.activeSuperbossFights.get(message.fightId);
+    if (!fight) return ws.send(JSON.stringify({ type: 'superboss_result', success: false, error: 'Fight not found.' }));
+    
+    // Transition to fighting phase on first attack
+    if (fight.phase === 'recruiting') fight.phase = 'fighting';
+    if (fight.phase !== 'fighting') return ws.send(JSON.stringify({ type: 'superboss_result', success: false, error: 'Fight is over.' }));
+    
+    const participant = fight.participants.find(p => p.playerId === clientId);
+    if (!participant || !participant.alive) return ws.send(JSON.stringify({ type: 'superboss_result', success: false, error: 'You are not alive in this fight.' }));
+    
+    // Player attack: damage based on player power + RNG
+    const playerPower = player.power || (player.level || 1) * 100;
+    const baseDamage = Math.floor(playerPower * (0.5 + Math.random() * 0.5));
+    const critChance = 0.15;
+    const isCrit = Math.random() < critChance;
+    const damage = isCrit ? baseDamage * 2 : baseDamage;
+    
+    fight.bossHP -= damage;
+    participant.damage += damage;
+    
+    // Boss counter-attack: damages a random alive participant
+    let bossAttackResult = null;
+    const aliveParticipants = fight.participants.filter(p => p.alive);
+    if (aliveParticipants.length > 0 && fight.bossHP > 0) {
+        const target = aliveParticipants[Math.floor(Math.random() * aliveParticipants.length)];
+        const bossDamage = Math.floor(fight.bossPower * (0.3 + Math.random() * 0.4) / aliveParticipants.length);
+        bossAttackResult = { targetName: target.name, damage: bossDamage };
+        // 10% chance to "down" a participant per hit
+        if (Math.random() < 0.1) {
+            target.alive = false;
+            bossAttackResult.downed = true;
+        }
+    }
+    
+    // Check if boss is defeated
+    if (fight.bossHP <= 0) {
+        fight.bossHP = 0;
+        fight.phase = 'resolved';
+        
+        // Distribute rewards to all participants proportionally
+        const totalDamage = fight.participants.reduce((s, p) => s + p.damage, 0) || 1;
+        fight.participants.forEach(p => {
+            const share = p.damage / totalDamage;
+            const moneyReward = Math.floor(fight.reward.money * share);
+            const xpReward = Math.floor(fight.reward.xp * share);
+            const pWs = clients.get(p.playerId);
+            if (pWs && pWs.readyState === WebSocket.OPEN) {
+                pWs.send(JSON.stringify({
+                    type: 'superboss_victory',
+                    bossName: fight.bossName,
+                    moneyReward,
+                    xpReward,
+                    buff: fight.reward.buff,
+                    damageDealt: p.damage,
+                    damageShare: Math.round(share * 100)
+                }));
+            }
+        });
+        
+        addGlobalChatMessage('System', `${fight.bossName} has been DEFEATED by ${fight.participants.map(p => p.name).join(', ')}!`, '#27ae60');
+        setTimeout(() => gameState.activeSuperbossFights.delete(fight.id), 30000);
+    }
+    
+    // Send update to all participants
+    fight.participants.forEach(p => {
+        const pWs = clients.get(p.playerId);
+        if (pWs && pWs.readyState === WebSocket.OPEN) {
+            pWs.send(JSON.stringify({
+                type: 'superboss_attack_result',
+                fightId: fight.id,
+                attackerName: player.name,
+                damage,
+                isCrit,
+                bossHP: fight.bossHP,
+                bossMaxHP: fight.bossMaxHP,
+                bossAttack: bossAttackResult,
+                phase: fight.phase
+            }));
+        }
+    });
+    
+    scheduleWorldSave();
+}
+
+function handleSuperbossList(clientId) {
+    const ws = clients.get(clientId);
+    if (!ws) return;
+    
+    const activeFights = [];
+    for (const [, f] of gameState.activeSuperbossFights) {
+        activeFights.push({
+            id: f.id,
+            bossName: f.bossName,
+            bossHP: f.bossHP,
+            bossMaxHP: f.bossMaxHP,
+            participants: f.participants.map(p => ({ name: p.name, damage: p.damage, alive: p.alive })),
+            phase: f.phase
+        });
+    }
+    
+    ws.send(JSON.stringify({
+        type: 'superboss_list_result',
+        bosses: SUPERBOSSES.map(b => ({ id: b.id, name: b.name, level: b.level, hp: b.hp, description: b.description })),
+        activeFights
+    }));
+}
+
+// ==================== SEASONAL EVENTS ====================
+
+const SEASONAL_EVENT_TEMPLATES = [
+    {
+        id: 'prohibition', name: 'Prohibition Week', theme: 'prohibition',
+        description: 'The feds have cracked down on alcohol. Bootlegging jobs pay double, but heat rises faster!',
+        durationDays: 7,
+        objectives: [
+            { id: 'bootleg_jobs', description: 'Complete 20 smuggling jobs', target: 20, reward: { money: 50000, xp: 1000 } },
+            { id: 'earn_dirty', description: 'Earn $500,000 in dirty money', target: 500000, reward: { money: 100000, xp: 2000 } }
+        ],
+        globalEffects: { jobPayoutMultiplier: 2.0, heatMultiplier: 1.5 }
+    },
+    {
+        id: 'election_season', name: 'Election Season', theme: 'politics',
+        description: 'It\'s election time. Corruption opportunities are everywhere, and bribes are half price!',
+        durationDays: 7,
+        objectives: [
+            { id: 'bribe_officials', description: 'Bribe 5 officials', target: 5, reward: { money: 75000, xp: 1500 } },
+            { id: 'earn_rep', description: 'Earn 50 reputation', target: 50, reward: { money: 100000, xp: 2500 } }
+        ],
+        globalEffects: { corruptionCostMultiplier: 0.5, reputationMultiplier: 1.5 }
+    },
+    {
+        id: 'gang_war_week', name: 'Gang War Week', theme: 'warfare',
+        description: 'All-out war! Territory rewards are doubled, but the streets are more dangerous.',
+        durationDays: 7,
+        objectives: [
+            { id: 'capture_turf', description: 'Capture 3 territories', target: 3, reward: { money: 200000, xp: 3000 } },
+            { id: 'pvp_wins', description: 'Win 5 PvP fights', target: 5, reward: { money: 150000, xp: 2000 } }
+        ],
+        globalEffects: { territoryRewardMultiplier: 2.0, pvpDamageMultiplier: 1.25 }
+    },
+    {
+        id: 'heist_bonanza', name: 'Heist Bonanza', theme: 'heists',
+        description: 'The vaults are overflowing! Heist payouts are tripled this week.',
+        durationDays: 7,
+        objectives: [
+            { id: 'complete_heists', description: 'Complete 3 heists', target: 3, reward: { money: 300000, xp: 5000 } },
+            { id: 'earn_heist_money', description: 'Earn $1M from heists', target: 1000000, reward: { money: 500000, xp: 5000 } }
+        ],
+        globalEffects: { heistPayoutMultiplier: 3.0 }
+    }
+];
+
+// Start a seasonal event every 7 days automatically  
+setInterval(() => {
+    const now = Date.now();
+    if (!gameState.seasonalEvent.active || now > gameState.seasonalEvent.endsAt) {
+        // Pick a random event
+        const template = SEASONAL_EVENT_TEMPLATES[Math.floor(Math.random() * SEASONAL_EVENT_TEMPLATES.length)];
+        gameState.seasonalEvent = {
+            active: true,
+            id: template.id + '_' + now,
+            name: template.name,
+            description: template.description,
+            theme: template.theme,
+            startedAt: now,
+            endsAt: now + (template.durationDays * 24 * 60 * 60 * 1000),
+            objectives: template.objectives,
+            rewards: template.objectives.map(o => o.reward),
+            globalEffects: template.globalEffects || {},
+            playerProgress: new Map()
+        };
+        addGlobalChatMessage('System', `🎉 SEASONAL EVENT: ${template.name} has begun! ${template.description}`, '#ff8c00');
+        broadcastToAll({ type: 'seasonal_event_started', event: { name: template.name, description: template.description, theme: template.theme, endsAt: gameState.seasonalEvent.endsAt, objectives: template.objectives } });
+        console.log(`🎪 Seasonal event started: ${template.name}`);
+    }
+}, 60 * 60 * 1000); // Check every hour
+
+function handleSeasonalEventInfo(clientId) {
+    const ws = clients.get(clientId);
+    if (!ws) return;
+    
+    const evt = gameState.seasonalEvent;
+    if (!evt.active) return ws.send(JSON.stringify({ type: 'seasonal_event_result', active: false }));
+    
+    const progress = evt.playerProgress.get(clientId) || { score: 0, completed: [] };
+    
+    ws.send(JSON.stringify({
+        type: 'seasonal_event_result',
+        active: true,
+        name: evt.name,
+        description: evt.description,
+        theme: evt.theme,
+        endsAt: evt.endsAt,
+        objectives: evt.objectives,
+        globalEffects: evt.globalEffects,
+        playerProgress: progress
+    }));
+}
+
+function handleSeasonalEventProgress(clientId, message) {
+    const ws = clients.get(clientId);
+    if (!ws) return;
+    
+    const evt = gameState.seasonalEvent;
+    if (!evt.active) return;
+    
+    let progress = evt.playerProgress.get(clientId);
+    if (!progress) { progress = { score: 0, completed: [] }; evt.playerProgress.set(clientId, progress); }
+    
+    // Update objective progress
+    const objId = message.objectiveId;
+    const amount = parseInt(message.amount) || 0;
+    if (!objId || amount <= 0) return;
+    
+    if (!progress[objId]) progress[objId] = 0;
+    progress[objId] += amount;
+    
+    // Check if objective is completed
+    const obj = evt.objectives.find(o => o.id === objId);
+    if (obj && progress[objId] >= obj.target && !progress.completed.includes(objId)) {
+        progress.completed.push(objId);
+        progress.score += 100;
+        
+        ws.send(JSON.stringify({
+            type: 'seasonal_objective_complete',
+            objectiveId: objId,
+            reward: obj.reward
+        }));
+    }
+    
+    scheduleWorldSave();
+}
+
+// ==================== DAILY LOGIN CLAIM ====================
+
+function handleDailyLoginClaim(clientId, message) {
+    const ws = clients.get(clientId);
+    const player = gameState.players.get(clientId);
+    if (!ws || !player) return;
+    
+    // The actual login reward logic runs client-side since player data is client-owned
+    // Server just validates the claim and broadcasts
+    const streak = message.streak || 1;
+    if (streak >= 7) {
+        addGlobalChatMessage('System', `${player.name} has logged in ${streak} days in a row! Dedication!`, '#27ae60');
+    }
+    
+    ws.send(JSON.stringify({ type: 'daily_login_result', success: true, streak }));
 }
 
 function generateLeaderboard() {
