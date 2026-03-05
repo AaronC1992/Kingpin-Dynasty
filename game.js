@@ -341,7 +341,7 @@ async function showMissions() {
   document.getElementById("missions-content").innerHTML = `
     <div style="display:flex;gap:4px;margin-bottom:16px;border-bottom:2px solid #c0a062;padding-bottom:0;">
       <button id="ops-tab-story" class="ops-tab active" onclick="switchOpsTab('story', this)" style="background:#c0a062;color:#000;padding:10px 18px;border:1px solid #c0a062;border-bottom:none;border-radius:8px 8px 0 0;cursor:pointer;font-family:'Georgia',serif;font-weight:bold;font-size:0.95em;">Story</button>
-      <button id="ops-tab-superboss" class="ops-tab" onclick="switchOpsTab('superboss', this)" style="background:#222;color:#c0a062;padding:10px 18px;border:1px solid #c0a062;border-bottom:1px solid #c0a062;border-radius:8px 8px 0 0;cursor:pointer;font-family:'Georgia',serif;font-weight:normal;font-size:0.95em;">💀 Superboss</button>
+      <button id="ops-tab-superboss" class="ops-tab" onclick="switchOpsTab('superboss', this)" style="background:#222;color:#c0a062;padding:10px 18px;border:1px solid #c0a062;border-bottom:1px solid #c0a062;border-radius:8px 8px 0 0;cursor:pointer;font-family:'Georgia',serif;font-weight:normal;font-size:0.95em;">Superboss</button>
     </div>
     <div id="ops-panel-story" class="ops-panel active">${missionsHTML}</div>
     <div id="ops-panel-superboss" class="ops-panel" style="display:none;"><div id="superboss-content"><p style="color:#8a7a5a;">Loading superboss data...</p></div></div>
@@ -6717,7 +6717,7 @@ function generateTurfOverviewHTML() {
       html += `
         <div style="margin-bottom:8px; font-size:0.8em; text-align:center;">
           <div style="color:${defColor};font-weight:bold;">Defense: ${zone.defenseRequired}</div>
-          <div style="font-size:0.7em;color:#888;">${canAttack ? '✓ You can attack' : '✗ Need more power'}</div>
+          <div style="font-size:0.7em;color:#888;">${canAttack ? 'You can attack' : 'Need more power'}</div>
         </div>
         <button onclick="attackTurfZone('${zone.id}')"
           style="width:100%;padding:10px;background:linear-gradient(135deg,#8b3a3a,#7a2a2a);border:none;border-radius:8px;color:white;font-weight:bold;cursor:pointer;font-size:0.9em;${!canAttack ? 'opacity:0.6;cursor:not-allowed;' : ''}">
@@ -11384,7 +11384,7 @@ function renderSkillTreeUI() {
       </div>
 
       <div style="text-align:center;margin-top:20px;">
-        <button class="nav-btn-back" onclick="respecSkillTree()" style="background:#8b3a3a;color:#f5e6c8;border:none;padding:10px 20px;border-radius:6px;cursor:pointer;margin-right:8px;font-weight:bold;">🔄 Respec Skills ($${(10000 * Math.pow(2, player.respecCount || 0)).toLocaleString()})</button>
+        <button class="nav-btn-back" onclick="respecSkillTree()" style="background:#8b3a3a;color:#f5e6c8;border:none;padding:10px 20px;border-radius:6px;cursor:pointer;margin-right:8px;font-weight:bold;">Respec Skills ($${(10000 * Math.pow(2, player.respecCount || 0)).toLocaleString()})</button>
         <button class="nav-btn-back" onclick="goBackToMainMenu()"><- Back to SafeHouse</button>
       </div>
     </div>
@@ -14178,11 +14178,11 @@ function buildPlayerMarketTabContent() {
       <div style="background: rgba(41, 128, 185, 0.15); padding: 20px; border-radius: 12px; border: 1px solid #a08850; margin-bottom: 20px;">
         <p style="color: #f5e6c8; margin: 0 0 15px 0;"><strong>Features:</strong></p>
         <ul style="color: #d4c4a0; text-align: left; list-style: none; padding: 0;">
-          <li style="margin: 8px 0;">🚗 List stolen vehicles for sale</li>
-          <li style="margin: 8px 0;">⚔️ Sell weapons, armor & utility items</li>
-          <li style="margin: 8px 0;">🔫 Trade <strong style="color: #e67e22;">bullets</strong> & <strong style="color: #f39c12;">gasoline</strong></li>
-          <li style="margin: 8px 0;">💰 Set your own asking prices</li>
-          <li style="margin: 8px 0;">📊 Real-time listings from all players</li>
+          <li style="margin: 8px 0;">List stolen vehicles for sale</li>
+          <li style="margin: 8px 0;">Sell weapons, armor & utility items</li>
+          <li style="margin: 8px 0;">Trade <strong style="color: #e67e22;">bullets</strong> & <strong style="color: #f39c12;">gasoline</strong></li>
+          <li style="margin: 8px 0;">Set your own asking prices</li>
+          <li style="margin: 8px 0;">Real-time listings from all players</li>
         </ul>
       </div>
       <p style="color: #c0a040; margin-bottom: 20px;">You must be connected to The Commission to access the Player Market.</p>
@@ -14295,7 +14295,7 @@ function renderStoreTab(tabId) {
       bulletSoldOut = remaining <= 0;
       const stockColor = remaining === 0 ? '#8b3a3a' : remaining <= 3 ? '#e67e22' : '#8a9a6a';
       bulletStockHTML = `<div style="margin-top: 5px; padding: 4px 10px; background: rgba(0,0,0,0.3); border-radius: 6px; display: inline-block;">
-        <span style="color: ${stockColor}; font-weight: bold;">📦 ${remaining}/${MAX_BULLETS_PER_DAY} in stock today</span>
+        <span style="color: ${stockColor}; font-weight: bold;">${remaining}/${MAX_BULLETS_PER_DAY} in stock today</span>
         ${remaining === 0 ? '<span style="color: #8b3a3a; margin-left: 8px;">— SOLD OUT</span>' : ''}
         ${isConnected ? '<span style="color: #6a5a3a; font-size: 0.8em; margin-left: 6px;">(server-wide)</span>' : ''}
       </div>`;
@@ -22911,7 +22911,7 @@ function processEconomySinks() {
     if (finalUpkeep > 0 && player.money > finalUpkeep) {
       player.money -= finalUpkeep;
       player.lastUpkeepCollection = now;
-      logAction(`💸 Hourly upkeep deducted: $${finalUpkeep.toLocaleString()} (${details.join(', ')})`, 'economy');
+      logAction(`Hourly upkeep deducted: $${finalUpkeep.toLocaleString()} (${details.join(', ')})`, 'economy');
     } else {
       player.lastUpkeepCollection = now; // Still reset timer
     }
@@ -22942,7 +22942,7 @@ function checkDailyLogin() {
   const reward = DAILY_LOGIN_REWARDS[dayIndex];
 
   let html = `<div style="text-align:center;padding:20px;">
-    <h2 style="color:#d4af37;margin-bottom:16px;">🎁 Daily Login Reward</h2>
+    <h2 style="color:#d4af37;margin-bottom:16px;">Daily Login Reward</h2>
     <p style="color:#d4c4a0;margin-bottom:8px;">Day ${dayIndex + 1} of 7 — Streak: ${player.dailyLogin.streak || 0} days</p>
     <div style="background:rgba(20,18,10,0.6);border:2px solid #d4af37;border-radius:12px;padding:20px;margin:16px auto;max-width:300px;">
       <p style="color:#d4af37;font-size:1.3em;font-weight:bold;">${reward.label}</p>
@@ -23006,7 +23006,7 @@ function claimDailyLogin() {
   player.dailyLogin.lastClaimDate = today;
 
   showBriefNotification(`Daily reward claimed: ${reward.label}`, 'success');
-  logAction(`🎁 Daily login reward (Day ${dayIndex + 1}): ${reward.label}`, 'reward');
+  logAction(`Daily login reward (Day ${dayIndex + 1}): ${reward.label}`, 'reward');
 
   // Notify server
   if (typeof sendMP === 'function') sendMP({ type: 'daily_login_claim' });
@@ -23039,7 +23039,7 @@ function renderActiveBuffs() {
   let html = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:4px 0;">';
   player.activeBuffs.forEach(b => {
     const timeLeft = Math.max(0, Math.round((b.expiresAt - Date.now()) / 60000));
-    html += `<span style="background:rgba(212,175,55,0.2);border:1px solid #d4af37;border-radius:4px;padding:2px 8px;font-size:0.8em;color:#d4af37;">⚡ ${b.name} (${timeLeft}m)</span>`;
+    html += `<span style="background:rgba(212,175,55,0.2);border:1px solid #d4af37;border-radius:4px;padding:2px 8px;font-size:0.8em;color:#d4af37;">${b.name} (${timeLeft}m)</span>`;
   });
   html += '</div>';
   return html;
@@ -23092,7 +23092,7 @@ function respecSkillTree() {
   player.respecCount++;
 
   showBriefNotification(`Skills reset! ${refundedPoints} points refunded. Cost: $${cost.toLocaleString()}`, 'success');
-  logAction(`🔄 Skill tree reset! ${refundedPoints} points refunded for $${cost.toLocaleString()}.`, 'skills');
+  logAction(`Skill tree reset! ${refundedPoints} points refunded for $${cost.toLocaleString()}.`, 'skills');
   updateUI();
 }
 
@@ -23171,61 +23171,61 @@ function checkNewAchievements() {
   const superbossFirst = player.achievements.find(a => a.id === 'superboss_first');
   if (superbossFirst && !superbossFirst.unlocked && (player.superbossesDefeated || []).length >= 1) {
     superbossFirst.unlocked = true;
-    showBriefNotification(`🏆 Achievement: "${superbossFirst.title}" — ${superbossFirst.name}`, 'success');
-    logAction(`🏆 Achievement unlocked: ${superbossFirst.name}`, 'achievement');
+    showBriefNotification(`Achievement: "${superbossFirst.title}" — ${superbossFirst.name}`, 'success');
+    logAction(`Achievement unlocked: ${superbossFirst.name}`, 'achievement');
   }
 
   const superbossAll = player.achievements.find(a => a.id === 'superboss_all');
   if (superbossAll && !superbossAll.unlocked && (player.superbossesDefeated || []).length >= 4) {
     superbossAll.unlocked = true;
-    showBriefNotification(`🏆 Achievement: "${superbossAll.title}" — ${superbossAll.name}`, 'success');
-    logAction(`🏆 Achievement unlocked: ${superbossAll.name}`, 'achievement');
+    showBriefNotification(`Achievement: "${superbossAll.title}" — ${superbossAll.name}`, 'success');
+    logAction(`Achievement unlocked: ${superbossAll.name}`, 'achievement');
   }
 
   // Social achievements
   const firstFriend = player.achievements.find(a => a.id === 'first_friend');
   if (firstFriend && !firstFriend.unlocked && (player.friends || []).length >= 1) {
     firstFriend.unlocked = true;
-    showBriefNotification(`🏆 Achievement: "${firstFriend.title}" — ${firstFriend.name}`, 'success');
-    logAction(`🏆 Achievement unlocked: ${firstFriend.name}`, 'achievement');
+    showBriefNotification(`Achievement: "${firstFriend.title}" — ${firstFriend.name}`, 'success');
+    logAction(`Achievement unlocked: ${firstFriend.name}`, 'achievement');
   }
 
   const crewFounder = player.achievements.find(a => a.id === 'crew_founder');
   if (crewFounder && !crewFounder.unlocked && player.crewId && player.crewRole === 'leader') {
     crewFounder.unlocked = true;
-    showBriefNotification(`🏆 Achievement: "${crewFounder.title}" — ${crewFounder.name}`, 'success');
-    logAction(`🏆 Achievement unlocked: ${crewFounder.name}`, 'achievement');
+    showBriefNotification(`Achievement: "${crewFounder.title}" — ${crewFounder.name}`, 'success');
+    logAction(`Achievement unlocked: ${crewFounder.name}`, 'achievement');
   }
 
   // Daily login streaks
   const daily7 = player.achievements.find(a => a.id === 'daily_7');
   if (daily7 && !daily7.unlocked && (player.dailyLogin?.streak || 0) >= 7) {
     daily7.unlocked = true;
-    showBriefNotification(`🏆 Achievement: "${daily7.title}" — ${daily7.name}`, 'success');
-    logAction(`🏆 Achievement unlocked: ${daily7.name}`, 'achievement');
+    showBriefNotification(`Achievement: "${daily7.title}" — ${daily7.name}`, 'success');
+    logAction(`Achievement unlocked: ${daily7.name}`, 'achievement');
   }
 
   const daily30 = player.achievements.find(a => a.id === 'daily_30');
   if (daily30 && !daily30.unlocked && (player.dailyLogin?.totalDays || 0) >= 30) {
     daily30.unlocked = true;
-    showBriefNotification(`🏆 Achievement: "${daily30.title}" — ${daily30.name}`, 'success');
-    logAction(`🏆 Achievement unlocked: ${daily30.name}`, 'achievement');
+    showBriefNotification(`Achievement: "${daily30.title}" — ${daily30.name}`, 'success');
+    logAction(`Achievement unlocked: ${daily30.name}`, 'achievement');
   }
 
   // Hit contracts
   const hitMan = player.achievements.find(a => a.id === 'hit_man');
   if (hitMan && !hitMan.unlocked && (player._hitContractsCompleted || 0) >= 5) {
     hitMan.unlocked = true;
-    showBriefNotification(`🏆 Achievement: "${hitMan.title}" — ${hitMan.name}`, 'success');
-    logAction(`🏆 Achievement unlocked: ${hitMan.name}`, 'achievement');
+    showBriefNotification(`Achievement: "${hitMan.title}" — ${hitMan.name}`, 'success');
+    logAction(`Achievement unlocked: ${hitMan.name}`, 'achievement');
   }
 
   // Poker/gambling wins  
   const pokerShark = player.achievements.find(a => a.id === 'poker_shark');
   if (pokerShark && !pokerShark.unlocked && (player._pokerWins || 0) >= 10) {
     pokerShark.unlocked = true;
-    showBriefNotification(`🏆 Achievement: "${pokerShark.title}" — ${pokerShark.name}`, 'success');
-    logAction(`🏆 Achievement unlocked: ${pokerShark.name}`, 'achievement');
+    showBriefNotification(`Achievement: "${pokerShark.title}" — ${pokerShark.name}`, 'success');
+    logAction(`Achievement unlocked: ${pokerShark.name}`, 'achievement');
   }
 }
 

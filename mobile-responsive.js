@@ -229,8 +229,8 @@ export const MobileSystem = {
         actionPanel.innerHTML = `
             <div style="color: #c0a062; font-family: 'Georgia', serif;">
                 <div style="text-align: center; margin-bottom: 20px;">
-                    <h3 style="color: #c0a062; margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 2px;">📜 The Ledger</h3>
-                    <small style="color: #8a7a5a; font-style: italic;">Tap 📜 button or swipe left to close</small>
+                    <h3 style="color: #c0a062; margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 2px;">The Ledger</h3>
+                    <small style="color: #8a7a5a; font-style: italic;">Tap Ledger button or swipe left to close</small>
                 </div>
                 
                 <div id="mobile-action-list" style="max-height: calc(100vh - 120px); overflow-y: auto; 
@@ -454,7 +454,7 @@ export const MobileSystem = {
                 <button onclick="showHelpScreen(); MobileSystem.toggleMobileMenu();" 
                         style="width: 100%; margin: 5px 0; padding: 12px; background: linear-gradient(45deg, #333, #000); 
                                color: #c0a062; border: 1px solid #c0a062; border-radius: 6px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
-                    ❓ Help
+                    Help
                 </button>
                 
                 <div id="mobile-action-log" style="margin-top: 30px; border-top: 2px solid #c0a062; padding-top: 20px;">
@@ -587,9 +587,9 @@ export const MobileSystem = {
         properties: { label: 'Property',  action: 'showRealEstate()' },
         missions:   { label: 'Missions',  action: 'showMissions()' },
         stats:      { label: 'Stats',     action: 'showPlayerStats()' },
-        coffee:     { label: '☕ Coffee',  action: 'buyCoffee()' },
-        energydrink:{ label: '⚡ Energy',  action: 'buyEnergyDrink()' },
-        steroids:   { label: '💉 Steroids', action: 'buySteroids()' },
+        coffee:     { label: 'Coffee',  action: 'buyCoffee()' },
+        energydrink:{ label: 'Energy',  action: 'buyEnergyDrink()' },
+        steroids:   { label: 'Steroids', action: 'buySteroids()' },
     },
     
     // Default tabs (these are used when no customization has been saved)

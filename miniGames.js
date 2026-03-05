@@ -294,7 +294,7 @@ export function canPlayMiniGame(gameType) {
     return false;
   }
   if (miniGameDailyPlays[gameType].count >= DAILY_GAME_LIMIT) {
-    _alert(`🚫 Daily limit reached! You've played this game ${DAILY_GAME_LIMIT} times today. Come back tomorrow!`);
+    _alert(`Daily limit reached! You've played this game ${DAILY_GAME_LIMIT} times today. Come back tomorrow!`);
     return false;
   }
   return true;
@@ -570,7 +570,7 @@ export function startMemoryMatch() {
   currentMiniGame = 'memory';
   document.getElementById("other-minigames").style.display = "block";
 
-  const symbols = ['🎯', '💰', '🔫', '🚗', '💎', '🎰', '🔔', '⚡'];
+  const symbols = ['[X]', '[$]', '[!]', '[V]', '[D]', '[G]', '[B]', '[Z]'];
   memoryCards = [...symbols, ...symbols].sort(() => Math.random() - 0.5);
   memoryFlippedCards = [];
   memoryMatchedPairs = 0;

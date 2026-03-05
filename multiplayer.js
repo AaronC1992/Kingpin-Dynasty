@@ -1883,11 +1883,11 @@ async function handleServerMessage(message) {
             handleSeasonalEventResult(message);
             break;
         case 'seasonal_event_started':
-            if (typeof showBriefNotification === 'function') showBriefNotification(`🎉 ${message.event.name} has begun!`, 'success');
-            if (typeof logAction === 'function') _safeLogAction(`🎉 SEASONAL EVENT: ${message.event.name} — ${message.event.description}`, 'event');
+            if (typeof showBriefNotification === 'function') showBriefNotification(`${message.event.name} has begun!`, 'success');
+            if (typeof logAction === 'function') _safeLogAction(`SEASONAL EVENT: ${message.event.name} — ${message.event.description}`, 'event');
             break;
         case 'seasonal_objective_complete':
-            if (typeof showBriefNotification === 'function') showBriefNotification(`🏆 Seasonal objective complete! +$${(message.reward?.money || 0).toLocaleString()}`, 'success');
+            if (typeof showBriefNotification === 'function') showBriefNotification(`Seasonal objective complete! +$${(message.reward?.money || 0).toLocaleString()}`, 'success');
             if (message.reward) {
                 player.money += message.reward.money || 0;
                 if (typeof gainExperience === 'function') gainExperience(message.reward.xp || 0);
@@ -1898,7 +1898,7 @@ async function handleServerMessage(message) {
         // Daily login
         case 'daily_login_result':
             if (message.success && typeof showBriefNotification === 'function') {
-                showBriefNotification(`✅ Daily login claimed! Streak: ${message.streak} days`, 'success');
+                showBriefNotification(`Daily login claimed! Streak: ${message.streak} days`, 'success');
             }
             break;
 
@@ -5884,11 +5884,11 @@ function renderServerLeaderboards(container) {
     let html = '';
 
     const sections = [
-        { title: '🏆 Reputation Leaders', data: lb.reputation, cols: ['Name', 'Rep', 'Territory'], render: p => `<td>${escapeHTML(p.name)}</td><td>${p.reputation}</td><td>${p.territory || 0}</td>` },
-        { title: '💰 Wealthiest', data: lb.wealth, cols: ['Name', 'Money'], render: p => `<td>${escapeHTML(p.name)}</td><td>$${(p.money||0).toLocaleString()}</td>` },
-        { title: '⚔️ Top Fighters', data: lb.combat, cols: ['Name', 'Wins', 'Losses'], render: p => `<td>${escapeHTML(p.name)}</td><td>${p.pvpWins}</td><td>${p.pvpLosses}</td>` },
-        { title: '🏰 Territory Lords', data: lb.territories, cols: ['Name', 'Territories'], render: p => `<td>${escapeHTML(p.name)}</td><td>${p.territories}</td>` },
-        { title: '🎖️ Ranked (ELO)', data: lb.ranked, cols: ['Name', 'ELO', 'Tier', 'W/L'], render: p => `<td>${escapeHTML(p.name)}</td><td>${p.elo}</td><td>${p.icon||''} ${p.tier}</td><td>${p.wins}/${p.losses}</td>` }
+        { title: 'Reputation Leaders', data: lb.reputation, cols: ['Name', 'Rep', 'Territory'], render: p => `<td>${escapeHTML(p.name)}</td><td>${p.reputation}</td><td>${p.territory || 0}</td>` },
+        { title: 'Wealthiest', data: lb.wealth, cols: ['Name', 'Money'], render: p => `<td>${escapeHTML(p.name)}</td><td>$${(p.money||0).toLocaleString()}</td>` },
+        { title: 'Top Fighters', data: lb.combat, cols: ['Name', 'Wins', 'Losses'], render: p => `<td>${escapeHTML(p.name)}</td><td>${p.pvpWins}</td><td>${p.pvpLosses}</td>` },
+        { title: 'Territory Lords', data: lb.territories, cols: ['Name', 'Territories'], render: p => `<td>${escapeHTML(p.name)}</td><td>${p.territories}</td>` },
+        { title: 'Ranked (ELO)', data: lb.ranked, cols: ['Name', 'ELO', 'Tier', 'W/L'], render: p => `<td>${escapeHTML(p.name)}</td><td>${p.elo}</td><td>${p.icon||''} ${p.tier}</td><td>${p.wins}/${p.losses}</td>` }
     ];
 
     sections.forEach(s => {
@@ -5923,8 +5923,8 @@ function handleHeistQueueResult(message) {
 }
 
 function handleHeistQueueMatched(message) {
-    if (typeof showBriefNotification === 'function') showBriefNotification('🎯 Heist crew assembled! Check the Heist tab!', 'success');
-    if (typeof logAction === 'function') _safeLogAction('🎯 Your matchmade heist crew has assembled!', 'heist');
+    if (typeof showBriefNotification === 'function') showBriefNotification('Heist crew assembled! Check the Heist tab!', 'success');
+    if (typeof logAction === 'function') _safeLogAction('Your matchmade heist crew has assembled!', 'heist');
 }
 
 window.joinHeistQueue = function() { sendMP({ type: 'heist_queue_join' }); };
@@ -6098,7 +6098,7 @@ function handleGamblingResolved(message) {
         if (typeof showBriefNotification === 'function') showBriefNotification(`You LOST $${message.bet.toLocaleString()}. ${message.result.description}`, 'error');
     }
     _safeUpdateUI();
-    if (typeof logAction === 'function') _safeLogAction(`🎲 ${message.result.description} — ${isWinner ? 'You won!' : isTie ? 'Tie!' : 'You lost.'}`, 'casino');
+    if (typeof logAction === 'function') _safeLogAction(`${message.result.description} — ${isWinner ? 'You won!' : isTie ? 'Tie!' : 'You lost.'}`, 'casino');
 
     // Refresh tables
     sendMP({ type: 'gambling_list_tables' });
@@ -6112,7 +6112,7 @@ function handleGamblingTablesList(message) {
 
 function renderPlayerGambling(container) {
     const style = 'style="background:rgba(20,18,10,0.4);border:1px solid #3a3520;border-radius:8px;padding:16px;margin:10px 0;"';
-    const typeIcons = { dice: '🎲', coinflip: '🪙', highcard: '🃏' };
+    const typeIcons = { dice: '[Dice]', coinflip: '[Coin]', highcard: '[Card]' };
     const typeNames = { dice: 'Dice Roll', coinflip: 'Coin Flip', highcard: 'High Card' };
 
     let html = `<p style="color:#8a7a5a;font-style:italic;">Gamble against other players. Create a table or join one. Winner takes all.</p>`;
@@ -6122,9 +6122,9 @@ function renderPlayerGambling(container) {
         <h4 style="color:#c0a062;">Open a Table</h4>
         <div style="display:grid;gap:8px;margin:8px 0;">
             <select id="gambling-type-select" style="padding:8px;background:#1a1810;border:1px solid #3a3520;color:#d4c4a0;border-radius:4px;">
-                <option value="dice">🎲 Dice Roll (2d6 each)</option>
-                <option value="coinflip">🪙 Coin Flip</option>
-                <option value="highcard">🃏 High Card</option>
+                <option value="dice">Dice Roll (2d6 each)</option>
+                <option value="coinflip">Coin Flip</option>
+                <option value="highcard">High Card</option>
             </select>
             <input type="number" id="gambling-bet-input" placeholder="Bet amount ($1,000 — $500,000)" min="1000" max="500000" style="padding:8px;background:#1a1810;border:1px solid #3a3520;color:#d4c4a0;border-radius:4px;">
             <button onclick="window.createGamblingTable()" style="background:linear-gradient(135deg,#d4af37,#b8962e);color:#14120a;border:none;padding:10px;border-radius:6px;cursor:pointer;font-weight:bold;">Open Table</button>
@@ -6138,7 +6138,7 @@ function renderPlayerGambling(container) {
             html += `<div ${style}>
                 <div style="display:flex;justify-content:space-between;align-items:center;">
                     <div>
-                        <strong style="color:#d4c4a0;">${typeIcons[t.type] || '🎲'} ${typeNames[t.type] || t.type}</strong>
+                        <strong style="color:#d4c4a0;">${typeIcons[t.type] || '[Dice]'} ${typeNames[t.type] || t.type}</strong>
                         <p style="color:#d4af37;margin:4px 0;">Bet: $${t.bet.toLocaleString()}</p>
                         <small style="color:#8a7a5a;">Hosted by ${escapeHTML(t.hostName)}</small>
                     </div>
@@ -6190,9 +6190,9 @@ function handleSuperbossResult(message) {
 }
 
 function handleSuperbossInviteReceived(message) {
-    if (typeof showBriefNotification === 'function') showBriefNotification(`⚔️ ${message.fromName} invites you to fight ${message.bossName}!`, 'success');
+    if (typeof showBriefNotification === 'function') showBriefNotification(`${message.fromName} invites you to fight ${message.bossName}!`, 'success');
     window._pendingSuperbossInvite = { fightId: message.fightId, bossName: message.bossName };
-    if (typeof logAction === 'function') _safeLogAction(`⚔️ ${message.fromName} invites you to fight ${message.bossName}! Go to the Superboss screen to join.`, 'combat');
+    if (typeof logAction === 'function') _safeLogAction(`${message.fromName} invites you to fight ${message.bossName}! Go to the Superboss screen to join.`, 'combat');
 }
 
 function handleSuperbossUpdate(message) {
@@ -6210,10 +6210,10 @@ function handleSuperbossUpdate(message) {
     // Log the attack
     if (message.attackerName) {
         const critText = message.isCrit ? ' (CRITICAL!)' : '';
-        if (typeof logAction === 'function') _safeLogAction(`⚔️ ${message.attackerName} hit the boss for ${message.damage} damage${critText}!`, 'combat');
+        if (typeof logAction === 'function') _safeLogAction(`${message.attackerName} hit the boss for ${message.damage} damage${critText}!`, 'combat');
         if (message.bossAttack) {
             const downText = message.bossAttack.downed ? ' — DOWNED!' : '';
-            _safeLogAction(`💀 Boss counter-attacks ${message.bossAttack.targetName} for ${message.bossAttack.damage} damage${downText}!`, 'combat');
+            _safeLogAction(`Boss counter-attacks ${message.bossAttack.targetName} for ${message.bossAttack.damage} damage${downText}!`, 'combat');
         }
     }
 }
@@ -6239,8 +6239,8 @@ function handleSuperbossVictory(message) {
     
     _safeUpdateUI();
     
-    if (typeof showBriefNotification === 'function') showBriefNotification(`🏆 ${message.bossName} DEFEATED! +$${message.moneyReward.toLocaleString()} +${message.xpReward} XP (${message.damageShare}% contribution)`, 'success');
-    if (typeof logAction === 'function') _safeLogAction(`🏆 SUPERBOSS DEFEATED: ${message.bossName}! You dealt ${message.damageDealt} damage (${message.damageShare}% share). Reward: $${message.moneyReward.toLocaleString()} + ${message.xpReward} XP`, 'combat');
+    if (typeof showBriefNotification === 'function') showBriefNotification(`${message.bossName} DEFEATED! +$${message.moneyReward.toLocaleString()} +${message.xpReward} XP (${message.damageShare}% contribution)`, 'success');
+    if (typeof logAction === 'function') _safeLogAction(`SUPERBOSS DEFEATED: ${message.bossName}! You dealt ${message.damageDealt} damage (${message.damageShare}% share). Reward: $${message.moneyReward.toLocaleString()} + ${message.xpReward} XP`, 'combat');
     
     renderSuperbossScreen();
 }
@@ -6264,7 +6264,7 @@ function renderSuperbossScreen() {
         const hpColor = hpPct > 50 ? '#27ae60' : hpPct > 25 ? '#e67e22' : '#e74c3c';
         
         html += `<div style="background:rgba(139,0,0,0.2);border:2px solid #8b0000;border-radius:12px;padding:20px;margin:10px 0;">
-            <h3 style="color:#e74c3c;text-align:center;margin:0 0 12px;">⚔️ ${escapeHTML(f.bossName)}</h3>
+            <h3 style="color:#e74c3c;text-align:center;margin:0 0 12px;">${escapeHTML(f.bossName)}</h3>
             <div style="background:#1a1810;border:1px solid #3a3520;border-radius:8px;overflow:hidden;height:32px;margin:8px 0;">
                 <div style="background:${hpColor};height:100%;width:${hpPct}%;transition:width 0.5s;display:flex;align-items:center;justify-content:center;">
                     <span style="color:#fff;font-weight:bold;font-size:0.85em;text-shadow:1px 1px 2px #000;">${f.bossHP.toLocaleString()} / ${f.bossMaxHP.toLocaleString()} HP</span>
@@ -6272,7 +6272,7 @@ function renderSuperbossScreen() {
             </div>
             <div style="margin:12px 0;">
                 <h4 style="color:#c0a062;">Participants:</h4>
-                ${f.participants.map(p => `<div style="padding:4px 8px;color:${p.alive ? '#d4c4a0' : '#8a7a5a'};"><span>${p.alive ? '✅' : '💀'} ${escapeHTML(p.name)}</span> <span style="color:#8a7a5a;">— ${p.damage} dmg</span></div>`).join('')}
+                ${f.participants.map(p => `<div style="padding:4px 8px;color:${p.alive ? '#d4c4a0' : '#8a7a5a'};"><span>${p.alive ? '[OK]' : '[X]'} ${escapeHTML(p.name)}</span> <span style="color:#8a7a5a;">— ${p.damage} dmg</span></div>`).join('')}
             </div>
             ${f.phase === 'recruiting' ? `
                 <p style="color:#d4af37;text-align:center;">Recruiting phase — invite friends before attacking!</p>
@@ -6280,14 +6280,14 @@ function renderSuperbossScreen() {
                     <input type="text" id="superboss-invite-input" placeholder="Player name to invite" style="padding:6px;background:#1a1810;border:1px solid #3a3520;color:#d4c4a0;border-radius:4px;width:60%;">
                     <button onclick="window.superbossInvite()" style="background:#d4af37;color:#14120a;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;font-weight:bold;">Invite</button>
                 </div>` : ''}
-            <button onclick="window.superbossAttack()" style="background:linear-gradient(135deg,#e74c3c,#c0392b);color:#fff;border:none;padding:12px 24px;border-radius:8px;cursor:pointer;font-weight:bold;font-size:1.1em;width:100%;margin-top:8px;">⚔️ ATTACK</button>
+            <button onclick="window.superbossAttack()" style="background:linear-gradient(135deg,#e74c3c,#c0392b);color:#fff;border:none;padding:12px 24px;border-radius:8px;cursor:pointer;font-weight:bold;font-size:1.1em;width:100%;margin-top:8px;">ATTACK</button>
         </div>`;
     }
 
     // Pending invite
     if (window._pendingSuperbossInvite && !_activeSuperbossFight) {
         html += `<div ${style} style="border-color:#d4af37;">
-            <h4 style="color:#d4af37;">⚔️ Fight Invitation</h4>
+            <h4 style="color:#d4af37;">Fight Invitation</h4>
             <p style="color:#d4c4a0;">You've been invited to fight <strong>${escapeHTML(window._pendingSuperbossInvite.bossName)}</strong>!</p>
             <button onclick="window.superbossJoinInvite()" style="background:#27ae60;color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-weight:bold;">Join Fight</button>
         </div>`;
@@ -6302,7 +6302,7 @@ function renderSuperbossScreen() {
             html += `<div ${style} style="opacity:${canFight?1:0.5};">
                 <div style="display:flex;justify-content:space-between;align-items:center;">
                     <div>
-                        <strong style="color:#e74c3c;">${defeated?'✅':''} ${escapeHTML(b.name)}</strong>
+                        <strong style="color:#e74c3c;">${defeated?'[Defeated]':''} ${escapeHTML(b.name)}</strong>
                         <p style="color:#8a7a5a;margin:4px 0;">${escapeHTML(b.description)}</p>
                         <small style="color:#8a7a5a;">Level ${b.level} required — HP: ${b.hp.toLocaleString()}</small>
                     </div>

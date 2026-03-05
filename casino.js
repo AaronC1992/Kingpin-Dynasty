@@ -639,7 +639,7 @@ export function rouletteSpin() {
   html += `<div style="margin:15px 0;text-align:left;max-width:400px;margin:15px auto;">`;
   for (const br of betResults) {
     const label = typeof br.type === 'number' ? `#${br.type}` : br.type;
-    html += `<div style="padding:4px 0;color:${br.won ? '#8a9a6a' : '#8b3a3a'};">${br.won ? '✅' : '❌'} ${label} ($${br.amount.toLocaleString()}) → ${br.won ? `+$${br.payout.toLocaleString()}` : 'Lost'}</div>`;
+    html += `<div style="padding:4px 0;color:${br.won ? '#8a9a6a' : '#8b3a3a'};">${br.won ? 'WIN' : 'LOSS'} ${label} ($${br.amount.toLocaleString()}) → ${br.won ? `+$${br.payout.toLocaleString()}` : 'Lost'}</div>`;
   }
   html += `</div>`;
 
