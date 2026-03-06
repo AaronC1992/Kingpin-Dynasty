@@ -53,6 +53,8 @@ const PORT = process.env.PORT || 3000;
 // Allowed origins for CORS (game website)
 const ALLOWED_ORIGINS = [
     'https://mafia-born.onrender.com',
+    'https://mafiaborn.com',
+    'https://www.mafiaborn.com',
     'https://aaronc1992.github.io',
     'http://localhost:3000',
     'http://127.0.0.1:3000'
