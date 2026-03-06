@@ -12156,18 +12156,10 @@ async function attemptGangRescue() {
   }
 
   const rescueChance = Math.min(90, 20 + availableMembers.length * 10);
-  const rescueCost = Math.floor(2000 + player.level * 300);
 
-  if (player.money < rescueCost) {
-    showBriefNotification(`Need $${rescueCost.toLocaleString()} to fund the rescue operation.`, 'warning');
+  if (!await ui.confirm(`<strong>Gang Rescue Operation</strong><br><br>Your crew of ${availableMembers.length} will attempt a jailbreak.<br>Success chance: <strong>${rescueChance}%</strong><br><br>If the rescue fails, some crew members may get arrested.<br><br>Proceed?`)) {
     return;
   }
-
-  if (!await ui.confirm(`<strong>Gang Rescue Operation</strong><br><br>Your crew of ${availableMembers.length} will attempt a jailbreak.<br>Success chance: <strong>${rescueChance}%</strong><br>Cost: <strong>$${rescueCost.toLocaleString()}</strong><br><br>If the rescue fails, some crew members may get arrested.<br><br>Proceed?`)) {
-    return;
-  }
-
-  player.money -= rescueCost;
   const success = Math.random() * 100 < rescueChance;
 
   if (success) {
@@ -12573,16 +12565,14 @@ function showJailScreen() {
   const availableMembers = (player.gang && player.gang.gangMembers) ? player.gang.gangMembers.filter(m => !m.arrested && !m.onOperation && !m.inTraining) : [];
   if (availableMembers.length > 0) {
     const rescueChance = Math.min(90, 20 + availableMembers.length * 10);
-    const rescueCost = Math.floor(2000 + player.level * 300);
     rescueEl.innerHTML = `<div style="margin:12px 0;padding:12px;background:rgba(20,18,10,0.6);border-radius:8px;border:1px solid #c0a062;">
       <strong style="color:#c0a062;">Gang Rescue Operation</strong>
       <p style="color:#8a7a5a;font-size:0.9em;margin:4px 0;">Send your crew to break you out. More members = better odds, but anyone caught gets arrested too.</p>
       <div style="margin:6px 0;font-size:0.9em;">
         <span style="color:#f5e6c8;">Available crew: ${availableMembers.length}</span> |
-        <span style="color:${rescueChance >= 60 ? '#8a9a6a' : '#c0a062'};">Success chance: ${rescueChance}%</span> |
-        <span style="color:#c0a062;">Cost: $${rescueCost.toLocaleString()}</span>
+        <span style="color:${rescueChance >= 60 ? '#8a9a6a' : '#c0a062'};">Success chance: ${rescueChance}%</span>
       </div>
-      <button onclick="attemptGangRescue()" style="background:linear-gradient(135deg,#c0a062,#8b6d2a);color:#000;border:none;padding:8px 16px;border-radius:5px;cursor:pointer;font-weight:bold;margin-top:6px;${player.money < rescueCost ? 'opacity:0.5;' : ''}">
+      <button onclick="attemptGangRescue()" style="background:linear-gradient(135deg,#c0a062,#8b6d2a);color:#000;border:none;padding:8px 16px;border-radius:5px;cursor:pointer;font-weight:bold;margin-top:6px;">
         Call in the Crew
       </button>
     </div>`;
@@ -13759,6 +13749,9 @@ function showCommandCenter() {
   });
 
   grid.innerHTML = html;
+
+  // Inject offline button if in offline mode
+  if (window._offlineMode) injectOfflineButtons();
 
   // Check for daily login reward
   setTimeout(() => {
@@ -23541,7 +23534,12 @@ function startLoadingSequence() {
     return 'https://mafia-born.onrender.com/health';
   })();
 
+  let pingAttempts = 0;
+  const MAX_PING_ATTEMPTS = 10; // Stop after ~30s (10 x 3s)
+
   function pingServer() {
+    if (loadingFinished) return; // Loading already resolved, stop pinging
+    pingAttempts++;
     fetch(SERVER_HEALTH_URL, { cache: 'no-store' })
       .then(res => {
         if (res.ok) return res.json();
@@ -23560,10 +23558,15 @@ function startLoadingSequence() {
         }
 
         serverReady = true;
+        window._offlineMode = false;
         console.log('[loading] Server is ready (v' + (data.version || '?') + ')');
         if (stepsComplete) finishLoading();
       })
       .catch(err => {
+        if (loadingFinished || pingAttempts >= MAX_PING_ATTEMPTS) {
+          console.log('[loading] Giving up server ping after ' + pingAttempts + ' attempts.');
+          return;
+        }
         console.log('[loading] Server not ready, retrying in 3s...', err.message);
         if (stepsComplete) {
           loadingText.textContent = "Waking up the server...";
@@ -23584,6 +23587,7 @@ function startLoadingSequence() {
       loadingText.textContent = "Server unavailable -- starting in offline mode...";
       loadingPercentage.textContent = '100%';
       loadingProgress.style.width = '100%';
+      window._offlineMode = true;
       finishLoading();
     }
   }, maxLoadingTime);
@@ -23639,6 +23643,11 @@ function completeLoading() {
   // Initialize game systems
   initGame();
 
+  // Show offline retry buttons if server was unreachable
+  if (window._offlineMode) {
+    setTimeout(injectOfflineButtons, 100);
+  }
+
   // Initialize mobile system if available
   if (typeof window.MobileSystem !== 'undefined') {
     window.MobileSystem.init();
@@ -23672,6 +23681,81 @@ function completeLoading() {
     }, 1500);
   }, 800);
 }
+
+// ==================== OFFLINE RETRY ====================
+function retryServerConnection() {
+  const btn = document.getElementById('offline-retry-btn-menu') || document.getElementById('offline-retry-btn-safehouse');
+  // Disable all retry buttons while attempting
+  document.querySelectorAll('.offline-retry-btn').forEach(b => {
+    b.disabled = true;
+    b.textContent = 'Connecting...';
+  });
+
+  const healthUrl = (function () {
+    try {
+      if (window.__MULTIPLAYER_SERVER_URL__) {
+        return window.__MULTIPLAYER_SERVER_URL__.replace(/^ws/, 'http').replace(/\/$/, '') + '/health';
+      }
+      const h = window.location.hostname;
+      if (h === 'localhost' || h === '127.0.0.1') return 'http://localhost:3000/health';
+    } catch (e) { /* fall through */ }
+    return 'https://mafia-born.onrender.com/health';
+  })();
+
+  fetch(healthUrl, { cache: 'no-store' })
+    .then(res => {
+      if (res.ok) return res.json();
+      throw new Error('Server returned ' + res.status);
+    })
+    .then(data => {
+      window._offlineMode = false;
+      showBriefNotification('Connected to server!', 'success');
+      // Remove offline buttons
+      document.querySelectorAll('.offline-retry-btn').forEach(b => b.remove());
+      // Reconnect multiplayer if available
+      if (typeof connectToOnlineWorld === 'function') {
+        connectToOnlineWorld();
+      }
+    })
+    .catch(err => {
+      showBriefNotification('Server still unavailable. Try again later.', 'danger');
+      document.querySelectorAll('.offline-retry-btn').forEach(b => {
+        b.disabled = false;
+        b.textContent = 'OFFLINE -- Tap to Retry';
+      });
+    });
+}
+window.retryServerConnection = retryServerConnection;
+
+function injectOfflineButtons() {
+  if (!window._offlineMode) return;
+  const btnStyle = 'background:#8b3a3a;color:#f5e6c8;border:1px solid #c0a062;padding:4px 12px;border-radius:5px;cursor:pointer;font-size:0.8em;font-weight:bold;margin-left:10px;vertical-align:middle;';
+
+  // Main menu header
+  const menuHeader = document.querySelector('#menu .page-header h1');
+  if (menuHeader && !document.getElementById('offline-retry-btn-menu')) {
+    const btn = document.createElement('button');
+    btn.id = 'offline-retry-btn-menu';
+    btn.className = 'offline-retry-btn';
+    btn.style.cssText = btnStyle;
+    btn.textContent = 'OFFLINE -- Tap to Retry';
+    btn.onclick = retryServerConnection;
+    menuHeader.appendChild(btn);
+  }
+
+  // SafeHouse header
+  const shHeader = document.querySelector('#safehouse .page-header h1');
+  if (shHeader && !document.getElementById('offline-retry-btn-safehouse')) {
+    const btn = document.createElement('button');
+    btn.id = 'offline-retry-btn-safehouse';
+    btn.className = 'offline-retry-btn';
+    btn.style.cssText = btnStyle;
+    btn.textContent = 'OFFLINE -- Tap to Retry';
+    btn.onclick = retryServerConnection;
+    shHeader.appendChild(btn);
+  }
+}
+window.injectOfflineButtons = injectOfflineButtons;
 
 // ==================== FRIENDS SCREEN ====================
 function showFriendsScreen() {
