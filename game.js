@@ -5383,7 +5383,7 @@ function calculateGangPower() {
     const hasLegacyRole = specialistRoles.find(r => r.id === member.specialization);
     const hasExpandedRole = member.role && EXPANDED_TO_SPECIALIZATION[member.role];
     if (hasLegacyRole || hasExpandedRole) {
-      totalPower += (member.experienceLevel * 20);
+      totalPower += ((member.experienceLevel || 1) * 20);
     }
   });
   // Kozlov Iron Discipline: +25% gang member effectiveness
@@ -5437,7 +5437,7 @@ function generateGangOperationsHTML() {
           <option value="">Select a member</option>
           ${availableMembers.map(member => {
             const eName = member.role && GANG_MEMBER_ROLES[member.role] ? GANG_MEMBER_ROLES[member.role].name : member.specialization;
-            return `<option value="${member.name}">${member.name} (${eName}, Lvl ${member.experienceLevel})</option>`;
+            return `<option value="${member.name}">${member.name} (${eName}, Lvl ${member.experienceLevel || 1})</option>`;
           }).join('')}
         </select>
         <button onclick="startGangOperation('${operation.id}')"
@@ -5652,7 +5652,7 @@ function startGangOperation(operationId) {
   const selectedMemberName = memberSelect.value;
 
   if (!selectedMemberName) {
-    showBriefNotification('Please select a gang member for this operation.', 'success');
+    showBriefNotification('Please select a gang member for this operation.', 'warning');
     return;
   }
 
@@ -5693,7 +5693,7 @@ function completeGangOperation(operationData) {
   member.onOperation = false;
 
   // Calculate success based on member stats and operation risks
-  const successChance = 60 + (member.experienceLevel * 8);
+  const successChance = 60 + ((member.experienceLevel || 1) * 8);
   const betrayalRoll = Math.random() * 100;
   const arrestRoll = Math.random() * 100;
 

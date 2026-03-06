@@ -824,6 +824,7 @@ wss.on('connection', (ws, req) => {
         
         clients.delete(clientId);
         sessions.delete(ws);
+        clientMessageHistory.delete(clientId);
     });
     
     // Send welcome message

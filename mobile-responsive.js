@@ -63,7 +63,10 @@ export const MobileSystem = {
     // Setup responsive event handlers
     // JS RESPONSIBILITY: Detect changes and update body classes; CSS reacts automatically
     _resizeTimer: null,
+    _responsiveHandlersAttached: false,
     setupResponsiveHandling() {
+        if (this._responsiveHandlersAttached) return;
+        this._responsiveHandlersAttached = true;
         // Handle window resize (debounced to avoid excessive reflows)
         window.addEventListener('resize', () => {
             if (this._resizeTimer) clearTimeout(this._resizeTimer);
@@ -131,6 +134,8 @@ export const MobileSystem = {
     
     // Setup swipe gestures for mobile action panel
     setupSwipeGestures() {
+        if (this._swipeListenersAttached) return;
+        this._swipeListenersAttached = true;
         let startX = 0;
         let startY = 0;
         let endX = 0;
@@ -665,6 +670,8 @@ export const MobileSystem = {
     
     // Add touch feedback via event delegation (covers dynamically created elements)
     addTouchFeedback() {
+        if (this._touchFeedbackAttached) return;
+        this._touchFeedbackAttached = true;
         document.body.addEventListener('touchstart', (e) => {
             const el = e.target.closest('button, .clickable');
             if (el) el.style.opacity = '0.7';

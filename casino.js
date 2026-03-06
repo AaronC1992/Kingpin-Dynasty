@@ -124,7 +124,7 @@ export function showCasinoTab(tab) {
 // BLACKJACK
 // ═══════════════════════════════════════════════════════════════════════
 
-const CARD_SUITS = ['', '', '', ''];
+const CARD_SUITS = ['\u2660', '\u2665', '\u2666', '\u2663'];
 const CARD_NAMES = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
 
 function bjNewDeck() {
@@ -151,7 +151,7 @@ function bjHandValue(hand) {
 
 function bjCardHTML(card, hidden) {
   if (hidden) return `<div style="display:inline-block;width:clamp(50px,15vw,70px);height:clamp(72px,21vw,100px);background:#14120a;border:2px solid #6a5a3a;border-radius:8px;margin:3px;text-align:center;line-height:clamp(72px,21vw,100px);font-size:1.5em;color:#8a7a5a;">?</div>`;
-  const color = (card.suit === '' || card.suit === '') ? '#8b3a3a' : '#14120a';
+  const color = (card.suit === '\u2665' || card.suit === '\u2666') ? '#8b3a3a' : '#14120a';
   return `<div style="display:inline-block;width:clamp(50px,15vw,70px);height:clamp(72px,21vw,100px);background:linear-gradient(135deg,#fff,#f5f5f5);border:2px solid #444;border-radius:8px;margin:3px;padding:4px;text-align:center;position:relative;box-sizing:border-box;">
     <div style="position:absolute;top:4px;left:6px;font-size:0.9em;color:${color};font-weight:bold;line-height:1;">${card.name}<br>${card.suit}</div>
     <div style="font-size:2em;color:${color};line-height:clamp(72px,21vw,100px);">${card.suit}</div>

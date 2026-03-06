@@ -51,8 +51,8 @@ function loadWorldState() {
       territories: parsed.territories || null,
       politics: parsed.politics || null,
       alliances: parsed.alliances || null,
-      bounties: Array.isArray(parsed.bounties) ? parsed.bounties : null,
-      marketplace: Array.isArray(parsed.marketplace) ? parsed.marketplace : null,
+      bounties: Array.isArray(parsed.bounties) ? parsed.bounties : [],
+      marketplace: Array.isArray(parsed.marketplace) ? parsed.marketplace : [],
       season: parsed.season || null
     };
     console.log(' World state loaded from world-state.json');
