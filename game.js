@@ -3772,8 +3772,8 @@ function processGangPassiveIncome() {
     // Small XP gain from street work
     member.xp = (member.xp || 0) + 5;
     const xpToLevel = getMemberXPToLevel(memberLevel);
-    if (member.xp >= xpToLevel && memberLevel < 10) {
-      member.experienceLevel = memberLevel + 1;
+    if (member.xp >= xpToLevel && Math.floor(memberLevel) < 10) {
+      member.experienceLevel = Math.floor(memberLevel) + 1;
       member.xp = 0;
       if (member.stats) {
         member.stats.violence = (member.stats.violence || 0) + 1;
@@ -4672,7 +4672,13 @@ async function collectAllBusinessIncome() {
     const bizMultiplier = getBusinessMultiplier(business.districtId || player.currentTerritory);
 
     const hourlyIncome = Math.floor(businessType.baseIncome * Math.pow(businessType.incomeMultiplier, business.level - 1) / 24);
-    const grossIncome = Math.floor(hourlyIncome * Math.min(hoursElapsed, 48) * bizMultiplier);
+    let grossIncome = Math.floor(hourlyIncome * Math.min(hoursElapsed, 48) * bizMultiplier);
+
+    // Gang member manager bonus
+    const memberBonus = getBusinessMemberBonus(business);
+    if (memberBonus > 1.0) {
+      grossIncome = Math.floor(grossIncome * memberBonus);
+    }
 
     // Phase 3: territory tax
     let taxAmount = 0;
@@ -5743,8 +5749,8 @@ function completeGangOperation(operationData) {
   const xpGained = operation.rewards.experience || 50;
   member.xp = (member.xp || 0) + xpGained;
   const xpToLevel = getMemberXPToLevel(member.experienceLevel || 1);
-  if (member.xp >= xpToLevel && member.experienceLevel < 10) {
-    member.experienceLevel = Math.min(10, (member.experienceLevel || 1) + 1);
+  if (member.xp >= xpToLevel && Math.floor(member.experienceLevel || 1) < 10) {
+    member.experienceLevel = Math.min(10, Math.floor(member.experienceLevel || 1) + 1);
     member.xp = 0;
     // Level-up stat boost
     if (member.stats) {
@@ -12187,13 +12193,12 @@ async function attemptGangRescue() {
     // Failed rescue -- 1-2 members get arrested
     const arrestCount = Math.min(availableMembers.length, Math.floor(Math.random() * 2) + 1);
     const arrested = [];
-    for (let i = 0; i < arrestCount; i++) {
-      const unlucky = availableMembers[Math.floor(Math.random() * availableMembers.length)];
-      if (!unlucky.arrested) {
-        unlucky.arrested = true;
-        unlucky.arrestTime = Date.now() + (Math.random() * 36 + 12) * 60 * 60 * 1000;
-        arrested.push(unlucky.name);
-      }
+    const shuffled = [...availableMembers].sort(() => Math.random() - 0.5);
+    for (let i = 0; i < arrestCount && i < shuffled.length; i++) {
+      const unlucky = shuffled[i];
+      unlucky.arrested = true;
+      unlucky.arrestTime = Date.now() + (Math.random() * 36 + 12) * 60 * 60 * 1000;
+      arrested.push(unlucky.name);
     }
 
     player.jailTime += 15; // Extra time for the attempt
@@ -17178,8 +17183,23 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = "1.16.3";
+const CURRENT_VERSION = "1.17.0";
 const VERSION_UPDATES = {
+  "1.17.0": {
+    title: "Gang Operations, Skill Synergies, Side Ops & Jail Revamp",
+    date: "March 2026",
+    changes: [
+      "Gang members now level up (1-10) with XP bars, stat boosts on level-up",
+      "Assign gang members to manage businesses for 15-40% income boost",
+      "Idle gang members earn passive dirty money from street hustles",
+      "6 cross-tree skill synergies unlock at 10+ pts in two trees (Silent Killer, Iron Warrior, Ghost Protocol, Mastermind, Silver Tongue, Survivor)",
+      "Skill soft cap: ranks above 7 cost 2 skill points instead of 1",
+      "New Side Ops tab in Operations screen surfaces all side quests",
+      "Jail now shows escape odds with visual breakdown before breakout",
+      "Gang rescue: send your crew to break you out of jail",
+      "Survivor synergy (Endurance + Luck) boosts jail breakout chance",
+    ]
+  },
   "1.16.3": {
     title: "Chance-Based Turf Attacks & Bug Fixes",
     date: "March 2026",

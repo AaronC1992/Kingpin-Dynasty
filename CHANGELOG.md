@@ -5,6 +5,37 @@ All notable changes to From Dusk To Don (Mafia Born) will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.17.0] - 2026-03-06
+
+### Added — Gang Member Operations
+- Gang members now have a real XP/leveling system (levels 1-10 with XP bars on member cards)
+- Assign gang members to manage businesses for 15-40% income boost based on member level
+- Idle (unassigned) members earn passive dirty money from street hustles each cycle
+- Members gain XP from operations, passive work, and level up with +1 to all stats and +2 power
+- Small 2% arrest risk during idle hustling adds stakes to leaving members unassigned
+
+### Added — Skill Tree Specialization
+- 6 cross-tree synergy bonuses unlocked by investing 10+ points in two connected trees
+- Synergies: Silent Killer, Iron Warrior, Ghost Protocol, Mastermind, Silver Tongue, Survivor
+- Soft cap: skill ranks above 7 cost 2 skill points instead of 1 (diminishing returns)
+- Synergy progress panel added to skill tree UI showing active/locked status
+
+### Added — Side Operations Tab
+- New "Side Ops" tab in the Operations screen between Story and Superboss
+- Surfaces all side quests inline with active timers, available, locked, and completed sections
+- Integrated with existing quest timer tick system for live countdowns
+
+### Added — Jail System Revamp
+- Escape odds displayed as visual bar with full breakdown (base + stealth + perks + synergies)
+- Gang rescue operation: send your crew to break you out (20% base + 10% per available member)
+- Failed rescue arrests 1-2 crew members and extends your sentence by 15 seconds
+- Survivor synergy (Endurance + Luck) boosts breakout chance by up to 18%
+
+### Fixed
+- collectAllBusinessIncome now applies gang member manager bonus (was only applied to single collection)
+- Old save files with fractional experienceLevel cleaned up on level-up
+- Gang rescue arrest loop no longer picks the same member twice
+
 ## [1.16.1] - 2026-03-05
 
 ### Fixed — Encoding Bug Fixes
