@@ -5,7 +5,7 @@ const onlineWorld = {
     maxPlayersPerServer: 100,
     // WebSocket server URL
     // Local dev -> ws://localhost:3000
-    // Production -> Render.com WebSocket server (game served from mafiaborn.com via cPanel)
+    // Production -> Render.com (serves both game files and WebSocket)
     serverUrl: (function(){
         try {
             if (window.__MULTIPLAYER_SERVER_URL__) return window.__MULTIPLAYER_SERVER_URL__;

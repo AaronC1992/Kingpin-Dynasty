@@ -52,10 +52,7 @@ const ADMIN_ALLOWED_FIELDS = new Set([
 const PORT = process.env.PORT || 3000;
 // Allowed origins for CORS (game website)
 const ALLOWED_ORIGINS = [
-    'https://mafiaborn.com',
-    'http://mafiaborn.com',
-    'https://www.mafiaborn.com',
-    'http://www.mafiaborn.com',
+    'https://mafia-born.onrender.com',
     'https://aaronc1992.github.io',
     'http://localhost:3000',
     'http://127.0.0.1:3000'
@@ -295,11 +292,7 @@ const server = http.createServer(async (req, res) => {
     if (reqPath === '/favicon.ico') reqPath = '/GameLogo.png';
     
     // Determine the static files root directory
-    // In cPanel, game files may be in ../public_html while server runs from a separate dir
-    const cwd = process.cwd();
-    const publicHtmlDir = path.join(path.dirname(cwd), 'public_html');
-    const hasPublicHtml = fs.existsSync(publicHtmlDir);
-    const staticRoot = hasPublicHtml ? publicHtmlDir : cwd;
+    const staticRoot = process.cwd();
     
     // Normalize path and restrict serving to the static root
     let filePath = path.normalize(path.join(staticRoot, reqPath));
