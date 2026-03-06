@@ -4922,9 +4922,6 @@ function generateGangMembersHTML() {
 
         <div style="margin-top: 10px;">
           ${!member.onOperation && !member.inTraining ? `
-            <button onclick="assignRole(${index})" style="background: #c0a062; color: white; padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer; margin: 2px; font-size: 0.8em;">
-              Assign Role
-            </button>
             <button onclick="startTraining(${index})" style="background: #1abc9c; color: white; padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer; margin: 2px; font-size: 0.8em;">
               Train
             </button>
@@ -5150,42 +5147,7 @@ function handleOperationArrest(member, operation) {
   updateUI();
 }
 
-// Assign or change a gang member's role (unified: sets both expanded role + specialization)
-async function assignRole(memberIndex) {
-  const member = player.gang.gangMembers[memberIndex];
-  if (!member) return;
 
-  // Build role list from expanded roles if available, fallback to legacy
-  let roleList, promptText;
-  if (EXPANDED_SYSTEMS_CONFIG.gangRolesEnabled) {
-    const roles = GANG_MEMBER_ROLES;
-    const roleKeys = Object.keys(roles);
-    promptText = `Assign ${member.name} to a role:<br><br>Available roles:<br>${roleKeys.map(k => `<strong>${k}</strong>: ${roles[k].name} -- ${roles[k].description}${roles[k].perk ? ` (${roles[k].perk.effect})` : ''}`).join('<br>')}<br><br>Enter role ID (${roleKeys.join(', ')}):`;
-
-    const selectedRole = await ui.prompt(promptText);
-    if (selectedRole && roles[selectedRole]) {
-      member.role = selectedRole;
-      member.specialization = EXPANDED_TO_SPECIALIZATION[selectedRole] || member.specialization;
-
-      showBriefNotification(`${member.name} assigned as ${roles[selectedRole].name}!`, 'success');
-      logAction(`${member.name} takes on the role of ${roles[selectedRole].name}. Specialization brings focus to your organization.`);
-      updateUI();
-      showGang();
-    }
-  } else {
-    // Legacy path
-    const selectedRole = await ui.prompt(`Assign ${member.name} to a specialist role:<br><br>Available roles:<br>${specialistRoles.map(r => `${r.name}: ${r.description}`).join('<br>')}<br><br>Enter role ID (muscle, thief, dealer, enforcer, driver, technician):`);
-
-    if (selectedRole && specialistRoles.find(r => r.id === selectedRole)) {
-      member.specialization = selectedRole;
-
-      showBriefNotification(`${member.name} assigned as ${specialistRoles.find(r => r.id === selectedRole).name}!`, 'success');
-      logAction(`${member.name} takes on the role of ${specialistRoles.find(r => r.id === selectedRole).name}. Specialization brings focus to your organization.`);
-      updateUI();
-      showGang();
-    }
-  }
-}
 
 // Start training for a gang member
 async function startTraining(memberIndex) {
@@ -23322,7 +23284,6 @@ window.acquireTerritory = function(zoneId) { attackTurfZone(zoneId); };
 window.fireGangMember = fireGangMember;
 window.dealWithDisloyalty = dealWithDisloyalty;
 window.startTraining = startTraining;
-window.assignRole = assignRole;
 window.hireSpecialRecruit = hireSpecialRecruit;
 window.showGangManagementScreen = showGangManagementScreen;
 window.deleteGameSlot = deleteGameSlot;
