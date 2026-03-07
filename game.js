@@ -342,10 +342,12 @@ async function showMissions() {
     <div style="display:flex;gap:4px;margin-bottom:16px;border-bottom:2px solid #c0a062;padding-bottom:0;flex-wrap:wrap;">
       <button id="ops-tab-story" class="ops-tab active" onclick="switchOpsTab('story', this)" style="background:#c0a062;color:#000;padding:10px 18px;border:1px solid #c0a062;border-bottom:none;border-radius:8px 8px 0 0;cursor:pointer;font-family:'Georgia',serif;font-weight:bold;font-size:0.95em;">Story</button>
       <button id="ops-tab-sideops" class="ops-tab" onclick="switchOpsTab('sideops', this)" style="background:#222;color:#c0a062;padding:10px 18px;border:1px solid #c0a062;border-bottom:1px solid #c0a062;border-radius:8px 8px 0 0;cursor:pointer;font-family:'Georgia',serif;font-weight:normal;font-size:0.95em;">Side Ops</button>
+      <button id="ops-tab-turf" class="ops-tab" onclick="switchOpsTab('turf', this)" style="background:#222;color:#c0a062;padding:10px 18px;border:1px solid #c0a062;border-bottom:1px solid #c0a062;border-radius:8px 8px 0 0;cursor:pointer;font-family:'Georgia',serif;font-weight:normal;font-size:0.95em;">Turf</button>
       <button id="ops-tab-superboss" class="ops-tab" onclick="switchOpsTab('superboss', this)" style="background:#222;color:#c0a062;padding:10px 18px;border:1px solid #c0a062;border-bottom:1px solid #c0a062;border-radius:8px 8px 0 0;cursor:pointer;font-family:'Georgia',serif;font-weight:normal;font-size:0.95em;">Superboss</button>
     </div>
     <div id="ops-panel-story" class="ops-panel active">${missionsHTML}</div>
     <div id="ops-panel-sideops" class="ops-panel" style="display:none;"><div id="sideops-content"><p style="color:#8a7a5a;">Loading side operations...</p></div></div>
+    <div id="ops-panel-turf" class="ops-panel" style="display:none;"><div id="turf-tab-content"><p style="color:#8a7a5a;">Loading turf control...</p></div></div>
     <div id="ops-panel-superboss" class="ops-panel" style="display:none;"><div id="superboss-content"><p style="color:#8a7a5a;">Loading superboss data...</p></div></div>
   `;
   hideAllScreens();
@@ -372,6 +374,13 @@ function switchOpsTab(tabId, btn) {
       initSideQuests();
       sideopsContainer.innerHTML = renderSideOpsContent();
       startQuestTimerTick();
+    }
+  }
+  if (tabId === 'turf') {
+    const turfContainer = document.getElementById('turf-tab-content');
+    if (turfContainer) {
+      initTurfZones();
+      turfContainer.innerHTML = renderTurfControlContent();
     }
   }
   if (tabId === 'superboss') {
@@ -672,10 +681,6 @@ function renderStoryChapter() {
       <!-- Advance -->
       ${advanceHTML}
 
-      <!-- Turf Access -->
-      <button class="story-action-btn" style="margin-bottom:10px;" onclick="showSideQuestScreen();">Side Operations</button>
-      <button class="story-action-btn" style="margin-bottom:10px;" onclick="showTerritoryControl();">View Turf Map</button>
-
       <!-- Back Button -->
       <button class="story-back-btn" onclick="goBackToMainMenu()"><- Back to SafeHouse</button>
     </div>`;
@@ -752,10 +757,7 @@ function renderStoryEpilogue(famKey, fam) {
       ${arcsHTML}
 
       <div style="display:flex;flex-direction:column;gap:12px;margin:20px 0;">
-        <button class="story-action-btn" onclick="showSideQuestScreen();">Side Operations</button>
-        <button class="story-action-btn" onclick="showTerritoryControl();">Turf Wars &amp; Territory</button>
         <button class="story-action-btn" onclick="showProtectionRackets();">Protection Rackets</button>
-        <button class="story-action-btn" onclick="showCorruption();">Corruption Network</button>
       </div>
 
       <button class="story-back-btn" onclick="goBackToMainMenu()"><- Back to SafeHouse</button>
@@ -1753,7 +1755,8 @@ function rivalAIGrowth() {
     if (ai.atWar === undefined) { ai.atWar = false; ai.warDeclaredTime = 0; ai.lastWarAttackTime = 0; ai.eliminationAvailable = false; }
     const personality = RIVAL_AI_PERSONALITY[famKey];
     // Count how many zones this family still controls
-    const zonesHeld = (player.turf._zones || []).filter(z => z.controlledBy === famKey).length;
+    const familyZones = (player.turf._zones || []).filter(z => z.controlledBy === famKey);
+    const zonesHeld = familyZones.length;
     // Growth: power increases each cycle based on zones held and personality
     const growthAmount = Math.floor((5 + zonesHeld * 8) * personality.growth);
     ai.power = Math.min(ai.maxPower, ai.power + growthAmount);
@@ -1761,6 +1764,19 @@ function rivalAIGrowth() {
     if (zonesHeld > 0 && ai.morale < 100) {
       ai.morale = Math.min(100, ai.morale + 3 + zonesHeld * 2);
     }
+
+    // FORTIFICATION: rivals invest in zone defenses as they grow stronger
+    // Stronger families fortify faster; each zone gets harder to take over time
+    familyZones.forEach(zone => {
+      const baseDef = zone.baseDefenseRequired || zone.defenseRequired;
+      // Cap at 2.5x the original defense
+      const maxDef = Math.floor(baseDef * 2.5);
+      if (zone.defenseRequired >= maxDef) return;
+      // Fortification rate scales with personality growth and family power
+      const powerRatio = ai.power / ai.maxPower; // 0-1, stronger = faster fortify
+      const fortifyAmount = Math.floor((3 + Math.ceil(powerRatio * 8)) * personality.growth);
+      zone.defenseRequired = Math.min(maxDef, zone.defenseRequired + fortifyAmount);
+    });
   });
 }
 
@@ -2167,6 +2183,10 @@ function initTurfZones() {
     if (!player.turf._zones) {
         player.turf._zones = JSON.parse(JSON.stringify(TURF_ZONES));
     }
+    // Store original defense values so rival fortification can be capped
+    player.turf._zones.forEach(z => {
+        if (z.baseDefenseRequired === undefined) z.baseDefenseRequired = z.defenseRequired;
+    });
 }
 
 // Calculate total defense strength of a turf zone
@@ -2285,6 +2305,9 @@ function processTurfAttack(zone, attackerName, attackStrength, player) {
             }
         }
     }
+    // Remove dead members from the gang roster
+    player.gang.gangMembers = player.gang.gangMembers.filter(m => m.status !== 'dead');
+    player.gang.members = player.gang.gangMembers.length;
     zone.lastAttacked = Date.now();
     return result;
 }
@@ -2669,9 +2692,11 @@ function applyEventOutcomes(outcome, player) {
         for (let i = 0; i < toLose; i++) {
             const randomIndex = Math.floor(Math.random() * player.gang.gangMembers.length);
             const member = player.gang.gangMembers[randomIndex];
-            member.status = "dead";
             lostMembers.push(member.name);
+            // Actually remove the dead member from the roster
+            player.gang.gangMembers.splice(randomIndex, 1);
         }
+        player.gang.members = player.gang.gangMembers.length;
         changes.lostMembers = lostMembers;
     }
 
@@ -4004,88 +4029,88 @@ const protectionBusinesses = [
     id: "corner_store",
     name: "Corner Store",
     type: "retail",
-    basePayment: 200,
+    basePayment: 120,
     riskLevel: "low",
     description: "Small neighborhood convenience store",
     vulnerabilities: ["theft", "vandalism"],
-    maxExtortion: 400,
+    maxExtortion: 240,
     category: "retail"
   },
   {
     id: "restaurant",
     name: "Family Restaurant",
     type: "food",
-    basePayment: 500,
+    basePayment: 300,
     riskLevel: "medium",
     description: "Local dining establishment",
     vulnerabilities: ["health_violations", "supply_disruption"],
-    maxExtortion: 1000,
+    maxExtortion: 600,
     category: "food"
   },
   {
     id: "auto_shop",
     name: "Auto Repair Shop",
     type: "service",
-    basePayment: 800,
+    basePayment: 480,
     riskLevel: "medium",
     description: "Automotive repair and service",
     vulnerabilities: ["equipment_damage", "supplier_issues"],
-    maxExtortion: 1500,
+    maxExtortion: 900,
     category: "automotive"
   },
   {
     id: "nightclub",
     name: "Nightclub",
     type: "entertainment",
-    basePayment: 1200,
+    basePayment: 720,
     riskLevel: "high",
     description: "Popular nightlife venue",
     vulnerabilities: ["license_issues", "security_problems"],
-    maxExtortion: 2500,
+    maxExtortion: 1500,
     category: "entertainment"
   },
   {
     id: "pharmacy",
     name: "Pharmacy",
     type: "medical",
-    basePayment: 600,
+    basePayment: 360,
     riskLevel: "low",
     description: "Local pharmacy and medical supplies",
     vulnerabilities: ["regulatory_issues", "theft"],
-    maxExtortion: 1200,
+    maxExtortion: 720,
     category: "medical"
   },
   {
     id: "construction_company",
     name: "Construction Company",
     type: "industrial",
-    basePayment: 1500,
+    basePayment: 900,
     riskLevel: "high",
     description: "Construction and contracting business",
     vulnerabilities: ["union_issues", "equipment_sabotage"],
-    maxExtortion: 3000,
+    maxExtortion: 1800,
     category: "industrial"
   },
   {
     id: "jewelry_store",
     name: "Jewelry Store",
     type: "luxury",
-    basePayment: 1000,
+    basePayment: 600,
     riskLevel: "high",
     description: "High-end jewelry and watches",
     vulnerabilities: ["robbery", "security_breaches"],
-    maxExtortion: 2000,
+    maxExtortion: 1200,
     category: "luxury"
   },
   {
     id: "shipping_company",
     name: "Shipping Company",
     type: "logistics",
-    basePayment: 2000,
+    basePayment: 1200,
     riskLevel: "high",
     description: "Freight and logistics operations",
     vulnerabilities: ["cargo_theft", "dock_issues"],
-    maxExtortion: 4000,
+    maxExtortion: 2400,
     category: "logistics"
   }
 ];
@@ -4756,16 +4781,11 @@ async function sellBusiness(businessIndex) {
 // [Loan Shark system removed in Phase 31]
 
 // Money Laundering Functions
-function showMoneyLaundering() {
-  if (player.inJail) {
-    showBriefNotification("You can't launder money while you're in jail!", 'danger');
-    return;
-  }
-
+// Build laundering content HTML (used by both standalone screen and Properties tab)
+function buildLaunderingHTML() {
   if (!player.dirtyMoney) player.dirtyMoney = 0;
   if (!player.activeLaundering) player.activeLaundering = [];
 
-  // Check for any completed laundering ops first
   checkLaunderingCompletions();
 
   let launderHTML = `
@@ -4881,6 +4901,19 @@ function showMoneyLaundering() {
       <p style="color: #f5e6c8;">* Dirty money jobs (Bank Job, Counterfeiting Money) increase your heat level -- launder regularly!</p>
     </div>
 
+  `;
+
+  return launderHTML;
+}
+
+function showMoneyLaundering() {
+  if (player.inJail) {
+    showBriefNotification("You can't launder money while you're in jail!", 'danger');
+    return;
+  }
+
+  let launderHTML = buildLaunderingHTML();
+  launderHTML += `
     <div class="page-nav" style="justify-content: center;">
       <button class="nav-btn-back" onclick="goBackToMainMenu()"><- Back to SafeHouse</button>
     </div>
@@ -4890,7 +4923,6 @@ function showMoneyLaundering() {
   hideAllScreens();
   document.getElementById("money-laundering-screen").style.display = "block";
 
-  // Start live countdown timer if there are active operations
   startLaunderingCountdown();
 }
 
@@ -6054,9 +6086,8 @@ function triggerBetrayalEvent(event) {
 // ==================== TURF CONTROL FUNCTIONS (SINGLEPLAYER) ====================
 
 // Show the main Turf Control screen
-function showTerritoryControl() {
-  if (player.inJail) { showBriefNotification("You can't manage turf while you're in jail!", 'danger'); return; }
-
+// Render turf control HTML (used by both the standalone screen and the Operations tab)
+function renderTurfControlContent() {
   initTurfZones();
   const zones = player.turf._zones || [];
   const ownedZones = zones.filter(z => (player.turf.owned || []).includes(z.id));
@@ -6068,7 +6099,6 @@ function showTerritoryControl() {
       Turf Control
     </h2>`;
 
-  // Family info banner
   if (fam) {
     html += `
     <div style="background: linear-gradient(135deg, ${fam.color}33, ${fam.color}11); padding: 15px; border-radius: 10px; margin-bottom: 20px; border-left: 4px solid ${fam.color};">
@@ -6083,174 +6113,94 @@ function showTerritoryControl() {
   } else {
     html += `
     <div style="background: rgba(231,76,60,0.2); padding:20px; border-radius:10px; text-align:center; margin-bottom:20px;">
-      <div style="font-size:3em; margin-bottom:10px;"></div>
       <h3 style="color:#8b3a3a; margin:0 0 10px 0;">No Family Allegiance</h3>
       <p style="color:#d4c4a0; margin:0 0 15px 0;">Choose a family to pledge your loyalty. Each family offers a unique story and buff.</p>
-      <button onclick="showFamilyChoice()" style="padding:12px 30px; background:linear-gradient(135deg,#8b3a3a,#7a2a2a); border:none; border-radius:10px; color:white; font-weight:bold; cursor:pointer; font-size:1.1em;">
-        Choose Your Family
-      </button>
+      <button onclick="showFamilyChoice()" style="padding:12px 30px; background:linear-gradient(135deg,#8b3a3a,#7a2a2a); border:none; border-radius:10px; color:white; font-weight:bold; cursor:pointer; font-size:1.1em;">Choose Your Family</button>
     </div>`;
   }
 
-  // Stats bar
   html += `
     <div style="display: flex; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
       <div style="background: rgba(52, 152, 219, 0.2); padding: 15px; border-radius: 10px; text-align: center; min-width: 120px;">
-        <div style="font-size: 1.6em; color: #c0a062;"></div>
         <div style="font-size: 0.9em; color: #d4c4a0;">Turf Power</div>
         <div style="font-size: 1.3em; font-weight: bold; color: #f5e6c8;">${player.turf.power || 100}</div>
       </div>
       <div style="background: rgba(138, 154, 106, 0.2); padding: 15px; border-radius: 10px; text-align: center; min-width: 120px;">
-        <div style="font-size: 1.6em; color: #8a9a6a;"></div>
         <div style="font-size: 0.9em; color: #d4c4a0;">Weekly Income</div>
         <div style="font-size: 1.3em; font-weight: bold; color: #f5e6c8;">$${(player.turf.income || 0).toLocaleString()}</div>
       </div>
       <div style="background: rgba(155, 89, 182, 0.2); padding: 15px; border-radius: 10px; text-align: center; min-width: 120px;">
-        <div style="font-size: 1.6em; color: #8b6a4a;"></div>
         <div style="font-size: 0.9em; color: #d4c4a0;">Turf Zones</div>
         <div style="font-size: 1.3em; font-weight: bold; color: #f5e6c8;">${ownedZones.length} / ${zones.length}</div>
       </div>
     </div>
 
     <div style="display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap;">
-      <button onclick="showTurfMap()"
-          style="flex: 1; min-width: 150px; padding: 12px 20px; background: linear-gradient(135deg, #7a8a5a, #8a9a6a);
-              border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer;">
-        Turf Map
-      </button>
-      <button onclick="showProtectionRackets()"
-          style="flex: 1; min-width: 150px; padding: 12px 20px; background: linear-gradient(135deg, #e67e22, #c0a040);
-              border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer;">
-        Protection Rackets
-      </button>
-      <button onclick="showCorruption()"
-          style="flex: 1; min-width: 150px; padding: 12px 20px; background: linear-gradient(135deg, #7a5a3a, #8b6a4a);
-              border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer;">
-        Corruption
-      </button>
+      <button onclick="showTurfMap()" style="flex: 1; min-width: 150px; padding: 12px 20px; background: linear-gradient(135deg, #7a8a5a, #8a9a6a); border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer;">Turf Map</button>
+      <button onclick="showProtectionRackets()" style="flex: 1; min-width: 150px; padding: 12px 20px; background: linear-gradient(135deg, #e67e22, #c0a040); border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer;">Protection Rackets</button>
+      <button onclick="showCorruption()" style="flex: 1; min-width: 150px; padding: 12px 20px; background: linear-gradient(135deg, #7a5a3a, #8b6a4a); border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer;">Corruption</button>
     </div>`;
 
-  // Show owned turf
   if (ownedZones.length > 0) {
-    html += `
-      <div style="background: rgba(0, 0, 0, 0.3); padding: 20px; border-radius: 10px; margin-bottom: 20px;">
-        <h3 style="color: #8b3a3a; margin-bottom: 15px;">Your Turf</h3>
-        <div style="display: grid; gap: 15px;">`;
-
+    html += `<div style="background: rgba(0, 0, 0, 0.3); padding: 20px; border-radius: 10px; margin-bottom: 20px;"><h3 style="color: #8b3a3a; margin-bottom: 15px;">Your Turf</h3><div style="display: grid; gap: 15px;">`;
     ownedZones.forEach(zone => {
       const income = calculateTurfZoneIncome(zone);
       const heatLevel = (player.turf.heat || {})[zone.id] || 0;
       const fortLevel = (player.turf.fortifications || {})[zone.id] || 0;
-
-      html += `
-        <div style="background: rgba(20, 18, 10, 0.8); padding: 15px; border-radius: 10px;
-              border-left: 4px solid ${getHeatColor(heatLevel)};">
-          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
-            <div style="flex: 1; min-width: 200px;">
-              <h4 style="color: #f5e6c8; margin: 0 0 5px 0;">${zone.icon} ${zone.name}</h4>
-              <p style="color: #d4c4a0; margin: 0; font-size: 0.9em;">${zone.description}</p>
-              <div style="font-size:0.8em; color:#8a7a5a; margin-top:4px;">Fort Lv ${fortLevel} | Heat: ${heatLevel.toFixed(1)}</div>
-            </div>
-            <div style="text-align: right; min-width: 120px;">
-              <div style="color: #8a9a6a; font-weight: bold;">$${income.toLocaleString()}/week</div>
-            </div>
-          </div>
-          <div style="margin-top: 10px; display: flex; gap: 10px; flex-wrap: wrap;">
-            <button onclick="manageTurfDetails('${zone.id}')"
-                style="padding: 5px 10px; background: #c0a062; border: none; border-radius: 5px; color: white; cursor: pointer; font-size: 0.8em;">
-              Manage
-            </button>
-            <button onclick="fortifyTurf('${zone.id}')"
-                style="padding: 5px 10px; background: #e67e22; border: none; border-radius: 5px; color: white; cursor: pointer; font-size: 0.8em;">
-              Fortify
-            </button>
-          </div>
-        </div>`;
+      html += `<div style="background: rgba(20, 18, 10, 0.8); padding: 15px; border-radius: 10px; border-left: 4px solid ${getHeatColor(heatLevel)};">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+          <div style="flex: 1; min-width: 200px;"><h4 style="color: #f5e6c8; margin: 0 0 5px 0;">${zone.icon} ${zone.name}</h4><p style="color: #d4c4a0; margin: 0; font-size: 0.9em;">${zone.description}</p><div style="font-size:0.8em; color:#8a7a5a; margin-top:4px;">Fort Lv ${fortLevel} | Heat: ${heatLevel.toFixed(1)}</div></div>
+          <div style="text-align: right; min-width: 120px;"><div style="color: #8a9a6a; font-weight: bold;">$${income.toLocaleString()}/week</div></div>
+        </div>
+        <div style="margin-top: 10px; display: flex; gap: 10px; flex-wrap: wrap;">
+          <button onclick="manageTurfDetails('${zone.id}')" style="padding: 5px 10px; background: #c0a062; border: none; border-radius: 5px; color: white; cursor: pointer; font-size: 0.8em;">Manage</button>
+          <button onclick="fortifyTurf('${zone.id}')" style="padding: 5px 10px; background: #e67e22; border: none; border-radius: 5px; color: white; cursor: pointer; font-size: 0.8em;">Fortify</button>
+        </div>
+      </div>`;
     });
     html += `</div></div>`;
   } else {
-    html += `
-      <div style="background: rgba(231, 76, 60, 0.2); padding: 20px; border-radius: 10px; text-align: center; margin-bottom: 20px;">
-        <div style="font-size: 3em; margin-bottom: 10px;">&#x1F3D9;</div>
-        <h3 style="color: #8b3a3a; margin: 0 0 10px 0;">No Turf Controlled</h3>
-        <p style="color: #d4c4a0; margin: 0;">Every zone is held by a rival family. Complete missions and fight for control!</p>
-      </div>`;
+    html += `<div style="background: rgba(231, 76, 60, 0.2); padding: 20px; border-radius: 10px; text-align: center; margin-bottom: 20px;"><h3 style="color: #8b3a3a; margin: 0 0 10px 0;">No Turf Controlled</h3><p style="color: #d4c4a0; margin: 0;">Every zone is held by a rival family. Complete missions and fight for control!</p></div>`;
   }
 
-  // Show active turf events
   if ((player.turf.events || []).length > 0) {
-    html += `
-      <div style="background: rgba(230, 126, 34, 0.2); padding: 20px; border-radius: 10px; margin-bottom: 20px;">
-        <h3 style="color: #e67e22; margin-bottom: 15px;">Turf Events</h3>
-        <div style="display: grid; gap: 10px;">`;
+    html += `<div style="background: rgba(230, 126, 34, 0.2); padding: 20px; border-radius: 10px; margin-bottom: 20px;"><h3 style="color: #e67e22; margin-bottom: 15px;">Turf Events</h3><div style="display: grid; gap: 10px;">`;
     player.turf.events.forEach(event => {
-      html += `
-        <div style="background: rgba(20, 18, 10, 0.8); padding: 12px; border-radius: 8px;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div><h4 style="color: #f5e6c8; margin: 0 0 5px 0;">${event.name}</h4><p style="color: #d4c4a0; margin: 0; font-size: 0.9em;">${event.description}</p></div>
-            <div style="text-align: right; color: #e67e22; font-weight: bold;">${Math.ceil(event.duration)} days</div>
-          </div>
-        </div>`;
+      html += `<div style="background: rgba(20, 18, 10, 0.8); padding: 12px; border-radius: 8px;"><div style="display: flex; justify-content: space-between; align-items: center;"><div><h4 style="color: #f5e6c8; margin: 0 0 5px 0;">${event.name}</h4><p style="color: #d4c4a0; margin: 0; font-size: 0.9em;">${event.description}</p></div><div style="text-align: right; color: #e67e22; font-weight: bold;">${Math.ceil(event.duration)} days</div></div></div>`;
     });
     html += `</div></div>`;
   }
 
-  // --- Turf Milestones Panel ---
   if (typeof TURF_MILESTONES !== 'undefined' && TURF_MILESTONES.length > 0) {
     const unlockedIds = getUnlockedTurfMilestones().map(m => m.id);
-    html += `
-      <div style="background:rgba(155,89,182,0.15);padding:20px;border-radius:10px;margin-bottom:20px;border:1px solid rgba(155,89,182,0.3);">
-        <h3 style="color:#bb8fce;margin-bottom:15px;">Turf Milestones</h3>
-        <div style="display:grid;gap:10px;">`;
+    html += `<div style="background:rgba(155,89,182,0.15);padding:20px;border-radius:10px;margin-bottom:20px;border:1px solid rgba(155,89,182,0.3);"><h3 style="color:#bb8fce;margin-bottom:15px;">Turf Milestones</h3><div style="display:grid;gap:10px;">`;
     TURF_MILESTONES.forEach(ms => {
       const unlocked = unlockedIds.includes(ms.id);
-      html += `
-          <div style="background:rgba(20,18,10,0.8);padding:12px;border-radius:8px;border-left:4px solid ${unlocked ? '#2ecc71' : '#555'};opacity:${unlocked ? 1 : 0.6};">
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-              <div>
-                <span style="color:${unlocked ? '#2ecc71' : '#888'};margin-right:8px;">${unlocked ? '\u2705' : '\u{1F512}'}</span>
-                <strong style="color:#f5e6c8;">${ms.name}</strong>
-                <span style="color:#8a7a5a;font-size:0.85em;margin-left:8px;">(${ms.zonesRequired} zones)</span>
-              </div>
-              <span style="color:#d4c4a0;font-size:0.85em;">${ms.description}</span>
-            </div>
-          </div>`;
+      html += `<div style="background:rgba(20,18,10,0.8);padding:12px;border-radius:8px;border-left:4px solid ${unlocked ? '#2ecc71' : '#555'};opacity:${unlocked ? 1 : 0.6};"><div style="display:flex;justify-content:space-between;align-items:center;"><div><span style="color:${unlocked ? '#2ecc71' : '#888'};margin-right:8px;">${unlocked ? '\u2705' : '\u{1F512}'}</span><strong style="color:#f5e6c8;">${ms.name}</strong><span style="color:#8a7a5a;font-size:0.85em;margin-left:8px;">(${ms.zonesRequired} zones)</span></div><span style="color:#d4c4a0;font-size:0.85em;">${ms.description}</span></div></div>`;
     });
     html += `</div></div>`;
   }
 
-  // --- Family Dominance Panel ---
   if (typeof RIVAL_FAMILIES !== 'undefined') {
     const domRewards = player.turf.dominanceRewards || [];
-    html += `
-      <div style="background:rgba(231,76,60,0.12);padding:20px;border-radius:10px;margin-bottom:20px;border:1px solid rgba(231,76,60,0.25);">
-        <h3 style="color:#e74c3c;margin-bottom:15px;">Family Dominance</h3>
-        <div style="display:grid;gap:10px;">`;
+    html += `<div style="background:rgba(231,76,60,0.12);padding:20px;border-radius:10px;margin-bottom:20px;border:1px solid rgba(231,76,60,0.25);"><h3 style="color:#e74c3c;margin-bottom:15px;">Family Dominance</h3><div style="display:grid;gap:10px;">`;
     Object.entries(RIVAL_FAMILIES).forEach(([key, fam]) => {
       const famZones = fam.turfZones || [];
       const ownedOfFam = famZones.filter(zId => (player.turf.owned || []).includes(zId)).length;
       const dominated = domRewards.includes(key);
       const pct = famZones.length > 0 ? Math.floor((ownedOfFam / famZones.length) * 100) : 0;
-      html += `
-          <div style="background:rgba(20,18,10,0.8);padding:12px;border-radius:8px;border-left:4px solid ${dominated ? '#2ecc71' : fam.color || '#8b3a3a'};">
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-              <div>
-                <strong style="color:${fam.color || '#f5e6c8'};">${fam.icon || ''} ${fam.name}</strong>
-                <span style="color:#8a7a5a;font-size:0.85em;margin-left:8px;">${ownedOfFam}/${famZones.length} zones</span>
-              </div>
-              <div style="display:flex;align-items:center;gap:10px;">
-                <div style="width:80px;height:8px;background:#333;border-radius:4px;overflow:hidden;">
-                  <div style="width:${pct}%;height:100%;background:${dominated ? '#2ecc71' : fam.color || '#e74c3c'};border-radius:4px;"></div>
-                </div>
-                <span style="color:${dominated ? '#2ecc71' : '#d4c4a0'};font-size:0.85em;font-weight:bold;">${dominated ? 'DOMINATED' : pct + '%'}</span>
-              </div>
-            </div>
-          </div>`;
+      html += `<div style="background:rgba(20,18,10,0.8);padding:12px;border-radius:8px;border-left:4px solid ${dominated ? '#2ecc71' : fam.color || '#8b3a3a'};"><div style="display:flex;justify-content:space-between;align-items:center;"><div><strong style="color:${fam.color || '#f5e6c8'};">${fam.icon || ''} ${fam.name}</strong><span style="color:#8a7a5a;font-size:0.85em;margin-left:8px;">${ownedOfFam}/${famZones.length} zones</span></div><div style="display:flex;align-items:center;gap:10px;"><div style="width:80px;height:8px;background:#333;border-radius:4px;overflow:hidden;"><div style="width:${pct}%;height:100%;background:${dominated ? '#2ecc71' : fam.color || '#e74c3c'};border-radius:4px;"></div></div><span style="color:${dominated ? '#2ecc71' : '#d4c4a0'};font-size:0.85em;font-weight:bold;">${dominated ? 'DOMINATED' : pct + '%'}</span></div></div></div>`;
     });
     html += `</div></div>`;
   }
 
-  html += `
+  return html;
+}
+
+function showTerritoryControl() {
+  if (player.inJail) { showBriefNotification("You can't manage turf while you're in jail!", 'danger'); return; }
+
+  const html = renderTurfControlContent() + `
     <div class="page-nav" style="justify-content: center;">
       <button class="nav-btn-back" onclick="goBackToMainMenu()"><- Back to SafeHouse</button>
     </div>`;
@@ -6376,9 +6326,12 @@ function showTurfMap() {
     } else {
       const winChance = calculateTurfWinChance(playerAtkPower, zone.defenseRequired);
       const chanceColor = winChance >= 70 ? '#2ecc71' : winChance >= 40 ? '#f1c40f' : winChance >= 15 ? '#e67e22' : '#e74c3c';
+      const baseDef = zone.baseDefenseRequired || zone.defenseRequired;
+      const fortBonus = zone.defenseRequired - baseDef;
+      const fortText = fortBonus > 0 ? ` <span style="color:#e67e22;">(+${fortBonus} fortified)</span>` : '';
       html += `
         <div style="margin-bottom:8px;font-size:0.8em;text-align:center;">
-          <div style="color:#d4c4a0;font-weight:bold;">Their Defense: ${zone.defenseRequired}</div>
+          <div style="color:#d4c4a0;font-weight:bold;">Their Defense: ${zone.defenseRequired}${fortText}</div>
           <div style="font-size:0.9em;font-weight:bold;color:${chanceColor};">${winChance}% Win Chance</div>
         </div>
         <button onclick="attackTurfZone('${zone.id}')"
@@ -6483,6 +6436,16 @@ function processTurfAttackCasualties(won, gangMembers, zoneName) {
       setTimeout(() => { if (m.status === 'injured') m.status = 'active'; }, 300000);
     }
   });
+
+  // Actually remove dead members from the gang roster so they don't block recruitment
+  for (let i = gangMembers.length - 1; i >= 0; i--) {
+    if (gangMembers[i].status === 'dead') {
+      gangMembers.splice(i, 1);
+    }
+  }
+  if (player.gang) {
+    player.gang.members = player.gang.gangMembers.length;
+  }
 
   return { casualties, injured };
 }
@@ -7173,11 +7136,24 @@ function showCorruption() {
                 <div style="font-size: 0.85em; color: #f5e6c8; margin-bottom: 5px; font-weight: bold;">Benefits:</div>
                 <div style="display: flex; flex-wrap: wrap; gap: 5px;">`;
 
+      const benefitLabels = {
+        heatReduction: 'Heat Reduction',
+        crimeBonus: 'Job Success',
+        evidenceDestruction: 'Evidence Destroyed',
+        raidWarning: 'Raid Warning',
+        businessLicense: 'Cheaper Businesses',
+        zonePermits: 'Faster Turf Capture',
+        sentenceReduction: 'Jail Time Reduced',
+        casesDismissed: 'Cases Dismissed',
+        cityWideProtection: 'City-Wide Heat Reduction',
+        contractAccess: 'Better Business Contracts'
+      };
       Object.entries(target.benefits).forEach(([key, value]) => {
         if (key !== 'duration') {
           const bonus = typeof value === 'number' ? Math.round(value * 100) : value;
+          const label = benefitLabels[key] || key.replace(/([A-Z])/g, ' $1').toLowerCase();
           html += `<span style="background: rgba(138, 154, 106, 0.3); padding: 1px 4px; border-radius: 3px;
-                  font-size: 0.75em; color: #8a9a6a;">${bonus}% ${key.replace(/([A-Z])/g, ' $1').toLowerCase()}</span>`;
+                  font-size: 0.75em; color: #8a9a6a;">${bonus}% ${label}</span>`;
         }
       });
 
@@ -7217,10 +7193,10 @@ function showCorruption() {
 
   html += `
     <div style="text-align: center; margin-top: 25px;">
-      <button onclick="window._opsActiveTab='rackets'; showMissions();"
+      <button onclick="goBackToMainMenu()"
           style="padding: 12px 30px; background: linear-gradient(135deg, #8a7a5a, #6a5a3a);
               border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer;">
-        <- Back to Operations
+        <- Back to SafeHouse
       </button>
     </div>`;
 
@@ -7360,9 +7336,12 @@ function generateTurfOverviewHTML() {
       const atkPower = typeof calculateTurfAttackPower === 'function' ? calculateTurfAttackPower() : (player.turf.power || 100);
       const canAttack = atkPower >= zone.defenseRequired;
       const defColor = canAttack ? '#2ecc71' : '#e74c3c';
+      const baseDef2 = zone.baseDefenseRequired || zone.defenseRequired;
+      const fortBonus2 = zone.defenseRequired - baseDef2;
+      const fortText2 = fortBonus2 > 0 ? ` <span style="color:#e67e22;">(+${fortBonus2})</span>` : '';
       html += `
         <div style="margin-bottom:8px; font-size:0.8em; text-align:center;">
-          <div style="color:${defColor};font-weight:bold;">Defense: ${zone.defenseRequired}</div>
+          <div style="color:${defColor};font-weight:bold;">Defense: ${zone.defenseRequired}${fortText2}</div>
           <div style="font-size:0.7em;color:#888;">${canAttack ? 'You can attack' : 'Need more power'}</div>
         </div>
         <button onclick="attackTurfZone('${zone.id}')"
@@ -8825,7 +8804,7 @@ function refreshJobsList() {
     if (detailParts.length > 0) {
       detailsHTML += `<br><small style="line-height:1.6;">${detailParts.join(' &nbsp; ')}</small>`;
     }
-    detailsHTML += `<br><small style="color:#8a7a5a;">Jail: ${job.jailChance}% | Damage: ${job.healthLoss} | Wanted: +${job.wantedLevelGain}</small>`;
+    detailsHTML += `<br><small style="color:#8a7a5a;">Jail: ${job.jailChance}% | Damage: ${job.healthLoss} | Wanted: +${job.wantedLevelGain} | XP: <span style="color:#c0a062;">${JOB_XP_BY_RISK[job.risk] || 2}</span></small>`;
 
     return `
       <li>
@@ -10185,6 +10164,8 @@ window.syncTutorialToggleButton = syncTutorialToggleButton;
 })();
 
 // Function to show jobs
+const JOB_XP_BY_RISK = { low: 2, medium: 4, high: 10, 'very high': 16, extreme: 25, legendary: 40 };
+
 function showJobs() {
   if (player.inJail) {
     showBriefNotification("You can't work while you're in jail!", 'danger');
@@ -10255,7 +10236,7 @@ function showJobs() {
         if (detailParts.length > 0) {
           detailsHTML += `<br><small style="line-height:1.6;">${detailParts.join(' &nbsp; ')}</small>`;
         }
-        detailsHTML += `<br><small style="color:#8a7a5a;">Jail: ${job.jailChance}% | Damage: ${job.healthLoss} | Wanted: +${job.wantedLevelGain}</small>`;
+        detailsHTML += `<br><small style="color:#8a7a5a;">Jail: ${job.jailChance}% | Damage: ${job.healthLoss} | Wanted: +${job.wantedLevelGain} | XP: <span style="color:#c0a062;">${JOB_XP_BY_RISK[job.risk] || 2}</span></small>`;
 
         return `
           <li>
@@ -13638,7 +13619,7 @@ const menuUnlockConfig = [
   { id: 'jailbreak', fn: 'showJailbreak()', label: 'Breakout', tip: 'Break allies out of prison', level: 0 },
 
   // === LATE GAME (Level 10-15) ===
-  { id: 'laundering', fn: 'showMoneyLaundering()', label: 'The Wash', tip: 'Launder dirty money into clean cash', level: 12 },
+  { id: 'corruption', fn: 'showCorruption()', label: 'Corruption', tip: 'Bribe officials for protection & influence', level: 10 },
 
   // === SOCIAL / ONLINE ===
   { id: 'worldchat', fn: 'showWorldChat()', label: 'World Chat', tip: 'Chat with other players online', level: 0 },
@@ -14751,7 +14732,8 @@ function showStore(activeTab) {
   const topTabs = [
     { id: 'buy', label: 'Buy', tip: 'Browse weapons, armor & supplies' },
     { id: 'fence', label: 'The Fence', tip: 'Sell stolen goods at premium rates' },
-    { id: 'market', label: 'Player Market', tip: 'Trade items with other players' }
+    { id: 'market', label: 'Player Market', tip: 'Trade items with other players' },
+    { id: 'stash', label: 'Stash', tip: 'Equip and manage your inventory' }
   ];
   const topTabsHTML = topTabs.map(tab => {
     const isActive = tab.id === _currentBlackMarketTab;
@@ -14776,6 +14758,8 @@ function showStore(activeTab) {
     contentHTML = buildFenceTabContent();
   } else if (_currentBlackMarketTab === 'market') {
     contentHTML = buildPlayerMarketTabContent();
+  } else if (_currentBlackMarketTab === 'stash') {
+    contentHTML = buildStashHTML();
   }
 
   const storeScreen = document.getElementById('store-screen');
@@ -18103,11 +18087,14 @@ function showRealEstate(initialTab) {
     <div style="display:flex;justify-content:center;gap:8px;margin-bottom:18px;flex-wrap:wrap;">
       <button id="prop-tab-properties" onclick="showPropertiesTab('properties')" style="background:#c0a062;color:#fff;padding:8px 20px;border:none;border-radius:8px 8px 0 0;cursor:pointer;font-weight:bold;font-size:1em;">Properties</button>
       <button id="prop-tab-fronts" onclick="showPropertiesTab('fronts')" style="background:rgba(243,156,18,0.3);color:#c0a040;padding:8px 20px;border:1px solid #c0a040;border-radius:8px 8px 0 0;cursor:pointer;font-weight:bold;font-size:1em;">Fronts</button>
+      <button id="prop-tab-wash" onclick="showPropertiesTab('wash')" style="background:rgba(192,160,64,0.3);color:#c0a040;padding:8px 20px;border:1px solid #c0a040;border-radius:8px 8px 0 0;cursor:pointer;font-weight:bold;font-size:1em;">The Wash</button>
     </div>
     <!-- Properties Tab (default) -->
     <div id="panel-properties"></div>
     <!-- Fronts Tab (hidden initially) -->
     <div id="panel-fronts" style="display:none;"></div>
+    <!-- The Wash Tab (hidden initially) -->
+    <div id="panel-wash" style="display:none;"></div>
   `;
   document.getElementById("real-estate-screen").style.display = "block";
   // Populate default tab content
@@ -18121,9 +18108,10 @@ function showRealEstate(initialTab) {
 const PROP_TAB_CONFIG = {
   properties: { inactive: 'rgba(52,152,219,0.3)', color: '#c0a062', active: '#c0a062', activeText: '#fff' },
   fronts: { inactive: 'rgba(243,156,18,0.3)', color: '#c0a040', active: '#c0a040', activeText: '#fff' },
+  wash: { inactive: 'rgba(192,160,64,0.3)', color: '#c0a040', active: '#c0a040', activeText: '#fff' },
 };
 function showPropertiesTab(tab) {
-  ['properties', 'fronts'].forEach(t => {
+  ['properties', 'fronts', 'wash'].forEach(t => {
     const panel = document.getElementById('panel-' + t);
     const btn = document.getElementById('prop-tab-' + t);
     if (!panel || !btn) return;
@@ -18144,6 +18132,14 @@ function showPropertiesTab(tab) {
   if (tab === 'fronts') {
     const panel = document.getElementById('panel-fronts');
     if (panel) panel.innerHTML = buildBusinessesHTML();
+  }
+  // Lazy-load wash content on switch
+  if (tab === 'wash') {
+    const panel = document.getElementById('panel-wash');
+    if (panel) {
+      panel.innerHTML = buildLaunderingHTML();
+      startLaunderingCountdown();
+    }
   }
 }
 window.showPropertiesTab = showPropertiesTab;
@@ -20754,7 +20750,7 @@ function showMap() {
         <div class="territory-info">
           <div style="color: ${statusColor}; font-weight: bold;">${statusText}</div>
           <div style="font-size: 0.8em;">Income: $${zone.baseIncome.toLocaleString()}/week</div>
-          <div style="font-size: 0.75em; color: #8a7a5a;">Defense: ${zone.defenseRequired} | Risk: ${zone.riskLevel}</div>
+          <div style="font-size: 0.75em; color: #8a7a5a;">Defense: ${zone.defenseRequired}${(zone.baseDefenseRequired && zone.defenseRequired > zone.baseDefenseRequired) ? ' <span style="color:#e67e22;">(fortified)</span>' : ''} | Risk: ${zone.riskLevel}</div>
         </div>
       </div>
     `;
