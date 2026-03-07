@@ -1230,7 +1230,7 @@ async function handleServerMessage(message) {
             if (message.newspaperData) {
                 lastReceivedJailNewspaper = message.newspaperData;
                 if (typeof logAction === 'function') {
-                    _safeLogAction(`ARRESTED! ${message.newspaperData.name} has been sent to jail for "${message.newspaperData.crimeName}" — <span class="newspaper-chat-link" onclick="showJailNewspaper(lastReceivedJailNewspaper)">Read the Headlines!</span>`, 'chat');
+                    _safeLogAction(`ARRESTED! ${message.newspaperData.name} has been sent to jail for "${message.newspaperData.crimeName}" — <span class="newspaper-chat-link" onclick="_showReceivedJailNewspaper()">Read the Headlines!</span>`, 'chat');
                 }
                 const jailChatArea = document.getElementById('global-chat-area');
                 if (jailChatArea) {
@@ -2719,7 +2719,7 @@ function generateChatHTML() {
         const isDeathAnnouncement = msg.player === 'The Daily Racketeer' && msg.message.includes('EXTRA!');
         if (isDeathAnnouncement) {
             return `
-                <div onclick="if(lastReceivedDeathNewspaper && typeof showDeathNewspaper==='function') showDeathNewspaper(lastReceivedDeathNewspaper);" style="margin: 8px 0; padding: 10px; background: rgba(30, 26, 16, 0.6); border-radius: 2px; border: 1px solid #8b7355; border-left: 3px solid #c0a040; cursor: pointer;">
+                <div onclick="_showReceivedDeathNewspaper()" style="margin: 8px 0; padding: 10px; background: rgba(30, 26, 16, 0.6); border-radius: 2px; border: 1px solid #8b7355; border-left: 3px solid #c0a040; cursor: pointer;">
                     <div style="font-family: var(--font-heading); color: #c0a040; font-size: 1.05em; letter-spacing: 1px;">THE DAILY RACKETEER</div>
                     <div style="color: #f5e6c8; margin: 4px 0;">${escapeHTML(msg.message)}</div>
                     <div class="newspaper-chat-link" style="margin-top: 4px;">&#128240; Click to read the full obituary</div>
@@ -5406,6 +5406,7 @@ function handleSeasonInfoResult(message) {
 
 // Death newspaper data from other players
 let lastReceivedDeathNewspaper = null;
+window._showReceivedDeathNewspaper = function() { if (lastReceivedDeathNewspaper && typeof showDeathNewspaper === 'function') showDeathNewspaper(lastReceivedDeathNewspaper); };
 
 function broadcastDeathNewspaper(newspaperData) {
     if (!onlineWorldState.isConnected || !onlineWorldState.socket || onlineWorldState.socket.readyState !== WebSocket.OPEN) {
@@ -5421,6 +5422,7 @@ window.broadcastDeathNewspaper = broadcastDeathNewspaper;
 
 // Jail newspaper data from other players
 let lastReceivedJailNewspaper = null;
+window._showReceivedJailNewspaper = function() { if (typeof showJailNewspaper === 'function') showJailNewspaper(lastReceivedJailNewspaper); };
 
 function broadcastJailNewspaper(newspaperData) {
     if (!onlineWorldState.isConnected || !onlineWorldState.socket || onlineWorldState.socket.readyState !== WebSocket.OPEN) {
