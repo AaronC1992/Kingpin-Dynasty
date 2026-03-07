@@ -1621,10 +1621,9 @@ async function handleServerMessage(message) {
             // Result of attempting to break out a jail bot
             if (message.success) {
                 _safeLogAction(`${message.message}`);
-                if (message.expReward) player.experience += message.expReward;
+                if (message.expReward && typeof gainExperience === 'function') gainExperience(message.expReward * 0.1);
                 if (message.cashReward) player.money += message.cashReward;
                 showSystemMessage(`${message.message}`, '#8a9a6a');
-                if (typeof checkLevelUp === 'function') checkLevelUp();
                 _safeUpdateUI();
                 if (typeof updateJailbreakPrisonerList === 'function') updateJailbreakPrisonerList();
                 // Show visible alert so user sees the result
@@ -3935,11 +3934,8 @@ function doDistrictJob(districtName) {
     } else {
         const earned = minReward + Math.floor(Math.random() * (maxReward - minReward));
         player.money += earned;
-        player.reputation = (player.reputation || 0) + 1;
         if (typeof gainExperience === 'function') {
             gainExperience(adjustedXp);
-        } else {
-            player.experience = (player.experience || 0) + adjustedXp;
         }
 
         resultModal.innerHTML = `
@@ -3971,7 +3967,6 @@ function doDistrictJob(districtName) {
     }
 
     if (typeof updateUI === 'function') updateUI();
-    if (typeof checkLevelUp === 'function') checkLevelUp();
 }
 
 function findPlayersInDistrict(districtName) {
@@ -4687,7 +4682,6 @@ function participateInEvent(eventType, district) {
 
     // Update UI
     if (typeof updateUI === 'function') updateUI();
-    if (typeof checkLevelUp === 'function') checkLevelUp();
 }
 
 // ==================== PHASE C: ALLIANCE PANEL ====================
@@ -6162,8 +6156,8 @@ function handleSuperbossVictory(message) {
     
     _safeUpdateUI();
     
-    if (typeof showBriefNotification === 'function') showBriefNotification(`${message.bossName} DEFEATED! +$${message.moneyReward.toLocaleString()} +${message.xpReward} XP (${message.damageShare}% contribution)`, 'success');
-    if (typeof logAction === 'function') _safeLogAction(`SUPERBOSS DEFEATED: ${message.bossName}! You dealt ${message.damageDealt} damage (${message.damageShare}% share). Reward: $${message.moneyReward.toLocaleString()} + ${message.xpReward} XP`, 'combat');
+    if (typeof showBriefNotification === 'function') showBriefNotification(`${message.bossName} DEFEATED! +$${message.moneyReward.toLocaleString()} +${message.xpReward} Rep (${message.damageShare}% contribution)`, 'success');
+    if (typeof logAction === 'function') _safeLogAction(`SUPERBOSS DEFEATED: ${message.bossName}! You dealt ${message.damageDealt} damage (${message.damageShare}% share). Reward: $${message.moneyReward.toLocaleString()} + ${message.xpReward} Rep`, 'combat');
     
     renderSuperbossScreen();
 }

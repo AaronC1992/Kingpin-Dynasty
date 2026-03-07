@@ -328,7 +328,7 @@ export function gainExperience(amount) {
     amount = amount * 1.10;
   }
   // Turf milestone perk: +10% rep (Street Presence -- 2 zones)
-  if (typeof window !== 'undefined' && typeof window.hasTurfPerk === 'function' && window.hasTurfPerk('xp_boost')) {
+  if (typeof window !== 'undefined' && typeof window.hasTurfPerk === 'function' && window.hasTurfPerk('rep_boost')) {
     amount = amount * 1.10;
   }
   // Mastermind: +10% rep per rank

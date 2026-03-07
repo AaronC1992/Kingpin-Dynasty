@@ -27,7 +27,7 @@ export const crimeFamilies = {
             type: "charisma",
             description: "Force the local union boss to pay up protection money.",
             baseReward: 800,
-            xpReward: 60,
+            repReward: 4.5,
             cooldown: 24 // hours
         }
     },
@@ -52,7 +52,7 @@ export const crimeFamilies = {
             type: "violence",
             description: "Ambush a military transport for high-grade weapons.",
             baseReward: 500, // Plus weapons
-            xpReward: 80,
+            repReward: 5.5,
             cooldown: 24
         }
     },
@@ -76,7 +76,7 @@ export const crimeFamilies = {
             type: "intelligence",
             description: "Hack into a major bank's server farm for a massive transfer.",
             baseReward: 1200,
-            xpReward: 70,
+            repReward: 5.0,
             cooldown: 24
         }
     },
@@ -100,7 +100,7 @@ export const crimeFamilies = {
             type: "stealth",
             description: "Smuggle a major shipment across the border undetected.",
             baseReward: 1000,
-            xpReward: 65,
+            repReward: 4.0,
             cooldown: 24
         }
     }

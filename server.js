@@ -217,7 +217,7 @@ const server = http.createServer(async (req, res) => {
                     empireRating: body.empireRating || 0,
                     playtime: body.playtime || '0:00',
                     saveDate: new Date().toISOString(),
-                    gameVersion: body.gameVersion || '1.17.1',
+                    gameVersion: body.gameVersion || '1.18.0',
                     data: body.data
                 };
                 userDB.setUserSave(username, saveEntry);
@@ -2397,7 +2397,7 @@ function handleJailbreakBot(clientId, message) {
                 botName: bot.name,
                 expReward,
                 cashReward,
-                message: `You freed ${bot.name}! +${expReward} XP, +$${cashReward}`
+                message: `You freed ${bot.name}! +${Math.round(expReward * 0.1)} Rep, +$${cashReward}`
             }));
         }
 
@@ -5075,10 +5075,10 @@ function handleGamblingLeaveTable(clientId) {
 // ==================== SUPERBOSS SYSTEM ====================
 
 const SUPERBOSSES = [
-    { id: 'don_sanguine', name: 'Don Sanguine, The Blood King', level: 30, minReputation: 75, hp: 10000, power: 8000, reward: { money: 1000000, xp: 5000, buff: { id: 'blood_king_fury', name: 'Blood King\'s Fury', effect: 'power', value: 500, duration: 3600000 } }, description: 'The crimson tyrant who ruled the underworld for decades.' },
-    { id: 'iron_widow', name: 'The Iron Widow', level: 40, minReputation: 150, hp: 15000, power: 12000, reward: { money: 2500000, xp: 10000, buff: { id: 'widow_veil', name: 'Widow\'s Veil', effect: 'stealth', value: 50, duration: 3600000 } }, description: 'A legendary assassin who has never been seen twice.' },
-    { id: 'ghost_of_alcatraz', name: 'Ghost of Alcatraz', level: 50, minReputation: 350, hp: 25000, power: 20000, reward: { money: 5000000, xp: 25000, buff: { id: 'ghost_form', name: 'Spectral Form', effect: 'evasion', value: 30, duration: 7200000 } }, description: 'The spirit of the most dangerous prisoner to ever live.' },
-    { id: 'the_commissioner', name: 'The Commissioner', level: 60, minReputation: 500, hp: 40000, power: 30000, reward: { money: 10000000, xp: 50000, buff: { id: 'untouchable', name: 'Untouchable', effect: 'immunity', value: 100, duration: 3600000 } }, description: 'The corrupt police chief who controls everything from the shadows.' }
+    { id: 'don_sanguine', name: 'Don Sanguine, The Blood King', level: 30, minReputation: 75, hp: 10000, power: 8000, reward: { money: 1000000, xp: 15, buff: { id: 'blood_king_fury', name: 'Blood King\'s Fury', effect: 'power', value: 500, duration: 3600000 } }, description: 'The crimson tyrant who ruled the underworld for decades.' },
+    { id: 'iron_widow', name: 'The Iron Widow', level: 40, minReputation: 150, hp: 15000, power: 12000, reward: { money: 2500000, xp: 25, buff: { id: 'widow_veil', name: 'Widow\'s Veil', effect: 'stealth', value: 50, duration: 3600000 } }, description: 'A legendary assassin who has never been seen twice.' },
+    { id: 'ghost_of_alcatraz', name: 'Ghost of Alcatraz', level: 50, minReputation: 350, hp: 25000, power: 20000, reward: { money: 5000000, xp: 40, buff: { id: 'ghost_form', name: 'Spectral Form', effect: 'evasion', value: 30, duration: 7200000 } }, description: 'The spirit of the most dangerous prisoner to ever live.' },
+    { id: 'the_commissioner', name: 'The Commissioner', level: 60, minReputation: 500, hp: 40000, power: 30000, reward: { money: 10000000, xp: 60, buff: { id: 'untouchable', name: 'Untouchable', effect: 'immunity', value: 100, duration: 3600000 } }, description: 'The corrupt police chief who controls everything from the shadows.' }
 ];
 
 function handleSuperbossStart(clientId, message) {

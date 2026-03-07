@@ -1645,8 +1645,9 @@ const RIVAL_FAMILIES = {
         buff: {
             id: "cartel_connections",
             name: "Cartel Supply Line",
-            description: "Violent jobs generate 25% less heat",
-            violentHeatReduction: 0.25
+            description: "Violent jobs generate 25% less heat, +15% territory defense",
+            violentHeatReduction: 0.25,
+            territoryDefenseBonus: 0.15
         },
         turfZones: ["redlight_district", "the_sprawl"],
         storyIntro: "The Cartel doesn't recruit -- they conscript. But Morales saw a fire in you, and offered a choice: serve willingly, or be buried with the rest."
@@ -1676,7 +1677,7 @@ const FAMILY_RANK_REQUIREMENTS = {
 // ==================== TURF MILESTONES ====================
 // Passive bonuses unlocked at zone-count thresholds.
 const TURF_MILESTONES = [
-  { zones: 2, label: 'Street Presence', icon: '[+]', description: '+10% reputation from all sources', perk: 'xp_boost', value: 0.10 },
+  { zones: 2, label: 'Street Presence', icon: '[+]', description: '+10% reputation from all sources', perk: 'rep_boost', value: 0.10 },
   { zones: 4, label: 'Neighbourhood Boss', icon: '[++]', description: 'Heat decays -6 per cycle (perk-exclusive)', perk: 'heat_reduction', value: 0.20 },
   { zones: 6, label: 'District Kingpin', icon: '[+++]', description: '+15% store sell prices & gang recruit quality', perk: 'trade_boost', value: 0.15 },
   { zones: 8, label: 'City Overlord', icon: '[*]', description: 'Exclusive Overlord weapon & +25% turf income', perk: 'overlord', value: 0.25 },
@@ -2263,6 +2264,12 @@ function calculateTurfDefense(zone, player) {
     const torrinoDefMod = getStreetRepBonus('torrino', 0, 0, 0.10, 0.20);
     if (torrinoDefMod !== 0) {
       totalDefense = Math.floor(totalDefense * (1 + torrinoDefMod));
+    }
+
+    // Morales Cartel Supply Line: +15% territory defense for chosen family
+    const defBuff = getChosenFamilyBuff();
+    if (defBuff && defBuff.territoryDefenseBonus) {
+      totalDefense = Math.floor(totalDefense * (1 + defBuff.territoryDefenseBonus));
     }
 
     return Math.floor(totalDefense);
@@ -13866,7 +13873,6 @@ function showPlayerStats() {
     row('Ammo', player.ammo || 0, '#8b3a3a'),
     row('Gas', player.gas || 0, '#f39c12'),
     row('Power', player.power || 0, '#e67e22'),
-    row('Reputation', player.reputation || 0, '#8b6a4a'),
     row('Wanted Level', `${player.wantedLevel || 0} / 100`, '#8b3a3a'),
     row('Training', player.activeTraining ? 'In Progress' : 'Idle', player.activeTraining ? '#1abc9c' : '#d4af37'),
     row('Breakout Chance', `${player.breakoutChance || 45}%`, '#c0a062'),
@@ -14219,7 +14225,7 @@ function buildCharacterShowcaseHTML() {
         <h1 style="color: ${gradeColor}; font-size: 3em; margin: 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.8);">
           ${showcase.characterName}
         </h1>
-        <h3 style="color: #f5e6c8; margin: 10px 0;">Level ${showcase.level} ${showcase.empireDescription}</h3>
+        <h3 style="color: #f5e6c8; margin: 10px 0;">${showcase.streetRank} ${showcase.empireDescription}</h3>
         <div style="display: flex; justify-content: center; align-items: center; gap: 20px; margin-top: 15px;">
           <span style="color: ${gradeColor}; font-size: 2em; font-weight: bold;">Grade ${showcase.empireGrade}</span>
           <span style="color: #d4c4a0;">Empire Rating: ${showcase.empireRating.toLocaleString()}</span>
@@ -14349,7 +14355,7 @@ function updateJailbreakPrisonerList() {
               <h3 style="color: #8b0000; margin: 0 0 8px 0;">${p.name}</h3>
               <p><strong>Status:</strong> <span style="color: #8b3a3a;">Online Player</span></p>
               <p><strong>Time Left:</strong> ${Math.max(0, Math.ceil(p.jailTime))}s</p>
-              <p><strong>Level:</strong> ${p.level || 1}</p>
+              <p><strong>Rank:</strong> ${p.reputation ? (typeof getReputationTier === 'function' ? getReputationTier(p.reputation).name : 'Unknown') : 'Street Rat'}</p>
             </div>
             <div style="text-align: center; min-width: 180px;">
               <button onclick="attemptPlayerJailbreak('${p.playerId}', '${p.name}')"
@@ -17145,8 +17151,25 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = "1.17.2";
+const CURRENT_VERSION = "1.18.0";
 const VERSION_UPDATES = {
+  "1.18.0": {
+    title: "Buff & Perk Rebalance Pass",
+    date: "March 2026",
+    changes: [
+      "Morales Cartel buff rebalanced -- added +15% territory defense bonus (was left with only 1 perk while other families had 2)",
+      "Superboss reputation rewards scaled to sane values (was 5,000-50,000, now 15-60)",
+      "Fixed multiplayer district jobs double-dipping reputation (+1 flat was stacking with gainExperience)",
+      "Fixed jailbreak bot result using dead player.experience field instead of gainExperience()",
+      "Turf milestone 'xp_boost' renamed to 'rep_boost' to match new reputation system",
+      "Character Showcase now shows Street Rank instead of undefined Level",
+      "Jailbreak player list now shows rank instead of level",
+      "All multiplayer XP display text updated to Rep",
+      "Removed duplicate Reputation row from Core Stats panel",
+      "Removed dead checkLevelUp() calls from multiplayer district jobs and events",
+      "Signature job xpReward fields renamed to repReward in factions.js",
+    ]
+  },
   "1.17.2": {
     title: "Recruitment Fixes & Quality of Life",
     date: "March 2026",
@@ -17365,7 +17388,7 @@ const VERSION_UPDATES = {
     title: "Turf System Overhaul -- Milestones, Escalation & Dominance",
     date: "March 2026",
     changes: [
-      "Turf Milestones -- 4 tiers unlock at 2/4/6/8 zones: +10% XP, faster heat decay, +15% income, and the exclusive Overlord's Scepter weapon",
+      "Turf Milestones -- 4 tiers unlock at 2/4/6/8 zones: +10% Rep, faster heat decay, +15% income, and the exclusive Overlord's Scepter weapon",
       "Rival Escalation -- rival attacks now scale with your empire: attack chance rises from 7.5% to 25% and power from 55 to 160+ as you control more zones",
       "Power-Scaled Defense -- fortifications give 25 defense per level (up from 10), plus 10% of your total turf power as a passive bonus to every zone",
       "Family Dominance -- seize all zones from a rival family to earn $100K + 50 rep + 50 power + 30 turf reputation",
@@ -23190,7 +23213,7 @@ function displayImportedShowcase(showcase) {
         <h1 style="color: ${gradeColor}; font-size: 3em; margin: 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.8);">
           ${showcase.characterName}
         </h1>
-        <h3 style="color: #f5e6c8; margin: 10px 0;">Level ${showcase.level} ${showcase.empireDescription}</h3>
+        <h3 style="color: #f5e6c8; margin: 10px 0;">${showcase.streetRank} ${showcase.empireDescription}</h3>
         <div style="display: flex; justify-content: center; align-items: center; gap: 20px; margin-top: 15px;">
           <span style="color: ${gradeColor}; font-size: 2em; font-weight: bold;">Grade ${showcase.empireGrade}</span>
           <span style="color: #d4c4a0;">Empire Rating: ${showcase.empireRating.toLocaleString()}</span>
