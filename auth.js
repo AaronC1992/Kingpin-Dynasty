@@ -551,6 +551,33 @@ export async function autoCloudSave(saveEntry) {
     }
 }
 
+// ── Emergency cloud save (survives page unload via keepalive) ──
+export function emergencyCloudSave(saveEntry) {
+    if (!isLoggedIn || !authToken) return;
+    try {
+        fetch(`${AUTH_API_BASE}/api/save`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify({
+                playerName: saveEntry.playerName,
+                level: saveEntry.level,
+                money: saveEntry.money,
+                reputation: saveEntry.reputation,
+                empireRating: saveEntry.empireRating,
+                playtime: saveEntry.playtime,
+                gameVersion: saveEntry.gameVersion,
+                data: saveEntry.data
+            }),
+            keepalive: true
+        });
+    } catch (e) {
+        // Silently fail — local save is the safety net
+    }
+}
+
 // ── Initialize on import ───────────────────────────────────────
 export async function initAuth() {
     if (authToken) {
@@ -565,12 +592,13 @@ export async function initAuth() {
                 if (save && save.data && typeof window.applyCloudSave === 'function') {
                     // Check if a newer LOCAL save exists before overwriting
                     let localIsNewer = false;
+                    let localEntry = null;
                     try {
                         const prefs = localStorage.getItem('saveSystemPrefs');
                         const slot = prefs ? (JSON.parse(prefs).currentSlot ?? 1) : 1;
                         const localRaw = localStorage.getItem(`gameSlot_${slot}`);
                         if (localRaw) {
-                            const localEntry = JSON.parse(localRaw);
+                            localEntry = JSON.parse(localRaw);
                             const localTime = new Date(localEntry.saveDate).getTime();
                             const cloudTime = new Date(save.saveDate).getTime();
                             if (localTime > cloudTime) localIsNewer = true;
@@ -578,7 +606,9 @@ export async function initAuth() {
                     } catch { /* ignore parse errors */ }
 
                     if (localIsNewer) {
-                        console.log('[auth] Local save is newer than cloud — skipping auto-load');
+                        console.log('[auth] Local save is newer than cloud — pushing to cloud');
+                        // Sync the newer local save up to cloud
+                        if (localEntry) autoCloudSave(localEntry);
                     } else {
                         window.applyCloudSave(save);
                         console.log('[auth] Cloud save auto-loaded on startup');

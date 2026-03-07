@@ -12,7 +12,7 @@ import { GameLogging } from './logging.js';
 import { ui, ModalSystem } from './ui-modal.js';
 import { MobileSystem, updateMobileActionLog } from './mobile-responsive.js';
 import { initUIEvents } from './ui-events.js';
-import { initAuth, showAuthModal, autoCloudSave, cloudDeleteSave, getAuthState, updateAuthStatusUI, checkPlayerName, checkAdmin, adminModify } from './auth.js';
+import { initAuth, showAuthModal, autoCloudSave, emergencyCloudSave, cloudDeleteSave, getAuthState, updateAuthStatusUI, checkPlayerName, checkAdmin, adminModify } from './auth.js';
 import {
   initCasino, getCasinoWins,
   showCasino, showCasinoTab, startBlackjack, bjDeal, bjHit, bjStand, bjDouble,
@@ -251,7 +251,6 @@ window.createSaveDataForCloud = function () {
         playerName: player.name,
         reputation: Math.floor(player.reputation || 0),
         money: player.money,
-        reputation: Math.floor(player.reputation),
         empireRating: empireRating.totalScore,
         playtime: playtime,
         gameVersion: CURRENT_VERSION,
@@ -22227,9 +22226,15 @@ function initializeSaveSystem() {
     startAutoSave();
   }
 
-  // Add window beforeunload handler for emergency save
+  // Always save on page unload (regardless of auto-save setting)
   window.addEventListener('beforeunload', function(e) {
-    if (SAVE_SYSTEM.autoSaveEnabled) {
+    emergencySave();
+  });
+
+  // Save when page goes hidden (mobile tab switch, browser minimize, etc.)
+  // More reliable than beforeunload on mobile devices
+  document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'hidden' && player && player.name) {
       emergencySave();
     }
   });
@@ -22271,7 +22276,13 @@ function emergencySave() {
     if (player && player.name) {
       // Save to current slot (or slot 0 as fallback) so the save is actually loadable
       const targetSlot = (SAVE_SYSTEM.currentSlot != null && SAVE_SYSTEM.currentSlot >= 0) ? SAVE_SYSTEM.currentSlot : 0;
-      saveGameToSlot(targetSlot, `Emergency - ${player.name}`, true);
+      const saveEntry = saveGameToSlot(targetSlot, `Emergency - ${player.name}`, true);
+
+      // Use keepalive fetch for cloud save so it survives page unload
+      // (the normal autoCloudSave from saveGameToSlot may be cancelled by the browser)
+      if (saveEntry) {
+        emergencyCloudSave(saveEntry);
+      }
     }
   } catch (error) {
     console.error("Emergency save failed:", error);
@@ -22287,7 +22298,7 @@ function saveGameToSlot(slotNumber, customName = null, isAutoSave = false) {
       if (!isAutoSave) {
         showBriefNotification("Save failed! Player name is missing. Please create a character first.", 'danger');
       }
-      return false;
+      return null;
     }
 
     const saveData = createSaveData();
@@ -22302,7 +22313,6 @@ function saveGameToSlot(slotNumber, customName = null, isAutoSave = false) {
       level: player.level,
       reputation: Math.floor(player.reputation || 0),
       money: player.money,
-      reputation: Math.floor(player.reputation),
       empireRating: empireRating.totalScore,
       playtime: playtime,
       saveDate: new Date().toISOString(),
@@ -22326,14 +22336,14 @@ function saveGameToSlot(slotNumber, customName = null, isAutoSave = false) {
     // Auto cloud save (fire-and-forget, won't block)
     autoCloudSave(saveEntry);
 
-    return true;
+    return saveEntry;
   } catch (error) {
     console.error("Save failed:", error);
     console.error("Player object:", player);
     if (!isAutoSave) {
       showBriefNotification(`Save failed! Error: ${error.message}`, 'danger');
     }
-    return false;
+    return null;
   }
 }
 
