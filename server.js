@@ -1519,8 +1519,7 @@ function handleTerritoryWar(clientId, message) {
         }
     }
     if (defenderPlayer) {
-        defenseScore += (defenderPlayer.level || 1) * 15;
-        defenseScore += Math.floor((defenderPlayer.reputation || 0) * 0.5);
+        defenseScore += Math.floor((defenderPlayer.reputation || 0) * 1.5);
     } else if (NPC_OWNER_NAMES.has(terr.owner)) {
         // NPC boss — defense scales with territory difficulty
         defenseScore += Math.floor((terr.defenseRating || 100) * 1.5);
@@ -1798,8 +1797,6 @@ function handlePlayerChallenge(clientId, message) {
     // === BALANCED COMBAT FORMULA ===
     // Factors: level (~25%), reputation (~15%), gear/power (~25%), gang (~15%), health (~10%), randomness (~10%)
     // Client-reported stats (power, gangMembers) are capped server-side to prevent inflated values.
-    const cLevel = challenger.level || 1;
-    const tLevel = targetPlayer.level || 1;
     const cRep = challenger.reputation || 0;
     const tRep = targetPlayer.reputation || 0;
 
@@ -1814,17 +1811,16 @@ function handlePlayerChallenge(clientId, message) {
     const tHealth = Math.max(0, Math.min(targetState.health || 100, 200));
 
     // Composite combat score
-    function combatScore(lvl, rep, power, gang, hp) {
-        return (lvl * 5) // Level: max ~250 @ lvl 50
-             + (rep * 0.3) // Reputation: max ~150 @ 500 rep
+    function combatScore(rep, power, gang, hp) {
+        return (rep * 0.5) // Reputation: max ~500 @ 1000 rep
              + (power * 0.08) // Gear power: max ~400 @ 5000
              + (gang * 3) // Gang: max ~300 @ 100 members
              + ((hp / 100) * 20) // Health: max ~40 @ 200 HP
              + (Math.random() * 40); // Randomness: 0-40 (upset factor)
     }
 
-    const challengerScore = combatScore(cLevel, cRep, cPower, cGang, cHealth);
-    const targetScore = combatScore(tLevel, tRep, tPower, tGang, tHealth);
+    const challengerScore = combatScore(cRep, cPower, cGang, cHealth);
+    const targetScore = combatScore(tRep, tPower, tGang, tHealth);
     const victory = challengerScore > targetScore;
 
     // Health damage from the fight (both take damage)
@@ -4657,7 +4653,7 @@ function handleHeistQueueJoin(clientId, message) {
         return ws.send(JSON.stringify({ type: 'heist_queue_result', success: false, error: 'Already in queue.' }));
     }
     
-    gameState.heistQueue.push({ playerId: clientId, playerName: player.name, level: player.level || 1, joinedAt: Date.now() });
+    gameState.heistQueue.push({ playerId: clientId, playerName: player.name, reputation: player.reputation || 0, joinedAt: Date.now() });
     ws.send(JSON.stringify({ type: 'heist_queue_result', success: true, position: gameState.heistQueue.length }));
     
     // Auto-match: if 3+ players in queue, form a heist
@@ -5079,10 +5075,10 @@ function handleGamblingLeaveTable(clientId) {
 // ==================== SUPERBOSS SYSTEM ====================
 
 const SUPERBOSSES = [
-    { id: 'don_sanguine', name: 'Don Sanguine, The Blood King', level: 30, hp: 10000, power: 8000, reward: { money: 1000000, xp: 5000, buff: { id: 'blood_king_fury', name: 'Blood King\'s Fury', effect: 'power', value: 500, duration: 3600000 } }, description: 'The crimson tyrant who ruled the underworld for decades.' },
-    { id: 'iron_widow', name: 'The Iron Widow', level: 40, hp: 15000, power: 12000, reward: { money: 2500000, xp: 10000, buff: { id: 'widow_veil', name: 'Widow\'s Veil', effect: 'stealth', value: 50, duration: 3600000 } }, description: 'A legendary assassin who has never been seen twice.' },
-    { id: 'ghost_of_alcatraz', name: 'Ghost of Alcatraz', level: 50, hp: 25000, power: 20000, reward: { money: 5000000, xp: 25000, buff: { id: 'ghost_form', name: 'Spectral Form', effect: 'evasion', value: 30, duration: 7200000 } }, description: 'The spirit of the most dangerous prisoner to ever live.' },
-    { id: 'the_commissioner', name: 'The Commissioner', level: 60, hp: 40000, power: 30000, reward: { money: 10000000, xp: 50000, buff: { id: 'untouchable', name: 'Untouchable', effect: 'immunity', value: 100, duration: 3600000 } }, description: 'The corrupt police chief who controls everything from the shadows.' }
+    { id: 'don_sanguine', name: 'Don Sanguine, The Blood King', level: 30, minReputation: 75, hp: 10000, power: 8000, reward: { money: 1000000, xp: 5000, buff: { id: 'blood_king_fury', name: 'Blood King\'s Fury', effect: 'power', value: 500, duration: 3600000 } }, description: 'The crimson tyrant who ruled the underworld for decades.' },
+    { id: 'iron_widow', name: 'The Iron Widow', level: 40, minReputation: 150, hp: 15000, power: 12000, reward: { money: 2500000, xp: 10000, buff: { id: 'widow_veil', name: 'Widow\'s Veil', effect: 'stealth', value: 50, duration: 3600000 } }, description: 'A legendary assassin who has never been seen twice.' },
+    { id: 'ghost_of_alcatraz', name: 'Ghost of Alcatraz', level: 50, minReputation: 350, hp: 25000, power: 20000, reward: { money: 5000000, xp: 25000, buff: { id: 'ghost_form', name: 'Spectral Form', effect: 'evasion', value: 30, duration: 7200000 } }, description: 'The spirit of the most dangerous prisoner to ever live.' },
+    { id: 'the_commissioner', name: 'The Commissioner', level: 60, minReputation: 500, hp: 40000, power: 30000, reward: { money: 10000000, xp: 50000, buff: { id: 'untouchable', name: 'Untouchable', effect: 'immunity', value: 100, duration: 3600000 } }, description: 'The corrupt police chief who controls everything from the shadows.' }
 ];
 
 function handleSuperbossStart(clientId, message) {
@@ -5093,7 +5089,7 @@ function handleSuperbossStart(clientId, message) {
     const bossId = message.bossId;
     const boss = SUPERBOSSES.find(b => b.id === bossId);
     if (!boss) return ws.send(JSON.stringify({ type: 'superboss_result', success: false, error: 'Unknown superboss.' }));
-    if ((player.level || 1) < boss.level) return ws.send(JSON.stringify({ type: 'superboss_result', success: false, error: `Requires level ${boss.level}.` }));
+    if ((player.reputation || 0) < (boss.minReputation || 0)) return ws.send(JSON.stringify({ type: 'superboss_result', success: false, error: `Requires ${boss.minReputation}+ reputation.` }));
     
     // Check not already in a fight
     for (const [, f] of gameState.activeSuperbossFights) {
@@ -5191,7 +5187,7 @@ function handleSuperbossAttack(clientId, message) {
     if (!participant || !participant.alive) return ws.send(JSON.stringify({ type: 'superboss_result', success: false, error: 'You are not alive in this fight.' }));
     
     // Player attack: damage based on player power + RNG
-    const playerPower = player.power || (player.level || 1) * 100;
+    const playerPower = player.power || Math.floor((player.reputation || 0) * 5);
     const baseDamage = Math.floor(playerPower * (0.5 + Math.random() * 0.5));
     const critChance = 0.15;
     const isCrit = Math.random() < critChance;

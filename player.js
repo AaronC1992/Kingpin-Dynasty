@@ -101,7 +101,7 @@ export const CHARACTER_PERKS = [
     name: 'Street Smarts',
     icon: '🧠',
     description: 'You read people and situations like an open book.',
-    effect: '+15% job success chance. +10% XP from all sources.',
+    effect: '+15% job success chance. +10% reputation from all sources.',
     color: '#8a9a6a'
   },
   {
@@ -145,10 +145,10 @@ export const player = {
   breakoutAttempts: 3, // Number of breakout attempts left
   power: 0, // Player's power level
   wantedLevel: 0, // Player's wanted level
-  reputation: 0, // Player's reputation
-  level: 1, // Player's level
-  experience: 0, // Player's experience points
-  skillPoints: 0, // Legacy (kept for save compat) — training now uses money
+  reputation: 0, // Player's reputation (primary progression metric)
+  level: 1, // Legacy — kept for save compatibility
+  experience: 0, // Legacy — kept for save compatibility
+  skillPoints: 0, // Legacy — kept for save compatibility
   activeTraining: null, // Gym-style: { tree, node, startTime, duration }
   activeHealing: null, // Hospital timer: { type, startTime, duration, healAmount }
   bountyBoard: { targets: [], lastRefresh: 0 }, // Bounty board state
@@ -288,53 +288,78 @@ export const player = {
   seasonalEventProgress: {} // { eventId: { score, completedObjectives[] } }
 };
 
-/**
- * Grant experience points to the player and check for level up
- * @param {number} amount - Amount of XP to grant
- */
-export function gainExperience(amount) {
-  // Street Smarts perk: +10% XP from all sources
-  if (player.perk === 'street_smarts') {
-    amount = Math.floor(amount * 1.10);
+// ── Reputation Tier Thresholds ──────────────────────────────────
+// Reputation is the sole progression metric. These tiers replace the old level system.
+export const REPUTATION_TIERS = [
+  { name: 'Street Rat',        minRep: 0 },
+  { name: 'Hustler',           minRep: 25 },
+  { name: 'Enforcer',          minRep: 75 },
+  { name: 'Made Man',          minRep: 150 },
+  { name: 'Underboss',         minRep: 350 },
+  { name: 'Crime Lord',        minRep: 500 },
+  { name: 'Legendary Kingpin', minRep: 1000 }
+];
+
+/** Get the player's current street rank title based on reputation */
+export function getReputationTier(rep) {
+  let tier = REPUTATION_TIERS[0];
+  for (const t of REPUTATION_TIERS) {
+    if (rep >= t.minRep) tier = t;
   }
-  // Turf milestone perk: +10% XP (Street Presence — 2 zones)
-  if (typeof window !== 'undefined' && typeof window.hasTurfPerk === 'function' && window.hasTurfPerk('xp_boost')) {
-    amount = Math.floor(amount * 1.10);
+  return tier;
+}
+
+/** Get the next tier the player is working toward (or null if at max) */
+export function getNextTier(rep) {
+  for (const t of REPUTATION_TIERS) {
+    if (rep < t.minRep) return t;
   }
-  // Mastermind: +10% XP per rank
-  const mastermindLevel = (player.skillTree && player.skillTree.intelligence && player.skillTree.intelligence.mastermind) || 0;
-  if (mastermindLevel > 0) {
-    amount = Math.floor(amount * (1 + mastermindLevel * 0.10));
-  }
-  player.experience += amount;
-  // Note: logAction is defined in game.js and exposed via window.logAction
-  if (typeof window !== 'undefined' && typeof window.logAction === 'function') {
-    window.logAction(`You gained ${amount} experience points.`);
-  }
-  checkLevelUp();
+  return null;
 }
 
 /**
- * Check if player has enough XP to level up and process the level up
+ * Grant reputation to the player (replaces old XP/level system).
+ * All sources that previously awarded XP now call this.
+ * @param {number} amount - Amount of reputation to grant
  */
-export function checkLevelUp() {
-  // v1.16.2 Rebalance: Further lowered XP curve for faster level-ups
-  let requiredXP = Math.floor(player.level * 200 + Math.pow(player.level, 2) * 40 + Math.pow(player.level, 3) * 2);
-  if (player.experience >= requiredXP) {
-    player.level++;
-    player.experience -= requiredXP;
-    player.reputation = (player.reputation || 0) + 5; // Gain 5 reputation per level up
-    
-    // Show dramatic level up screen effects
+export function gainExperience(amount) {
+  // Street Smarts perk: +10% rep from all sources
+  if (player.perk === 'street_smarts') {
+    amount = amount * 1.10;
+  }
+  // Turf milestone perk: +10% rep (Street Presence -- 2 zones)
+  if (typeof window !== 'undefined' && typeof window.hasTurfPerk === 'function' && window.hasTurfPerk('xp_boost')) {
+    amount = amount * 1.10;
+  }
+  // Mastermind: +10% rep per rank
+  const mastermindLevel = (player.skillTree && player.skillTree.intelligence && player.skillTree.intelligence.mastermind) || 0;
+  if (mastermindLevel > 0) {
+    amount = amount * (1 + mastermindLevel * 0.10);
+  }
+  // Round to 1 decimal place for clean display
+  amount = Math.round(amount * 10) / 10;
+  const oldTier = getReputationTier(player.reputation);
+  player.reputation = (player.reputation || 0) + amount;
+  const newTier = getReputationTier(player.reputation);
+  if (typeof window !== 'undefined' && typeof window.logAction === 'function') {
+    window.logAction(`Your reputation grows. (+${amount} rep)`);
+  }
+  // Rank-up notification
+  if (newTier.name !== oldTier.name) {
     if (typeof window !== 'undefined' && typeof window.showLevelUpEffects === 'function') {
       window.showLevelUpEffects();
     }
-    
     if (typeof window !== 'undefined' && typeof window.logAction === 'function') {
-      window.logAction(` The streets recognize your growing power! You've clawed your way up to level ${player.level}. Every scar tells a story, every skill hard-earned.`);
+      window.logAction(` The streets recognize your growing power! You've earned the title of ${newTier.name}. Every scar tells a story.`);
+    }
+    if (typeof window !== 'undefined' && typeof window.showBriefNotification === 'function') {
+      window.showBriefNotification(`Rank Up: ${newTier.name}`, 'success');
     }
   }
 }
+
+/** Legacy stub -- level system removed, reputation is the sole progression metric */
+export function checkLevelUp() {}
 
 // Energy system removed — replaced by crime cooldown timers.
 // Legacy stubs kept for backward compatibility with old saves.
@@ -396,7 +421,7 @@ export const SKILL_TREE_DEFS = {
     color: "#c0a062",
     desc: "Outsmart, outplan, outmaneuver. The mind is the deadliest weapon.",
     nodes: {
-      mastermind:  { tier: 1, name: "Mastermind",     icon: "🎯", maxRank: 5,  desc: "The brain behind every operation", effect: "+10% XP gain per rank", prereqs: [] },
+      mastermind:  { tier: 1, name: "Mastermind",     icon: "🎯", maxRank: 5,  desc: "The brain behind every operation", effect: "+10% reputation gain per rank", prereqs: [] },
       quick_study: { tier: 1, name: "Quick Study",   icon: "📚", maxRank: 10, desc: "A sharp mind that learns from every job", effect: "+4% job success per rank", prereqs: [] },
       awareness:   { tier: 1, name: "Awareness",     icon: "🔍", maxRank: 10, desc: "Nothing escapes your notice", effect: "+2% luck-based outcomes per rank", prereqs: [] },
       hacking:     { tier: 2, name: "Hacking",       icon: "💻", maxRank: 10, desc: "Master of digital infiltration", effect: "+7% cyber job success per rank", prereqs: [{ node: "quick_study", rank: 3 }] },
@@ -504,9 +529,9 @@ export const achievements = [
   { id: "boss_slayer", name: "Boss Slayer", description: "Defeat your first rival boss", unlocked: false, reward: { money: 100000, xp: 500 }, title: "Boss Slayer" },
   // === Progression ===
   { id: "reputation_max", name: "Legendary Criminal", description: "Reach 100 reputation", unlocked: false, reward: { money: 100000, xp: 500 }, title: "Legendary" },
-  { id: "level_10", name: "Rising Star", description: "Reach level 10", unlocked: false, reward: { money: 15000, xp: 200 }, title: "Rising Star" },
-  { id: "level_25", name: "Veteran", description: "Reach level 25", unlocked: false, reward: { money: 100000, xp: 500 }, title: "Veteran" },
-  { id: "level_50", name: "Kingpin", description: "Reach level 50", unlocked: false, reward: { money: 500000, xp: 2000 }, title: "Kingpin" },
+  { id: "level_10", name: "Rising Star", description: "Reach 75 reputation (Enforcer)", unlocked: false, reward: { money: 15000, xp: 200 }, title: "Rising Star" },
+  { id: "level_25", name: "Veteran", description: "Reach 350 reputation (Underboss)", unlocked: false, reward: { money: 100000, xp: 500 }, title: "Veteran" },
+  { id: "level_50", name: "Kingpin", description: "Reach 1000 reputation (Legendary Kingpin)", unlocked: false, reward: { money: 500000, xp: 2000 }, title: "Kingpin" },
   { id: "skill_master", name: "Skill Master", description: "Max out any base skill (20+)", unlocked: false, reward: { money: 25000, xp: 300 }, title: "Specialist" },
   // === Empire ===
   { id: "territory_3", name: "Neighborhood Boss", description: "Control 3 territories", unlocked: false, reward: { money: 30000, xp: 200 }, title: "Block Captain" },

@@ -437,7 +437,7 @@ export function makeGuess() {
   document.getElementById('guess-attempts').textContent = numberGuessingAttempts;
 
   if (guess === numberGuessingTarget) {
-    const baseReward = 100 + (player.level * 50);
+    const baseReward = 100 + Math.floor((player.reputation || 0) * 2.5);
     const attemptBonus = Math.max(0, (10 - numberGuessingAttempts) * Math.floor(baseReward * 0.1));
     const totalReward = baseReward + attemptBonus;
     player.money += totalReward;
@@ -514,7 +514,7 @@ export function updateRPSDisplay() {
         </div>
       ` : `
         <div style="margin: 30px 0;">
-          <h3>${rpsPlayerScore > rpsAIScore ? 'You Won the Match! +$' + (100 + (player.level * 50)).toLocaleString() : 'AI Won the Match!'}</h3>
+          <h3>${rpsPlayerScore > rpsAIScore ? 'You Won the Match! +$' + (100 + Math.floor((player.reputation || 0) * 2.5)).toLocaleString() : 'AI Won the Match!'}</h3>
           <button onclick="startRockPaperScissors()" style="background: #8a9a6a; color: white; padding: 15px 25px; border: none; border-radius: 8px; cursor: pointer; margin-top: 15px;">
             Play Again
           </button>
@@ -552,7 +552,7 @@ export function playRPS(playerChoice) {
   setTimeout(() => {
     updateRPSDisplay();
     if (rpsPlayerScore >= 3) {
-      const rpsReward = 100 + (player.level * 50);
+      const rpsReward = 100 + Math.floor((player.reputation || 0) * 2.5);
       player.money += rpsReward;
       _updateUI();
       _logAction(`Rock Paper Scissors champion! Your tactical mind proves superior in this classic game of psychology and earned $${rpsReward.toLocaleString()}.`);
@@ -653,7 +653,7 @@ export function flipMemoryCard(index) {
           let earnedPersonalBest = false;
           let totalEarned = 0;
 
-          const memoryBaseReward = 200 + (player.level * 100);
+          const memoryBaseReward = 200 + Math.floor((player.reputation || 0) * 5);
 
           if (memoryPersonalBest === null || totalTime < memoryPersonalBest) {
             memoryPersonalBest = totalTime;
@@ -907,7 +907,7 @@ export function gameOverSnake() {
     snakeGame.canvas.removeEventListener('mouseleave', snakeMouseLeave);
   }
 
-  const perFoodReward = 50 + (player.level * 25);
+  const perFoodReward = 50 + Math.floor((player.reputation || 0) * 1.25);
   let earnings = snakeGame.score * perFoodReward;
   let bonusMessage = '';
 
@@ -1021,7 +1021,7 @@ export function handleReactionClick() {
   let personalBestBonus = false;
   let totalEarned = 0;
 
-  const qdBaseReward = 100 + (player.level * 50);
+  const qdBaseReward = 100 + Math.floor((player.reputation || 0) * 2.5);
 
   if (quickDrawPersonalBest === null || reactionTime < quickDrawPersonalBest) {
     quickDrawPersonalBest = reactionTime;

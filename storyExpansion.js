@@ -20,7 +20,7 @@ export const STREET_STORIES = [
   {
     id: "ss_old_debts",
     title: "Old Debts",
-    minLevel: 1, maxLevel: 99,
+    minReputation: 0,
     scene: "A drizzle-slicked alley behind Sal's Diner. A man in a rumpled suit grabs your arm as you pass.",
     dialogue: [
       { speaker: "Stranger", text: "\"Please — you're with the family, right? I owe Frankie Bones twelve grand. He says if I don't pay by midnight, he'll take it from my daughter's college fund. I'm begging you.\"" },
@@ -84,7 +84,7 @@ export const STREET_STORIES = [
   {
     id: "ss_the_confession",
     title: "The Confession",
-    minLevel: 2, maxLevel: 99,
+    minReputation: 5,
     scene: "Sunday morning. You're sitting in the back pew of St. Catherine's when Father Donovan slides into the seat beside you.",
     dialogue: [
       { speaker: "Father Donovan", text: "\"I know what you do for a living. I'm not here to judge — God handles that. But I heard something in confession that I can't ignore.\"" },
@@ -156,7 +156,7 @@ export const STREET_STORIES = [
   {
     id: "ss_the_stray",
     title: "The Stray Dog",
-    minLevel: 1, maxLevel: 15,
+    minReputation: 0, maxReputation: 150,
     scene: "Behind the warehouse, you find an emaciated pit bull chained to a pipe. It's shivering in the rain, ribs showing through matted fur.",
     dialogue: [
       { speaker: "Narrator", text: "The dog's eyes follow you. Not with fear — with something like recognition. Like it's been waiting for someone who gives a damn." },
@@ -193,7 +193,7 @@ export const STREET_STORIES = [
   {
     id: "ss_the_journalist",
     title: "The Journalist",
-    minLevel: 5, maxLevel: 99,
+    minReputation: 25,
     scene: "A sharp-eyed woman with a press badge approaches you outside the Belmont Hotel. She knows your name.",
     dialogue: [
       { speaker: "Nina Castillo", text: "\"I'm Nina Castillo, investigative reporter. Before you reach for anything violent — I have insurance. A dead man's switch on a file that names every made man in this city. You kill me, it goes public.\"" },
@@ -269,7 +269,7 @@ export const STREET_STORIES = [
   {
     id: "ss_the_kid",
     title: "Corner Boy",
-    minLevel: 5, maxLevel: 99,
+    minReputation: 25,
     scene: "You spot a kid — can't be older than fifteen — running a corner for a crew that isn't yours. He's fast, sharp-eyed, and probably going to be dead by twenty at this rate.",
     dialogue: [
       { speaker: "The Kid", text: "\"I ain't scared of you. You want this corner, you gotta talk to my people.\"" },
@@ -323,7 +323,7 @@ export const STREET_STORIES = [
   {
     id: "ss_the_funeral",
     title: "A Funeral in Brooklyn",
-    minLevel: 8, maxLevel: 99,
+    minReputation: 50,
     scene: "The church is packed. Tony 'Two-Touch' Martinelli is being laid to rest. Every made man in three boroughs is here — including some who wanted him dead.",
     dialogue: [
       { speaker: "Narrator", text: "Funerals in this world serve two purposes: mourning and politics. The real business happens in the parking lot." },
@@ -380,7 +380,7 @@ export const STREET_STORIES = [
   {
     id: "ss_crooked_cop",
     title: "The Crooked Badge",
-    minLevel: 6, maxLevel: 99,
+    minReputation: 30,
     scene: "Detective Morrison corners you in a parking garage. He's sweating, eyes darting.",
     dialogue: [
       { speaker: "Detective Morrison", text: "\"I need fifteen thousand by Friday, or my bookie sends someone to break my legs. I know things — patrol routes, upcoming raids, which judges are on the take. I can be useful.\"" },
@@ -450,7 +450,7 @@ export const STREET_STORIES = [
   {
     id: "ss_mothers_visit",
     title: "A Mother's Visit",
-    minLevel: 3, maxLevel: 99,
+    minReputation: 10,
     scene: "Your mother shows up unannounced at your apartment. She brings tupperware. She brings questions.",
     dialogue: [
       { speaker: "Your Mother", text: "\"I see you on the news, you know. 'Gang activity in the neighborhood.' That's my neighborhood. That's you, isn't it?\"" },
@@ -502,7 +502,7 @@ export const STREET_STORIES = [
   {
     id: "ss_the_don_call",
     title: "The Don's Dilemma",
-    minLevel: 15, maxLevel: 99,
+    minReputation: 150,
     scene: "Three AM. Your phone rings. The number is blocked, but you recognize the voice immediately — it's the head of a rival family.",
     dialogue: [
       { speaker: "Rival Don", text: "\"I know we've had our differences. But I have a problem that requires... discretion. My underboss is planning a coup. I need him gone before sunrise.\"" },
@@ -558,7 +558,7 @@ export const STREET_STORIES = [
   {
     id: "ss_the_painting",
     title: "The Stolen Masterpiece",
-    minLevel: 10, maxLevel: 99,
+    minReputation: 75,
     scene: "Your fence, Louie the Greek, calls you to his back room. On the table sits a painting in an ornate gold frame.",
     dialogue: [
       { speaker: "Louie the Greek", text: "\"Vermeer. 'The Concert.' Stolen from the Isabella Stewart Gardner Museum in 1990. The FBI has a $10 million reward for its return. A private collector will pay $2 million, no questions.\"" },
@@ -614,7 +614,7 @@ export const STREET_STORIES = [
   {
     id: "ss_the_wedding",
     title: "The Wedding",
-    minLevel: 7, maxLevel: 99,
+    minReputation: 40,
     scene: "Your cousin Maria is getting married at the Palazzo Grande. Half the guests are legitimate — teachers, nurses, plumbers. The other half... aren't.",
     dialogue: [
       { speaker: "Uncle Enzo", text: "\"Beautiful ceremony, eh? Listen — your cousin's new father-in-law, he's got a construction company. Very profitable. Very connected to city contracts. I think you two should talk.\"" },
@@ -664,7 +664,7 @@ export const STREET_STORIES = [
   {
     id: "ss_the_hospital",
     title: "The Hospital Visit",
-    minLevel: 10, maxLevel: 99,
+    minReputation: 75,
     scene: "Your right-hand man is in the ICU after a drive-by. The doctors say fifty-fifty. The hallway is full of your crew, anger boiling just beneath the surface.",
     dialogue: [
       { speaker: "Narrator", text: "The shooter was from the Eastside Bloods — a street gang that's been encroaching on your territory. This wasn't random. It was a message." },
@@ -720,7 +720,7 @@ export const STREET_STORIES = [
   {
     id: "ss_fbi_approach",
     title: "The FBI Offer",
-    minLevel: 12, maxLevel: 99,
+    minReputation: 100,
     scene: "An unmarked sedan pulls up beside you at a stoplight. The window rolls down.",
     dialogue: [
       { speaker: "Agent Torres", text: "\"Don't reach for anything. I'm Agent Torres, FBI Organized Crime Task Force. I'm not here to arrest you — I'm here to make you an offer.\"" },
@@ -773,7 +773,7 @@ export const STREET_STORIES = [
   {
     id: "ss_the_barber",
     title: "The Barber's Secret",
-    minLevel: 4, maxLevel: 99,
+    minReputation: 15,
     scene: "Old Sal's barbershop — where every made man gets his cut. You're in the chair when Sal leans close with the razor.",
     dialogue: [
       { speaker: "Old Sal", text: "\"Thirty-seven years I've been cutting hair. Every boss, every soldier, every punk with ambitions. They all talk in the chair — they forget I'm listening.\"" },
@@ -813,7 +813,7 @@ export const STREET_STORIES = [
   {
     id: "ss_dock_strike",
     title: "The Dock Strike",
-    minLevel: 8, maxLevel: 99,
+    minReputation: 50,
     scene: "The longshoremen are threatening a strike at Port Newark. Three of your containers are sitting on the docks — perishable cargo that won't survive a shutdown.",
     dialogue: [
       { speaker: "Jimmy Hooks", text: "\"The union wants a 15% raise. Management says 3%. Nobody's blinking. Your containers could be stuck for weeks.\"" },
@@ -867,7 +867,7 @@ export const STREET_STORIES = [
   {
     id: "ss_old_rival",
     title: "Ghost from the Past",
-    minLevel: 10, maxLevel: 99,
+    minReputation: 75,
     scene: "You're eating alone at a diner when someone sits across from you. You don't recognize them at first — but then you do. It's Marco. You grew up on the same block.",
     dialogue: [
       { speaker: "Marco", text: "\"Been a long time. Fifteen years? I heard you made it big. Me... I went the other way. Straight. Sort of.\"" },
@@ -914,7 +914,7 @@ export const STREET_STORIES = [
   {
     id: "ss_casino_whale",
     title: "The High Roller",
-    minLevel: 12, maxLevel: 99,
+    minReputation: 100,
     scene: "A Saudi prince just dropped $2 million at your casino — and he's still losing. He's also getting increasingly erratic.",
     dialogue: [
       { speaker: "Floor Manager", text: "\"He's been at the tables for sixteen hours. Hasn't eaten. Won't listen to the waitresses. His bodyguards are getting nervous.\"" },
@@ -967,7 +967,7 @@ export const SIDE_QUESTS = [
     title: "The Informant Network",
     description: "Build a web of informants across the city — bartenders, taxi drivers, hotel clerks — people who see everything and tell only you.",
     icon: "🕸️",
-    minLevel: 5,
+    minReputation: 25,
     steps: [
       {
         id: "sq_informant_1",
@@ -993,7 +993,7 @@ export const SIDE_QUESTS = [
         id: "sq_informant_3",
         title: "The Hotel Clerk",
         narrative: "Timothy works the front desk at the Grand Meridian — where every powerful person in the city stays. He has access to guest lists, phone records, and room service bills that reveal mistresses and vices.",
-        objective: { type: "level", target: 10, text: "Reach level 10 to earn Timothy's trust" },
+        objective: { type: "reputation", target: 75, text: "Reach 75 Rep to earn Timothy's trust" },
         reward: { respect: 15, reputation: 5 },
         completionText: "Your network is complete. Three sets of ears in three crucial locations. The information flows like a river — and you control the dam.",
         timerMinutes: 10,
@@ -1009,7 +1009,7 @@ export const SIDE_QUESTS = [
     title: "The Safe House Network",
     description: "Establish hidden safe houses across the city — places to disappear when the heat gets too intense.",
     icon: "🏠",
-    minLevel: 8,
+    minReputation: 50,
     steps: [
       {
         id: "sq_safe_1",
@@ -1051,7 +1051,7 @@ export const SIDE_QUESTS = [
     title: "Ghost Money",
     description: "Build an untraceable money laundering operation that turns dirty cash into clean investments.",
     icon: "💰",
-    minLevel: 12,
+    minReputation: 100,
     steps: [
       {
         id: "sq_ghost_1",
@@ -1067,7 +1067,7 @@ export const SIDE_QUESTS = [
         id: "sq_ghost_2",
         title: "The Accountant",
         narrative: "A forensic accountant named Gerald has been disbarred for 'creative bookkeeping.' His skills are exactly what you need to layer your money through a maze of shell companies.",
-        objective: { type: "level", target: 15, text: "Reach level 15 to recruit Gerald" },
+        objective: { type: "reputation", target: 130, text: "Reach 130 Rep to recruit Gerald" },
         reward: { respect: 10 },
         completionText: "Gerald builds you a financial labyrinth. Money flows through twelve shell companies in four countries before landing in your offshore accounts. The IRS would need a decade to untangle it.",
         timerMinutes: 15,
@@ -1093,7 +1093,7 @@ export const SIDE_QUESTS = [
     title: "The Code",
     description: "Establish your personal code of conduct — the rules that define your criminal empire.",
     icon: "📜",
-    minLevel: 3,
+    minReputation: 10,
     steps: [
       {
         id: "sq_code_1",
@@ -1135,7 +1135,7 @@ export const SIDE_QUESTS = [
     title: "King of the Night",
     description: "Build a string of nightclubs, lounges, and speakeasies that become the social hub of the city's underworld.",
     icon: "🌙",
-    minLevel: 10,
+    minReputation: 75,
     steps: [
       {
         id: "sq_night_1",
@@ -1151,7 +1151,7 @@ export const SIDE_QUESTS = [
         id: "sq_night_2",
         title: "The Underground",
         narrative: "Below The Velvet Room, behind a bookshelf that slides open with a password, lies something special: a prohibition-era speakeasy rebuilt for the modern age. Invite only.",
-        objective: { type: "level", target: 13, text: "Reach level 13 to unlock the VIP network" },
+        objective: { type: "reputation", target: 100, text: "Reach 100 Rep to unlock the VIP network" },
         reward: { respect: 15, reputation: 10 },
         completionText: "The Underground becomes the most exclusive space in the city. A place where judges drink with criminals, where cops dance with con artists. What happens underground, stays underground. And you control the guest list.",
         timerMinutes: 12,
@@ -1265,28 +1265,28 @@ export const POST_DON_ARCS = [
 
 export const DEEP_NARRATIONS = {
   // Rich narrations triggered at level milestones
-  levelMilestones: {
-    5: {
+  reputationMilestones: {
+    25: {
       title: "Making a Name",
       text: "The streets are starting to know your face. When you walk into a bar, conversations pause. When you pass a corner, dealers nod. You're not a nobody anymore — you're becoming somebody. And in this city, being somebody is the most dangerous thing you can be."
     },
-    10: {
+    75: {
       title: "The Point of No Return",
       text: "You look in the mirror and barely recognize yourself. The person who started this journey — scared, hungry, desperate — is gone. In their place stands someone hardened by choices that can't be unmade. There's no going back. The only direction is up."
     },
-    15: {
+    150: {
       title: "Empire Builder",
       text: "Your operation runs like a machine now. Cash flows in from a dozen sources. Your crew handles problems before they reach your desk. Somewhere between the first heist and today, you stopped being a criminal and became an institution."
     },
-    20: {
+    350: {
       title: "King of a Concrete Jungle",
       text: "They write about you in the papers now — without using your name, of course. 'An unnamed crime figure.' They know. Everyone knows. The question isn't whether you're running things; it's how long you can keep running them."
     },
-    25: {
+    500: {
       title: "Living Legend",
       text: "Young kids on the corner tell stories about you the way they used to tell stories about Gotti and Capone. You've become a myth. And myths, for better or worse, have a way of outliving the men who inspired them."
     },
-    30: {
+    1000: {
       title: "Beyond the Crown",
       text: "You've surpassed every marker of success this life has to offer. More money than you can spend. More power than you need. The only challenge left is the one you've been avoiding: what happens when you stop?"
     }

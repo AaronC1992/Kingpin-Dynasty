@@ -1,4 +1,4 @@
-﻿/**
+/**
  * missions.js - Story-Driven Family Storylines
  *
  * Each crime family has a 25-chapter story arc. The player picks one family,
@@ -80,7 +80,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 8, text: "Complete 8 jobs (any type)" },
     { type: "money", target: 1500, text: "Accumulate $1,500 in collections" },
-    { type: "level", target: 2, text: "Reach Level 2" }
+    { type: "reputation", target: 475, text: "Reach 475 Rep" }
   ],
   rewards: { money: 875, experience: 68, reputation: 2 },
   choice: null,
@@ -106,7 +106,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 12, text: "Complete 12 jobs (any type)" },
     { type: "money", target: 2500, text: "Earn $2,500 to prove you're focused on business" },
-    { type: "level", target: 3, text: "Reach Level 3" }
+    { type: "reputation", target: 450, text: "Reach 450 Rep" }
   ],
   rewards: { money: 1250, experience: 85, reputation: 3 },
   choice: {
@@ -141,7 +141,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 15, text: "Complete 15 jobs (any type)" },
     { type: "money", target: 3500, text: "Earn $3,500 for the Family coffers" },
-    { type: "level", target: 5, text: "Reach Level 5" }
+    { type: "reputation", target: 375, text: "Reach 375 Rep" }
   ],
   rewards: { money: 1625, experience: 103, reputation: 3 },
   choice: null,
@@ -168,7 +168,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 18, text: "Complete 18 jobs (any type)" },
     { type: "money", target: 5000, text: "Generate $5,000 through legitimate and illegitimate channels" },
-    { type: "level", target: 6, text: "Reach Level 6" }
+    { type: "reputation", target: 350, text: "Reach 350 Rep" }
   ],
   rewards: { money: 2000, experience: 120, reputation: 4 },
   choice: {
@@ -202,7 +202,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 22, text: "Complete 22 jobs (any type)" },
     { type: "money", target: 7000, text: "Accumulate $7,000 to demonstrate business acumen" },
-    { type: "level", target: 8, text: "Reach Level 8" }
+    { type: "reputation", target: 275, text: "Reach 275 Rep" }
   ],
   rewards: { money: 2800, experience: 140, reputation: 5 },
   choice: {
@@ -237,7 +237,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 25, text: "Complete 25 jobs (any type)" },
     { type: "money", target: 9000, text: "Earn $9,000 to establish your soldier's fund" },
-    { type: "level", target: 10, text: "Reach Level 10" }
+    { type: "reputation", target: 200, text: "Reach 200 Rep" }
   ],
   rewards: { money: 3600, experience: 160, reputation: 5 },
   choice: {
@@ -271,7 +271,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 28, text: "Complete 28 jobs (any type)" },
     { type: "money", target: 12000, text: "Earn $12,000 from the hijack and follow-up sales" },
-    { type: "level", target: 11, text: "Reach Level 11" },
+    { type: "reputation", target: 175, text: "Reach 175 Rep" },
     { type: "gang", target: 2, text: "Recruit 2 crew members for your operations" }
   ],
   rewards: { money: 4400, experience: 180, reputation: 6 },
@@ -306,7 +306,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 32, text: "Complete 32 jobs (any type)" },
     { type: "money", target: 15000, text: "Accumulate $15,000 to fund your crew" },
-    { type: "level", target: 12, text: "Reach Level 12" },
+    { type: "reputation", target: 150, text: "Reach 150 Rep" },
     { type: "gang", target: 3, text: "Recruit 3 crew members" }
   ],
   rewards: { money: 5200, experience: 200, reputation: 7 },
@@ -342,7 +342,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 35, text: "Complete 35 jobs (any type)" },
     { type: "money", target: 18000, text: "Accumulate $18,000 for weapons and operational costs" },
-    { type: "level", target: 14, text: "Reach Level 14" },
+    { type: "reputation", target: 130, text: "Reach 130 Rep" },
     { type: "gang", target: 3, text: "Maintain a crew of 3 for the assault" }
   ],
   rewards: { money: 6000, experience: 220, reputation: 8 },
@@ -382,7 +382,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 38, text: "Complete 38 jobs (any type)" },
     { type: "money", target: 22000, text: "Generate $22,000 to replace lost revenue streams" },
-    { type: "level", target: 15, text: "Reach Level 15" },
+    { type: "reputation", target: 110, text: "Reach 110 Rep" },
     { type: "gang", target: 4, text: "Expand your crew to 4 members" }
   ],
   rewards: { money: 7200, experience: 256, reputation: 9 },
@@ -417,7 +417,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 40, text: "Complete 40 jobs (any type)" },
     { type: "money", target: 26000, text: "Earn $26,000 through diversified operations" },
-    { type: "level", target: 16, text: "Reach Level 16" },
+    { type: "reputation", target: 90, text: "Reach 90 Rep" },
     { type: "gang", target: 5, text: "Grow your crew to 5 members" }
   ],
   rewards: { money: 8400, experience: 292, reputation: 10 },
@@ -446,7 +446,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 43, text: "Complete 43 jobs (any type)" },
     { type: "money", target: 30000, text: "Generate $30,000 in your new territory" },
-    { type: "level", target: 17, text: "Reach Level 17" },
+    { type: "reputation", target: 80, text: "Reach 80 Rep" },
     { type: "gang", target: 5, text: "Command a crew of 5" },
     { type: "properties", target: 1, text: "Acquire 1 property as your base of operations" }
   ],
@@ -482,7 +482,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 46, text: "Complete 46 jobs (any type)" },
     { type: "money", target: 35000, text: "Earn $35,000 from expanded operations" },
-    { type: "level", target: 18, text: "Reach Level 18" },
+    { type: "reputation", target: 75, text: "Reach 75 Rep" },
     { type: "gang", target: 6, text: "Grow your crew to 6 members" },
     { type: "properties", target: 1, text: "Maintain at least 1 property" }
   ],
@@ -511,7 +511,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 50, text: "Complete 50 jobs (any type)" },
     { type: "money", target: 40000, text: "Accumulate $40,000 for a war chest" },
-    { type: "level", target: 19, text: "Reach Level 19" },
+    { type: "reputation", target: 50, text: "Reach 50 Rep" },
     { type: "gang", target: 7, text: "Expand your crew to 7 for the coming battle" },
     { type: "properties", target: 2, text: "Secure 2 properties as staging areas" }
   ],
@@ -547,7 +547,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 53, text: "Complete 53 jobs (any type)" },
     { type: "money", target: 50000, text: "Spend and earn $50,000 through wartime operations" },
-    { type: "level", target: 20, text: "Reach Level 20" },
+    { type: "reputation", target: 35, text: "Reach 35 Rep" },
     { type: "gang", target: 7, text: "Command 7 crew members in battle" },
     { type: "properties", target: 2, text: "Hold 2 properties" },
     { type: "reputation", target: 30, text: "Achieve a reputation of 30" }
@@ -589,7 +589,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 56, text: "Complete 56 jobs (any type)" },
     { type: "money", target: 60000, text: "Accumulate $60,000 for bribes and political influence" },
-    { type: "level", target: 22, text: "Reach Level 22" },
+    { type: "reputation", target: 10, text: "Reach 10 Rep" },
     { type: "gang", target: 8, text: "Maintain a crew of 8" },
     { type: "properties", target: 2, text: "Hold 2 properties" },
     { type: "reputation", target: 35, text: "Build reputation to 35" }
@@ -627,7 +627,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 60, text: "Complete 60 jobs (any type)" },
     { type: "money", target: 70000, text: "Maintain $70,000 as operations are disrupted" },
-    { type: "level", target: 23, text: "Reach Level 23" },
+    { type: "reputation", target: 5, text: "Reach 5 Rep" },
     { type: "gang", target: 9, text: "Keep your crew at 9 despite the turmoil" },
     { type: "properties", target: 2, text: "Protect your 2 properties" },
     { type: "reputation", target: 40, text: "Maintain reputation at 40 despite the scandal" }
@@ -657,7 +657,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 63, text: "Complete 63 jobs (any type)" },
     { type: "money", target: 80000, text: "Manage $80,000 in Family operations" },
-    { type: "level", target: 25, text: "Reach Level 25" },
+    { type: "reputation", target: , text: "Reach  Rep" },
     { type: "gang", target: 10, text: "Command 10 crew members" },
     { type: "properties", target: 3, text: "Oversee 3 Family properties" },
     { type: "reputation", target: 45, text: "Build reputation to 45" }
@@ -694,7 +694,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 66, text: "Complete 66 jobs (any type)" },
     { type: "money", target: 100000, text: "Control $100,000 in Family funds" },
-    { type: "level", target: 26, text: "Reach Level 26" },
+    { type: "reputation", target: , text: "Reach  Rep" },
     { type: "gang", target: 10, text: "Maintain 10 loyal crew members" },
     { type: "properties", target: 3, text: "Secure 3 properties" },
     { type: "reputation", target: 50, text: "Achieve reputation of 50" }
@@ -725,7 +725,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 70, text: "Complete 70 jobs (any type)" },
     { type: "money", target: 120000, text: "Spend and earn $120,000 in the investigation" },
-    { type: "level", target: 28, text: "Reach Level 28" },
+    { type: "reputation", target: , text: "Reach  Rep" },
     { type: "gang", target: 11, text: "Mobilize 11 crew members" },
     { type: "properties", target: 3, text: "Lock down 3 properties as safe houses" },
     { type: "reputation", target: 55, text: "Maintain reputation at 55" }
@@ -774,7 +774,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 75, text: "Complete 75 jobs (any type)" },
     { type: "money", target: 140000, text: "Build a war chest of $140,000" },
-    { type: "level", target: 30, text: "Reach Level 30" },
+    { type: "reputation", target: , text: "Reach  Rep" },
     { type: "gang", target: 12, text: "Secure loyalty of 12 crew members" },
     { type: "properties", target: 4, text: "Control 4 strategic properties" },
     { type: "reputation", target: 60, text: "Build reputation to 60" }
@@ -811,7 +811,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 80, text: "Complete 80 jobs (any type)" },
     { type: "money", target: 170000, text: "Demonstrate $170,000 in earning power" },
-    { type: "level", target: 32, text: "Reach Level 32" },
+    { type: "reputation", target: , text: "Reach  Rep" },
     { type: "gang", target: 13, text: "Unite 13 men under your banner" },
     { type: "properties", target: 4, text: "Control 4 properties" },
     { type: "reputation", target: 65, text: "Reputation must reach 65" }
@@ -842,7 +842,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 85, text: "Complete 85 jobs (any type)" },
     { type: "money", target: 200000, text: "Control $200,000 in Family assets" },
-    { type: "level", target: 33, text: "Reach Level 33" },
+    { type: "reputation", target: , text: "Reach  Rep" },
     { type: "gang", target: 14, text: "Rally 14 loyal men for the vote and its aftermath" },
     { type: "properties", target: 4, text: "Hold 4 key properties" },
     { type: "reputation", target: 70, text: "Achieve reputation of 70" }
@@ -880,7 +880,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 90, text: "Complete 90 jobs (any type)" },
     { type: "money", target: 250000, text: "Command $250,000 in total assets" },
-    { type: "level", target: 35, text: "Reach Level 35" },
+    { type: "reputation", target: , text: "Reach  Rep" },
     { type: "gang", target: 15, text: "Lead 15 loyal soldiers into the final battle" },
     { type: "properties", target: 5, text: "Control 5 properties across the city" },
     { type: "reputation", target: 80, text: "Achieve legendary reputation of 80" }
@@ -959,7 +959,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 8, text: "Complete 8 jobs (any type)" },
     { type: "money", target: 1500, text: "Earn $1,500 from weapons trade" },
-    { type: "level", target: 2, text: "Reach level 2" }
+    { type: "reputation", target: 475, text: "Reach 475 Rep" }
   ],
   rewards: { money: 875, experience: 68, reputation: 3 },
   choice: {
@@ -992,7 +992,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 12, text: "Complete 12 jobs (any type)" },
     { type: "money", target: 2500, text: "Accumulate $2,500 in earnings" },
-    { type: "level", target: 3, text: "Reach level 3" }
+    { type: "reputation", target: 450, text: "Reach 450 Rep" }
   ],
   rewards: { money: 1250, experience: 85, reputation: 3 },
   choice: null,
@@ -1019,7 +1019,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 15, text: "Complete 15 jobs (any type)" },
     { type: "money", target: 3500, text: "Earn $3,500 from dock smuggling" },
-    { type: "level", target: 5, text: "Reach level 5" }
+    { type: "reputation", target: 375, text: "Reach 375 Rep" }
   ],
   rewards: { money: 1625, experience: 100, reputation: 3 },
   choice: {
@@ -1052,7 +1052,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 18, text: "Complete 18 jobs (any type)" },
     { type: "money", target: 5000, text: "Accumulate $5,000 in pipeline profits" },
-    { type: "level", target: 6, text: "Reach level 6" }
+    { type: "reputation", target: 350, text: "Reach 350 Rep" }
   ],
   rewards: { money: 2000, experience: 120, reputation: 4 },
   choice: null,
@@ -1080,7 +1080,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 22, text: "Complete 22 jobs (any type)" },
     { type: "money", target: 7000, text: "Accumulate $7,000 in Bratva earnings" },
-    { type: "level", target: 8, text: "Reach level 8" }
+    { type: "reputation", target: 275, text: "Reach 275 Rep" }
   ],
   rewards: { money: 2800, experience: 140, reputation: 5 },
   choice: {
@@ -1113,7 +1113,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 25, text: "Complete 25 jobs (any type)" },
     { type: "money", target: 9000, text: "Contribute $9,000 to the Bratva treasury" },
-    { type: "level", target: 10, text: "Reach level 10" }
+    { type: "reputation", target: 200, text: "Reach 200 Rep" }
   ],
   rewards: { money: 3600, experience: 160, reputation: 6 },
   choice: {
@@ -1147,7 +1147,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 28, text: "Complete 28 jobs (any type)" },
     { type: "money", target: 12000, text: "Recover $12,000 worth of stolen arms" },
-    { type: "level", target: 11, text: "Reach level 11" },
+    { type: "reputation", target: 175, text: "Reach 175 Rep" },
     { type: "gang", target: 2, text: "Recruit 2 crew members" }
   ],
   rewards: { money: 4400, experience: 180, reputation: 6 },
@@ -1175,7 +1175,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 32, text: "Complete 32 jobs (any type)" },
     { type: "money", target: 15000, text: "Invest $15,000 in crew equipment and training" },
-    { type: "level", target: 12, text: "Reach level 12" },
+    { type: "reputation", target: 150, text: "Reach 150 Rep" },
     { type: "gang", target: 3, text: "Expand crew to 3 members" }
   ],
   rewards: { money: 5200, experience: 200, reputation: 7 },
@@ -1209,7 +1209,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 35, text: "Complete 35 jobs (any type)" },
     { type: "money", target: 18000, text: "Protect $18,000 worth of arms inventory" },
-    { type: "level", target: 14, text: "Reach level 14" },
+    { type: "reputation", target: 130, text: "Reach 130 Rep" },
     { type: "gang", target: 3, text: "Maintain a crew of 3 for the ambush" }
   ],
   rewards: { money: 6000, experience: 220, reputation: 8 },
@@ -1249,7 +1249,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 38, text: "Complete 38 jobs (any type)" },
     { type: "money", target: 22000, text: "Recover $22,000 lost to compromised operations" },
-    { type: "level", target: 15, text: "Reach level 15" },
+    { type: "reputation", target: 110, text: "Reach 110 Rep" },
     { type: "gang", target: 4, text: "Expand crew to 4 trusted operatives" }
   ],
   rewards: { money: 7200, experience: 256, reputation: 9 },
@@ -1283,7 +1283,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 40, text: "Complete 40 jobs (any type)" },
     { type: "money", target: 26000, text: "Recover and consolidate $26,000 in Bratva assets" },
-    { type: "level", target: 16, text: "Reach level 16" },
+    { type: "reputation", target: 90, text: "Reach 90 Rep" },
     { type: "gang", target: 5, text: "Recruit a crew of 5 for enforcement and collection" }
   ],
   rewards: { money: 8400, experience: 292, reputation: 10 },
@@ -1311,7 +1311,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 43, text: "Complete 43 jobs (any type)" },
     { type: "money", target: 30000, text: "Generate $30,000 in Northside revenue" },
-    { type: "level", target: 17, text: "Reach level 17" },
+    { type: "reputation", target: 80, text: "Reach 80 Rep" },
     { type: "gang", target: 5, text: "Command a crew of 5 soldiers" },
     { type: "properties", target: 1, text: "Establish 1 Bratva property on the Northside" }
   ],
@@ -1346,7 +1346,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 46, text: "Complete 46 jobs (any type)" },
     { type: "money", target: 35000, text: "Invest $35,000 to reestablish Moscow connections" },
-    { type: "level", target: 18, text: "Reach level 18" },
+    { type: "reputation", target: 75, text: "Reach 75 Rep" },
     { type: "gang", target: 6, text: "Expand operations crew to 6 members" },
     { type: "properties", target: 1, text: "Maintain at least 1 secure warehouse property" }
   ],
@@ -1375,7 +1375,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 50, text: "Complete 50 jobs (any type)" },
     { type: "money", target: 40000, text: "Seize $40,000 in rival territory assets" },
-    { type: "level", target: 19, text: "Reach level 19" },
+    { type: "reputation", target: 50, text: "Reach 50 Rep" },
     { type: "gang", target: 7, text: "Command a crew of 7 for the takeover" },
     { type: "properties", target: 2, text: "Control 2 Bratva properties" }
   ],
@@ -1411,7 +1411,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 53, text: "Complete 53 jobs (any type)" },
     { type: "money", target: 50000, text: "Protect $50,000 in Bratva assets from federal seizure" },
-    { type: "level", target: 20, text: "Reach level 20" },
+    { type: "reputation", target: 35, text: "Reach 35 Rep" },
     { type: "gang", target: 7, text: "Maintain a crew of 7 through the federal pressure" },
     { type: "properties", target: 2, text: "Secure 2 properties against seizure" },
     { type: "reputation", target: 30, text: "Build 30 reputation to withstand federal heat" }
@@ -1453,7 +1453,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 56, text: "Complete 56 jobs (any type)" },
     { type: "money", target: 60000, text: "Maintain $60,000 in revenue despite leadership chaos" },
-    { type: "level", target: 22, text: "Reach level 22" },
+    { type: "reputation", target: 10, text: "Reach 10 Rep" },
     { type: "gang", target: 8, text: "Expand crew to 8 to fill the leadership gap" },
     { type: "properties", target: 2, text: "Hold 2 properties amid internal instability" },
     { type: "reputation", target: 35, text: "Achieve 35 reputation as a stabilizing force" }
@@ -1489,7 +1489,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 60, text: "Complete 60 jobs (any type)" },
     { type: "money", target: 70000, text: "Build a $70,000 war chest for the transition" },
-    { type: "level", target: 23, text: "Reach level 23" },
+    { type: "reputation", target: 5, text: "Reach 5 Rep" },
     { type: "gang", target: 9, text: "Secure loyalty of 9 crew members" },
     { type: "properties", target: 2, text: "Maintain 2 legitimate front properties" },
     { type: "reputation", target: 40, text: "Achieve 40 reputation as the Bratva's future" }
@@ -1525,7 +1525,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 63, text: "Complete 63 jobs (any type)" },
     { type: "money", target: 80000, text: "Manage $80,000 in Bratva revenue streams" },
-    { type: "level", target: 25, text: "Reach level 25" },
+    { type: "reputation", target: , text: "Reach  Rep" },
     { type: "gang", target: 10, text: "Command 10 loyalists across all territories" },
     { type: "properties", target: 3, text: "Oversee 3 Bratva properties" },
     { type: "reputation", target: 45, text: "Achieve 45 reputation as the Bratva's acting leader" }
@@ -1555,7 +1555,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 66, text: "Complete 66 jobs (any type)" },
     { type: "money", target: 100000, text: "Control $100,000 in Bratva finances" },
-    { type: "level", target: 26, text: "Reach level 26" },
+    { type: "reputation", target: , text: "Reach  Rep" },
     { type: "gang", target: 10, text: "Maintain 10 loyal crew members" },
     { type: "properties", target: 3, text: "Secure 3 properties against internal threats" },
     { type: "reputation", target: 50, text: "Achieve 50 reputation to challenge the old guard" }
@@ -1592,7 +1592,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 70, text: "Complete 70 jobs (any type)" },
     { type: "money", target: 120000, text: "Protect $120,000 in Bratva assets from the uprising" },
-    { type: "level", target: 28, text: "Reach level 28" },
+    { type: "reputation", target: , text: "Reach  Rep" },
     { type: "gang", target: 11, text: "Rally 11 fighters for the final confrontation" },
     { type: "properties", target: 3, text: "Reclaim 3 Bratva properties from Sergei's faction" },
     { type: "reputation", target: 55, text: "Achieve 55 reputation to unite the Bratva" }
@@ -1635,7 +1635,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 75, text: "Complete 75 jobs (any type)" },
     { type: "money", target: 140000, text: "Secure $140,000 in transition funds" },
-    { type: "level", target: 30, text: "Reach level 30" },
+    { type: "reputation", target: , text: "Reach  Rep" },
     { type: "gang", target: 12, text: "Assemble 12 absolutely loyal operatives" },
     { type: "properties", target: 4, text: "Control 4 strategic properties" },
     { type: "reputation", target: 60, text: "Achieve 60 reputation to command the transition" }
@@ -1665,7 +1665,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 80, text: "Complete 80 jobs (any type)" },
     { type: "money", target: 170000, text: "Secure $170,000 in arms and resources" },
-    { type: "level", target: 32, text: "Reach level 32" },
+    { type: "reputation", target: , text: "Reach  Rep" },
     { type: "gang", target: 13, text: "Command 13 operatives across all sectors" },
     { type: "properties", target: 4, text: "Control 4 critical Bratva properties" },
     { type: "reputation", target: 65, text: "Achieve 65 reputation to ensure loyalty during the coup" }
@@ -1696,7 +1696,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 85, text: "Complete 85 jobs (any type)" },
     { type: "money", target: 200000, text: "Secure $200,000 for the post-coup transition" },
-    { type: "level", target: 33, text: "Reach level 33" },
+    { type: "reputation", target: , text: "Reach  Rep" },
     { type: "gang", target: 14, text: "Command 14 operatives loyal to the new order" },
     { type: "properties", target: 4, text: "Control 4 Bratva properties" },
     { type: "reputation", target: 70, text: "Achieve 70 reputation to command absolute loyalty" }
@@ -1733,7 +1733,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 90, text: "Complete 90 jobs (any type)" },
     { type: "money", target: 250000, text: "Command $250,000 in total Bratva assets" },
-    { type: "level", target: 35, text: "Reach level 35" },
+    { type: "reputation", target: , text: "Reach  Rep" },
     { type: "gang", target: 15, text: "Lead 15 soldiers as the new Pakhan" },
     { type: "properties", target: 5, text: "Control 5 properties across all territories" },
     { type: "reputation", target: 80, text: "Achieve 80 reputation — undisputed leader of the Bratva" }
@@ -1825,7 +1825,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 8, text: "Complete 8 jobs (any type)" },
     { type: "money", target: 1500, text: "Earn $1,500 from digital contracts" },
-    { type: "level", target: 2, text: "Reach level 2" }
+    { type: "reputation", target: 475, text: "Reach 475 Rep" }
   ],
   rewards: { money: 875, experience: 68, reputation: 3 },
   choice: null,
@@ -1853,7 +1853,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 12, text: "Complete 12 jobs (any type)" },
     { type: "money", target: 2500, text: "Accumulate $2,500 in Triad earnings" },
-    { type: "level", target: 3, text: "Reach level 3" }
+    { type: "reputation", target: 450, text: "Reach 450 Rep" }
   ],
   rewards: { money: 1250, experience: 85, reputation: 3 },
   choice: {
@@ -1886,7 +1886,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 15, text: "Complete 15 jobs (any type)" },
     { type: "money", target: 3500, text: "Earn $3,500 from cyber-security contracts" },
-    { type: "level", target: 5, text: "Reach level 5" }
+    { type: "reputation", target: 375, text: "Reach 375 Rep" }
   ],
   rewards: { money: 1625, experience: 103, reputation: 4 },
   choice: null,
@@ -1913,7 +1913,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 18, text: "Complete 18 jobs (any type)" },
     { type: "money", target: 5000, text: "Generate $5,000 in marketplace revenue" },
-    { type: "level", target: 6, text: "Reach level 6" }
+    { type: "reputation", target: 350, text: "Reach 350 Rep" }
   ],
   rewards: { money: 2000, experience: 120, reputation: 4 },
   choice: {
@@ -1947,7 +1947,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 22, text: "Complete 22 jobs (any type)" },
     { type: "money", target: 7000, text: "Accumulate $7,000 in operational funds" },
-    { type: "level", target: 8, text: "Reach level 8" }
+    { type: "reputation", target: 275, text: "Reach 275 Rep" }
   ],
   rewards: { money: 2800, experience: 140, reputation: 5 },
   choice: null,
@@ -1976,7 +1976,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 25, text: "Complete 25 jobs (any type)" },
     { type: "money", target: 9000, text: "Demonstrate $9,000 in earned revenue" },
-    { type: "level", target: 10, text: "Reach level 10" }
+    { type: "reputation", target: 200, text: "Reach 200 Rep" }
   ],
   rewards: { money: 3600, experience: 160, reputation: 6 },
   choice: {
@@ -2009,7 +2009,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 28, text: "Complete 28 jobs (any type)" },
     { type: "money", target: 12000, text: "Invest $12,000 in network infrastructure" },
-    { type: "level", target: 11, text: "Reach level 11" },
+    { type: "reputation", target: 175, text: "Reach 175 Rep" },
     { type: "gang", target: 2, text: "Recruit 2 specialists to your division" }
   ],
   rewards: { money: 4400, experience: 180, reputation: 6 },
@@ -2037,7 +2037,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 32, text: "Complete 32 jobs (any type)" },
     { type: "money", target: 15000, text: "Generate $15,000 in corporate espionage fees" },
-    { type: "level", target: 12, text: "Reach level 12" },
+    { type: "reputation", target: 150, text: "Reach 150 Rep" },
     { type: "gang", target: 3, text: "Expand your team to 3 operatives" }
   ],
   rewards: { money: 5200, experience: 200, reputation: 7 },
@@ -2072,7 +2072,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 35, text: "Complete 35 jobs (any type)" },
     { type: "money", target: 18000, text: "Protect $18,000 in Triad digital assets" },
-    { type: "level", target: 14, text: "Reach level 14" },
+    { type: "reputation", target: 130, text: "Reach 130 Rep" },
     { type: "gang", target: 3, text: "Deploy 3 specialists in the counter-assault" }
   ],
   rewards: { money: 6000, experience: 220, reputation: 8 },
@@ -2101,7 +2101,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 38, text: "Complete 38 jobs (any type)" },
     { type: "money", target: 22000, text: "Manage $22,000 in council-directed funds" },
-    { type: "level", target: 15, text: "Reach level 15" },
+    { type: "reputation", target: 110, text: "Reach 110 Rep" },
     { type: "gang", target: 4, text: "Command a team of 4 specialists" }
   ],
   rewards: { money: 7200, experience: 256, reputation: 9 },
@@ -2135,7 +2135,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 40, text: "Complete 40 jobs (any type)" },
     { type: "money", target: 26000, text: "Channel $26,000 through corporate fronts" },
-    { type: "level", target: 16, text: "Reach level 16" },
+    { type: "reputation", target: 90, text: "Reach 90 Rep" },
     { type: "gang", target: 5, text: "Maintain a team of 5 operatives" }
   ],
   rewards: { money: 8400, experience: 292, reputation: 10 },
@@ -2163,7 +2163,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 43, text: "Complete 43 jobs (any type)" },
     { type: "money", target: 30000, text: "Manage $30,000 in Triad resources" },
-    { type: "level", target: 17, text: "Reach level 17" },
+    { type: "reputation", target: 80, text: "Reach 80 Rep" },
     { type: "gang", target: 5, text: "Command 5 operatives under your authority" },
     { type: "properties", target: 1, text: "Establish 1 operational front property" }
   ],
@@ -2198,7 +2198,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 46, text: "Complete 46 jobs (any type)" },
     { type: "money", target: 35000, text: "Invest $35,000 in global infrastructure" },
-    { type: "level", target: 18, text: "Reach level 18" },
+    { type: "reputation", target: 75, text: "Reach 75 Rep" },
     { type: "gang", target: 6, text: "Deploy 6 operatives across international nodes" },
     { type: "properties", target: 1, text: "Maintain 1 international front operation" }
   ],
@@ -2228,7 +2228,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 50, text: "Complete 50 jobs (any type)" },
     { type: "money", target: 40000, text: "Invest $40,000 in heist preparation" },
-    { type: "level", target: 19, text: "Reach level 19" },
+    { type: "reputation", target: 50, text: "Reach 50 Rep" },
     { type: "gang", target: 7, text: "Assemble a 7-person heist team" },
     { type: "properties", target: 2, text: "Secure 2 staging properties near the museum" }
   ],
@@ -2264,7 +2264,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 53, text: "Complete 53 jobs (any type)" },
     { type: "money", target: 50000, text: "Secure $50,000 worth of operational assets" },
-    { type: "level", target: 20, text: "Reach level 20" },
+    { type: "reputation", target: 35, text: "Reach 35 Rep" },
     { type: "gang", target: 7, text: "Coordinate your 7-person team flawlessly" },
     { type: "properties", target: 2, text: "Maintain 2 safe houses for extraction" },
     { type: "reputation", target: 30, text: "Achieve 30 reputation in the underworld" }
@@ -2295,7 +2295,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 56, text: "Complete 56 jobs (any type)" },
     { type: "money", target: 60000, text: "Manage $60,000 in Jade Mountain transactions" },
-    { type: "level", target: 22, text: "Reach level 22" },
+    { type: "reputation", target: 10, text: "Reach 10 Rep" },
     { type: "gang", target: 8, text: "Deploy 8 operatives in corporate positions" },
     { type: "properties", target: 2, text: "Control 2 Jade Mountain subsidiary properties" },
     { type: "reputation", target: 35, text: "Achieve 35 reputation across sectors" }
@@ -2331,7 +2331,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 60, text: "Complete 60 jobs (any type)" },
     { type: "money", target: 70000, text: "Secure $70,000 in independent reserves" },
-    { type: "level", target: 23, text: "Reach level 23" },
+    { type: "reputation", target: 5, text: "Reach 5 Rep" },
     { type: "gang", target: 9, text: "Maintain 9 loyal operatives" },
     { type: "properties", target: 2, text: "Establish 2 independent safe houses" },
     { type: "reputation", target: 40, text: "Build 40 reputation as an independent power" }
@@ -2362,7 +2362,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 63, text: "Complete 63 jobs (any type)" },
     { type: "money", target: 80000, text: "Control $80,000 in organizational assets" },
-    { type: "level", target: 25, text: "Reach level 25" },
+    { type: "reputation", target: , text: "Reach  Rep" },
     { type: "gang", target: 10, text: "Command 10 operatives across divisions" },
     { type: "properties", target: 3, text: "Manage 3 Triad properties" },
     { type: "reputation", target: 45, text: "Achieve 45 reputation as a power broker" }
@@ -2400,7 +2400,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 66, text: "Complete 66 jobs (any type)" },
     { type: "money", target: 100000, text: "Protect $100,000 in endangered Triad assets" },
-    { type: "level", target: 26, text: "Reach level 26" },
+    { type: "reputation", target: , text: "Reach  Rep" },
     { type: "gang", target: 10, text: "Mobilize all 10 operatives for crisis response" },
     { type: "properties", target: 3, text: "Secure 3 properties against compromise" },
     { type: "reputation", target: 50, text: "Maintain 50 reputation during the crisis" }
@@ -2432,7 +2432,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 70, text: "Complete 70 jobs (any type)" },
     { type: "money", target: 120000, text: "Deploy $120,000 in war resources" },
-    { type: "level", target: 28, text: "Reach level 28" },
+    { type: "reputation", target: , text: "Reach  Rep" },
     { type: "gang", target: 11, text: "Command 11 operatives in coordinated assault" },
     { type: "properties", target: 3, text: "Use 3 staging properties for the operation" },
     { type: "reputation", target: 55, text: "Achieve 55 reputation through decisive action" }
@@ -2463,7 +2463,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 75, text: "Complete 75 jobs (any type)" },
     { type: "money", target: 140000, text: "Invest $140,000 in distributed infrastructure" },
-    { type: "level", target: 30, text: "Reach level 30" },
+    { type: "reputation", target: , text: "Reach  Rep" },
     { type: "gang", target: 12, text: "Deploy 12 operatives across the mirror network" },
     { type: "properties", target: 4, text: "Establish 4 mirror node locations" },
     { type: "reputation", target: 60, text: "Achieve 60 reputation as the Triad's architect" }
@@ -2500,7 +2500,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 80, text: "Complete 80 jobs (any type)" },
     { type: "money", target: 170000, text: "Manage $170,000 in operational security funds" },
-    { type: "level", target: 32, text: "Reach level 32" },
+    { type: "reputation", target: , text: "Reach  Rep" },
     { type: "gang", target: 13, text: "Coordinate 13 trusted operatives" },
     { type: "properties", target: 4, text: "Maintain 4 secure operational bases" },
     { type: "reputation", target: 65, text: "Hold 65 reputation as a master strategist" }
@@ -2531,7 +2531,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 85, text: "Complete 85 jobs (any type)" },
     { type: "money", target: 200000, text: "Secure $200,000 in Triad reserves" },
-    { type: "level", target: 33, text: "Reach level 33" },
+    { type: "reputation", target: , text: "Reach  Rep" },
     { type: "gang", target: 14, text: "Ensure loyalty of 14 division operatives" },
     { type: "properties", target: 4, text: "Control 4 key Triad properties" },
     { type: "reputation", target: 70, text: "Achieve 70 reputation as heir apparent" }
@@ -2568,7 +2568,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 90, text: "Complete 90 jobs (any type)" },
     { type: "money", target: 250000, text: "Control $250,000 in Triad assets" },
-    { type: "level", target: 35, text: "Reach level 35" },
+    { type: "reputation", target: , text: "Reach  Rep" },
     { type: "gang", target: 15, text: "Command all 15 Triad division operatives" },
     { type: "properties", target: 5, text: "Oversee 5 properties across the empire" },
     { type: "reputation", target: 80, text: "Achieve 80 reputation as the new Dragon Master" }
@@ -2648,7 +2648,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 8, text: "Complete 8 jobs (any type)" },
     { type: "money", target: 1500, text: "Earn $1,500 managing the tunnel operation" },
-    { type: "level", target: 2, text: "Reach level 2" }
+    { type: "reputation", target: 475, text: "Reach 475 Rep" }
   ],
   rewards: { money: 875, experience: 68, reputation: 2 },
   choice: null,
@@ -2675,7 +2675,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 12, text: "Complete 12 jobs (any type)" },
     { type: "money", target: 2500, text: "Generate $2,500 in street revenue" },
-    { type: "level", target: 3, text: "Reach level 3" }
+    { type: "reputation", target: 450, text: "Reach 450 Rep" }
   ],
   rewards: { money: 1250, experience: 85, reputation: 3 },
   choice: {
@@ -2708,7 +2708,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 15, text: "Complete 15 jobs (any type)" },
     { type: "money", target: 3500, text: "Generate $3,500 through Sofia's restaurant fronts" },
-    { type: "level", target: 5, text: "Reach level 5" }
+    { type: "reputation", target: 375, text: "Reach 375 Rep" }
   ],
   rewards: { money: 1625, experience: 103, reputation: 4 },
   choice: null,
@@ -2735,7 +2735,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 18, text: "Complete 18 jobs (any type)" },
     { type: "money", target: 5000, text: "Earn $5,000 from the cross-border operation" },
-    { type: "level", target: 6, text: "Reach level 6" }
+    { type: "reputation", target: 350, text: "Reach 350 Rep" }
   ],
   rewards: { money: 2000, experience: 120, reputation: 4 },
   choice: {
@@ -2768,7 +2768,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 22, text: "Complete 22 jobs (any type)" },
     { type: "money", target: 7000, text: "Accumulate $7,000" },
-    { type: "level", target: 8, text: "Reach level 8" }
+    { type: "reputation", target: 275, text: "Reach 275 Rep" }
   ],
   rewards: { money: 2800, experience: 140, reputation: 5 },
   choice: {
@@ -2801,7 +2801,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 25, text: "Complete 25 jobs (any type)" },
     { type: "money", target: 9000, text: "Accumulate $9,000 for the cartel treasury" },
-    { type: "level", target: 10, text: "Reach level 10" }
+    { type: "reputation", target: 200, text: "Reach 200 Rep" }
   ],
   rewards: { money: 3600, experience: 160, reputation: 6 },
   choice: null,
@@ -2829,7 +2829,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 28, text: "Complete 28 jobs (any type)" },
     { type: "money", target: 12000, text: "Generate $12,000 from festival shipments" },
-    { type: "level", target: 11, text: "Reach level 11" },
+    { type: "reputation", target: 175, text: "Reach 175 Rep" },
     { type: "gang", target: 2, text: "Recruit 2 reliable crew members" }
   ],
   rewards: { money: 4400, experience: 180, reputation: 6 },
@@ -2863,7 +2863,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 32, text: "Complete 32 jobs (any type)" },
     { type: "money", target: 15000, text: "Generate $15,000 through the distribution network" },
-    { type: "level", target: 12, text: "Reach level 12" },
+    { type: "reputation", target: 150, text: "Reach 150 Rep" },
     { type: "gang", target: 3, text: "Recruit 3 crew members for logistics" }
   ],
   rewards: { money: 5200, experience: 200, reputation: 7 },
@@ -2891,7 +2891,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 35, text: "Complete 35 jobs (any type)" },
     { type: "money", target: 18000, text: "Accumulate $18,000 in war funds" },
-    { type: "level", target: 14, text: "Reach level 14" },
+    { type: "reputation", target: 130, text: "Reach 130 Rep" },
     { type: "gang", target: 3, text: "Maintain a crew of 3 for the defense" }
   ],
   rewards: { money: 6000, experience: 220, reputation: 8 },
@@ -2937,7 +2937,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 38, text: "Complete 38 jobs (any type)" },
     { type: "money", target: 22000, text: "Generate $22,000 managing your squad's territory" },
-    { type: "level", target: 15, text: "Reach level 15" },
+    { type: "reputation", target: 110, text: "Reach 110 Rep" },
     { type: "gang", target: 4, text: "Build your squad to 4 members" }
   ],
   rewards: { money: 7200, experience: 256, reputation: 9 },
@@ -2965,7 +2965,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 40, text: "Complete 40 jobs (any type)" },
     { type: "money", target: 26000, text: "Generate $26,000 to fund war preparations" },
-    { type: "level", target: 16, text: "Reach level 16" },
+    { type: "reputation", target: 90, text: "Reach 90 Rep" },
     { type: "gang", target: 5, text: "Expand your crew to 5 members" }
   ],
   rewards: { money: 8400, experience: 292, reputation: 10 },
@@ -2999,7 +2999,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 43, text: "Complete 43 jobs (any type)" },
     { type: "money", target: 30000, text: "Generate $30,000 from your territory" },
-    { type: "level", target: 17, text: "Reach level 17" },
+    { type: "reputation", target: 80, text: "Reach 80 Rep" },
     { type: "gang", target: 5, text: "Command a crew of 5" },
     { type: "properties", target: 1, text: "Acquire your first property as a base of operations" }
   ],
@@ -3029,7 +3029,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 46, text: "Complete 46 jobs (any type)" },
     { type: "money", target: 35000, text: "Generate $35,000 from new southern operations" },
-    { type: "level", target: 18, text: "Reach level 18" },
+    { type: "reputation", target: 75, text: "Reach 75 Rep" },
     { type: "gang", target: 6, text: "Recruit 6 crew members including local allies" },
     { type: "properties", target: 1, text: "Establish a southern base of operations" }
   ],
@@ -3064,7 +3064,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 50, text: "Complete 50 jobs (any type)" },
     { type: "money", target: 40000, text: "Maintain $40,000 in war funds" },
-    { type: "level", target: 19, text: "Reach level 19" },
+    { type: "reputation", target: 50, text: "Reach 50 Rep" },
     { type: "gang", target: 7, text: "Recruit 7 soldiers for the war effort" },
     { type: "properties", target: 2, text: "Secure 2 fortified properties" }
   ],
@@ -3093,7 +3093,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 53, text: "Complete 53 jobs (any type)" },
     { type: "money", target: 50000, text: "Secure $50,000 in emergency funds" },
-    { type: "level", target: 20, text: "Reach level 20" },
+    { type: "reputation", target: 35, text: "Reach 35 Rep" },
     { type: "gang", target: 7, text: "Maintain 7 loyal crew members" },
     { type: "properties", target: 2, text: "Maintain 2 secure safe houses" },
     { type: "reputation", target: 30, text: "Build 30 reputation to intimidate informants" }
@@ -3140,7 +3140,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 56, text: "Complete 56 jobs (any type)" },
     { type: "money", target: 60000, text: "Secure $60,000 for rebuilding and negotiations" },
-    { type: "level", target: 22, text: "Reach level 22" },
+    { type: "reputation", target: 10, text: "Reach 10 Rep" },
     { type: "gang", target: 8, text: "Maintain 8 crew members during the ceasefire" },
     { type: "properties", target: 2, text: "Hold 2 properties as negotiation leverage" },
     { type: "reputation", target: 35, text: "Achieve 35 reputation as a feared negotiator" }
@@ -3170,7 +3170,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 60, text: "Complete 60 jobs (any type)" },
     { type: "money", target: 70000, text: "Fund $70,000 in security measures for Isabella" },
-    { type: "level", target: 23, text: "Reach level 23" },
+    { type: "reputation", target: 5, text: "Reach 5 Rep" },
     { type: "gang", target: 9, text: "Assign 9 crew members to protective details" },
     { type: "properties", target: 2, text: "Secure 2 safe houses for extraction routes" },
     { type: "reputation", target: 40, text: "Build 40 reputation to deter Colombian agents" }
@@ -3206,7 +3206,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 63, text: "Complete 63 jobs (any type)" },
     { type: "money", target: 80000, text: "Manage $80,000 in cartel operations" },
-    { type: "level", target: 25, text: "Reach level 25" },
+    { type: "reputation", target: , text: "Reach  Rep" },
     { type: "gang", target: 10, text: "Command 10 crew members" },
     { type: "properties", target: 3, text: "Oversee 3 key properties" },
     { type: "reputation", target: 45, text: "Achieve 45 reputation as Underboss" }
@@ -3236,7 +3236,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 66, text: "Complete 66 jobs (any type)" },
     { type: "money", target: 100000, text: "Amass $100,000 in war chest funds" },
-    { type: "level", target: 26, text: "Reach level 26" },
+    { type: "reputation", target: , text: "Reach  Rep" },
     { type: "gang", target: 10, text: "Mobilize all 10 crew members for the rescue" },
     { type: "properties", target: 3, text: "Fortify 3 staging properties for the assault" },
     { type: "reputation", target: 50, text: "Command 50 reputation to rally all allies" }
@@ -3272,7 +3272,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 70, text: "Complete 70 jobs (any type)" },
     { type: "money", target: 120000, text: "Deploy $120,000 in military resources" },
-    { type: "level", target: 28, text: "Reach level 28" },
+    { type: "reputation", target: , text: "Reach  Rep" },
     { type: "gang", target: 11, text: "Command 11 soldiers in the assault" },
     { type: "properties", target: 3, text: "Maintain 3 properties for staging and recovery" },
     { type: "reputation", target: 55, text: "Achieve 55 reputation as a legendary war commander" }
@@ -3314,7 +3314,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 75, text: "Complete 75 jobs (any type)" },
     { type: "money", target: 140000, text: "Generate $140,000 rebuilding the empire" },
-    { type: "level", target: 30, text: "Reach level 30" },
+    { type: "reputation", target: , text: "Reach  Rep" },
     { type: "gang", target: 12, text: "Rebuild the crew to 12 loyal members" },
     { type: "properties", target: 4, text: "Restore and acquire 4 properties" },
     { type: "reputation", target: 60, text: "Achieve 60 reputation as a war hero" }
@@ -3352,7 +3352,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 80, text: "Complete 80 jobs (any type)" },
     { type: "money", target: 170000, text: "Secure $170,000 in transition funds" },
-    { type: "level", target: 32, text: "Reach level 32" },
+    { type: "reputation", target: , text: "Reach  Rep" },
     { type: "gang", target: 13, text: "Grow the organization to 13 loyal members" },
     { type: "properties", target: 4, text: "Control 4 key properties across the empire" },
     { type: "reputation", target: 65, text: "Build 65 reputation as the chosen successor" }
@@ -3382,7 +3382,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 85, text: "Complete 85 jobs (any type)" },
     { type: "money", target: 200000, text: "Manage $200,000 in cartel assets" },
-    { type: "level", target: 33, text: "Reach level 33" },
+    { type: "reputation", target: , text: "Reach  Rep" },
     { type: "gang", target: 14, text: "Command loyalty of 14 crew members" },
     { type: "properties", target: 4, text: "Oversee all 4 key cartel properties" },
     { type: "reputation", target: 70, text: "Achieve 70 reputation across all territories" }
@@ -3420,7 +3420,7 @@ export const familyStories = {
   objectives: [
     { type: "jobs", target: 90, text: "Complete 90 jobs (any type)" },
     { type: "money", target: 250000, text: "Command $250,000 in cartel wealth" },
-    { type: "level", target: 35, text: "Reach level 35" },
+    { type: "reputation", target: , text: "Reach  Rep" },
     { type: "gang", target: 15, text: "Lead an organization of 15 loyal members" },
     { type: "properties", target: 5, text: "Control all 5 Morales empire properties" },
     { type: "reputation", target: 80, text: "Achieve 80 reputation as the new El Jefe" }

@@ -229,13 +229,13 @@ function showWhackRivalDon() {
 
 // Heist target definitions with difficulty, reward, and requirements
 const HEIST_TARGETS = [
-    { id: 'jewelry_store', name: 'Jewelry Store', difficulty: 'Easy', reward: 50000, minLevel: 1, minCrew: 1, maxCrew: 3, successBase: 75 },
-    { id: 'bank_vault', name: 'Bank Vault', difficulty: 'Medium', reward: 150000, minLevel: 5, minCrew: 2, maxCrew: 4, successBase: 60 },
-    { id: 'armored_truck', name: 'Armored Truck', difficulty: 'Medium', reward: 200000, minLevel: 8, minCrew: 2, maxCrew: 4, successBase: 55 },
-    { id: 'casino_heist', name: 'Casino Vault', difficulty: 'Hard', reward: 400000, minLevel: 12, minCrew: 3, maxCrew: 5, successBase: 40 },
-    { id: 'art_museum', name: 'Art Museum', difficulty: 'Hard', reward: 350000, minLevel: 10, minCrew: 2, maxCrew: 4, successBase: 45 },
-    { id: 'federal_reserve', name: 'Federal Reserve', difficulty: 'Extreme', reward: 800000, minLevel: 18, minCrew: 4, maxCrew: 6, successBase: 25 },
-    { id: 'drug_cartel', name: 'Cartel Warehouse', difficulty: 'Extreme', reward: 600000, minLevel: 15, minCrew: 3, maxCrew: 5, successBase: 30 },
+    { id: 'jewelry_store', name: 'Jewelry Store', difficulty: 'Easy', reward: 50000, minReputation: 0, minCrew: 1, maxCrew: 3, successBase: 75 },
+    { id: 'bank_vault', name: 'Bank Vault', difficulty: 'Medium', reward: 150000, minReputation: 25, minCrew: 2, maxCrew: 4, successBase: 60 },
+    { id: 'armored_truck', name: 'Armored Truck', difficulty: 'Medium', reward: 200000, minReputation: 50, minCrew: 2, maxCrew: 4, successBase: 55 },
+    { id: 'casino_heist', name: 'Casino Vault', difficulty: 'Hard', reward: 400000, minReputation: 100, minCrew: 3, maxCrew: 5, successBase: 40 },
+    { id: 'art_museum', name: 'Art Museum', difficulty: 'Hard', reward: 350000, minReputation: 75, minCrew: 2, maxCrew: 4, successBase: 45 },
+    { id: 'federal_reserve', name: 'Federal Reserve', difficulty: 'Extreme', reward: 800000, minReputation: 225, minCrew: 4, maxCrew: 6, successBase: 25 },
+    { id: 'drug_cartel', name: 'Cartel Warehouse', difficulty: 'Extreme', reward: 600000, minReputation: 150, minCrew: 3, maxCrew: 5, successBase: 30 },
 ];
 
 // Show active heists available to join + create new heist
@@ -358,10 +358,10 @@ function showCreateHeist() {
     const content = document.getElementById('multiplayer-content');
     if (!content) return;
 
-    const playerLevel = player.level || 1;
+    const playerRep = player.reputation || 0;
 
     const targetsHTML = HEIST_TARGETS.map(t => {
-        const locked = playerLevel < t.minLevel;
+        const locked = playerRep < t.minReputation;
         const diffColor = t.difficulty === 'Easy' ? '#8a9a6a' : t.difficulty === 'Medium' ? '#c0a040' : t.difficulty === 'Hard' ? '#8b3a3a' : '#ff00ff';
         
         return `
@@ -374,11 +374,11 @@ function showCreateHeist() {
                         <span style="color: #8a9a6a; font-size: 0.85em;">$${t.reward.toLocaleString()}</span>
                         <span style="color: #ccc; font-size: 0.85em;">${t.minCrew}-${t.maxCrew} crew</span>
                     </div>
-                    <div style="color: #888; font-size: 0.8em; margin-top: 4px;">Base success: ${t.successBase}% | Requires Level ${t.minLevel}+</div>
+                    <div style="color: #888; font-size: 0.8em; margin-top: 4px;">Base success: ${t.successBase}% | Requires ${t.minReputation}+ Rep</div>
                 </div>
                 <div>
                     ${locked 
-                        ? `<div style="color: #666; font-size: 0.85em;">Level ${t.minLevel}</div>`
+                        ? `<div style="color: #666; font-size: 0.85em;">${t.minReputation} Rep</div>`
                         : `<button onclick="createHeist('${t.id}')" style="background: linear-gradient(180deg, #8b0000, #3a0000); color: #ff4444; padding: 10px 20px; border: 1px solid #ff0000; border-radius: 6px; cursor: pointer; font-family: 'Georgia', serif; font-weight: bold;">
                             Plan This
                         </button>`
@@ -415,8 +415,8 @@ async function createHeist(targetId) {
     const target = HEIST_TARGETS.find(t => t.id === targetId);
     if (!target) return;
 
-    if ((player.level || 1) < target.minLevel) {
-        window.ui.toast(`You need to be Level ${target.minLevel} to plan this heist.`, 'error');
+    if ((player.reputation || 0) < target.minReputation) {
+        window.ui.toast(`You need ${target.minReputation}+ reputation to plan this heist.`, 'error');
         return;
     }
 
@@ -2524,7 +2524,7 @@ function calculateAttackPower() {
         return window.calculateTurfAttackPower();
     }
     // Fallback if game.js hasn't loaded yet
-    return (player.level * 10) + 
+    return ((player.reputation || 0) * 0.3) + 
            ((player.skillTree?.combat?.brawler || 0) * 12) + 
            ((player.power || 0) * 2);
 }
@@ -2532,7 +2532,7 @@ function calculateAttackPower() {
 // Helper to calculate defense power for display
 function calculateDefensePower() {
     const territoryCount = countControlledTerritories();
-    return (player.level * 10) + 
+    return ((player.reputation || 0) * 0.3) + 
            (player.reputation * 0.5) + 
            ((player.power || 0) * 2) + 
            (territoryCount * 15);
@@ -3896,7 +3896,7 @@ function doDistrictJob(districtName) {
     const minReward = Math.floor(job.baseReward[0] * rewardMultiplier);
     const maxReward = Math.floor(job.baseReward[1] * rewardMultiplier);
     const adjustedJailChance = Math.min(0.5, job.jailChance * dangerMultiplier);
-    const adjustedXp = Math.floor(job.xp * rewardMultiplier);
+    const adjustedXp = Math.max(0.5, Math.round(job.xp * rewardMultiplier * 0.1 * 10) / 10);
 
     // Check for arrest
     const arrested = Math.random() < adjustedJailChance;
@@ -3956,8 +3956,8 @@ function doDistrictJob(districtName) {
                         <div class="popup-stat-label">Cash</div>
                     </div>
                     <div class="popup-stat">
-                        <div class="popup-stat-value" style="color:#8b6a4a;">+${adjustedXp} XP</div>
-                        <div class="popup-stat-label">Experience</div>
+                        <div class="popup-stat-value" style="color:#8b6a4a;">+${adjustedXp} Rep</div>
+                        <div class="popup-stat-label">Reputation</div>
                     </div>
                 </div>
                 <div class="popup-actions">
@@ -3966,7 +3966,7 @@ function doDistrictJob(districtName) {
             </div>
         `;
 
-        _safeLogAction(`${job.name} in ${districtName}: earned $${earned.toLocaleString()}, +${adjustedXp} XP`);
+        _safeLogAction(`${job.name} in ${districtName}: earned $${earned.toLocaleString()}, +${adjustedXp} Rep`);
         addWorldEvent(`${player.name || 'A player'} pulled off a job in ${districtName}!`);
     }
 
@@ -4457,7 +4457,6 @@ function challengePlayer(playerName) {
 
     // Find target player info from nearby players
     const targetInfo = (onlineWorldState.nearbyPlayers || []).find(p => p.name === playerName);
-    const targetLevel = targetInfo ? (targetInfo.level || '?') : '?';
     const targetRep = targetInfo ? (targetInfo.reputation || '?') : '?';
 
     modal.innerHTML = `
@@ -4466,14 +4465,12 @@ function challengePlayer(playerName) {
             <div style="margin:20px 0;display:grid;grid-template-columns:1fr auto 1fr;gap:15px;align-items:center;">
                 <div class="popup-section" style="border-color:rgba(138, 154, 106,0.3);text-align:center;padding:15px;">
                     <div style="color:#8a9a6a;font-weight:bold;font-size:1.1em;">${escapeHTML(player.name || 'You')}</div>
-                    <div style="color:#888;font-size:0.85em;margin-top:5px;">Lvl ${player.level || 1}</div>
-                    <div style="color:#888;font-size:0.85em;">Rep: ${Math.floor(player.reputation || 0)}</div>
+                    <div style="color:#888;font-size:0.85em;margin-top:5px;">Rep: ${Math.floor(player.reputation || 0)}</div>
                 </div>
                 <div style="color:#8b0000;font-size:1.5em;font-weight:bold;">VS</div>
                 <div class="popup-section" style="border-color:rgba(231,76,60,0.3);text-align:center;padding:15px;">
                     <div style="color:#8b3a3a;font-weight:bold;font-size:1.1em;">${escapeHTML(playerName)}</div>
-                    <div style="color:#888;font-size:0.85em;margin-top:5px;">Lvl ${targetLevel}</div>
-                    <div style="color:#888;font-size:0.85em;">Rep: ${targetRep}</div>
+                    <div style="color:#888;font-size:0.85em;margin-top:5px;">Rep: ${targetRep}</div>
                 </div>
             </div>
             <p class="popup-subtitle">Winner gains Don Rep</p>
@@ -4606,7 +4603,7 @@ function participateInEvent(eventType, district) {
     const scenario = eventData.scenarios[Math.floor(Math.random() * eventData.scenarios.length)];
 
     // Level bonus: higher level = slightly better success chance
-    const levelBonus = Math.min(0.15, (player.level || 1) * 0.01);
+    const levelBonus = Math.min(0.15, (player.reputation || 0) * 0.001);
     const success = Math.random() < (scenario.successChance + levelBonus);
 
     // Build the result modal
@@ -4622,11 +4619,6 @@ function participateInEvent(eventType, district) {
         const moneyEarned = scenario.moneyMin + Math.floor(Math.random() * (scenario.moneyMax - scenario.moneyMin));
         player.money += moneyEarned;
         player.reputation = (player.reputation || 0) + scenario.repGain;
-        if (typeof gainExperience === 'function') {
-            gainExperience(scenario.xp);
-        } else {
-            player.experience = (player.experience || 0) + scenario.xp;
-        }
 
         modal.innerHTML = `
             <div class="popup-card popup-success" style="max-width:550px;">
@@ -4642,11 +4634,7 @@ function participateInEvent(eventType, district) {
                         <div class="popup-stat-label">Cash</div>
                     </div>
                     <div class="popup-stat">
-                        <div class="popup-stat-value" style="color:#8b6a4a;">+${scenario.xp} XP</div>
-                        <div class="popup-stat-label">Experience</div>
-                    </div>
-                    <div class="popup-stat">
-                        <div class="popup-stat-value" style="color:#c0a040;">+${scenario.repGain}</div>
+                        <div class="popup-stat-value" style="color:#c0a040;">+${scenario.repGain} Rep</div>
                         <div class="popup-stat-label">Reputation</div>
                     </div>
                 </div>
@@ -4656,7 +4644,7 @@ function participateInEvent(eventType, district) {
             </div>
         `;
 
-        _safeLogAction(`${eventData.icon} ${eventData.title} in ${district}: earned $${moneyEarned.toLocaleString()}, +${scenario.xp} XP, +${scenario.repGain} rep`);
+        _safeLogAction(`${eventData.icon} ${eventData.title} in ${district}: earned $${moneyEarned.toLocaleString()}, +${scenario.repGain} Rep`);
         addWorldEvent(`${eventData.icon} ${player.name || 'A player'} profited from the ${eventData.title.toLowerCase()} in ${district}!`);
     } else {
         // Failure — still get partial rewards but take a hit
@@ -6232,14 +6220,14 @@ function renderSuperbossScreen() {
     if (_superbossListCache) {
         html += `<h3 style="color:#c0a062;margin:16px 0 8px;">Legendary Crime Lords</h3>`;
         _superbossListCache.bosses.forEach(b => {
-            const canFight = (player.level || 1) >= b.level;
+            const canFight = (player.reputation || 0) >= (b.minReputation || b.level || 1);
             const defeated = (player.superbossesDefeated || []).includes(b.id);
             html += `<div ${style} style="opacity:${canFight?1:0.5};">
                 <div style="display:flex;justify-content:space-between;align-items:center;">
                     <div>
                         <strong style="color:#e74c3c;">${defeated?'[Defeated]':''} ${escapeHTML(b.name)}</strong>
                         <p style="color:#8a7a5a;margin:4px 0;">${escapeHTML(b.description)}</p>
-                        <small style="color:#8a7a5a;">Level ${b.level} required — HP: ${b.hp.toLocaleString()}</small>
+                        <small style="color:#8a7a5a;">Requires ${b.minReputation || b.level || 1}+ Rep — HP: ${b.hp.toLocaleString()}</small>
                     </div>
                     ${canFight && !_activeSuperbossFight ? `<button onclick="window.startSuperbossFight('${b.id}')" style="background:linear-gradient(135deg,#e74c3c,#c0392b);color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-weight:bold;">Challenge</button>` : `<span style="color:#8a7a5a;">${!canFight ? 'Locked' : 'In fight'}</span>`}
                 </div>

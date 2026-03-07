@@ -1,7 +1,7 @@
 // onboarding removed -- tutorial system fully stripped
 import { applyDailyPassives, getDrugIncomeMultiplier, getViolenceHeatMultiplier, getWeaponPriceMultiplier } from './passiveManager.js';
 import { showEmpireOverview } from './empireOverview.js';
-import { player, gainExperience, checkLevelUp, SKILL_TREE_DEFS, getTreePointsSpent, canUnlockNode, isNodeAccessible, achievements, CHARACTER_BACKGROUNDS, CHARACTER_PERKS } from './player.js';
+import { player, gainExperience, checkLevelUp, REPUTATION_TIERS, getReputationTier, getNextTier, SKILL_TREE_DEFS, getTreePointsSpent, canUnlockNode, isNodeAccessible, achievements, CHARACTER_BACKGROUNDS, CHARACTER_PERKS } from './player.js';
 import { jobs, stolenCarTypes } from './jobs.js';
 import { crimeFamilies, factionEffects } from './factions.js';
 import { familyStories, missionProgress, factionMissions } from './missions.js?v=1.8.1';
@@ -252,7 +252,7 @@ window.createSaveDataForCloud = function () {
     const playtime = formatPlaytime(calculatePlaytime());
     return {
         playerName: player.name,
-        level: player.level,
+        reputation: Math.floor(player.reputation || 0),
         money: player.money,
         reputation: Math.floor(player.reputation),
         empireRating: empireRating.totalScore,
@@ -490,10 +490,10 @@ function getStoryObjectiveValue(objective) {
   switch (objective.type) {
     case 'jobs': return stats.jobsCompleted || 0;
     case 'money': return player.money || 0;
-    case 'level': return player.level || 1;
+    case 'level':
+    case 'reputation': return Math.floor(player.reputation || 0);
     case 'gang': return player.gang.members || 0;
     case 'properties': return (player.realEstate?.ownedProperties || []).length;
-    case 'reputation': return Math.floor(player.reputation || 0);
     default: return 0;
   }
 }
@@ -626,7 +626,6 @@ function renderStoryChapter() {
   const rw = chapter.rewards;
   let rewardsHTML = `<div class="story-rewards">
     ${rw.money ? `<span class="story-reward-tag">$${rw.money.toLocaleString()}</span>` : ''}
-    ${rw.experience ? `<span class="story-reward-tag">${rw.experience} XP</span>` : ''}
     ${rw.reputation ? `<span class="story-reward-tag">+${rw.reputation} Rep</span>` : ''}
     ${chapter.rankOnComplete ? `<span class="story-reward-tag rank-up">-> ${chapter.rankOnComplete.charAt(0).toUpperCase() + chapter.rankOnComplete.slice(1)}</span>` : ''}
   </div>`;
@@ -953,11 +952,10 @@ function advanceStoryChapter() {
 
   // Give rewards
   player.money += chapter.rewards.money || 0;
-  gainExperience(chapter.rewards.experience || 0);
-  player.reputation += chapter.rewards.reputation || 0;
+  player.reputation = (player.reputation || 0) + (chapter.rewards.reputation || 0);
   sp.respect = (sp.respect || 0) + (chapter.respectGain || 0);
 
-  logAction(`Chapter Complete: "${chapter.title}" -- +$${(chapter.rewards.money||0).toLocaleString()}, +${chapter.rewards.experience||0} XP, +${chapter.rewards.reputation||0} Rep`);
+  logAction(`Chapter Complete: "${chapter.title}" -- +$${(chapter.rewards.money||0).toLocaleString()}, +${chapter.rewards.reputation||0} Rep`);
 
   // Rank promotion
   if (chapter.rankOnComplete) {
@@ -1103,9 +1101,8 @@ function startSignatureJob(familyKey) {
     const rewardMultiplier = 1 + (reputation / 100); // Higher rep => bigger reward
     const earnings = Math.floor(sigJob.baseReward * rewardMultiplier);
     player.dirtyMoney = (player.dirtyMoney || 0) + earnings;
-    player.reputation += 3;
+    gainExperience(4.5);
     player.missions.factionReputation[familyKey] += 5;
-    gainExperience(sigJob.xpReward);
 
     // Kozlov special bonus: random weapon on success
     if (familyKey === 'kozlov') {
@@ -1115,7 +1112,7 @@ function startSignatureJob(familyKey) {
       logAction(`Kozlov bonus: You scored a ${bonusWeapon} from the convoy!`);
     }
 
-    logAction(`Signature Job "${sigJob.name}" completed for ${family.name}! +$${earnings.toLocaleString()} (dirty), +${sigJob.xpReward} XP, +5 family rep.`);
+    logAction(`Signature Job "${sigJob.name}" completed for ${family.name}! +$${earnings.toLocaleString()} (dirty), +4.5 rep, +5 family rep.`);
     flashSuccessScreen();
     showBriefNotification(`Signature job complete! Earned $${earnings.toLocaleString()} and gained standing with ${family.name}.`, 'success');
     degradeEquipment('signature_job');
@@ -1363,7 +1360,7 @@ function generateRandomTraits() {
         { name: "Charming", effect: "+10% reputation gains" },
         { name: "Paranoid", effect: "+20% detection of betrayals" },
         { name: "Veteran", effect: "+5 to all stats" },
-        { name: "Greenhorn", effect: "-5 to all stats, gains XP 50% faster" }
+        { name: "Greenhorn", effect: "-5 to all stats, gains Rep 50% faster" }
     ];
 
     // 30% chance of having a trait
@@ -1670,16 +1667,16 @@ const INDEPENDENT_BOSSES = {
 // Family rank progression
 const FAMILY_RANKS = ['associate', 'soldier', 'capo', 'underboss', 'don'];
 const FAMILY_RANK_REQUIREMENTS = {
-    soldier: { turfOwned: 1, bossesDefeated: 0, level: 8 },
-    capo: { turfOwned: 3, bossesDefeated: 1, level: 15 },
-    underboss: { turfOwned: 5, bossesDefeated: 3, level: 25 },
-    don: { turfOwned: 7, bossesDefeated: 5, level: 35, allDonsDefeated: true }
+    soldier: { turfOwned: 1, bossesDefeated: 0, reputation: 50 },
+    capo: { turfOwned: 3, bossesDefeated: 1, reputation: 150 },
+    underboss: { turfOwned: 5, bossesDefeated: 3, reputation: 350 },
+    don: { turfOwned: 7, bossesDefeated: 5, reputation: 500, allDonsDefeated: true }
 };
 
 // ==================== TURF MILESTONES ====================
 // Passive bonuses unlocked at zone-count thresholds.
 const TURF_MILESTONES = [
-  { zones: 2, label: 'Street Presence', icon: '[+]', description: '+10% passive XP from all sources', perk: 'xp_boost', value: 0.10 },
+  { zones: 2, label: 'Street Presence', icon: '[+]', description: '+10% reputation from all sources', perk: 'xp_boost', value: 0.10 },
   { zones: 4, label: 'Neighbourhood Boss', icon: '[++]', description: 'Heat decays -6 per cycle (perk-exclusive)', perk: 'heat_reduction', value: 0.20 },
   { zones: 6, label: 'District Kingpin', icon: '[+++]', description: '+15% store sell prices & gang recruit quality', perk: 'trade_boost', value: 0.15 },
   { zones: 8, label: 'City Overlord', icon: '[*]', description: 'Exclusive Overlord weapon & +25% turf income', perk: 'overlord', value: 0.25 },
@@ -2291,7 +2288,7 @@ function checkFamilyRankUp() {
     const t = player.turf || {};
     const meetsOwned = (t.owned || []).length >= req.turfOwned;
     const meetsKills = (t.bossesDefeated || []).length >= req.bossesDefeated;
-    const meetsLevel = player.level >= req.level;
+    const meetsLevel = (player.reputation || 0) >= req.reputation;
     const meetsDons = req.allDonsDefeated
         ? Object.keys(RIVAL_FAMILIES).every(fk => fk === player.chosenFamily || (t.donsDefeated || []).includes(RIVAL_FAMILIES[fk].don.id))
         : true;
@@ -2816,7 +2813,7 @@ function getActiveQuestStep(quest) {
 }
 
 function canStartSideQuest(quest) {
-  return player.level >= (quest.minLevel || 1);
+  return (player.reputation || 0) >= (quest.minReputation || quest.minLevel || 0);
 }
 
 // -- Timer helpers ---
@@ -2942,7 +2939,7 @@ function completeSideQuestStep(questId) {
   const obj = step.objective;
   let met = false;
   if (obj.type === 'money' && player.money >= obj.target) met = true;
-  if (obj.type === 'level' && player.level >= obj.target) met = true;
+  if ((obj.type === 'level' || obj.type === 'reputation') && (player.reputation || 0) >= obj.target) met = true;
   if (obj.type === 'jobs' && (player.missions?.missionStats?.jobsCompleted || 0) >= obj.target) met = true;
 
   if (!met) {
@@ -3048,7 +3045,7 @@ function showSideQuestScreen() {
       const obj = step.objective;
       let currentVal = 0;
       if (obj.type === 'money') currentVal = player.money;
-      else if (obj.type === 'level') currentVal = player.level;
+      else if (obj.type === 'level') currentVal = Math.floor(player.reputation || 0);
       else if (obj.type === 'jobs') currentVal = player.missions?.missionStats?.jobsCompleted || 0;
       else if (obj.type === 'gang') currentVal = player.gang?.members || 0;
       else if (obj.type === 'properties') currentVal = (player.realEstate?.ownedProperties || []).length;
@@ -3097,7 +3094,7 @@ function showSideQuestScreen() {
           <div class="story-family-icon">${quest.icon}</div>
           <h2 class="story-family-name">${quest.title}</h2>
           <p style="color:#ccc;line-height:1.5;">${quest.description}</p>
-          <div style="color:#888;font-size:0.9em;">Min Level: ${quest.minLevel} &middot; ${quest.steps.length} Steps &middot; ~${totalTime}min total</div>
+          <div style="color:#888;font-size:0.9em;">Min Rep: ${quest.minReputation || quest.minLevel || 0} &middot; ${quest.steps.length} Steps &middot; ~${totalTime}min total</div>
           <div style="color:#c0a040;font-size:0.9em;margin-top:5px;">
             Completion Reward: ${quest.completionReward.money ? '$' + quest.completionReward.money.toLocaleString() + ' ' : ''}${quest.completionReward.respect ? '+' + quest.completionReward.respect + ' Respect ' : ''}${quest.completionReward.reputation ? '+' + quest.completionReward.reputation + ' Rep' : ''}
           </div>
@@ -3116,7 +3113,7 @@ function showSideQuestScreen() {
           <div class="story-family-icon">${quest.icon}</div>
           <h2 class="story-family-name">${quest.title}</h2>
           <p style="color:#888;">${quest.description}</p>
-          <div style="color:#8b3a3a;font-size:0.9em;"> Requires Level ${quest.minLevel}</div>
+          <div style="color:#8b3a3a;font-size:0.9em;"> Requires ${quest.minReputation || quest.minLevel || 0} Rep</div>
         </div>`;
     });
   }
@@ -3168,7 +3165,7 @@ function renderSideOpsContent() {
       const obj = step.objective;
       let currentVal = 0;
       if (obj.type === 'money') currentVal = player.money;
-      else if (obj.type === 'level') currentVal = player.level;
+      else if (obj.type === 'level') currentVal = Math.floor(player.reputation || 0);
       else if (obj.type === 'jobs') currentVal = player.missions?.missionStats?.jobsCompleted || 0;
       else if (obj.type === 'gang') currentVal = player.gang?.members || 0;
       else if (obj.type === 'properties') currentVal = (player.realEstate?.ownedProperties || []).length;
@@ -3200,7 +3197,7 @@ function renderSideOpsContent() {
         <div style="background:rgba(20,18,10,0.4);padding:12px;border-radius:8px;border-left:4px solid #c0a062;margin-bottom:10px;">
           <h4 style="color:#f5e6c8;margin:0 0 4px;">${quest.icon} ${quest.title}</h4>
           <p style="color:#ccc;font-size:0.9em;margin:4px 0;">${quest.description}</p>
-          <div style="color:#888;font-size:0.85em;">Level ${quest.minLevel} | ${quest.steps.length} Steps | ~${totalTime}min</div>
+          <div style="color:#888;font-size:0.85em;">Rep ${quest.minReputation || quest.minLevel || 0} | ${quest.steps.length} Steps | ~${totalTime}min</div>
           <button onclick="startSideQuest('${quest.id}')" style="background:linear-gradient(135deg,#c0a062,#a08850);color:#000;border:none;padding:6px 14px;border-radius:4px;cursor:pointer;font-weight:bold;margin-top:6px;">Accept</button>
         </div>`;
     });
@@ -3215,7 +3212,7 @@ function renderSideOpsContent() {
         <div style="background:rgba(20,18,10,0.3);padding:10px;border-radius:8px;border-left:4px solid #444;margin-bottom:8px;opacity:0.6;">
           <h4 style="color:#888;margin:0 0 4px;">${quest.icon} ${quest.title}</h4>
           <p style="color:#666;font-size:0.85em;">${quest.description}</p>
-          <div style="color:#8b3a3a;font-size:0.85em;">Requires Level ${quest.minLevel}</div>
+          <div style="color:#8b3a3a;font-size:0.85em;">Requires ${quest.minReputation || quest.minLevel || 0} Rep</div>
         </div>`;
     });
   }
@@ -3314,8 +3311,8 @@ window.selectSuccessor = selectSuccessor;
 
 // ==================== LEVEL-UP MILESTONE NARRATIONS ====================
 
-function checkMilestoneNarration(newLevel) {
-  const milestone = DEEP_NARRATIONS.levelMilestones[newLevel];
+function checkMilestoneNarration(reputation) {
+  const milestone = DEEP_NARRATIONS.reputationMilestones[reputation];
   if (milestone) {
     showNarrativeOverlay(milestone.title, milestone.text, 'Continue');
   }
@@ -5831,7 +5828,7 @@ function completeGangOperation(operationData) {
     showBriefNotification(`${member.name} leveled up to Level ${member.experienceLevel}! Stats improved.`, 'success');
     logAction(`${member.name} is becoming a more capable operator. Their skills sharpen with every mission (Level ${member.experienceLevel}).`);
   }
-  gainExperience(Math.floor(operation.rewards.experience * 0.7)); // Reduce XP for operations
+  gainExperience(Math.max(0.5, Math.floor(operation.rewards.experience * 0.07 * 10) / 10)); // Rep for operations
 
   // Remove from active operations and record cooldown
   player.gang.activeOperations = player.gang.activeOperations.filter(op => op !== operationData);
@@ -8192,7 +8189,7 @@ function updateUI() {
       emitNum('health', player.health, 'healthChanged');
       emitNum('territoryCount', (player.turf?.owned || []).length, 'territoryChanged');
       emitNum('level', player.level, 'levelChanged');
-      emitNum('experience', player.experience, 'experienceChanged');
+      emitNum('experience', Math.floor(player.reputation), 'experienceChanged');
     }
   } catch (e) { /* no-op */ }
 
@@ -8243,11 +8240,14 @@ function updateUI() {
 
   // Add new UI elements if they exist
   if (document.getElementById("level-display")) {
-    document.getElementById("level-display").innerText = `Rank: ${player.level}`;
+    const tier = getReputationTier(player.reputation);
+    document.getElementById("level-display").innerText = `Rank: ${tier.name}`;
   }
   if (document.getElementById("experience-display")) {
-    const xpNeeded = Math.floor(player.level * 350 + Math.pow(player.level, 2) * 75 + Math.pow(player.level, 3) * 5);
-    document.getElementById("experience-display").innerText = `XP: ${player.experience}/${xpNeeded}`;
+    const next = getNextTier(player.reputation);
+    document.getElementById("experience-display").innerText = next
+      ? `Rep: ${Math.floor(player.reputation)}/${next.minRep}`
+      : `Rep: ${Math.floor(player.reputation)} (Max)`;
   }
   if (document.getElementById("skill-points-display")) {
     if (player.activeTraining) {
@@ -8335,8 +8335,6 @@ function updateUI() {
   // Refresh current screen if it depends on money/stats
   refreshCurrentScreen();
 
-  // Check for level up
-  checkLevelUp();
   // Check for achievements
   checkAchievements();
   // Recalculate empire rating
@@ -8383,24 +8381,19 @@ function showAdminPanel() {
       <button onclick="adminQuickGrant('money', 100000)" style="border-color:#8b3a3a;">+$100K Clean</button>
       <button onclick="adminQuickGrant('dirtyMoney', 100000)" style="border-color:#8b3a3a;">+$100K Dirty</button>
       <button onclick="adminQuickGrant('skillPoints', 100)" style="border-color:#8b3a3a;">+100 Skill Pts</button>
-      <button onclick="adminQuickGrant('experience', 100000)" style="border-color:#8b3a3a;">+100K XP</button>
+      <button onclick="adminQuickGrant('reputation', 100)" style="border-color:#8b3a3a;">+100 Rep</button>
       <button onclick="adminClearCooldowns()" style="border-color:#8b3a3a;">Clear Cooldowns</button>
       <button onclick="adminQuickGrant('health', 100)" style="border-color:#8b3a3a;">+100 Health</button>
       <button onclick="adminQuickGrant('reputation', 500)" style="border-color:#8b3a3a;">+500 Rep</button>
       <button onclick="adminQuickGrant('ammo', 500)" style="border-color:#8b3a3a;">+500 Ammo</button>
-      <button onclick="adminLevelUp(10)" style="border-color:#8b3a3a;">+10 Levels</button>
     </div>
 
     <div class="section-header" style="color: #8b3a3a;">Set Stats Directly</div>
     <div class="content-card">
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
         <label style="display:flex; flex-direction:column; gap:4px;">
-          <span>Level (${player.level})</span>
-          <input type="number" id="admin-level" value="${player.level}" min="1" style="padding:6px; background:#14120a; color:#e0e0e0; border:1px solid #444; border-radius:4px;">
-        </label>
-        <label style="display:flex; flex-direction:column; gap:4px;">
-          <span>XP (${(player.experience || 0).toLocaleString()})</span>
-          <input type="number" id="admin-xp" value="${player.experience || 0}" min="0" style="padding:6px; background:#14120a; color:#e0e0e0; border:1px solid #444; border-radius:4px;">
+          <span>Street Rank: ${getReputationTier(player.reputation).name}</span>
+          <input type="number" id="admin-rep" value="${Math.floor(player.reputation || 0)}" min="0" style="padding:6px; background:#14120a; color:#e0e0e0; border:1px solid #444; border-radius:4px;">
         </label>
         <label style="display:flex; flex-direction:column; gap:4px;">
           <span>Clean Money ($${player.money.toLocaleString()})</span>
@@ -8469,10 +8462,7 @@ function showAdminPanel() {
 }
 
 function adminQuickGrant(stat, amount) {
-  if (stat === 'experience') {
-    player.experience = (player.experience || 0) + amount;
-    checkLevelUp();
-  } else if (stat === 'dirtyMoney') {
+  if (stat === 'dirtyMoney') {
     player.dirtyMoney = (player.dirtyMoney || 0) + amount;
   } else if (stat === 'skillPoints') {
     player.skillPoints = (player.skillPoints || 0) + amount;
@@ -8486,23 +8476,19 @@ function adminQuickGrant(stat, amount) {
 }
 
 function adminLevelUp(count) {
-  for (let i = 0; i < count; i++) {
-    player.experience = (player.experience || 0) + Math.floor(player.level * 250 + Math.pow(player.level, 2) * 30);
-    checkLevelUp();
-  }
-  showBriefNotification(`Admin: +${count} levels (now ${player.level})`, 'success');
-  logAction(`[Admin] Granted +${count} level ups (now level ${player.level})`);
+  // Legacy -- levels removed, grant reputation instead
+  player.reputation = (player.reputation || 0) + (count * 25);
+  showBriefNotification(`Admin: +${count * 25} reputation`, 'success');
+  logAction(`[Admin] Granted +${count * 25} reputation`);
   updateUI();
   showAdminPanel();
 }
 
 function adminApplyStats() {
   const getValue = (id) => parseInt(document.getElementById(id).value) || 0;
-  player.level = Math.max(1, getValue('admin-level'));
-  player.experience = Math.max(0, getValue('admin-xp'));
+  player.reputation = Math.max(0, getValue('admin-rep'));
   player.money = Math.max(0, getValue('admin-money'));
   player.dirtyMoney = Math.max(0, getValue('admin-dirty'));
-  player.reputation = Math.max(0, getValue('admin-rep'));
   player.skillPoints = Math.max(0, getValue('admin-sp'));
   player.health = Math.max(0, Math.min(100, getValue('admin-health')));
   player.wantedLevel = Math.max(0, Math.min(100, getValue('admin-wanted')));
@@ -8836,7 +8822,7 @@ function refreshJobsList() {
     if (detailParts.length > 0) {
       detailsHTML += `<br><small style="line-height:1.6;">${detailParts.join(' &nbsp; ')}</small>`;
     }
-    detailsHTML += `<br><small style="color:#8a7a5a;">Jail: ${job.jailChance}% | Damage: ${job.healthLoss} | Wanted: +${job.wantedLevelGain} | XP: <span style="color:#c0a062;">${JOB_XP_BY_RISK[job.risk] || 2}</span></small>`;
+    detailsHTML += `<br><small style="color:#8a7a5a;">Jail: ${job.jailChance}% | Damage: ${job.healthLoss} | Wanted: +${job.wantedLevelGain} | Rep: <span style="color:#c0a062;">${JOB_REP_BY_RISK[job.risk] || 0.5}</span></small>`;
 
     // Cooldown display
     const cooldownDisplay = cooldownLeft > 0
@@ -9248,21 +9234,21 @@ const TUTORIAL_CONTENT = {
   safehouse: {
     title: 'Welcome to Mafia Born',
     sections: [
-      { heading: 'Your SafeHouse', text: 'This is your base of operations -- the hub of your criminal empire. Every journey into the city starts from here. As you level up, new locations and features will unlock on the navigation buttons below.' },
-      { heading: 'The Status Bar (Top)', text: 'The bar running across the top of the screen shows your vital stats at a glance:<br><b>Cash</b> -- your spending money.<br><b>Health</b> -- drops from fights and failed jobs; if it hits 0, your character dies permanently (permadeath).<br><b>Heat</b> -- your wanted level; rises from crime, attracts police attention, and decays over time.<br><b>Rank</b> -- your current level in the underworld; level up to unlock new content.<br>You can customise which stats are shown in Settings > UI Toggles.' },
+      { heading: 'Your SafeHouse', text: 'This is your base of operations -- the hub of your criminal empire. Every journey into the city starts from here. As you earn reputation, new locations and features will unlock on the navigation buttons below.' },
+      { heading: 'The Status Bar (Top)', text: 'The bar running across the top of the screen shows your vital stats at a glance:<br><b>Cash</b> -- your spending money.<br><b>Health</b> -- drops from fights and failed jobs; if it hits 0, your character dies permanently (permadeath).<br><b>Heat</b> -- your wanted level; rises from crime, attracts police attention, and decays over time.<br><b>Rank</b> -- your current reputation rank in the underworld; earn Rep to unlock new content.<br>You can customise which stats are shown in Settings > UI Toggles.' },
       { heading: 'The Ledger (Activity Log)', text: 'Below the status bar is The Ledger -- a scrolling log that records everything you do: jobs, fights, purchases, story events, and more. Keep an eye on it for confirmation of your actions and narrative flavour.' },
       { heading: 'Quick Actions Bar (Right Panel)', text: 'On the right (desktop) or accessible via the mobile menu, the Quick Actions bar provides one-tap shortcuts to your most-used screens. It also has a Save button, Help button, and a Skip Tutorials option. You can customise which shortcuts appear in Settings.' },
-      { heading: 'Navigation Buttons', text: 'The main buttons in the SafeHouse let you visit Jobs, the Black Market, Missions, the Casino, Hospital, and more. Buttons are locked until you reach the required level -- keep grinding!' },
-      { heading: 'Getting Started Tips', text: 'Start by doing <b>Jobs</b> to earn cash and XP. Visit the <b>Black Market</b> to buy weapons and armour. Check <b>Missions</b> when you\'re ready for the story. Visit the <b>Hospital</b> when your health is low. Head to <b>Settings > Help</b> at any time for a full game guide.' },
+      { heading: 'Navigation Buttons', text: 'The main buttons in the SafeHouse let you visit Jobs, the Black Market, Missions, the Casino, Hospital, and more. New areas unlock as your reputation grows -- keep grinding!' },
+      { heading: 'Getting Started Tips', text: 'Start by doing <b>Jobs</b> to earn cash and Rep. Visit the <b>Black Market</b> to buy weapons and armour. Check <b>Missions</b> when you\'re ready for the story. Visit the <b>Hospital</b> when your health is low. Head to <b>Settings > Help</b> at any time for a full game guide.' },
     ]
   },
   jobs: {
     title: 'Jobs & Hustles',
     sections: [
-      { heading: 'Earn Cash & XP', text: 'Pick a job from the list to earn money and experience. Higher-tier jobs pay more but have longer cooldown timers.' },
+      { heading: 'Earn Cash & Rep', text: 'Pick a job from the list to earn money and reputation. Higher-tier jobs pay more but have longer cooldown timers.' },
       { heading: 'Crime Cooldowns', text: 'Every job triggers a cooldown timer after completion. Higher-risk jobs have longer cooldowns. The Planning and Unstoppable skills reduce cooldown times.' },
       { heading: 'Heat Warning', text: 'Some jobs raise your Heat (wanted level). Higher heat means more police encounters and bigger penalties if caught.' },
-      { heading: 'Levelling Up', text: 'XP from jobs levels you up, unlocking new screens, gear, and story chapters. Check your XP bar in the status bar.' },
+      { heading: 'Ranking Up', text: 'Reputation from jobs ranks you up, unlocking new content and story chapters. Check your Rep in the status bar.' },
     ]
   },
   store: {
@@ -9277,10 +9263,10 @@ const TUTORIAL_CONTENT = {
   missions: {
     title: 'Missions & Story',
     sections: [
-      { heading: 'Family Story', text: 'Choose a crime family (Torrino, Kozlov, Chen, or Morales) and follow their cinematic storyline from street thug to Don. Story chapters unlock as you level up.' },
+      { heading: 'Family Story', text: 'Choose a crime family (Torrino, Kozlov, Chen, or Morales) and follow their cinematic storyline from street thug to Don. Story chapters unlock as your reputation grows.' },
       { heading: 'Side Operations', text: 'Optional quest chains with countdown timers (3-20 minutes). You must wait for the timer AND complete the objective to advance to the next step.' },
       { heading: 'Street Stories', text: 'Narrative encounters that trigger during side operations. They add consequences, choices, and flavour to your quests.' },
-      { heading: 'Rewards', text: 'Completing missions awards large chunks of XP, cash, influence, and sometimes unique items or crew members.' },
+      { heading: 'Rewards', text: 'Completing missions awards large chunks of Rep, cash, influence, and sometimes unique items or crew members.' },
     ]
   },
   gang: {
@@ -9327,15 +9313,15 @@ const TUTORIAL_CONTENT = {
   skills: {
     title: 'Talents & Skills',
     sections: [
-      { heading: 'Six Skill Trees', text: 'Spend skill points in: <b>Combat</b> (attack, crit), <b>Stealth</b> (dodge, heat reduction), <b>Business</b> (income, prices), <b>Endurance</b> (HP, cooldowns), <b>Street Smarts</b> (XP, loot), <b>Leadership</b> (crew, territory).' },
-      { heading: 'Skill Points', text: 'You earn skill points when you level up. Spend them wisely -- each node gives permanent passive bonuses to your character.' },
+      { heading: 'Six Skill Trees', text: 'Spend skill points in: <b>Combat</b> (attack, crit), <b>Stealth</b> (dodge, heat reduction), <b>Business</b> (income, prices), <b>Endurance</b> (HP, cooldowns), <b>Street Smarts</b> (Rep, loot), <b>Leadership</b> (crew, territory).' },
+      { heading: 'Skill Points', text: 'You earn skill points when you rank up. Spend them wisely -- each node gives permanent passive bonuses to your character.' },
       { heading: 'Passive Bonuses', text: 'Examples: extra damage per hit, higher income from jobs, cheaper hospital visits, reduced cooldown times, better loot drops, and stronger crew defence.' },
     ]
   },
   stats: {
     title: 'Player Stats',
     sections: [
-      { heading: 'Overview', text: 'Full breakdown of your character: level, cash, dirty money, health, attack, defence, influence, reputation, and more.' },
+      { heading: 'Overview', text: 'Full breakdown of your character: rank, cash, dirty money, health, attack, defence, influence, reputation, and more.' },
       { heading: 'Empire Rating', text: 'A composite score measuring your overall power -- based on territory controlled, income streams, crew size, properties, and story progress.' },
       { heading: 'Empire Overview', text: 'A visual dashboard showing all your assets, income sources, crew members, and territory at a glance. Great for tracking your empire\'s growth.' },
     ]
@@ -9532,12 +9518,12 @@ const HELP_TOPICS = [
       <li><strong>Dirty Money</strong> -- Earned from heists and illegal activities. Cannot be spent directly -- you must launder it through Business Fronts (Properties screen) to convert it into clean Cash.</li>
       <li><strong>Health</strong> -- Drops from combat, failed jobs, and random events. If it hits 0, your character dies permanently (permadeath). Heal at the Hospital or use Medkits.</li>
       <li><strong>Heat (Wanted Level)</strong> -- Rises when you commit crimes. Higher heat means more police encounters, bigger fines, and possible arrest. Heat does NOT decay on its own -- you must reduce it via perks, skills, and bribes.</li>
-      <li><strong>XP & Rank</strong> -- Earn XP from jobs, missions, side ops, and combat. Level up ("Rank up") to unlock new screens, gear, story chapters, and features.</li>
+      <li><strong>Rep & Rank</strong> -- Earn reputation from jobs, missions, side ops, and combat. Rank up to unlock new screens, gear, story chapters, and features.</li>
       <li><strong>Influence</strong> -- A measure of your power in the underworld. Used to claim territory and affects your Empire Rating.</li>
     </ul>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Your First Steps</h4>
     <ol style="color:#d4c4a0; line-height:1.7;">
-      <li>Do <strong>Jobs</strong> to earn cash and XP.</li>
+      <li>Do <strong>Jobs</strong> to earn cash and Rep.</li>
       <li>Visit the <strong>Black Market</strong> to buy a weapon and armour.</li>
       <li>Check <strong>Missions</strong> to start your crime family story.</li>
       <li>Visit the <strong>Hospital</strong> when your health is low.</li>
@@ -9552,11 +9538,11 @@ const HELP_TOPICS = [
       <li><strong>Cash</strong> -- Your clean, spendable money.</li>
       <li><strong>Health</strong> -- Your current HP. If it reaches 0, your character dies permanently (permadeath).</li>
       <li><strong>Heat</strong> -- Your wanted level (0-100). Higher = more police attention.</li>
-      <li><strong>Rank</strong> -- Your character level. Level up to unlock content.</li>
+      <li><strong>Rank</strong> -- Your reputation rank. Earn Rep to unlock content.</li>
       <li><strong>Dirty Money</strong> -- Cash from illegal activities that needs laundering.</li>
       <li><strong>Influence</strong> -- Your underworld power / reputation score.</li>
       <li><strong>Turf / Tribute</strong> -- Number of territories held and income earned from them.</li>
-      <li><strong>XP</strong> -- Current experience and how much you need for the next level.</li>
+      <li><strong>Rep</strong> -- Current reputation and how much you need for the next rank.</li>
       <li><strong>Skill Points</strong> -- Unspent points available for the Skills screen.</li>
       <li><strong>Season / Weather</strong> -- The current in-game season and weather, which can affect events.</li>
       <li><strong>Bullets / Gas / Respect</strong> -- Resource counters shown when you have relevant items or features unlocked.</li>
@@ -9575,12 +9561,12 @@ const HELP_TOPICS = [
     </ul>
     <p style="color:#8a7a5a; font-style:italic;">Tip: On mobile, access quick actions from the hamburger menu or swipe panel.</p>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Navigation Buttons</h4>
-    <p>The main SafeHouse screen has buttons for every area of the game. Buttons are locked (greyed out) until you reach the required level.</p>
+    <p>The main SafeHouse screen has buttons for every area of the game. Buttons unlock as your reputation grows.</p>
   `},
   { id: 'safehouse-help', icon: '', title: 'SafeHouse', content: `
     <p>Your home base and central hub. All navigation starts here.</p>
     <ul>
-      <li><strong>Navigation</strong> -- Tap any unlocked button to visit that area. Buttons unlock as you level up through Jobs and Missions.</li>
+      <li><strong>Navigation</strong> -- Tap any unlocked button to visit that area. Buttons unlock as you rank up through Jobs and Missions.</li>
       <li><strong>Quick Actions</strong> -- The right panel (desktop) or mobile menu provides fast shortcuts to your favourite screens, a save button, and help.</li>
       <li><strong>Status Bar</strong> -- The top bar shows your cash, health, heat, rank, and more at all times. Customise it in Settings > UI Toggles.</li>
       <li><strong>The Ledger</strong> -- The scrolling activity log below the status bar records all your actions, purchases, fights, and story events.</li>
@@ -9588,11 +9574,11 @@ const HELP_TOPICS = [
     </ul>
   `},
   { id: 'jobs-help', icon: '', title: 'Jobs', content: `
-    <p>Your main source of income and XP, especially early on.</p>
+    <p>Your main source of income and Rep, especially early on.</p>
     <h4 style="color:#c0a062; margin:14px 0 6px;">How Jobs Work</h4>
     <ul>
-      <li>Each job pays <strong>cash + XP</strong> on success and triggers a <strong>cooldown timer</strong> before you can do it again.</li>
-      <li>Higher-tier jobs unlock at higher levels and pay significantly more, but have longer cooldowns.</li>
+      <li>Each job pays <strong>cash + Rep</strong> on success and triggers a <strong>cooldown timer</strong> before you can do it again.</li>
+      <li>Higher-tier jobs unlock at higher reputation and pay significantly more, but have longer cooldowns.</li>
       <li>Some jobs have a <strong>chance to fail</strong>, especially risky ones. Failure may cost health or attract heat.</li>
       <li>Some jobs increase <strong>Heat</strong> (wanted level), which makes cops more aggressive.</li>
       <li>Jobs may reward <strong>stolen goods</strong> that you can sell at the Fence (Black Market) for extra profit.</li>
@@ -9628,13 +9614,13 @@ const HELP_TOPICS = [
     <h4 style="color:#c0a062; margin:14px 0 6px;">Family Story</h4>
     <ul>
       <li>Choose a crime family (Torrino, Kozlov, Chen, or Morales) and play through their <strong>cinematic storyline</strong>.</li>
-      <li>Story chapters unlock as you level up. Each chapter has unique missions with dialogue, choices, and consequences.</li>
+      <li>Story chapters unlock as your reputation grows. Each chapter has unique missions with dialogue, choices, and consequences.</li>
     </ul>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Side Operations</h4>
     <ul>
       <li>Optional quest chains that run in parallel with the main story.</li>
       <li>Each step has a <strong>countdown timer</strong> (3-20 minutes). You must wait for the timer AND complete the objective to advance.</li>
-      <li>Great source of extra XP, cash, influence, and sometimes unique rewards.</li>
+      <li>Great source of extra Rep, cash, influence, and sometimes unique rewards.</li>
     </ul>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Street Stories</h4>
     <ul>
@@ -9739,12 +9725,12 @@ const HELP_TOPICS = [
       <li><strong>Stealth</strong> -- Boost dodge chance, theft success rate, and reduce heat gained from crimes. Best for sneaky players.</li>
       <li><strong>Business</strong> -- Increase income from jobs and properties, reduce purchase prices, and improve front efficiency. Best for empire builders.</li>
       <li><strong>Endurance</strong> -- Reduce cooldown times, gain damage reduction, and boost max health recovery. Best for grinders.</li>
-      <li><strong>Street Smarts</strong> -- Boost XP gains, reduce jail time, and improve loot quality. Best for fast levellers.</li>
+      <li><strong>Street Smarts</strong> -- Boost Rep gains, reduce jail time, and improve loot quality. Best for fast levellers.</li>
       <li><strong>Leadership</strong> -- Strengthen crew bonuses, family buffs, and territory defence. Best for gang leaders.</li>
     </ul>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Earning Skill Points</h4>
     <ul>
-      <li>You receive skill points each time you level up.</li>
+      <li>You receive skill points each time you rank up.</li>
       <li>Spend them from the <strong>Skills</strong> screen. Each node is permanent once purchased.</li>
     </ul>
   `},
@@ -9771,7 +9757,7 @@ const HELP_TOPICS = [
     </ul>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Turf Milestones</h4>
     <ul>
-      <li><strong>2 zones -- Street Presence:</strong> +10% XP from all sources.</li>
+      <li><strong>2 zones -- Street Presence:</strong> +10% Rep from all sources.</li>
       <li><strong>4 zones -- Neighbourhood Boss:</strong> Heat decays -6 per cycle (only way heat decays passively).</li>
       <li><strong>6 zones -- District Kingpin:</strong> +15% turf income.</li>
       <li><strong>8 zones -- City Overlord:</strong> +25% turf income + the exclusive Overlord's Scepter weapon (60 power).</li>
@@ -10081,7 +10067,7 @@ window.syncTutorialToggleButton = syncTutorialToggleButton;
 })();
 
 // Function to show jobs
-const JOB_XP_BY_RISK = { low: 2, medium: 8, high: 20, 'very high': 32, extreme: 100, legendary: 160 };
+const JOB_REP_BY_RISK = { low: 0.5, medium: 1, high: 2, 'very high': 3, extreme: 5, legendary: 8 };
 
 function showJobs() {
   if (player.inJail) {
@@ -10154,7 +10140,7 @@ function showJobs() {
         if (detailParts.length > 0) {
           detailsHTML += `<br><small style="line-height:1.6;">${detailParts.join(' &nbsp; ')}</small>`;
         }
-        detailsHTML += `<br><small style="color:#8a7a5a;">Jail: ${job.jailChance}% | Damage: ${job.healthLoss} | Wanted: +${job.wantedLevelGain} | XP: <span style="color:#c0a062;">${JOB_XP_BY_RISK[job.risk] || 2}</span></small>`;
+        detailsHTML += `<br><small style="color:#8a7a5a;">Jail: ${job.jailChance}% | Damage: ${job.healthLoss} | Wanted: +${job.wantedLevelGain} | Rep: <span style="color:#c0a062;">${JOB_REP_BY_RISK[job.risk] || 0.5}</span></small>`;
 
         return `
           <li>
@@ -10588,8 +10574,8 @@ async function startJob(index) {
 
     showBriefNotification(`${getFamilyNarration('jobFailure')} The job went sideways.`, 'danger');
     logAction(getFamilyNarration('jobFailure'));
-    // Still gain some experience for trying (reduced in v1.11.0 rebalance)
-    gainExperience(1);
+    // Still gain some reputation for trying
+    gainExperience(0.1);
     updateUI();
     return;
   }
@@ -10875,44 +10861,38 @@ async function startJob(index) {
   // Calculate chance of getting hurt based on job risk and player's power
   let hurtChance;
   let maxHealthLoss;
-  // v1.11.0 Rebalance: XP and reputation gains reduced -- Omerta-style slow grind
+  // v1.11.0 Rebalance: Reputation gains per job risk tier (replaces old XP + rep split)
   if (job.risk === "low") {
     hurtChance = Math.max(0, 1 - player.power * 0.01 - player.skillTree.combat.brawler * 0.5);
     maxHealthLoss = 5;
-    player.reputation += 0.2;
-    gainExperience(2);
+    gainExperience(0.5);
   } else if (job.risk === "medium") {
     hurtChance = Math.max(0, 5 - player.power * 0.05 - player.skillTree.combat.brawler * 0.5);
     maxHealthLoss = 20;
-    player.reputation += 0.3;
-    gainExperience(8);
+    gainExperience(1.0);
   } else if (job.risk === "high") {
     hurtChance = Math.max(0, 10 - player.power * 0.1 - player.skillTree.combat.brawler * 0.5);
     maxHealthLoss = 50;
-    player.reputation += 0.6;
-    gainExperience(20);
+    gainExperience(2.0);
   } else if (job.risk === "very high") {
     hurtChance = Math.max(0, 15 - player.power * 0.12 - player.skillTree.combat.brawler * 0.5);
     maxHealthLoss = 60;
-    player.reputation += 1.0;
-    gainExperience(32);
+    gainExperience(3.0);
   } else if (job.risk === "extreme") {
     hurtChance = Math.max(0, 20 - player.power * 0.15 - player.skillTree.combat.brawler * 0.5);
     maxHealthLoss = 75;
-    player.reputation += 1.5;
-    gainExperience(100);
+    gainExperience(5.0);
   } else if (job.risk === "legendary") {
     hurtChance = Math.max(0, 25 - player.power * 0.18 - player.skillTree.combat.brawler * 0.5);
     maxHealthLoss = 90;
-    player.reputation += 2.5;
-    gainExperience(160);
+    gainExperience(8.0);
   }
 
   // Street Cred skill: +2% reputation gain per rank
   const streetCredLevel = player.skillTree.charisma?.street_cred || 0;
   if (streetCredLevel > 0) {
-    const riskRepMap = { low: 0.2, medium: 0.3, high: 0.6, 'very high': 1.0, extreme: 1.5, legendary: 2.5 };
-    const baseRep = riskRepMap[job.risk] || 0.2;
+    const riskRepMap = { low: 0.5, medium: 1.0, high: 2.0, 'very high': 3.0, extreme: 5.0, legendary: 8.0 };
+    const baseRep = riskRepMap[job.risk] || 0.5;
     const bonusRep = baseRep * streetCredLevel * 0.02;
     player.reputation += bonusRep;
   }
@@ -11057,7 +11037,7 @@ function handleCarTheft(job) {
     showBriefNotification(`${getRandomNarration('carTheftFailure')} On cooldown.`, 'danger');
     logAction(`${getRandomNarration('carTheftFailure')} The streets can be unforgiving to those seeking easy rides.`);
     player.wantedLevel += 1; // Small wanted level increase for suspicious activity
-    gainExperience(2);
+    gainExperience(0.2);
     updateUI();
     // Only refresh the job list instead of reloading the entire jobs screen to prevent flashing
     if (document.getElementById("jobs-screen").style.display === "block") {
@@ -11128,8 +11108,7 @@ function handleCarTheft(job) {
   };
 
   player.wantedLevel += job.wantedLevelGain;
-  player.reputation += 0.5;
-  gainExperience(8);
+  gainExperience(1.0);
 
   // Check if player gets hurt during theft
   if (Math.random() * 100 < 15) { // 15% chance of getting hurt
@@ -11257,9 +11236,8 @@ function handleLaunderMoneyJob(job, approachLabel) {
   // Loud heat already added above
   player.wantedLevel = Math.min(100, player.wantedLevel + baseHeatGain);
 
-  // Reputation and XP based on risk level
-  player.reputation += 1.5;
-  gainExperience(30);
+  // Reputation based on risk level
+  gainExperience(3.0);
 
   // Successful laundering boosts underground reputation
   if (player.streetReputation) {
@@ -11678,7 +11656,7 @@ function sendToJail(wantedLevelLoss) {
 
 // Bribe guard to get released early
 function bribeGuard() {
-  let bribeCost = Math.floor(1000 + player.level * 500 + player.wantedLevel * 200);
+  let bribeCost = Math.floor(1000 + (player.reputation || 0) * 15 + player.wantedLevel * 200);
   // Silver Tongue perk: -10% bribe cost
   if (hasPlayerPerk('silver_tongue')) {
     bribeCost = Math.floor(bribeCost * 0.90);
@@ -12571,7 +12549,7 @@ function showJailScreen() {
   const bribeButton = document.getElementById("bribe-button");
   const bribeCostEl = document.getElementById("bribe-cost");
   if (bribeButton) {
-    const bribeCost = Math.floor(1000 + player.level * 500 + player.wantedLevel * 200);
+    const bribeCost = Math.floor(1000 + (player.reputation || 0) * 15 + player.wantedLevel * 200);
     bribeButton.innerText = `Bribe Guard ($${bribeCost.toLocaleString()})`;
     bribeButton.style.display = player.money >= bribeCost ? "inline-block" : "inline-block";
     bribeButton.style.opacity = player.money >= bribeCost ? "1" : "0.5";
@@ -12656,7 +12634,7 @@ function displayPlayerJailPortrait() {
           </div>
           <p style="color: #f5e6c8; margin: 15px 0 0 0; text-align: center; font-weight: bold; font-size: 1.1em;">${player.name}</p>
           <p style="color: #8a7a5a; margin: 5px 0 0 0; text-align: center; font-size: 0.9em; font-style: italic;">
-            Level ${player.level} Criminal
+            ${getReputationTier(player.reputation).name}
           </p>
         </div>
       </div>
@@ -12749,14 +12727,11 @@ function breakoutPrisoner(prisonerIndex) {
   const success = Math.random() * 100 < successChance;
 
   if (success) {
-  const expReward = prisoner.difficulty * 3 + 2;
-  gainExperience(expReward);
+  const repReward = Math.max(0.5, Math.round((prisoner.difficulty * 3 + 2) * 0.1 * 10) / 10);
+  gainExperience(repReward);
 
-    // Check for level up
-    checkLevelUp();
-
-    showBriefNotification(`${getRandomNarration('prisonerBreakoutSuccess')} You helped ${prisoner.name} escape! Gained ${expReward} XP.`, 'success');
-    logAction(` You slip ${prisoner.name} the keys and watch them disappear into the night. Honor among thieves - your reputation on the streets grows (+${expReward} XP).`);
+    showBriefNotification(`${getRandomNarration('prisonerBreakoutSuccess')} You helped ${prisoner.name} escape! Gained ${repReward} rep.`, 'success');
+    logAction(` You slip ${prisoner.name} the keys and watch them disappear into the night. Honor among thieves - your reputation on the streets grows (+${repReward} rep).`);
 
     // Remove prisoner from list
     jailPrisoners.splice(prisonerIndex, 1);
@@ -13404,7 +13379,7 @@ function triggerPoliceCrackdown() {
   const validCrackdowns = crackdownTypes.filter(crackdown => {
     return crackdown.triggers.some(trigger => {
       switch(trigger) {
-        case 'high_drug_activity': return player.experience > 100;
+        case 'high_drug_activity': return (player.reputation || 0) > 30;
         case 'public_pressure': return player.wantedLevel > 30;
         case 'territory_violence': return (player.turf?.owned || []).length > 2;
         case 'gang_visibility': return player.gang.members > 5;
@@ -13647,7 +13622,7 @@ function triggerRandomWeatherChange() {
 const menuUnlockConfig = [
   // === CORE PROGRESSION (Always Available) ===
   { id: 'missions', fn: 'showMissions()', label: 'Operations', tip: 'Story missions & special ops', level: 0 },
-  { id: 'jobs', fn: 'showJobs()', label: 'Jobs', tip: 'Complete tasks for cash & XP', level: 0 },
+  { id: 'jobs', fn: 'showJobs()', label: 'Jobs', tip: 'Complete tasks for cash & Rep', level: 0 },
   { id: 'store', fn: 'showStore()', label: 'Black Market', tip: 'Buy weapons, armor & supplies', level: 0 },
   { id: 'inventory', fn: 'showInventory()', label: 'Stash', tip: 'Inventory, equipment & motor pool', level: 0 },
   { id: 'hospital', fn: 'showHospital()', label: 'The Doctor', tip: 'Heal your injuries', level: 0 },
@@ -13813,13 +13788,13 @@ function showSafehouseTip() {
       <div style="font-size: 2.5em; margin-bottom: 12px;">&#128161;</div>
       <h2 style="color: #c0a062; margin: 0 0 14px; font-family: 'Georgia', serif; font-size: 1.4em;">Tip: How to Get Started</h2>
       <p style="color: #d4c4a0; font-size: 1em; line-height: 1.7; margin: 0 0 10px;">
-        Start by running <strong style="color:#d4af37;">Operations</strong> and doing <strong style="color:#d4af37;">Jobs</strong> to earn cash, XP, and level up.
+        Start by running <strong style="color:#d4af37;">Operations</strong> and doing <strong style="color:#d4af37;">Jobs</strong> to earn cash and Rep.
       </p>
       <p style="color: #d4c4a0; font-size: 0.95em; line-height: 1.7; margin: 0 0 10px;">
         Once you have some money, visit the <strong style="color:#d4af37;">Black Market</strong> for weapons and armour, then check <strong style="color:#d4af37;">The Doctor</strong> when your health is low.
       </p>
       <p style="color: #8a7a5a; font-size: 0.85em; line-height: 1.6; margin: 0 0 20px;">
-        More locations and features unlock as you level up. Check <strong>Settings &gt; Help</strong> any time for a full guide.
+        More locations and features unlock as you rank up. Check <strong>Settings &gt; Help</strong> any time for a full guide.
       </p>
       <button onclick="document.getElementById('safehouse-tip-overlay').remove(); localStorage.setItem('safehouseTipSeen', '1');"
         style="background: linear-gradient(135deg, #d4af37, #b8962e); color: #14120a; border: none;
@@ -13883,8 +13858,8 @@ function showPlayerStats() {
   const totalChapters = player.chosenFamily && typeof familyStories !== 'undefined' && familyStories[player.chosenFamily] ? familyStories[player.chosenFamily].chapters.length : '—';
   const chapterDisplay = player.chosenFamily ? `${(player.missions?.currentChapter || 0) + 1} / ${totalChapters}` : '—';
   const coreHTML = [
-    row('Level', player.level, '#d4af37'),
-    row('XP', `${player.experience} / ${Math.floor(player.level * 350 + Math.pow(player.level, 2) * 75 + Math.pow(player.level, 3) * 5)}`, '#c0a062'),
+    row('Street Rank', getReputationTier(player.reputation).name, '#d4af37'),
+    row('Reputation', Math.floor(player.reputation || 0), '#c0a062'),
     row('Health', `${player.health !== undefined ? player.health : 100} / 100`, '#8b3a3a'),
     row('Cash', `$${(player.money || 0).toLocaleString()}`, '#7a8a5a'),
     row('Dirty Money', `$${(player.dirtyMoney || 0).toLocaleString()}`, '#7a2a2a'),
@@ -14183,10 +14158,9 @@ function buildCareerStatisticsHTML() {
 
       <div class="stat-category">
         <h3>Character Development</h3>
-        <div class="stat-item"><span class="stat-label">Current Level:</span><span class="stat-highlight">${player.level}</span></div>
-        <div class="stat-item"><span class="stat-label">Total Experience:</span><span class="stat-value">${player.experience}</span></div>
+        <div class="stat-item"><span class="stat-label">Street Rank:</span><span class="stat-highlight">${getReputationTier(player.reputation).name}</span></div>
+        <div class="stat-item"><span class="stat-label">Total Reputation:</span><span class="stat-value">${Math.floor(player.reputation || 0)}</span></div>
         <div class="stat-item"><span class="stat-label">Skill Points Earned:</span><span class="stat-value">${stats.skillPointsEarned}</span></div>
-        <div class="stat-item"><span class="stat-label">Current Reputation:</span><span class="stat-value">${Math.floor(player.reputation)}</span></div>
         <div class="stat-item"><span class="stat-label">Achievements Unlocked:</span><span class="stat-value">${achievements.filter(a => a.unlocked).length}/${achievements.length}</span></div>
         <div class="stat-item"><span class="stat-label">Current Power:</span><span class="stat-value">${player.power}</span></div>
       </div>
@@ -14442,15 +14416,13 @@ function attemptJailbreak(prisonerIndex) {
 
   if (success) {
     // Successful jailbreak
-  gainExperience(Math.floor(prisoner.expReward * 0.6)); // Reduce XP for jailbreaks
+  const repReward = Math.max(0.5, Math.round(prisoner.expReward * 0.06 * 10) / 10);
+  gainExperience(repReward);
     player.money += prisoner.cashReward;
     player.reputation += Math.floor(prisoner.difficulty * 1.5);
 
-    // Check for level up
-    checkLevelUp();
-
-    logAction(`Mission accomplished! You freed ${prisoner.name} from ${prisoner.securityLevel} security. Your reputation on the streets grows (+${prisoner.expReward} XP, +$${prisoner.cashReward}).`);
-    showBriefNotification(`${getRandomNarration('prisonerBreakoutSuccess')} You helped ${prisoner.name} escape from ${prisoner.securityLevel} security. Gained ${prisoner.expReward} XP and $${prisoner.cashReward}!`, 'success');
+    logAction(`Mission accomplished! You freed ${prisoner.name} from ${prisoner.securityLevel} security. Your reputation on the streets grows (+${repReward} rep, +$${prisoner.cashReward}).`);
+    showBriefNotification(`${getRandomNarration('prisonerBreakoutSuccess')} You helped ${prisoner.name} escape from ${prisoner.securityLevel} security. Gained ${repReward} rep and $${prisoner.cashReward}!`, 'success');
 
     // Remove prisoner from list
     jailbreakPrisoners.splice(prisonerIndex, 1);
@@ -15478,17 +15450,16 @@ function closeVehiclePurchaseResult() {
 function showLevelUpEffects() {
   // Milestone rewards at key levels
   const milestones = {
-    5: { title: 'Street Hustler', bonus: 2000, msg: 'You\'re making a name for yourself.' },
-    10: { title: 'Made Man', bonus: 10000, msg: 'The families are starting to notice you.' },
-    15: { title: 'Shot Caller', bonus: 25000, msg: 'Your word carries weight now.' },
-    20: { title: 'Underboss', bonus: 50000, msg: 'Half the city answers to you.' },
-    25: { title: 'Crime Lord', bonus: 100000, msg: 'Your empire spans the underworld.' },
-    30: { title: 'Shadow King', bonus: 200000, msg: 'Even the cops pay tribute to you.' },
-    40: { title: 'Legend of the Streets', bonus: 500000, msg: 'Songs are written about your reign.' },
-    50: { title: 'Mafia Born', bonus: 1000000, msg: 'You ARE the legend. History remembers.' }
+    25: { title: 'Hustler', bonus: 5000, msg: 'You\'re making a name for yourself.' },
+    75: { title: 'Enforcer', bonus: 15000, msg: 'The families are starting to notice you.' },
+    150: { title: 'Made Man', bonus: 50000, msg: 'Your word carries weight now.' },
+    350: { title: 'Underboss', bonus: 100000, msg: 'Half the city answers to you.' },
+    500: { title: 'Crime Lord', bonus: 250000, msg: 'Your empire spans the underworld.' },
+    1000: { title: 'Legendary Kingpin', bonus: 1000000, msg: 'You ARE the legend. History remembers.' }
   };
 
-  const milestone = milestones[player.level];
+  const currentTier = getReputationTier(player.reputation);
+  const milestone = milestones[currentTier.minRep];
   let milestoneHTML = '';
   if (milestone) {
     player.money += milestone.bonus;
@@ -15524,13 +15495,13 @@ function showLevelUpEffects() {
     <div style="text-align: center; color: white;">
       <div style="font-size: clamp(2.5em, 12vw, 6em); font-weight: bold; color: #c0a040; text-shadow: 0 0 30px #c0a040;
             animation: levelUpPulse 1s ease-in-out infinite alternate, levelUpGlow 2s ease-in-out infinite;">
-        LEVEL UP!
+        RANK UP!
       </div>
       <div style="font-size: clamp(1.8em, 8vw, 3em); margin: 20px 0; color: #8b3a3a; text-shadow: 0 0 20px #7a2a2a;">
-        Level ${player.level}
+        ${getReputationTier(player.reputation).name}
       </div>
       <div style="font-size: 1.5em; margin: 15px 0; color: #f5e6c8;">
-        +2 Skill Points Earned!
+        Reputation: ${Math.floor(player.reputation)}
       </div>
       ${milestoneHTML}
       <div style="font-size: 1.2em; color: #8a7a5a; margin-top: ${milestone ? '15px' : '30px'};">
@@ -15731,11 +15702,11 @@ function closeLevelUpOverlay() {
     }, 300);
   }
 
-  // Show alert with level up info
-  showBriefNotification(`Level Up! You are now level ${player.level}. You gained 3 skill points!`, 'success');
+  // Show alert with rank up info
+  showBriefNotification(`Rank Up! You are now a ${getReputationTier(player.reputation).name}!`, 'success');
 
   // Check for deep milestone narration (storyExpansion)
-  checkMilestoneNarration(player.level);
+  checkMilestoneNarration(Math.floor(player.reputation));
 }
 
 // Function to unlock achievements
@@ -15758,7 +15729,7 @@ function checkAchievements() {
   const g = player.gang.members;
   const w = player.wantedLevel;
   const r = player.reputation;
-  const l = player.level;
+  const l = Math.floor(player.reputation);
   const t = (player.turf?.owned || []).length;
   const stats = player.missions.missionStats;
   const fRep = player.missions.factionReputation;
@@ -15783,9 +15754,9 @@ function checkAchievements() {
   if (_jobsWithoutArrest >= 10 && ac('ghost')) unlockAchievement('ghost');
   if (stats.bossesDefeated >= 1 && ac('boss_slayer')) unlockAchievement('boss_slayer');
   // Progression
-  if (l >= 10 && ac('level_10')) unlockAchievement('level_10');
-  if (l >= 25 && ac('level_25')) unlockAchievement('level_25');
-  if (l >= 50 && ac('level_50')) unlockAchievement('level_50');
+  if (l >= 75 && ac('level_10')) unlockAchievement('level_10');
+  if (l >= 350 && ac('level_25')) unlockAchievement('level_25');
+  if (l >= 1000 && ac('level_50')) unlockAchievement('level_50');
   if (maxSkill >= 20 && ac('skill_master')) unlockAchievement('skill_master');
   // Faction
   if (maxFRep >= 25 && ac('faction_friend')) unlockAchievement('faction_friend');
@@ -18977,7 +18948,7 @@ function renderBountyBoard() {
         <p class="bounty-card-desc">${bounty.desc}</p>
         <div class="bounty-card-stats">
           <span>Reward: <strong>$${bounty.reward.toLocaleString()}</strong></span>
-          <span>XP: <strong>${bounty.xp}</strong></span>
+          <span>Rep: <strong>${bounty.xp}</strong></span>
         </div>
         <div class="bounty-card-chance">
           <span>Success: </span>
@@ -19010,11 +18981,11 @@ function attemptBounty(index) {
     // Success
     bounty.completed = true;
     player.money += bounty.reward;
-    if (typeof gainExperience === 'function') gainExperience(bounty.xp);
+    if (typeof gainExperience === 'function') gainExperience(Math.max(0.5, Math.round(bounty.xp * 0.1 * 10) / 10));
     const heatGain = Math.floor(bounty.tier * 3);
     player.wantedLevel = Math.min(100, (player.wantedLevel || 0) + heatGain);
 
-    showBriefNotification(`Bounty collected! $${bounty.reward.toLocaleString()} + ${bounty.xp} XP`, 'success');
+    showBriefNotification(`Bounty collected! $${bounty.reward.toLocaleString()} + rep`, 'success');
     logAction(`You tracked down ${bounty.name} and collected the bounty. $${bounty.reward.toLocaleString()} earned. +${heatGain} heat.`);
   } else {
     // Failure
@@ -19309,12 +19280,12 @@ function showDeathScreen(causeOfDeath) {
 
   // Determine legacy title
   let legacyTitle = 'Street Rat';
-  if (player.level >= 50) legacyTitle = 'Legendary Kingpin';
-  else if (player.level >= 35) legacyTitle = 'Crime Lord';
-  else if (player.level >= 25) legacyTitle = 'Underboss';
-  else if (player.level >= 15) legacyTitle = 'Made Man';
-  else if (player.level >= 10) legacyTitle = 'Enforcer';
-  else if (player.level >= 5) legacyTitle = 'Hustler';
+  if ((player.reputation || 0) >= 1000) legacyTitle = 'Legendary Kingpin';
+  else if ((player.reputation || 0) >= 500) legacyTitle = 'Crime Lord';
+  else if ((player.reputation || 0) >= 350) legacyTitle = 'Underboss';
+  else if ((player.reputation || 0) >= 150) legacyTitle = 'Made Man';
+  else if ((player.reputation || 0) >= 75) legacyTitle = 'Enforcer';
+  else if ((player.reputation || 0) >= 25) legacyTitle = 'Hustler';
 
   // Flavor text based on how they died
   const flavorTexts = [
@@ -19335,7 +19306,7 @@ function showDeathScreen(causeOfDeath) {
           <div class="obituary-portrait">${player.portrait ? `<img src="${player.portrait}" alt="${player.name || 'Portrait'}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;">` : ''}</div>
           <div class="obituary-name-block">
             <h3>${player.name || 'Unknown'}</h3>
-            <span class="obituary-title">${legacyTitle} -- Level ${player.level}</span>
+            <span class="obituary-title">${legacyTitle}</span>
           </div>
         </div>
         <div class="obituary-cause">${cause}</div>
@@ -19440,17 +19411,17 @@ function generateDeathNewspaperData(causeOfDeath) {
     }
   }
   let legacyTitle = 'Street Rat';
-  if (player.level >= 50) legacyTitle = 'Legendary Kingpin';
-  else if (player.level >= 35) legacyTitle = 'Crime Lord';
-  else if (player.level >= 25) legacyTitle = 'Underboss';
-  else if (player.level >= 15) legacyTitle = 'Made Man';
-  else if (player.level >= 10) legacyTitle = 'Enforcer';
-  else if (player.level >= 5) legacyTitle = 'Hustler';
+  if ((player.reputation || 0) >= 1000) legacyTitle = 'Legendary Kingpin';
+  else if ((player.reputation || 0) >= 500) legacyTitle = 'Crime Lord';
+  else if ((player.reputation || 0) >= 350) legacyTitle = 'Underboss';
+  else if ((player.reputation || 0) >= 150) legacyTitle = 'Made Man';
+  else if ((player.reputation || 0) >= 75) legacyTitle = 'Enforcer';
+  else if ((player.reputation || 0) >= 25) legacyTitle = 'Hustler';
   const familyName = player.chosenFamily ? player.chosenFamily.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'Unaffiliated';
   return {
     name: player.name || 'Unknown',
     portrait: player.portrait || '',
-    level: player.level || 1,
+    reputation: Math.floor(player.reputation || 0),
     legacyTitle: legacyTitle,
     causeOfDeath: causeOfDeath || 'Died on the streets',
     money: player.money || 0,
@@ -19709,8 +19680,8 @@ function randomSale() {
 }
 
 function luckyFind() {
-  // Scale lucky find with player level so it stays relevant
-  const base = 75 + player.level * 25;
+  // Scale lucky find with reputation so it stays relevant
+  const base = 75 + Math.floor((player.reputation || 0) * 0.8);
   let found = Math.floor(Math.random() * base) + base;
   found += Math.floor(found * (player.skillTree.luck.fortune * 0.05));
   player.money += found;
@@ -19722,13 +19693,11 @@ function luckyFind() {
 // === NEW RANDOM EVENTS ===
 
 function mysteriousTip() {
-  // Gives the player a small XP boost and a bit of reputation
-  const xpGain = 4 + player.level * 1;
-  const repGain = Math.floor(Math.random() * 2) + 1;
-  gainExperience(xpGain);
-  player.reputation += repGain;
-  showBriefNotification(`Mysterious tip! +${xpGain} XP, +${repGain} Rep`, 3000);
-  logAction(`An informant slips you a useful tip about the city's operations. You gain insight (+${xpGain} XP) and your name spreads further (+${repGain} reputation).`);
+  // Gives the player a small rep boost
+  const repGain = 1.0;
+  gainExperience(repGain);
+  showBriefNotification(`Mysterious tip! +${repGain} rep`, 3000);
+  logAction(`An informant slips you a useful tip about the city's operations. Your name spreads further (+${repGain} reputation).`);
   updateUI();
 }
 
@@ -19745,7 +19714,7 @@ function healthScare() {
 
 function streetCredEvent() {
   // Pure reputation boost based on current standing
-  const repGain = Math.floor(Math.random() * 5) + 2 + Math.floor(player.level / 5);
+  const repGain = Math.floor(Math.random() * 5) + 2 + Math.floor((player.reputation || 0) / 50);
   player.reputation += repGain;
   showBriefNotification(`Street cred! +${repGain} reputation`, 3000);
   logAction(`Word of your exploits spreads through the underworld. Your reputation grows by ${repGain}.`);
@@ -21357,20 +21326,16 @@ function showStatistics() {
       <div class="stat-category">
         <h3>Character Development</h3>
         <div class="stat-item">
-          <span class="stat-label">Current Level:</span>
-          <span class="stat-highlight">${player.level}</span>
+          <span class="stat-label">Street Rank:</span>
+          <span class="stat-highlight">${getReputationTier(player.reputation).name}</span>
         </div>
         <div class="stat-item">
-          <span class="stat-label">Total Experience:</span>
-          <span class="stat-value">${player.experience}</span>
+          <span class="stat-label">Total Reputation:</span>
+          <span class="stat-value">${Math.floor(player.reputation || 0)}</span>
         </div>
         <div class="stat-item">
           <span class="stat-label">Skill Points Earned:</span>
           <span class="stat-value">${stats.skillPointsEarned}</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-label">Current Reputation:</span>
-          <span class="stat-value">${Math.floor(player.reputation)}</span>
         </div>
         <div class="stat-item">
           <span class="stat-label">Achievements Unlocked:</span>
@@ -21429,7 +21394,8 @@ function exportStatistics() {
   const stats = player.statistics;
   const exportData = {
     playerName: player.name,
-    level: player.level,
+    reputation: Math.floor(player.reputation || 0),
+    streetRank: getReputationTier(player.reputation).name,
     money: player.money,
     reputation: player.reputation,
     statistics: stats,
@@ -21868,6 +21834,7 @@ function saveGameToSlot(slotNumber, customName = null, isAutoSave = false) {
       saveName: saveName,
       playerName: player.name,
       level: player.level,
+      reputation: Math.floor(player.reputation || 0),
       money: player.money,
       reputation: Math.floor(player.reputation),
       empireRating: empireRating.totalScore,
@@ -22077,7 +22044,10 @@ function validateSaveData(saveData) {
   if (!saveData.player || typeof saveData.player !== 'object') return false;
   if (!saveData.player.name || typeof saveData.player.name !== 'string') return false;
   if (typeof saveData.player.money !== 'number' || isNaN(saveData.player.money) || saveData.player.money < 0) return false;
-  if (typeof saveData.player.level !== 'number' || isNaN(saveData.player.level) || saveData.player.level < 1) return false;
+  if (typeof saveData.player.level !== 'number' || isNaN(saveData.player.level)) {
+    // Legacy saves may have level; new saves keep it as stub
+    saveData.player.level = saveData.player.level || 1;
+  }
   if (typeof saveData.player.health !== 'number' || isNaN(saveData.player.health)) return false;
   if (saveData.player.experience !== undefined && (typeof saveData.player.experience !== 'number' || isNaN(saveData.player.experience))) return false;
   if (!Array.isArray(saveData.player.inventory)) return false;
@@ -22906,7 +22876,7 @@ function submitToLeaderboards() {
 
   const playerEntry = {
     name: player.name || "Anonymous Criminal",
-    level: player.level,
+    reputation: Math.floor(player.reputation || 0),
     submissionDate: now,
     values: {
       empire: empireRating.totalScore,
@@ -23065,7 +23035,7 @@ function checkWeeklyChallenges() {
         player.money += challenge.reward.money;
       }
       if (challenge.reward.experience) {
-        player.experience += challenge.reward.experience;
+        gainExperience(Math.max(0.5, Math.round(challenge.reward.experience * 0.02 * 10) / 10));
       }
       if (challenge.reward.reputation) {
         player.reputation += challenge.reward.reputation;
@@ -23082,7 +23052,7 @@ function checkWeeklyChallenges() {
 
       newCompletions++;
       showBriefNotification(`Challenge Complete: ${challenge.name}!`, 4000);
-      logAction(`Completed weekly challenge: ${challenge.name}. Earned $${challenge.reward.money.toLocaleString()}, ${challenge.reward.experience} XP, and ${challenge.reward.reputation} reputation!`);
+      logAction(`Completed weekly challenge: ${challenge.name}. Earned $${challenge.reward.money.toLocaleString()} and ${challenge.reward.reputation} reputation!`);
     }
   });
 
@@ -23106,7 +23076,8 @@ function createCharacterShowcase() {
 
   const showcase = {
     characterName: player.name || "Anonymous Criminal",
-    level: player.level,
+    reputation: Math.floor(player.reputation || 0),
+    streetRank: getReputationTier(player.reputation).name,
     empireRating: empireRating.totalScore,
     empireGrade: grade.grade,
     empireDescription: grade.description,
@@ -23692,12 +23663,8 @@ function showWeeklyChallenges() {
                         <div style="color: #f5e6c8;">$${challenge.reward.money.toLocaleString()}</div>
                       </div>
                       <div style="text-align: center;">
-                        <div style="color: #c0a062; font-weight: bold;">Experience</div>
-                        <div style="color: #f5e6c8;">${challenge.reward.experience.toLocaleString()} XP</div>
-                      </div>
-                      <div style="text-align: center;">
-                        <div style="color: #8b3a3a; font-weight: bold;">Reputation</div>
-                        <div style="color: #f5e6c8;">+${challenge.reward.reputation}</div>
+                        <div style="color: #c0a062; font-weight: bold;">Reputation</div>
+                        <div style="color: #f5e6c8;">+${challenge.reward.reputation} Rep</div>
                       </div>
                     </div>
                   </div>
@@ -24133,13 +24100,13 @@ function processEconomySinks() {
 
 // ==================== DAILY LOGIN REWARDS ====================
 const DAILY_LOGIN_REWARDS = [
-  { day: 1, money: 2000, xp: 100, label: '$2,000 + 100 XP' },
-  { day: 2, money: 3500, xp: 150, label: '$3,500 + 150 XP' },
-  { day: 3, money: 5000, xp: 200, buff: { type: 'cooldown_reduction', multiplier: 0.75, duration: 3600000, name: 'Quick Fingers' }, label: '$5K + 200 XP + Quick Fingers (1h)' },
-  { day: 4, money: 7500, xp: 300, label: '$7,500 + 300 XP' },
-  { day: 5, money: 10000, xp: 400, buff: { type: 'job_pay', multiplier: 1.25, duration: 3600000, name: 'Pay Day' }, label: '$10K + 400 XP + Job Pay Boost (1h)' },
-  { day: 6, money: 15000, xp: 500, label: '$15,000 + 500 XP' },
-  { day: 7, money: 25000, xp: 750, buff: { type: 'xp_boost', multiplier: 1.5, duration: 7200000, name: 'XP Surge' }, label: '$25K + 750 XP + 1.5x XP (2h)' }
+  { day: 1, money: 2000, rep: 2, label: '$2,000 + 2 Rep' },
+  { day: 2, money: 3500, rep: 3, label: '$3,500 + 3 Rep' },
+  { day: 3, money: 5000, rep: 4, buff: { type: 'cooldown_reduction', multiplier: 0.75, duration: 3600000, name: 'Quick Fingers' }, label: '$5K + 4 Rep + Quick Fingers (1h)' },
+  { day: 4, money: 7500, rep: 5, label: '$7,500 + 5 Rep' },
+  { day: 5, money: 10000, rep: 8, buff: { type: 'job_pay', multiplier: 1.25, duration: 3600000, name: 'Pay Day' }, label: '$10K + 8 Rep + Job Pay Boost (1h)' },
+  { day: 6, money: 15000, rep: 10, label: '$15,000 + 10 Rep' },
+  { day: 7, money: 25000, rep: 15, buff: { type: 'rep_boost', multiplier: 1.5, duration: 7200000, name: 'Rep Surge' }, label: '$25K + 15 Rep + 1.5x Rep (2h)' }
 ];
 
 function checkDailyLogin() {
@@ -24201,7 +24168,7 @@ function claimDailyLogin() {
   const reward = DAILY_LOGIN_REWARDS[dayIndex];
 
   player.money += reward.money;
-  gainExperience(reward.xp);
+  gainExperience(reward.rep);
 
   if (reward.buff) {
     if (!player.activeBuffs) player.activeBuffs = [];
