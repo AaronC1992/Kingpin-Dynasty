@@ -284,7 +284,28 @@ export const player = {
   superbossInvites: [],     // Pending superboss fight invites from other players
 
   // === Seasonal Event Participation ===
-  seasonalEventProgress: {} // { eventId: { score, completedObjectives[] } }
+  seasonalEventProgress: {}, // { eventId: { score, completedObjectives[] } }
+
+  // === Gym / Training System ===
+  gymStats: {
+    strength: 0,
+    defense: 0,
+    speed: 0,
+    endurance: 0
+  },
+  gymTraining: null, // { stat, startedAt, completesAt } or null if not training
+  gymTotalSessions: 0, // Lifetime completed sessions
+
+  // === Bounty Board ===
+  bounties: [],        // Active bounties: [{ id, targetName, reward, xpReward, difficulty, expiresAt, description }]
+  bountiesCompleted: 0,
+  lastBountyRefresh: 0, // Timestamp of last board refresh
+
+  // === Newspaper / Activity Feed ===
+  newspaper: [],       // [{ headline, body, timestamp, category }] — up to 50 entries
+
+  // === Hospital Timer ===
+  hospitalTimer: null  // { healType, amount, cost, startedAt, completesAt } or null
 };
 
 /**
@@ -337,6 +358,9 @@ export function checkLevelUp() {
     
     if (typeof window !== 'undefined' && typeof window.logAction === 'function') {
       window.logAction(` The streets recognize your growing power! You've clawed your way up to level ${player.level}. Every scar tells a story, every skill hard-earned.`);
+    }
+    if (typeof window !== 'undefined' && typeof window.addNewspaperEntry === 'function') {
+      window.addNewspaperEntry(`A rising figure in the underworld has reached Level ${player.level}. The families are taking notice.`, 'general');
     }
   }
 }
