@@ -3422,7 +3422,7 @@ window.recruitGangMemberExpanded = function() {
 
   GameLogging.logEvent('GANG_RECRUIT', { name: newMember.name, role: newMember.roleData.name });
 
-  showGangManagementScreen(); // Refresh
+  showGang('roster'); // Refresh
   updateUI();
 };
 
@@ -3446,7 +3446,7 @@ window.dismissMember = async function(memberId) {
 
   recalculatePower();
   GameLogging.logEvent('GANG_DISMISS', { name: member.name });
-  showGangManagementScreen();
+  showGang('roster');
   updateUI();
 };
 
@@ -5223,61 +5223,191 @@ function showToast(message, type = 'info') {
 // ==================== GANG MANAGEMENT OVERHAUL FUNCTIONS ====================
 
 // Enhanced Gang Screen with Specialist Management
-function showGang() {
+function showGang(activeTab) {
   if (player.inJail) {
     showBriefNotification("You can't manage your gang while you're in jail!", 'danger');
     return;
   }
 
+  const tab = activeTab || 'roster';
+  _currentGangTab = tab;
+
+  const members = player.gang.gangMembers;
+  const maxMembers = calculateMaxGangMembers();
+  const power = calculateGangPower();
+  const activeOps = player.gang.activeOperations.length;
+  const inTraining = player.gang.trainingQueue.length;
+
+  // Tab bar
+  const tabs = [
+    { id: 'roster', label: 'The Family' },
+    { id: 'operations', label: 'Operations' },
+    { id: 'training', label: 'Training' },
+    { id: 'recruitment', label: 'Recruitment' }
+  ];
+
   let gangHTML = `
-    <h2>Gang Management</h2>
-    <p>Command your criminal organization and assign specialists to operations.</p>
+    <div class="ops-tabs" style="margin-bottom: 0;">
+      ${tabs.map(t => `<button class="ops-tab${tab === t.id ? ' active' : ''}" onclick="showGang('${t.id}')">${t.label}${t.id === 'operations' && activeOps > 0 ? `<span class="ops-tab-count" style="display:inline-block;background:#8b0000;color:#f5e6c8;font-size:0.7em;padding:1px 6px;border-radius:2px;margin-left:6px;vertical-align:middle;font-family:Arial,sans-serif;">${activeOps}</span>` : ''}${t.id === 'training' && inTraining > 0 ? `<span class="ops-tab-count" style="display:inline-block;background:#1abc9c;color:#fff;font-size:0.7em;padding:1px 6px;border-radius:2px;margin-left:6px;vertical-align:middle;font-family:Arial,sans-serif;">${inTraining}</span>` : ''}</button>`).join('')}
+    </div>
+  `;
 
-    <div class="gang-top-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0;">
-
-      <!-- Gang Overview -->
-      <div style="background: rgba(20, 18, 10, 0.8); padding: 20px; border-radius: 10px; border: 2px solid #c0a062;">
-        <h3 style="color: #c0a062;">Gang Overview</h3>
-        <div style="margin: 10px 0;">
-          <strong>Total Members:</strong> ${player.gang.gangMembers.length} / ${calculateMaxGangMembers()}<br>
-          <strong>Gang Power:</strong> ${calculateGangPower()}<br>
-          <strong>Active Operations:</strong> ${player.gang.activeOperations.length}<br>
-          <strong>In Training:</strong> ${player.gang.trainingQueue.length}
+  // ===== ROSTER TAB =====
+  if (tab === 'roster') {
+    // Overview stats row
+    gangHTML += `
+      <div style="display: flex; gap: 12px; margin: 20px 0; flex-wrap: wrap;">
+        <div class="game-card" style="flex:1; min-width:120px; text-align:center;">
+          <div style="font-size:1.6em; color:#c0a062; font-weight:bold;">${members.length}<span style="font-size:0.5em; color:#8a7a5a;">/${maxMembers}</span></div>
+          <div style="font-size:0.8em; color:#8a7a5a; text-transform:uppercase; letter-spacing:1px;">Members</div>
         </div>
-
-        <div style="margin: 15px 0;">
-          <button onclick="showRecruitment()" style="background: #8a9a6a; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; margin: 5px;">
-            Recruit Members
-          </button>
-          <button onclick="collectTribute()" style="background: #c0a040; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; margin: 5px;">
-            Collect Tribute
-          </button>
+        <div class="game-card" style="flex:1; min-width:120px; text-align:center;">
+          <div style="font-size:1.6em; color:#c0a062; font-weight:bold;">${power}</div>
+          <div style="font-size:0.8em; color:#8a7a5a; text-transform:uppercase; letter-spacing:1px;">Gang Power</div>
+        </div>
+        <div class="game-card" style="flex:1; min-width:120px; text-align:center;">
+          <div style="font-size:1.6em; color:#8b3a3a; font-weight:bold;">${activeOps}</div>
+          <div style="font-size:0.8em; color:#8a7a5a; text-transform:uppercase; letter-spacing:1px;">Active Ops</div>
+        </div>
+        <div class="game-card" style="flex:1; min-width:120px; text-align:center;">
+          <div style="font-size:1.6em; color:#1abc9c; font-weight:bold;">${inTraining}</div>
+          <div style="font-size:0.8em; color:#8a7a5a; text-transform:uppercase; letter-spacing:1px;">In Training</div>
         </div>
       </div>
+      <div style="display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap;">
+        <button onclick="collectTribute()" class="store-buy-btn store-buy-btn--active" style="padding:10px 18px;">Collect Tribute</button>
+        <button onclick="showGang('recruitment')" class="store-buy-btn store-buy-btn--active" style="padding:10px 18px; background:linear-gradient(180deg,#8a9a6a,#6a7a4a);">Recruit Members</button>
+      </div>
+    `;
 
-      <!-- Gang Operations -->
-      <div style="background: rgba(20, 18, 10, 0.8); padding: 20px; border-radius: 10px; border: 2px solid #8b3a3a;">
-        <h3 style="color: #8b3a3a;">Gang Operations</h3>
+    // Member roster
+    if (members.length === 0) {
+      gangHTML += `<div class="game-card" style="text-align:center; padding:40px;">
+        <p style="font-size:1.2em; color:#8a7a5a;">No crew members yet.</p>
+        <button onclick="showGang('recruitment')" class="store-buy-btn store-buy-btn--active" style="padding:12px 25px; margin-top:10px;">
+          Recruit Your First Member
+        </button>
+      </div>`;
+    } else {
+      gangHTML += '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px;">';
+
+      members.forEach((member, index) => {
+        let statusText = member.arrested ? 'Arrested' :
+                  member.onOperation ? 'On Operation' :
+                  member.inTraining ? 'In Training' :
+                  member.assignedTo && member.assignedTo.startsWith('business_') ? 'Managing Business' :
+                  'Available';
+        const statusColor = member.arrested ? '#8b3a3a' : member.onOperation ? '#c0a040' : member.inTraining ? '#1abc9c' : member.assignedTo && member.assignedTo.startsWith('business_') ? '#c0a062' : '#8a9a6a';
+
+        if (member.onOperation) {
+          const opData = player.gang.activeOperations.find(op => op.memberName === member.name);
+          if (opData) {
+            const remaining = Math.max(0, (opData.startTime + opData.duration) - Date.now());
+            statusText += remaining > 0 ? ` (${formatCountdown(remaining)})` : ' (Completing...)';
+          }
+        }
+        if (member.inTraining) {
+          const trainData = player.gang.trainingQueue.find(t => t.memberName === member.name);
+          if (trainData) {
+            const remaining = Math.max(0, (trainData.startTime + trainData.duration) - Date.now());
+            statusText += remaining > 0 ? ` (${formatCountdown(remaining)})` : ' (Completing...)';
+          }
+        }
+
+        const expandedRole = member.role ? GANG_MEMBER_ROLES[member.role] : null;
+        const role = specialistRoles.find(r => r.id === member.specialization);
+        const roleName = expandedRole ? `${expandedRole.name}` : (role ? role.name : 'Unassigned');
+        const perkText = expandedRole && expandedRole.perk ? `<div style="font-size:0.8em;color:#6a5a3a;margin-top:2px;"><em>${expandedRole.perk.name}</em> -- ${expandedRole.perk.effect}</div>` : '';
+        const expLevel = member.experienceLevel || 1;
+        const memberXP = member.xp || 0;
+        const xpNeeded = getMemberXPToLevel(expLevel);
+        const xpPct = expLevel >= 10 ? 100 : Math.min(100, Math.floor((memberXP / xpNeeded) * 100));
+        const tribute = Math.floor((member.tributeMultiplier || 1) * 100);
+        const daysActive = Math.floor((Date.now() - (member.joinedDate || Date.now())) / (1000 * 60 * 60 * 24));
+
+        // Business assignment
+        const businesses = player.businesses || [];
+        const isManagingBusiness = member.assignedTo && member.assignedTo.startsWith('business_');
+        let businessHTML = '';
+        if (!member.onOperation && !member.inTraining && !member.arrested) {
+          if (isManagingBusiness) {
+            const bIdx = parseInt(member.assignedTo.replace('business_', ''));
+            const biz = businesses[bIdx];
+            businessHTML = `<div style="margin-top:6px;font-size:0.85em;color:#c0a062;">Managing: ${biz ? biz.name : 'Unknown'} <button onclick="unassignMemberFromBusiness(${bIdx});showGang('roster');" style="background:#8b3a3a;color:#f5e6c8;border:none;padding:2px 8px;border-radius:3px;cursor:pointer;font-size:0.85em;margin-left:4px;">Remove</button></div>`;
+          } else if (businesses.length > 0) {
+            const unmanaged = businesses.map((b, i) => ({ b, i })).filter(({ b }) => !b.assignedMember);
+            if (unmanaged.length > 0) {
+              businessHTML = `<div style="margin-top:6px;"><select id="biz-assign-${index}" style="padding:3px;font-size:0.8em;width:65%;"><option value="">Assign to business...</option>${unmanaged.map(({ b, i }) => `<option value="${i}">${b.name}</option>`).join('')}</select> <button onclick="var s=document.getElementById('biz-assign-${index}');if(s.value!==''){assignMemberToBusiness(${index},parseInt(s.value));showGang('roster');}" style="background:#1abc9c;color:#fff;border:none;padding:3px 8px;border-radius:3px;cursor:pointer;font-size:0.8em;">Assign</button></div>`;
+            }
+          }
+        }
+
+        gangHTML += `
+          <div class="game-card game-card--accent-left" style="--card-accent:${statusColor};">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <h4 style="margin:0; color:#f5e6c8; font-size:1.05em;">${member.name}</h4>
+              <span style="font-size:0.8em; color:${statusColor}; font-weight:bold;">${statusText}</span>
+            </div>
+            <div style="font-size:0.9em; color:#d4c4a0; margin-bottom:6px;">
+              <div style="display:flex; justify-content:space-between;">
+                <span>Role: <strong>${roleName}</strong></span>
+                <span>Lv. ${expLevel}${expLevel >= 10 ? ' (MAX)' : ''}</span>
+              </div>
+              <div style="background:#1a1610;border-radius:4px;height:6px;margin:4px 0;overflow:hidden;border:1px solid #3a3520;">
+                <div style="height:100%;width:${xpPct}%;background:${expLevel >= 10 ? '#d4af37' : '#c0a062'};transition:width 0.3s;"></div>
+              </div>
+              <div style="display:flex; justify-content:space-between; font-size:0.9em;">
+                <span>Power: ${member.power || 5}</span>
+                <span>Tribute: $${tribute}/cycle <span style="color:${memberPaysCleanCash(member) ? '#4CAF50' : '#e67e22'}; font-weight:bold;">(${memberPaysCleanCash(member) ? 'Clean' : 'Dirty'})</span></span>
+              </div>
+              ${perkText}
+              <div style="font-size:0.8em; color:#6a5a3a; margin-top:2px;">${daysActive > 0 ? daysActive + ' day' + (daysActive > 1 ? 's' : '') + ' in crew' : 'Just joined'}</div>
+            </div>
+            ${businessHTML}
+            <div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:8px;">
+              ${!member.onOperation && !member.inTraining && !member.arrested ? `
+                <button onclick="startTraining(${index})" style="background:#1abc9c; color:white; padding:5px 10px; border:none; border-radius:3px; cursor:pointer; font-size:0.8em;">Train</button>
+                <button onclick="fireGangMember(${index});showGang('roster');" style="background:#8a7a5a; color:white; padding:5px 10px; border:none; border-radius:3px; cursor:pointer; font-size:0.8em;">Fire</button>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      });
+
+      gangHTML += '</div>';
+    }
+  }
+
+  // ===== OPERATIONS TAB =====
+  if (tab === 'operations') {
+    gangHTML += `
+      <div style="margin-top:20px;">
+        <p style="color:#8a7a5a;">Assign crew members to criminal operations. Each operation requires a specific role.</p>
         ${generateGangOperationsHTML()}
       </div>
-    </div>
+    `;
+  }
 
-    <!-- Gang Members List -->
-    <div style="background: rgba(20, 18, 10, 0.8); padding: 20px; border-radius: 10px; border: 2px solid #8b6a4a; margin: 20px 0;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-        <h3 style="color: #8b6a4a; margin: 0;">Gang Members</h3>
-        ${player.gang.gangMembers.length > 0 ? `<button onclick="showGangManagementScreen()" style="background: #1a1a1a; color: #c0a062; padding: 8px 16px; border: 1px solid #c0a062; border-radius: 3px; cursor: pointer; font-weight: bold;">Manage Crew</button>` : ''}
+  // ===== TRAINING TAB =====
+  if (tab === 'training') {
+    gangHTML += `
+      <div style="margin-top:20px;">
+        <p style="color:#8a7a5a;">Enroll crew members in training programs to improve their skills and level.</p>
+        ${generateTrainingProgramsHTML()}
       </div>
-      ${generateGangMembersHTML()}
-    </div>
+    `;
+  }
 
-    <!-- Training Programs -->
-    <div style="background: rgba(20, 18, 10, 0.8); padding: 20px; border-radius: 10px; border: 2px solid #1abc9c; margin: 20px 0;">
-      <h3 style="color: #1abc9c;">Training Programs</h3>
-      ${generateTrainingProgramsHTML()}
-    </div>
+  // ===== RECRUITMENT TAB =====
+  if (tab === 'recruitment') {
+    if (availableRecruits.length === 0) {
+      generateAvailableRecruits();
+    }
+    gangHTML += generateRecruitmentHTML();
+  }
 
-    <div class="page-nav" style="justify-content: center;">
+  gangHTML += `
+    <div class="page-nav" style="justify-content: center; margin-top: 20px;">
       <button class="nav-btn-back" onclick="goBackToMainMenu()"><- Back to SafeHouse</button>
     </div>
   `;
@@ -5286,12 +5416,127 @@ function showGang() {
   hideAllScreens();
   document.getElementById("gang-screen").style.display = "block";
 
-  // Check for betrayals
-  checkForBetrayals();
+  if (tab === 'roster') {
+    checkForBetrayals();
+  }
 }
 
-// Crew Details screen - detailed gang member management with individual stats
+// Generate the recruitment tab content HTML (used by both showGang and showRecruitment)
+function generateRecruitmentHTML() {
+  let html = `
+    <div style="margin-top:20px;">
+      <div style="text-align: center; margin-bottom: 20px; padding: 15px; background: rgba(192, 160, 98, 0.15); border-radius: 2px; border: 1px solid rgba(192, 160, 98, 0.4);">
+        <h3 style="color: #c0a062; margin: 0; font-family: var(--font-heading);">Talent Scouting Active</h3>
+        <p style="margin: 10px 0 0 0; font-size: 1.05em; color: #ccc;">Find fresh blood to join your criminal organization. Higher level recruits generate more tribute but cost more.</p>
+      </div>
+
+      <div style="margin-bottom: 20px; padding: 15px; background: rgba(0, 0, 0, 0.3); border-radius: 2px; border: 1px solid rgba(192, 160, 98, 0.3);">
+        <h4 style="color: #c0a062; margin-top: 0; font-family: var(--font-heading);">Experience Level Guide:</h4>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-top: 10px;">
+          <div class="game-card" style="border-left:3px solid #8a7a5a;">
+            <strong style="color: #8a7a5a;">Levels 1-3: Rookies</strong><br>
+            <small>Common (85% chance) -- Standard tribute</small>
+          </div>
+          <div class="game-card" style="border-left:3px solid #c0a062;">
+            <strong style="color: #c0a062;">Levels 4-6: Experienced</strong><br>
+            <small>Rare (12% chance) -- +20-80% tribute</small>
+          </div>
+          <div class="game-card" style="border-left:3px solid #8b3a3a;">
+            <strong style="color: #8b3a3a;">Levels 7-10: Veterans</strong><br>
+            <small>Legendary (3% chance) -- +110-200% tribute</small>
+          </div>
+        </div>
+      </div>
+
+      <h3 style="text-align: center; color: #c0a062; margin-bottom: 15px; font-family: var(--font-heading);">Available Recruits (${availableRecruits.length} found):</h3>
+
+      ${window._pendingSpecialRecruit ? (() => {
+        const sr = window._pendingSpecialRecruit;
+        const canAffordSR = player.money >= sr.cost;
+        return `
+        <div class="game-card" style="margin-bottom: 20px; border: 2px solid #f0c040; box-shadow: 0 0 15px rgba(240,192,64,0.25);">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+            <span style="background: #f0c040; color: #1a1a1a; padding: 4px 10px; border-radius: 2px; font-weight: bold; font-size: 0.9em;">SPECIAL RECRUIT</span>
+            <span style="color: #f0c040; font-size: 0.9em;">Word-of-mouth referral</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+            <div style="flex: 1; min-width: 220px;">
+              <h4 style="color: #f0c040; margin: 0 0 8px 0; font-size: 1.25em;">${sr.name}</h4>
+              <div style="margin-bottom: 8px;">
+                <span class="game-card__badge" style="background: #c0a062; color: white;">Level ${sr.experienceLevel} Experienced</span>
+                <span class="game-card__badge" style="background: rgba(20,18,10,0.8); color: white; margin-left: 8px;">${sr.skill}</span>
+              </div>
+              <div style="font-size: 0.95em; color: #ccc;"><strong>Power:</strong> +${sr.power} &nbsp; <strong>Tribute:</strong> ${(sr.tributeMultiplier * 100).toFixed(0)}%</div>
+            </div>
+            <div style="text-align: right; margin-left: 15px;">
+              <div class="game-card__price" style="font-size: 1.2em; margin-bottom: 10px;">$${sr.cost.toLocaleString()}</div>
+              <button onclick="hireSpecialRecruit()"
+                  ${canAffordSR ? '' : 'disabled'}
+                  class="store-buy-btn ${canAffordSR ? 'store-buy-btn--active' : 'store-buy-btn--disabled'}">
+                ${canAffordSR ? 'Recruit' : 'Too Expensive'}
+              </button>
+            </div>
+          </div>
+        </div>`;
+      })() : ''}
+
+      <ul style="list-style: none; padding: 0; margin: 0;">
+        ${availableRecruits.map((recruit, index) => {
+          const canAfford = player.money >= recruit.cost;
+          const levelColor = recruit.experienceLevel <= 3 ? '#8a7a5a' :
+                  recruit.experienceLevel <= 6 ? '#c0a062' : '#8b3a3a';
+          const levelText = recruit.experienceLevel <= 3 ? 'Rookie' :
+                  recruit.experienceLevel <= 6 ? 'Experienced' : 'Veteran';
+          const expandedRoleKey = SPECIALIZATION_TO_EXPANDED[recruit.specialization];
+          const expandedRoleData = expandedRoleKey ? GANG_MEMBER_ROLES[expandedRoleKey] : null;
+          const displayRoleName = expandedRoleData ? expandedRoleData.name : (recruit.specialization.charAt(0).toUpperCase() + recruit.specialization.slice(1));
+          const isCleanMoney = expandedRoleData ? expandedRoleData.cleanCashTribute : false;
+          const moneyTypeLabel = isCleanMoney ? 'Clean' : 'Dirty';
+          const moneyTypeColor = isCleanMoney ? '#5a8a5a' : '#8a5a5a';
+
+          return `
+            <li class="game-card game-card--tier" style="--card-accent: ${levelColor}; margin: 12px 0;">
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                <div style="flex: 1; min-width: 220px;">
+                  <h4 class="game-card__title" style="color: ${levelColor}; margin: 0 0 10px 0; font-size: 1.2em;">${recruit.name}</h4>
+                  <div style="margin-bottom: 10px;">
+                    <span class="game-card__badge" style="background: ${levelColor}; color: white;">Level ${recruit.experienceLevel} ${levelText}</span>
+                    <span class="game-card__badge" style="background: rgba(20, 18, 10, 0.8); color: white; margin-left: 8px;">${displayRoleName}</span>
+                    <span class="game-card__badge" style="background: ${moneyTypeColor}; color: white; margin-left: 8px;">${moneyTypeLabel} Money</span>
+                  </div>
+                  <div style="font-size: 0.95em;"><strong>Tribute:</strong> ${(recruit.tributeMultiplier * 100).toFixed(0)}%</div>
+                </div>
+                <div style="text-align: right; margin-left: 15px;">
+                  <div class="game-card__price" style="font-size: 1.2em; margin-bottom: 10px;">$${recruit.cost.toLocaleString()}</div>
+                  <button onclick="recruitMember(${index})"
+                      ${canAfford ? '' : 'disabled'}
+                      class="store-buy-btn ${canAfford ? 'store-buy-btn--active' : 'store-buy-btn--disabled'}">
+                    ${canAfford ? 'Recruit' : 'Too Expensive'}
+                  </button>
+                </div>
+              </div>
+            </li>
+          `;
+        }).join('')}
+      </ul>
+
+      <div style="text-align: center; margin-top: 20px;">
+        <button onclick="refreshRecruits()"
+            class="store-buy-btn store-buy-btn--active" style="padding:12px 25px;">
+          Look for New Recruits ($500)
+        </button>
+      </div>
+    </div>
+  `;
+  return html;
+}
+
+// Crew Details screen - redirects to roster tab
 function showGangManagementScreen() {
+  showGang('roster');
+  return;
+
+  // LEGACY CODE BELOW - kept for reference during transition
   if (player.inJail) {
     showBriefNotification("You can't manage your gang while you're in jail!", 'warning');
     return;
@@ -5529,7 +5774,7 @@ function formatCountdown(ms) {
 // Generate gang members HTML
 function generateGangMembersHTML() {
   if (player.gang.gangMembers.length === 0) {
-    return '<p>No gang members yet. <button onclick="showRecruitment()">Recruit your first member</button></p>';
+    return '<p>No gang members yet. <button onclick="showGang(\'recruitment\')">Recruit your first member</button></p>';
   }
 
   let html = '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px;">';
@@ -5717,7 +5962,7 @@ function startGangOperation(operationId) {
   logAction(`${member.name} heads out on a ${operation.name} mission. The crew is earning their keep while you handle bigger things.`);
 
   updateUI();
-  showGang();
+  showGang('operations');
 }
 
 // Complete a gang operation
@@ -5922,7 +6167,7 @@ async function startTraining(memberIndex) {
     logAction(`${member.name} hits the books and training grounds. Investment in your crew's skills pays dividends in the long run (-$${program.cost}).`);
 
     updateUI();
-    showGang();
+    showGang('roster');
   }
 }
 
@@ -5989,7 +6234,7 @@ function enrollInTraining(programId) {
   logAction(`${member.name} begins intensive training in ${program.name}. Skilled soldiers make for a stronger organization (-$${program.cost}).`);
 
   updateUI();
-  showGang();
+  showGang('training');
 }
 
 // Check for betrayal events
@@ -8658,15 +8903,8 @@ function refreshGangTimers() {
   // Only re-render if the main gang content is showing (not crew details sub-screen)
   const gangContent = document.getElementById("gang-content");
   if (!gangContent) return;
-  // Detect if we're on the Crew Details sub-screen by checking for a heading
-  const heading = gangContent.querySelector('h2');
-  if (heading && heading.textContent.includes('Crew Details')) {
-    // On crew details -- full rebuild to update all timer text
-    showGangManagementScreen();
-  } else {
-    // On main gang screen -- just rebuild the operations and members sections
-    showGang();
-  }
+  // Refresh the gang screen preserving the currently active tab
+  showGang(_currentGangTab);
 }
 
 // Lightweight per-second refresh: only patch job button text / color / disabled
@@ -12330,7 +12568,7 @@ function collectTribute() {
   showBriefNotification(`Collected $${totalTribute.toLocaleString()} in tribute (${breakdownText})!${bonusText}`, 'success');
   logAction(`Your crew comes through! Envelopes stuffed with cash find their way to you. The family business is paying dividends (+${breakdownText}${bonusText}).`);
   updateUI();
-  showGang(); // Refresh the gang screen to show new cooldown
+  showGang(_currentGangTab); // Refresh the gang screen to show new cooldown
 }
 
 function expandTerritory() {
@@ -12392,7 +12630,7 @@ function expandTerritory() {
     logAction(`Failed territory expansion, lost ${losses} members.`);
   }
   updateUI();
-  showGang();
+  showGang(_currentGangTab);
 }
 
 function gangWar() {
@@ -12492,7 +12730,7 @@ function gangWar() {
     }
   }
   updateUI();
-  showGang();
+  showGang(_currentGangTab);
 }
 
 // Function to fire a gang member
@@ -12522,7 +12760,7 @@ async function fireGangMember(memberIndex) {
 
   // Update UI and refresh gang screen
   updateUI();
-  showGang();
+  showGang('roster');
 
   // Log the action with some flavor text
   const fireReasons = [
@@ -14487,6 +14725,10 @@ function refreshPrisoners() {
 
 // Function to show recruitment screen
 function showRecruitment() {
+  showGang('recruitment');
+  return;
+
+  // LEGACY CODE BELOW - kept for reference during transition
   if (player.inJail) {
     showBriefNotification("You can't recruit gang members while you're in jail!", 'danger');
     return;
@@ -14703,7 +14945,7 @@ function recruitMember(index) {
     updateMissionProgress('gang_member_recruited', 1);
 
     updateUI();
-    showRecruitment(); // Refresh the screen
+    showGang('recruitment'); // Refresh the screen
   } else {
     showBriefNotification(`You need $${recruit.cost.toLocaleString()} to recruit ${recruit.name}, but you only have $${player.money.toLocaleString()}.`, 'danger');
   }
@@ -14717,7 +14959,7 @@ function refreshRecruits() {
     player.money -= cost;
     generateAvailableRecruits();
     updateUI();
-    showRecruitment();
+    showGang('recruitment');
     logAction("You hit the streets looking for fresh talent. Word spreads that you're hiring - new faces emerge from the shadows.");
     showBriefNotification('New recruits found! Fresh talent is available.', 'success', 3000);
   } else {
@@ -14728,6 +14970,7 @@ function refreshRecruits() {
 
 // Function to show the store (Black Market with tabs: Buy / Fence / Player Market)
 // Track which store tab is currently active
+let _currentGangTab = 'roster';
 let _currentStoreTab = 'all';
 let _currentBlackMarketTab = 'buy';
 
@@ -20044,7 +20287,7 @@ function hireSpecialRecruit() {
   logAction(`${recruit.name} joins your crew! Their expertise in ${recruit.skill} will serve you well. (+${recruit.power} power)`);
 
   // Refresh recruitment screen
-  showRecruitment();
+  showGang('recruitment');
   checkAchievements();
 }
 
@@ -20308,7 +20551,7 @@ function startScreenRefreshTimer() {
   // income changes without disrupting interaction.
   gameplayIntervals.push(setInterval(() => {
     if (document.getElementById("gang-screen").style.display === "block") {
-      showGang();
+      showGang(_currentGangTab);
     }
     if (document.getElementById("real-estate-screen").style.display === "block") {
       updateRealEstateDisplay();
