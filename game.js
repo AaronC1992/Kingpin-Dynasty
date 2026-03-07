@@ -1635,7 +1635,7 @@ const FAMILY_RANK_REQUIREMENTS = {
 // Passive bonuses unlocked at zone-count thresholds.
 const TURF_MILESTONES = [
   { zones: 2, label: 'Street Presence', icon: '[+]', description: '+10% passive XP from all sources', perk: 'xp_boost', value: 0.10 },
-  { zones: 4, label: 'Neighbourhood Boss', icon: '[++]', description: '-20% heat from all jobs', perk: 'heat_reduction', value: 0.20 },
+  { zones: 4, label: 'Neighbourhood Boss', icon: '[++]', description: 'Heat decays -6 per cycle (perk-exclusive)', perk: 'heat_reduction', value: 0.20 },
   { zones: 6, label: 'District Kingpin', icon: '[+++]', description: '+15% store sell prices & gang recruit quality', perk: 'trade_boost', value: 0.15 },
   { zones: 8, label: 'City Overlord', icon: '[*]', description: 'Exclusive Overlord weapon & +25% turf income', perk: 'overlord', value: 0.25 },
 ];
@@ -2178,7 +2178,7 @@ function getTurfZone(zoneId) {
 // Initialise the player's turf zone state (deep clone of TURF_ZONES)
 function initTurfZones() {
     if (!player.turf) {
-        player.turf = { owned: [], bossesDefeated: [], donsDefeated: [], income: 0, heat: {}, power: 100, reputation: 0, events: [], fortifications: {}, lastTributeCollection: 0 };
+        player.turf = { owned: [], bossesDefeated: [], donsDefeated: [], income: 0, power: 100, reputation: 0, events: [], fortifications: {}, lastTributeCollection: 0 };
     }
     if (!player.turf._zones) {
         player.turf._zones = JSON.parse(JSON.stringify(TURF_ZONES));
@@ -3303,7 +3303,7 @@ function initializeExpandedSystems(player) {
     // Territories -- now handled by turf system (initTurfZones)
     // player.territoriesEx is legacy; turf data lives in player.turf
     if (!player.turf) {
-        player.turf = { owned: [], bossesDefeated: [], donsDefeated: [], income: 0, heat: {}, power: 100, reputation: 0, events: [], fortifications: {}, lastTributeCollection: 0 };
+        player.turf = { owned: [], bossesDefeated: [], donsDefeated: [], income: 0, power: 100, reputation: 0, events: [], fortifications: {}, lastTributeCollection: 0 };
     }
 
     // Rival kingpins
@@ -6145,11 +6145,11 @@ function renderTurfControlContent() {
     html += `<div style="background: rgba(0, 0, 0, 0.3); padding: 20px; border-radius: 10px; margin-bottom: 20px;"><h3 style="color: #8b3a3a; margin-bottom: 15px;">Your Turf</h3><div style="display: grid; gap: 15px;">`;
     ownedZones.forEach(zone => {
       const income = calculateTurfZoneIncome(zone);
-      const heatLevel = (player.turf.heat || {})[zone.id] || 0;
+      const heatLevel = player.wantedLevel || 0;
       const fortLevel = (player.turf.fortifications || {})[zone.id] || 0;
       html += `<div style="background: rgba(20, 18, 10, 0.8); padding: 15px; border-radius: 10px; border-left: 4px solid ${getHeatColor(heatLevel)};">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
-          <div style="flex: 1; min-width: 200px;"><h4 style="color: #f5e6c8; margin: 0 0 5px 0;">${zone.icon} ${zone.name}</h4><p style="color: #d4c4a0; margin: 0; font-size: 0.9em;">${zone.description}</p><div style="font-size:0.8em; color:#8a7a5a; margin-top:4px;">Fort Lv ${fortLevel} | Heat: ${heatLevel.toFixed(1)}</div></div>
+          <div style="flex: 1; min-width: 200px;"><h4 style="color: #f5e6c8; margin: 0 0 5px 0;">${zone.icon} ${zone.name}</h4><p style="color: #d4c4a0; margin: 0; font-size: 0.9em;">${zone.description}</p><div style="font-size:0.8em; color:#8a7a5a; margin-top:4px;">Fort Lv ${fortLevel} | Heat: ${heatLevel}/100</div></div>
           <div style="text-align: right; min-width: 120px;"><div style="color: #8a9a6a; font-weight: bold;">$${income.toLocaleString()}/week</div></div>
         </div>
         <div style="margin-top: 10px; display: flex; gap: 10px; flex-wrap: wrap;">
@@ -6553,8 +6553,7 @@ async function attackTurfZone(zoneId) {
     zone.defendingMembers = [];
     if (!player.turf.owned) player.turf.owned = [];
     player.turf.owned.push(zone.id);
-    player.turf.heat = player.turf.heat || {};
-    player.turf.heat[zone.id] = 0.3;
+    player.wantedLevel = Math.min(100, (player.wantedLevel || 0) + 15);
     player.turf.reputation = (player.turf.reputation || 0) + 15;
     player.territoryReputation = (player.territoryReputation || 0) + 15;
     recalcTurfIncome();
@@ -6606,8 +6605,8 @@ function calculateTurfZoneIncome(zone) {
   let income = zone.baseIncome;
   const fortLevel = (player.turf.fortifications || {})[zone.id] || 0;
   income *= (1 + fortLevel * 0.1);
-  const heat = (player.turf.heat || {})[zone.id] || 0;
-  income *= Math.max(0.3, 1 - heat * 0.5);
+  const heat = player.wantedLevel || 0;
+  income *= Math.max(0.3, 1 - (heat / 100) * 0.5);
   // Family buff
   const buff = getChosenFamilyBuff();
   if (buff && buff.incomeMultiplier) income *= buff.incomeMultiplier;
@@ -6643,7 +6642,7 @@ function manageTurfDetails(zoneId) {
   const zone = (player.turf._zones || []).find(z => z.id === zoneId);
   if (!zone) return;
   const income = calculateTurfZoneIncome(zone);
-  const heat = (player.turf.heat || {})[zone.id] || 0;
+  const heat = player.wantedLevel || 0;
   const fort = (player.turf.fortifications || {})[zone.id] || 0;
 
   // Calculate defense breakdown
@@ -6685,7 +6684,7 @@ function manageTurfDetails(zoneId) {
       </div>
       <div style="background:rgba(231,76,60,0.2);padding:12px;border-radius:10px;text-align:center;">
         <div style="font-size:0.85em;color:#d4c4a0;">Heat</div>
-        <div style="font-size:1.2em;font-weight:bold;color:${getHeatColor(heat)};">${heat.toFixed(1)}</div>
+        <div style="font-size:1.2em;font-weight:bold;color:${getHeatColor(heat)};">${heat}/100</div>
       </div>
       <div style="background:rgba(52,152,219,0.2);padding:12px;border-radius:10px;text-align:center;">
         <div style="font-size:0.85em;color:#d4c4a0;">Fortification</div>
@@ -6719,7 +6718,7 @@ function manageTurfDetails(zoneId) {
 
     <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-bottom:20px;">
       <button onclick="fortifyTurf('${zone.id}')" style="padding:10px 20px;background:linear-gradient(135deg,#e67e22,#d35400);border:none;border-radius:8px;color:white;cursor:pointer;font-weight:bold;">Fortify ($${((fort+1)*5000).toLocaleString()})</button>
-      <button onclick="reduceHeatTurf('${zone.id}')" style="padding:10px 20px;background:linear-gradient(135deg,#c0a062,#a08850);border:none;border-radius:8px;color:white;cursor:pointer;font-weight:bold;">Reduce Heat ($${Math.floor(heat*10000).toLocaleString()})</button>
+      <button onclick="reduceHeatTurf('${zone.id}')" style="padding:10px 20px;background:linear-gradient(135deg,#c0a062,#a08850);border:none;border-radius:8px;color:white;cursor:pointer;font-weight:bold;">Reduce Heat ($${Math.max(1000, Math.floor(heat*200)).toLocaleString()})</button>
       <button onclick="collectTurfTribute('${zone.id}')" style="padding:10px 20px;background:linear-gradient(135deg,#7a8a5a,#229954);border:none;border-radius:8px;color:white;cursor:pointer;font-weight:bold;">Collect Tribute</button>
     </div>
     <div style="text-align:center;">
@@ -6747,16 +6746,17 @@ function fortifyTurf(zoneId) {
 }
 window.fortifyTurf = fortifyTurf;
 
-// Reduce heat on turf
+// Reduce global heat from turf screen
 function reduceHeatTurf(zoneId) {
-  const heat = (player.turf.heat || {})[zoneId] || 0;
-  const cost = Math.max(1000, Math.floor(heat * 10000));
+  const heat = player.wantedLevel || 0;
+  const cost = Math.max(1000, Math.floor(heat * 200));
   if (player.money < cost) { showBriefNotification(`Need $${cost.toLocaleString()}!`, 'danger'); return; }
   if (heat <= 0) { showBriefNotification('Heat is already at 0!', 'info'); return; }
   player.money -= cost;
-  player.turf.heat[zoneId] = Math.max(0, heat - 0.3);
+  player.wantedLevel = Math.max(0, heat - 10);
   recalcTurfIncome();
-  showBriefNotification('Heat reduced!', 'success');
+  showBriefNotification('Heat reduced by 10!', 'success');
+  logAction(`Paid $${cost.toLocaleString()} to lay low and reduce heat.`);
   updateUI();
 }
 window.reduceHeatTurf = reduceHeatTurf;
@@ -6774,8 +6774,8 @@ function collectTurfTribute(zoneId) {
   const tribute = Math.floor(income * Math.min(hoursSince / 168, 1));
   player.dirtyMoney = (player.dirtyMoney || 0) + tribute;
   player.turf.lastTributeCollection = now;
-  player.turf.heat[zoneId] = ((player.turf.heat || {})[zoneId] || 0) + 0.05;
-  showBriefNotification(`Collected $${tribute.toLocaleString()} in dirty tribute!`, 'success');
+  player.wantedLevel = Math.min(100, (player.wantedLevel || 0) + 3);
+  showBriefNotification(`Collected $${tribute.toLocaleString()} in dirty tribute! (+3 heat)`, 'success');
   logAction(`Collected $${tribute.toLocaleString()} tribute from ${zone.name}.`);
   updateUI();
 }
@@ -6794,11 +6794,10 @@ function processTurfOperations() {
     logAction(`Weekly turf tribute: +$${player.turf.income.toLocaleString()} (dirty money)`);
   }
 
-  // Decay heat slowly (faster with heat_reduction milestone perk)
-  const heatDecayRate = (typeof hasTurfPerk === 'function' && hasTurfPerk('heat_reduction')) ? 0.11 : 0.05;
-  Object.keys(player.turf.heat || {}).forEach(zId => {
-    player.turf.heat[zId] = Math.max(0, (player.turf.heat[zId] || 0) - heatDecayRate);
-  });
+  // Heat only decays if the player has the heat_reduction milestone perk
+  if (player.wantedLevel > 0 && typeof hasTurfPerk === 'function' && hasTurfPerk('heat_reduction')) {
+    player.wantedLevel = Math.max(0, player.wantedLevel - 6);
+  }
 
   // Rival retaliation - FAMILY-BASED AI (3 rival families attack individually)
   initRivalAI();
@@ -7207,8 +7206,8 @@ function showCorruption() {
 
 // Helper Functions for Territory Control
 function getHeatColor(heat) {
-  if (heat < 0.3) return '#8a9a6a';
-  if (heat < 0.6) return '#c0a040';
+  if (heat < 20) return '#8a9a6a';
+  if (heat < 50) return '#c0a040';
   return '#8b3a3a';
 }
 
@@ -7364,7 +7363,7 @@ function generateTurfOverviewHTML() {
 
     ownedZones.forEach(zone => {
       const income = calculateTurfZoneIncome(zone);
-      const heatLevel = (player.turf.heat || {})[zone.id] || 0;
+      const heatLevel = player.wantedLevel || 0;
       const fortLevel = (player.turf.fortifications || {})[zone.id] || 0;
 
       html += `
@@ -7372,7 +7371,7 @@ function generateTurfOverviewHTML() {
           <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
             <div style="flex:1; min-width:200px;">
               <div style="color:#f5e6c8; font-weight:bold;">${zone.icon} ${zone.name}</div>
-              <div style="font-size:0.8em; color:#8a7a5a; margin-top:4px;">Fort Lv ${fortLevel} | Heat: ${heatLevel.toFixed(1)}</div>
+              <div style="font-size:0.8em; color:#8a7a5a; margin-top:4px;">Fort Lv ${fortLevel} | Heat: ${heatLevel}/100</div>
             </div>
             <div style="text-align:right; min-width:120px;">
               <div style="color:#8a9a6a; font-weight:bold;">$${income.toLocaleString()}/week</div>
@@ -7750,9 +7749,9 @@ async function corruptOfficial(targetId) {
 
     player.corruptedOfficials.push(corruption);
 
-    // Corrupting officials improves police & underground reputation
+    // Corrupting officials reduces heat
+    player.wantedLevel = Math.max(0, (player.wantedLevel || 0) - 5);
     if (player.streetReputation) {
-      player.streetReputation.police = Math.min(100, (player.streetReputation.police || 0) + 3);
       player.streetReputation.underground = Math.min(100, (player.streetReputation.underground || 0) + 2);
     }
 
@@ -8021,8 +8020,8 @@ function generateTerritoryEvent() {
 
   // Apply effects from the richer schema
   if (evt.effects.heatIncrease) {
-    player.turf.heat = player.turf.heat || {};
-    player.turf.heat[randomZoneId] = ((player.turf.heat[randomZoneId]) || 0) + evt.effects.heatIncrease;
+    const heatGain = Math.round(evt.effects.heatIncrease * 50);
+    player.wantedLevel = Math.min(100, (player.wantedLevel || 0) + heatGain);
   }
   if (evt.effects.incomeReduction) {
     // Temporarily reduce income from the zone for event duration (stored on event)
@@ -9612,7 +9611,7 @@ const HELP_TOPICS = [
       <li><strong>Cash</strong> -- Your main currency. Earned from jobs, businesses, missions, and the casino. Spend it on gear, properties, heals, and more.</li>
       <li><strong>Dirty Money</strong> -- Earned from heists and illegal activities. Cannot be spent directly -- you must launder it through Business Fronts (Properties screen) to convert it into clean Cash.</li>
       <li><strong>Health</strong> -- Drops from combat, failed jobs, and random events. If it hits 0, your character dies permanently (permadeath). Heal at the Hospital or use Medkits.</li>
-      <li><strong>Heat (Wanted Level)</strong> -- Rises when you commit crimes. Higher heat means more police encounters, bigger fines, and possible arrest. Heat decays slowly over time, or you can reduce it via skills and bribes.</li>
+      <li><strong>Heat (Wanted Level)</strong> -- Rises when you commit crimes. Higher heat means more police encounters, bigger fines, and possible arrest. Heat does NOT decay on its own -- you must reduce it via perks, skills, and bribes.</li>
       <li><strong>XP & Rank</strong> -- Earn XP from jobs, missions, side ops, and combat. Level up ("Rank up") to unlock new screens, gear, story chapters, and features.</li>
       <li><strong>Influence</strong> -- A measure of your power in the underworld. Used to claim territory and affects your Empire Rating.</li>
     </ul>
@@ -9855,7 +9854,7 @@ const HELP_TOPICS = [
     <h4 style="color:#c0a062; margin:14px 0 6px;">Turf Milestones</h4>
     <ul>
       <li><strong>2 zones -- Street Presence:</strong> +10% XP from all sources.</li>
-      <li><strong>4 zones -- Neighbourhood Boss:</strong> Turf heat decays twice as fast.</li>
+      <li><strong>4 zones -- Neighbourhood Boss:</strong> Heat decays -6 per cycle (only way heat decays passively).</li>
       <li><strong>6 zones -- District Kingpin:</strong> +15% turf income.</li>
       <li><strong>8 zones -- City Overlord:</strong> +25% turf income + the exclusive Overlord's Scepter weapon (60 power).</li>
     </ul>
@@ -9909,7 +9908,7 @@ const HELP_TOPICS = [
     </ul>
     <h4 style="color:#c0a062; margin:14px 0 6px;">How to Reduce Heat</h4>
     <ul>
-      <li><strong>Wait</strong> -- Heat decays slowly over real time.</li>
+      <li><strong>Perks</strong> -- The Neighbourhood Boss milestone perk grants passive heat decay.</li>
       <li><strong>Lay Low</strong> -- Avoid committing crimes to let it drop faster.</li>
       <li><strong>Bribe Officials</strong> -- Spend cash to reduce heat quickly.</li>
       <li><strong>Stealth Skills</strong> -- The Stealth skill tree has nodes that reduce heat gain and increase decay speed.</li>
@@ -10833,10 +10832,16 @@ async function startJob(index) {
     adjustedJailChance = Math.max(1, Math.floor(adjustedJailChance * 0.85));
   }
 
-  // Police streetReputation: positive = reduced arrest chance, negative = increased
-  const policeRepMod = getStreetRepBonus('police', 0.10, 0.20, 0.30, 0.40);
-  if (policeRepMod !== 0) {
-    adjustedJailChance = Math.max(1, Math.floor(adjustedJailChance * (1 - policeRepMod)));
+  // Heat-based arrest modifier: low heat = less arrests, high heat = more
+  const heatLevel = player.wantedLevel || 0;
+  if (heatLevel < 10) {
+    adjustedJailChance = Math.max(1, Math.floor(adjustedJailChance * 0.70));
+  } else if (heatLevel < 20) {
+    adjustedJailChance = Math.max(1, Math.floor(adjustedJailChance * 0.85));
+  } else if (heatLevel > 80) {
+    adjustedJailChance = Math.floor(adjustedJailChance * 1.30);
+  } else if (heatLevel > 60) {
+    adjustedJailChance = Math.floor(adjustedJailChance * 1.15);
   }
 
   let jailChance = Math.random() * 100;
@@ -10934,9 +10939,10 @@ async function startJob(index) {
 
   player.wantedLevel += wantedLevelGain;
 
-  // Every 5 clean jobs (no arrest) slowly improves police relations (staying under the radar)
-  if (_jobsWithoutArrest > 0 && _jobsWithoutArrest % 5 === 0 && player.streetReputation) {
-    player.streetReputation.police = Math.min(100, (player.streetReputation.police || 0) + 1);
+  // Every 5 clean jobs reduces heat slightly (laying low)
+  if (_jobsWithoutArrest > 0 && _jobsWithoutArrest % 5 === 0) {
+    player.wantedLevel = Math.max(0, player.wantedLevel - 2);
+    logAction(`Staying clean pays off -- heat drops slightly (-2).`);
   }
 
   // Log intimidation effect if it reduced wanted level
@@ -11706,11 +11712,6 @@ function sendToJail(wantedLevelLoss) {
   player.inJail = true;
   _jobsWithoutArrest = 0; // Reset consecutive clean jobs on arrest
 
-  // Getting arrested hurts police reputation (you're a known criminal)
-  if (player.streetReputation) {
-    player.streetReputation.police = Math.max(-100, (player.streetReputation.police || 0) - 3);
-  }
-
   // Jail time scales with wanted level but caps at 90 seconds. Escape skill reduces time.
   const escapeReduction = (player.skillTree.stealth.escape_artist || 0) * 2; // -2s per escape level
   const baseJailTime = Math.min(90, 15 + Math.floor(player.wantedLevel * 0.8));
@@ -11731,17 +11732,24 @@ function sendToJail(wantedLevelLoss) {
     logAction(`Iron Will kicks in -- your jail sentence is shortened by ${reduced}s.`);
   }
 
-  // Police streetReputation: positive = shorter sentences, negative = longer
-  const policeJailMod = getStreetRepBonus('police', 0.05, 0.15, 0.25, 0.40);
-  if (policeJailMod !== 0) {
-    const change = Math.floor(calculatedJailTime * Math.abs(policeJailMod));
-    if (policeJailMod > 0) {
-      calculatedJailTime = Math.max(5, calculatedJailTime - change);
-      logAction(`Your police contacts pull strings -- sentence reduced by ${change}s.`);
-    } else {
-      calculatedJailTime += change;
-      logAction(`Law enforcement has it out for you -- sentence increased by ${change}s.`);
-    }
+  // Heat-based sentence modifier: low heat = shorter, high heat = longer
+  const heatLevelForJail = player.wantedLevel || 0;
+  if (heatLevelForJail < 10) {
+    const change = Math.floor(calculatedJailTime * 0.25);
+    calculatedJailTime = Math.max(5, calculatedJailTime - change);
+    logAction(`Low heat keeps you under the radar -- sentence reduced by ${change}s.`);
+  } else if (heatLevelForJail < 20) {
+    const change = Math.floor(calculatedJailTime * 0.10);
+    calculatedJailTime = Math.max(5, calculatedJailTime - change);
+    logAction(`Moderate profile keeps your sentence manageable (-${change}s).`);
+  } else if (heatLevelForJail > 80) {
+    const change = Math.floor(calculatedJailTime * 0.30);
+    calculatedJailTime += change;
+    logAction(`You're public enemy #1 -- the judge throws the book at you (+${change}s).`);
+  } else if (heatLevelForJail > 60) {
+    const change = Math.floor(calculatedJailTime * 0.15);
+    calculatedJailTime += change;
+    logAction(`High heat draws extra scrutiny -- sentence increased by ${change}s.`);
   }
 
   // Utility item: Fake ID Kit reduces jail time by 5 seconds
@@ -11797,10 +11805,8 @@ function bribeGuard() {
   player.breakoutAttempts = 3;
 
 
-  // Bribing guards improves police relations (you know how to play the game)
-  if (player.streetReputation) {
-    player.streetReputation.police = Math.min(100, (player.streetReputation.police || 0) + 2);
-  }
+  // Bribing guards reduces heat slightly
+  player.wantedLevel = Math.max(0, (player.wantedLevel || 0) - 3);
 
   stopJailTimer();
 
