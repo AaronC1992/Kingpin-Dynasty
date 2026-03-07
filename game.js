@@ -17402,7 +17402,7 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = "1.18.0";
+const CURRENT_VERSION = "1.22.0";
 const VERSION_UPDATES = {
   "1.18.0": {
     title: "Buff & Perk Rebalance Pass",
