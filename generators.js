@@ -84,7 +84,7 @@ export function generateJailbreakPrisoners() {
             difficulty: difficulty,
             securityLevel: securityLevel,
             breakoutSuccess: Math.max(15, 50 - (difficulty * 10)), // 40%, 30%, 20%, 15% based on difficulty
-            energyCost: 10 + (difficulty * 5), // 15, 20, 25, 30 energy
+            energyCost: 0, // Legacy field, no longer used
             expReward: difficulty * 20 + 15, // 35, 55, 75, 95 XP
             cashReward: difficulty * 100 + 50, // $150, $250, $350, $450
             arrestChance: 20 + (difficulty * 10) // 30%, 40%, 50%, 60% arrest chance on failure

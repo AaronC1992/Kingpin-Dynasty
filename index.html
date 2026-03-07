@@ -105,7 +105,6 @@
                 <div class="stats-primary">
                     <p id="money-display">Cash: $0</p>
                     <p id="health-display">Health: 100</p>
-                    <p id="energy-display">Energy: 100/100</p>
                     <p id="wanted-level-display">Heat: 0</p>
                     <p id="level-display">Rank: 1</p>
                 </div>
@@ -115,7 +114,7 @@
                     <p id="territory-display" style="display: none;">Turf: 0 | Tribute: $0/week</p>
                     <p id="current-territory-display" style="display: none; cursor: pointer;" onclick="showTerritoryRelocation()">District: —</p>
                     <p id="experience-display">XP: 0/100</p>
-                    <p id="skill-points-display">Skill Points: 0</p>
+                    <p id="skill-points-display">Training: Idle</p>
                     <p id="season-display">Season: Spring</p>
                     <p id="weather-display">Weather: Clear</p>
                     <p id="active-events-display" style="display: none;">Events: None</p>
@@ -406,49 +405,19 @@
             </div>
         </div>
 
-        <!-- Gym / Training Screen -->
-        <div id="gym-screen" class="game-screen" style="display:none;">
-            <div class="page-header">
-                <h1><span class="icon"></span> The Gym</h1>
-                <div class="breadcrumb">
-                    <a href="#" onclick="goBackToMainMenu(); return false;">SafeHouse</a>
-                    <span class="separator">&#9670;</span>
-                    <span class="current">Training</span>
-                </div>
-            </div>
-            <div id="gym-content"></div>
-            <div class="page-nav">
-                <button class="nav-btn-back" onclick="goBackToMainMenu()">&#8592; Back to SafeHouse</button>
-            </div>
-        </div>
-
         <!-- Bounty Board Screen -->
-        <div id="bounty-screen" class="game-screen" style="display:none;">
+        <div id="bountyboard-screen" class="game-screen" style="display:none;">
             <div class="page-header">
                 <h1><span class="icon"></span> Bounty Board</h1>
                 <div class="breadcrumb">
                     <a href="#" onclick="goBackToMainMenu(); return false;">SafeHouse</a>
                     <span class="separator">&#9670;</span>
-                    <span class="current">Bounties</span>
+                    <span class="current">Bounty Board</span>
                 </div>
             </div>
-            <div id="bounty-content"></div>
-            <div class="page-nav">
-                <button class="nav-btn-back" onclick="goBackToMainMenu()">&#8592; Back to SafeHouse</button>
-            </div>
-        </div>
-
-        <!-- Newspaper / Activity Feed Screen -->
-        <div id="newspaper-screen" class="game-screen" style="display:none;">
-            <div class="page-header">
-                <h1><span class="icon"></span> The Daily Racket</h1>
-                <div class="breadcrumb">
-                    <a href="#" onclick="goBackToMainMenu(); return false;">SafeHouse</a>
-                    <span class="separator">&#9670;</span>
-                    <span class="current">Newspaper</span>
-                </div>
-            </div>
-            <div id="newspaper-feed-content"></div>
+            <div class="section-header">Active Contracts</div>
+            <p>High-value targets. Eliminate them for the payout.</p>
+            <div id="bountyboard-content"></div>
             <div class="page-nav">
                 <button class="nav-btn-back" onclick="goBackToMainMenu()">&#8592; Back to SafeHouse</button>
             </div>
@@ -675,10 +644,6 @@
                         <span style="color:#8b3a3a;">Health</span>
                     </label>
                     <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-                        <input type="checkbox" class="stat-toggle" data-stat="energy-display" checked onchange="toggleStatDisplay(this)" style="width:16px; height:16px; accent-color:#c0a062;">
-                        <span style="color:#8a9a6a;">Energy</span>
-                    </label>
-                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
                         <input type="checkbox" class="stat-toggle" data-stat="wanted-level-display" checked onchange="toggleStatDisplay(this)" style="width:16px; height:16px; accent-color:#c0a062;">
                         <span style="color:#e67e22;">Heat</span>
                     </label>
@@ -821,7 +786,6 @@
                 <h4>Risks</h4>
                 <p>• Failure means you join them</p>
                 <p>• Stealth helps you stay unseen</p>
-                <p>• Takes energy</p>
                 <p>• Earns respect</p>
             </div>
             
@@ -1001,23 +965,6 @@
             </div>
             
             <!-- Quick Stats removed -->
-            
-            <div id="energy-actions">
-                <h3>Energy</h3>
-                <div id="energy-bar">
-                    <div id="energy-fill"></div>
-                    <span id="energy-text">100/100</span>
-                </div>
-                <button id="quick-buy-coffee" onclick="buyCoffee()" class="quick-btn energy-btn">
-                    Strong Coffee
-                </button>
-                <button id="quick-buy-energydrink" onclick="buyEnergyDrink()" class="quick-btn energy-btn">
-                    Energy Drink
-                </button>
-                <button id="quick-buy-steroids" onclick="buySteroids()" class="quick-btn energy-btn">
-                    Steroids
-                </button>
-            </div>
             
 
         </div>

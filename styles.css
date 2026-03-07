@@ -209,13 +209,6 @@ body.season-winter {
     display: contents;
 }
 
-#energy-display {
-    min-width: 120px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
 /* Season display styling */
 #season-display {
     font-weight: bold;
@@ -1277,6 +1270,174 @@ button:disabled::after {
     cursor: not-allowed;
 }
 
+/* Hospital Timer Healing */
+.hospital-healing-active {
+    background: rgba(30, 30, 30, 0.7);
+    border: 1px solid #555;
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+}
+.hospital-healing-label {
+    color: #d4c5a0;
+    font-size: 1.05em;
+    margin-bottom: 10px;
+}
+.hospital-progress-bar {
+    background: #333;
+    border-radius: 6px;
+    height: 18px;
+    overflow: hidden;
+    border: 1px solid #555;
+    margin: 8px 0;
+}
+.hospital-progress-fill {
+    background: linear-gradient(90deg, #6a8a4a, #8a9a6a);
+    height: 100%;
+    transition: width 1s linear;
+    border-radius: 6px;
+}
+.hospital-healing-time {
+    color: #c0a062;
+    font-size: 0.95em;
+    margin-bottom: 12px;
+}
+.hospital-cancel-btn {
+    background: rgba(139, 58, 58, 0.4);
+    border: 1px solid #8b3a3a;
+    color: #d4c5a0;
+    padding: 6px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85em;
+}
+.hospital-cancel-btn:hover {
+    background: rgba(139, 58, 58, 0.6);
+}
+
+/* Bounty Board */
+.bounty-refresh-timer {
+    text-align: center;
+    color: #888;
+    font-size: 0.9em;
+    margin-bottom: 14px;
+    padding: 6px 0;
+    border-bottom: 1px solid #333;
+}
+.bounty-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 14px;
+}
+.bounty-card {
+    background: rgba(30, 30, 30, 0.7);
+    border: 1px solid var(--tier-color, #555);
+    border-radius: 8px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.bounty-card-done {
+    opacity: 0.45;
+}
+.bounty-card-failed {
+    opacity: 0.45;
+}
+.bounty-card-tier {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 4px;
+    font-size: 0.75em;
+    font-weight: bold;
+    color: #1a1a1a;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    width: fit-content;
+}
+.bounty-card-name {
+    color: #d4c5a0;
+    font-weight: bold;
+    font-size: 1.05em;
+}
+.bounty-card-desc {
+    color: #999;
+    font-size: 0.85em;
+    margin: 0;
+    line-height: 1.35;
+}
+.bounty-card-stats {
+    display: flex;
+    justify-content: space-between;
+    color: #aaa;
+    font-size: 0.85em;
+}
+.bounty-card-stats strong {
+    color: #c0a062;
+}
+.bounty-card-chance {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8em;
+    color: #aaa;
+}
+.bounty-chance-bar {
+    flex: 1;
+    background: #333;
+    border-radius: 4px;
+    height: 10px;
+    overflow: hidden;
+    border: 1px solid #444;
+}
+.bounty-chance-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s;
+}
+.bounty-chance-pct {
+    min-width: 32px;
+    text-align: right;
+    font-weight: bold;
+}
+.bounty-attempt-btn {
+    background: linear-gradient(135deg, rgba(139, 90, 43, 0.5), rgba(92, 64, 32, 0.5));
+    border: 1px solid #8b5a2b;
+    color: #d4c5a0;
+    padding: 8px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+    font-weight: bold;
+    width: 100%;
+    text-align: center;
+}
+.bounty-attempt-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, rgba(139, 90, 43, 0.7), rgba(92, 64, 32, 0.7));
+}
+.bounty-attempt-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+.bounty-status {
+    text-align: center;
+    padding: 8px;
+    border-radius: 4px;
+    font-weight: bold;
+    font-size: 0.85em;
+    letter-spacing: 1px;
+}
+.bounty-complete {
+    background: rgba(100, 140, 80, 0.2);
+    color: #8a9a6a;
+    border: 1px solid #8a9a6a;
+}
+.bounty-failed {
+    background: rgba(139, 58, 58, 0.2);
+    color: #8b3a3a;
+    border: 1px solid #8b3a3a;
+}
+
 #hurt-flash {
     position: fixed;
     top: 0;
@@ -1415,16 +1576,6 @@ p, ul {
     background: linear-gradient(to bottom, #3c3c3c, #2a2a2a) !important;
 }
 
-.energy-btn {
-    background: linear-gradient(to bottom, #2c2c2c, #1a1a1a) !important;
-    color: #8b0000 !important;
-    border: 1px solid #8b0000 !important;
-}
-
-.energy-btn:hover {
-    background: linear-gradient(to bottom, #3c3c3c, #2a2a2a) !important;
-}
-
 .stat-item {
     display: flex;
     justify-content: space-between;
@@ -1450,51 +1601,9 @@ p, ul {
     font-style: italic;
 }
 
-#energy-bar {
-    width: 100%;
-    height: 20px;
-    background: #000;
-    border-radius: 2px;
-    position: relative;
-    margin: 8px 0;
-    border: 1px solid #555;
-}
-
-#energy-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #8b0000 0%, #d4af37 100%);
-    border-radius: 1px;
-    width: 100%;
-    transition: width 0.3s ease;
-}
-
-#energy-text {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 10px;
-    font-weight: bold;
-    color: var(--color-cream);
-    text-shadow: 0 1px 2px rgba(0,0,0,0.8);
-}
-
 #quick-actions {
     margin-bottom: 15px;
 }
-
-/* #quick-stats removed */
-
-#energy-actions {
-    margin-bottom: 15px;
-}
-
-.energy-btn {
-    display: block;
-    width: 100%;
-    margin-top: 8px;
-}
-
 
 #store-screen ul, #jobs-screen ul {
     list-style-type: none;
@@ -3900,6 +4009,99 @@ p, ul {
 }
 .rpg-node-btn-active:hover {
   filter: brightness(1.15);
+}
+.rpg-node-btn-cancel {
+  background: #8b3a3a !important;
+  color: #f5e6c8 !important;
+  cursor: pointer !important;
+}
+.rpg-node-btn-cancel:hover {
+  filter: brightness(1.2);
+}
+
+/* Training banner at top of skill panel */
+.skill-training-banner {
+  background: linear-gradient(135deg, rgba(26,188,156,0.15), rgba(212,175,55,0.1));
+  border: 1px solid #1abc9c;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+.skill-training-banner-info {
+  color: #f5e6c8;
+  font-size: 1em;
+  margin-bottom: 8px;
+}
+.skill-training-banner-info strong {
+  color: #d4af37;
+}
+.skill-training-countdown {
+  color: #1abc9c;
+  font-weight: bold;
+  margin-left: 8px;
+  font-size: 1.1em;
+}
+.skill-training-progress {
+  height: 6px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+.skill-training-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #1abc9c, #d4af37);
+  border-radius: 3px;
+  transition: width 1s linear;
+}
+.skill-training-cancel-btn {
+  background: #8b3a3a;
+  color: #f5e6c8;
+  border: none;
+  padding: 6px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85em;
+  font-weight: bold;
+}
+.skill-training-cancel-btn:hover {
+  filter: brightness(1.2);
+}
+
+/* Node-level training timer */
+.rpg-node-training {
+  border-color: #1abc9c !important;
+  box-shadow: 0 0 12px rgba(26,188,156,0.3);
+}
+.rpg-node-training-timer {
+  margin-bottom: 6px;
+}
+.rpg-node-training-bar {
+  height: 4px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+.rpg-node-training-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #1abc9c, #d4af37);
+  border-radius: 2px;
+  transition: width 1s linear;
+}
+.rpg-node-training-time {
+  color: #1abc9c;
+  font-weight: bold;
+  font-size: 0.85em;
+}
+
+/* Cost warning under train button */
+.rpg-node-cost-warn {
+  display: block;
+  color: #e74c3c;
+  font-size: 0.75em;
+  margin-top: 4px;
 }
 
 /* Mobile responsive */

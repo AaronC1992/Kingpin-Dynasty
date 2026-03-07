@@ -3,11 +3,11 @@
  * 
  * Manages the player character's state, stats, skills, progression, and related functions.
  * This is the core data structure for the player's criminal empire, including:
- * - Basic stats (money, health, energy, level, experience)
+ * - Basic stats (money, health, level, experience)
  * - Skills and skill trees (stealth, violence, charisma, intelligence, luck, endurance)
  * - Jail status and breakout mechanics
  * - Gang, territory, and business management
- * - Player progression functions (XP, level up, energy regeneration)
+ * - Player progression functions (XP, level up)
  */
 
 // ── CHARACTER BACKGROUNDS ──────────────────────────────────────
@@ -19,8 +19,8 @@ export const CHARACTER_BACKGROUNDS = [
     icon: '🐀',
     description: 'Grew up in the gutter. You know every alley and shortcut in the city.',
     flavor: 'The streets raised you — and the streets never forget their own.',
-    bonus: { stealth: 2, energy: 10 },
-    bonusText: '+2 Stealth, +10 Starting Energy'
+    bonus: { stealth: 2 },
+    bonusText: '+2 Stealth'
   },
   {
     id: 'ex_cop',
@@ -93,7 +93,7 @@ export const CHARACTER_PERKS = [
     name: 'Quick Hands',
     icon: '🤚',
     description: 'Lightning-fast reflexes. You act before others can react.',
-    effect: '-15% energy cost on all jobs. +10% car theft success.',
+    effect: '-15% crime cooldown on all jobs. +10% car theft success.',
     color: '#c0a062'
   },
   {
@@ -135,9 +135,7 @@ export const player = {
   inventory: [],
   stolenCars: [], // Array to store stolen cars
   selectedCar: null, // Currently selected car for jobs
-  energy: 100, // Player's energy (max 100)
-  maxEnergy: 100, // Maximum energy capacity
-  energyRegenTimer: 0, // Timer for energy regeneration (in seconds)
+  jobCooldowns: {}, // Crime cooldown timers: { jobIndex: endTimestamp }
   ammo: 0, // Player's ammo count
   gas: 0, // Player's gas count
   health: 100, // Player's health
@@ -150,7 +148,10 @@ export const player = {
   reputation: 0, // Player's reputation
   level: 1, // Player's level
   experience: 0, // Player's experience points
-  skillPoints: 0, // Available skill points
+  skillPoints: 0, // Legacy (kept for save compat) — training now uses money
+  activeTraining: null, // Gym-style: { tree, node, startTime, duration }
+  activeHealing: null, // Hospital timer: { type, startTime, duration, healAmount }
+  bountyBoard: { targets: [], lastRefresh: 0 }, // Bounty board state
   // ── Unified RPG Skill Tree ──
   // 6 trees × 6 nodes each (2 per tier). Tier 1: max 10, Tier 2: max 10, Tier 3: max 5.
   skillTree: {
@@ -284,28 +285,7 @@ export const player = {
   superbossInvites: [],     // Pending superboss fight invites from other players
 
   // === Seasonal Event Participation ===
-  seasonalEventProgress: {}, // { eventId: { score, completedObjectives[] } }
-
-  // === Gym / Training System ===
-  gymStats: {
-    strength: 0,
-    defense: 0,
-    speed: 0,
-    endurance: 0
-  },
-  gymTraining: null, // { stat, startedAt, completesAt } or null if not training
-  gymTotalSessions: 0, // Lifetime completed sessions
-
-  // === Bounty Board ===
-  bounties: [],        // Active bounties: [{ id, targetName, reward, xpReward, difficulty, expiresAt, description }]
-  bountiesCompleted: 0,
-  lastBountyRefresh: 0, // Timestamp of last board refresh
-
-  // === Newspaper / Activity Feed ===
-  newspaper: [],       // [{ headline, body, timestamp, category }] — up to 50 entries
-
-  // === Hospital Timer ===
-  hospitalTimer: null  // { healType, amount, cost, startedAt, completesAt } or null
+  seasonalEventProgress: {} // { eventId: { score, completedObjectives[] } }
 };
 
 /**
@@ -343,13 +323,7 @@ export function checkLevelUp() {
   if (player.experience >= requiredXP) {
     player.level++;
     player.experience -= requiredXP;
-    player.skillPoints += 2; // Gain 2 skill points per level (slower progression)
     player.reputation = (player.reputation || 0) + 5; // Gain 5 reputation per level up
-    
-    // Bonus skill point at milestone levels (every 5 levels)
-    if (player.level % 5 === 0) {
-      player.skillPoints += 1; // Extra point at milestones
-    }
     
     // Show dramatic level up screen effects
     if (typeof window !== 'undefined' && typeof window.showLevelUpEffects === 'function') {
@@ -359,86 +333,14 @@ export function checkLevelUp() {
     if (typeof window !== 'undefined' && typeof window.logAction === 'function') {
       window.logAction(` The streets recognize your growing power! You've clawed your way up to level ${player.level}. Every scar tells a story, every skill hard-earned.`);
     }
-    if (typeof window !== 'undefined' && typeof window.addNewspaperEntry === 'function') {
-      window.addNewspaperEntry(`A rising figure in the underworld has reached Level ${player.level}. The families are taking notice.`, 'general');
-    }
   }
 }
 
-/**
- * Regenerate player energy over time (passive regeneration)
- * Called by the energy regeneration interval
- */
-export function regenerateEnergy() {
-  if (player.energy < player.maxEnergy) {
-    player.energyRegenTimer--;
-    
-    if (player.energyRegenTimer <= 0) {
-      // Base 2 energy per tick; Recovery skill increases energy gained per tick
-      const recoveryLevel = (player.skillTree && player.skillTree.endurance && player.skillTree.endurance.recovery) || 0;
-      const extraPerTick = Math.floor(recoveryLevel / 2); // +1 energy per 2 recovery levels
-      const energyGain = Math.max(2, 2 + extraPerTick);
-      
-      // Max energy scales with conditioning skill (base 100 + 3 per conditioning rank)
-      const conditioningLevel = (player.skillTree && player.skillTree.endurance && player.skillTree.endurance.conditioning) || 0;
-      player.maxEnergy = 100 + conditioningLevel * 3;
-      
-      player.energy = Math.min(player.energy + energyGain, player.maxEnergy);
-      
-      // v1.12 Rebalance: Regen interval 30s base (was 45s) — faster energy recovery
-      // Reduced by 1s per 2 recovery levels (min 15s)
-      let regenInterval = Math.max(15, 30 - Math.floor(recoveryLevel / 2));
-      // Family buff: energyRegenBonus (e.g. Morales Cartel Supply Line: +20% energy regen speed)
-      const famBuff = (typeof window.getChosenFamilyBuff === 'function') ? window.getChosenFamilyBuff() : null;
-      if (famBuff && famBuff.energyRegenBonus) {
-        regenInterval = Math.max(20, Math.floor(regenInterval * (1 - famBuff.energyRegenBonus)));
-      }
-      player.energyRegenTimer = regenInterval;
-      
-      if (typeof window.logAction === 'function') {
-        window.logAction(` You catch your breath in the shadows. The adrenaline fades and your strength slowly returns. (+${energyGain} energy)`);
-      }
-      
-      // Forensics skill: Advanced wanted level decay
-      if (player.wantedLevel > 0 && player.skillTree.intelligence.forensics > 0) {
-        let forensicsDecayChance = player.skillTree.intelligence.forensics * 3; // 3% chance per level
-        if (Math.random() * 100 < forensicsDecayChance) {
-          player.wantedLevel = Math.max(0, player.wantedLevel - 1);
-          if (typeof window.logAction === 'function') {
-            window.logAction(" Your forensics expertise helps eliminate evidence over time. Heat level decreased by 1!");
-          }
-        }
-      }
-    }
-    
-    if (typeof window.updateUI === 'function') {
-      window.updateUI();
-    }
-  }
-}
-
-/**
- * Start the energy regeneration timer when energy is consumed
- */
-export function startEnergyRegenTimer() {
-  if (player.energyRegenTimer === 0 && player.energy < player.maxEnergy) {
-    const recoveryLevel = (player.skillTree && player.skillTree.endurance && player.skillTree.endurance.recovery) || 0;
-    const regenInterval = Math.max(10, 20 - Math.floor(recoveryLevel / 2));
-    player.energyRegenTimer = regenInterval;
-  }
-}
-
-/**
- * Initialize the energy regeneration interval (1 energy per 30 seconds)
- * Should be called once when the game starts
- */
-let energyRegenInterval = null;
-export function startEnergyRegeneration() {
-  if (energyRegenInterval) clearInterval(energyRegenInterval);
-  energyRegenInterval = setInterval(() => {
-    regenerateEnergy();
-  }, 1000); // Update every second for timer display
-}
+// Energy system removed — replaced by crime cooldown timers.
+// Legacy stubs kept for backward compatibility with old saves.
+export function regenerateEnergy() {}
+export function startEnergyRegenTimer() {}
+export function startEnergyRegeneration() {}
 
 // ── Unified Skill Tree Definitions ──────────────────────────────
 // RPG-style talent trees with 3 tiers per discipline.
@@ -453,7 +355,7 @@ export const SKILL_TREE_DEFS = {
     desc: "Move unseen, strike unheard. The art of the invisible hand.",
     nodes: {
       shadow_step:    { tier: 1, name: "Shadow Step",    icon: "🌑", maxRank: 10, desc: "Move unseen through the criminal underworld", effect: "-2% arrest chance per rank", prereqs: [] },
-      light_feet:     { tier: 1, name: "Light Feet",     icon: "👣", maxRank: 10, desc: "Reduce energy cost with silent movement", effect: "-1 energy cost per rank", prereqs: [] },
+      light_feet:     { tier: 1, name: "Light Feet",     icon: "👣", maxRank: 10, desc: "Move silently through enemy territory", effect: "-3% detection chance per rank", prereqs: [] },
       infiltration:   { tier: 2, name: "Infiltration",   icon: "🔓", maxRank: 10, desc: "Break into secured locations with ease", effect: "+5% stealth job success per rank", prereqs: [{ node: "shadow_step", rank: 3 }] },
       escape_artist:  { tier: 2, name: "Escape Artist",  icon: "💨", maxRank: 10, desc: "Slip out of the tightest situations", effect: "-2s jail time, +3% breakout per rank", prereqs: [{ node: "light_feet", rank: 3 }] },
       ghost_protocol: { tier: 3, name: "Ghost Protocol", icon: "👻", maxRank: 5,  desc: "Become a phantom — practically invisible", effect: "-4% heat gain per rank", prereqs: [{ node: "infiltration", rank: 5 }] },
@@ -498,7 +400,7 @@ export const SKILL_TREE_DEFS = {
       quick_study: { tier: 1, name: "Quick Study",   icon: "📚", maxRank: 10, desc: "A sharp mind that learns from every job", effect: "+4% job success per rank", prereqs: [] },
       awareness:   { tier: 1, name: "Awareness",     icon: "🔍", maxRank: 10, desc: "Nothing escapes your notice", effect: "+2% luck-based outcomes per rank", prereqs: [] },
       hacking:     { tier: 2, name: "Hacking",       icon: "💻", maxRank: 10, desc: "Master of digital infiltration", effect: "+7% cyber job success per rank", prereqs: [{ node: "quick_study", rank: 3 }] },
-      planning:    { tier: 2, name: "Planning",       icon: "📋", maxRank: 10, desc: "Every detail accounted for", effect: "+4% heist success per rank", prereqs: [{ node: "quick_study", rank: 3 }] },
+      planning:    { tier: 2, name: "Planning",       icon: "📋", maxRank: 10, desc: "Every detail accounted for", effect: "-5% crime cooldown per rank", prereqs: [{ node: "quick_study", rank: 3 }] },
       forensics:   { tier: 3, name: "Forensics",     icon: "🔬", maxRank: 5,  desc: "Clean up evidence like a professional", effect: "8% chance per rank to reduce wanted", prereqs: [{ node: "planning", rank: 5 }] }
     }
   },
@@ -522,12 +424,12 @@ export const SKILL_TREE_DEFS = {
     color: "#1abc9c",
     desc: "Outlast them all. When everyone else drops, you're still standing.",
     nodes: {
-      vitality:     { tier: 1, name: "Vitality",      icon: "❤️", maxRank: 10, desc: "Raw physical toughness and stamina", effect: "-1 energy cost per rank", prereqs: [] },
-      conditioning: { tier: 1, name: "Conditioning",  icon: "🏃", maxRank: 10, desc: "Push your body past its limits", effect: "+3 max energy per rank", prereqs: [] },
-      recovery:     { tier: 2, name: "Recovery",       icon: "❤️‍🩹", maxRank: 10, desc: "Bounce back from anything", effect: "+energy regen speed per rank", prereqs: [{ node: "vitality", rank: 3 }] },
+      vitality:     { tier: 1, name: "Vitality",      icon: "❤️", maxRank: 10, desc: "Raw physical toughness and stamina", effect: "-2% damage taken per rank", prereqs: [] },
+      conditioning: { tier: 1, name: "Conditioning",  icon: "🏃", maxRank: 10, desc: "Push your body past its limits", effect: "+2 max health recovery per rank", prereqs: [] },
+      recovery:     { tier: 2, name: "Recovery",       icon: "❤️‍🩹", maxRank: 10, desc: "Bounce back from anything", effect: "-5% hospital treatment time per rank", prereqs: [{ node: "vitality", rank: 3 }] },
       resilience:   { tier: 2, name: "Resilience",     icon: "🦾", maxRank: 10, desc: "Reduce the impact of injuries", effect: "-3% injury severity per rank", prereqs: [{ node: "conditioning", rank: 3 }] },
       resistance:   { tier: 3, name: "Resistance",     icon: "🛡️", maxRank: 5,  desc: "Nearly immune to punishment", effect: "-5% all damage taken per rank", prereqs: [{ node: "resilience", rank: 5 }] },
-      unstoppable:  { tier: 3, name: "Unstoppable",    icon: "⚡", maxRank: 5,  desc: "An unstoppable force of nature", effect: "+20% energy efficiency per rank", prereqs: [{ node: "recovery", rank: 5 }] }
+      unstoppable:  { tier: 3, name: "Unstoppable",    icon: "⚡", maxRank: 5,  desc: "An unstoppable force of nature", effect: "-8% all cooldowns per rank", prereqs: [{ node: "recovery", rank: 5 }] }
     }
   }
 };
@@ -547,9 +449,6 @@ export function canUnlockNode(treeName, nodeId) {
   if (!nodeDef) return false;
   const currentRank = player.skillTree[treeName][nodeId] || 0;
   if (currentRank >= nodeDef.maxRank) return false;
-  // Soft cap: ranks above 7 cost 2 skill points
-  const upgradeCost = currentRank >= 7 ? 2 : 1;
-  if (player.skillPoints < upgradeCost) return false;
   // Tier point requirements: tier 2 needs 5 pts in tree, tier 3 needs 20 pts
   const ptsInTree = getTreePointsSpent(treeName);
   if (nodeDef.tier === 2 && ptsInTree < 5) return false;

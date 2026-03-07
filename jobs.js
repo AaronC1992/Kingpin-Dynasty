@@ -2,12 +2,13 @@
  * jobs.js
  * 
  * Manages job definitions and car theft mechanics for the mafia game.
- * Contains the jobs array with payout ranges, risk levels, energy costs, jail chances,
+ * Contains the jobs array with payout ranges, risk levels, jail chances,
  * and required items. Also includes stolen car types and their properties.
+ * Note: energyCost fields are legacy data — cooldowns now use the risk field.
  */
 
 // Job options with risk categories, jail chances, wanted level gains, health loss, required items, and reputation requirements
-// v1.12.0 Rebalance: Energy costs lowered across the board — Street Soldier starts at 1
+// energyCost fields kept for data reference — cooldown timers use risk tiers instead
 export const jobs = [
     // Entry Level Job — tight early-game grind
     { name: "Street Soldier", payout: [40, 180], risk: "low", jailChance: 20, wantedLevelGain: 1, healthLoss: 0, requiredItems: [], reputation: 0, energyCost: 1 },

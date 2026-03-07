@@ -202,11 +202,7 @@ function showWhackRivalDon() {
             <h2 style="color: #c0a062; text-align: center; font-family: 'Georgia', serif;">Whack Rival Don</h2>
             <p style="color: #ccc; text-align: center; font-style: italic;">A casual PvP brawl between Dons. No permadeath — just bragging rights.</p>
             <div style="background: rgba(192, 160, 98, 0.1); padding: 15px; border-radius: 8px; margin: 15px 0; border: 1px solid #c0a062;">
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; text-align: center;">
-                    <div>
-                        <div style="color: #c0a062; font-weight: bold;">5 Energy</div>
-                        <div style="color: #888; font-size: 0.8em;">Cost per fight</div>
-                    </div>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; text-align: center;">
                     <div>
                         <div style="color: #c0a040; font-weight: bold;">Don Rep</div>
                         <div style="color: #888; font-size: 0.8em;">Win = +Rep / Lose = -Rep</div>
@@ -842,10 +838,6 @@ function challengeForTerritory(district) {
         window.ui.toast('You need at least 5 gang members to wage a territory war!', 'error');
         return;
     }
-    if ((player.energy || 0) < 40) {
-        window.ui.toast('Not enough energy! You need 40 energy to challenge.', 'error');
-        return;
-    }
 
     onlineWorldState.socket.send(JSON.stringify({
         type: 'territory_war',
@@ -1301,7 +1293,6 @@ async function handleServerMessage(message) {
             if (message.success) {
                 // Server-authoritative values overwrite local computation
                 if (typeof message.money === 'number') player.money = message.money;
-                if (typeof message.energy === 'number') player.energy = message.energy;
                 if (typeof message.reputation === 'number') player.reputation = message.reputation;
                 if (typeof message.wantedLevel === 'number') player.wantedLevel = message.wantedLevel;
                 if (message.jailed) {
@@ -1337,14 +1328,12 @@ async function handleServerMessage(message) {
                 playNotificationSound('victory');
                 showMPToast(`\u2694\uFE0F Victory! You conquered ${message.district}!`, '#8a9a6a', 5000);
                 if (typeof message.wantedLevel === 'number') player.wantedLevel = message.wantedLevel;
-                if (typeof message.energy === 'number') player.energy = message.energy;
                 if (typeof message.newHealth === 'number') player.health = message.newHealth;
             } else {
                 _safeLogAction(`\u2694\uFE0F Defeat! Failed to take ${message.district}. Lost ${message.gangMembersLost} members, HP -${message.healthDamage}.${message.jailed ? ' Arrested!' : ''}`);
                 playNotificationSound('defeat');
                 showMPToast(`\u2694\uFE0F Defeat! Failed to take ${message.district}.`, '#8b3a3a', 5000);
                 if (typeof message.wantedLevel === 'number') player.wantedLevel = message.wantedLevel;
-                if (typeof message.energy === 'number') player.energy = message.energy;
                 if (typeof message.newHealth === 'number') player.health = message.newHealth;
                 if (message.jailed) {
                     player.inJail = true;
@@ -1393,7 +1382,6 @@ async function handleServerMessage(message) {
                 if (typeof message.money === 'number') player.money = message.money;
                 if (typeof message.reputation === 'number') player.reputation = message.reputation;
                 if (typeof message.wantedLevel === 'number') player.wantedLevel = message.wantedLevel;
-                if (typeof message.energy === 'number') player.energy = message.energy;
                 player.inJail = !!message.jailed ? true : player.inJail;
                 if (message.jailed) player.jailTime = message.jailTime || player.jailTime;
                 // Log outcome
@@ -2245,16 +2233,9 @@ async function attemptPlayerJailbreak(targetPlayerId, targetPlayerName) {
         return;
     }
     
-    if (player.energy < 15) {
-        window.ui.toast("You need at least 15 energy to attempt a jailbreak!", 'error');
-        return;
-    }
-    
-    const confirmBreakout = await window.ui.confirm(`Attempt to break ${targetPlayerName} out of jail? This will cost 15 energy and has risks.`);
+    const confirmBreakout = await window.ui.confirm(`Attempt to break ${targetPlayerName} out of jail? This has risks.`);
     
     if (confirmBreakout) {
-        // SERVER-AUTHORITATIVE INTENT: Energy deducted locally, outcome (success/arrest) decided by server.
-        player.energy -= 15;
         if (onlineWorldState.socket && onlineWorldState.socket.readyState === WebSocket.OPEN) {
             onlineWorldState.socket.send(JSON.stringify({
                 type: 'jailbreak_attempt',
@@ -2267,7 +2248,7 @@ async function attemptPlayerJailbreak(targetPlayerId, targetPlayerName) {
         } else {
             window.ui.toast('Connection lost before sending jailbreak intent.', 'error');
         }
-        _safeUpdateUI(); // Show reduced energy immediately; success/failure will arrive via server messages
+        _safeUpdateUI();
     }
 }
 
@@ -2290,15 +2271,9 @@ async function attemptBotJailbreak(botId, botName) {
         return;
     }
 
-    if (player.energy < 15) {
-        window.ui.toast("You need at least 15 energy to attempt a jailbreak!", 'error');
-        return;
-    }
-
-    const confirmBreakout = await window.ui.confirm(`Attempt to break ${botName} out of jail? This will cost 15 energy and has risks.`);
+    const confirmBreakout = await window.ui.confirm(`Attempt to break ${botName} out of jail? This has risks.`);
 
     if (confirmBreakout) {
-        player.energy -= 15;
         if (onlineWorldState.socket && onlineWorldState.socket.readyState === WebSocket.OPEN) {
             onlineWorldState.socket.send(JSON.stringify({
                 type: 'jailbreak_bot',
@@ -3025,7 +3000,6 @@ function showOnlineWorld(activeTab) {
                         <p style="color: #ccc; margin: 0 0 12px 0; font-size: 0.9em;">Casual PvP brawl for bragging rights</p>
                         <div style="background: rgba(0, 0, 0, 0.6); padding: 10px; border-radius: 8px;">
                             <div style="color: #ccc; font-size: 0.8em; line-height: 1.6;">
-                                5 energy cost<br>
                                 Win/lose Don Rep<br>
                                 Both take health damage
                             </div>
@@ -3147,7 +3121,7 @@ function showOnlineWorld(activeTab) {
             </div>
             
             <div style="background: rgba(192, 160, 98, 0.1); padding: 12px; border-radius: 8px; margin-top: 15px; border: 1px solid #c0a062;">
-                <p style="color: #ccc; margin: 0; font-size: 0.85em; line-height: 1.6;"><strong style="color: #c0a062;">How Territories Work:</strong> Every territory is controlled by a rival NPC boss. Challenge them to seize control! Wars require 5+ gang members and 40 energy. The owner collects 10% tax on all resident income. Relocating costs money and has a 1-hour cooldown.</p>
+                <p style="color: #ccc; margin: 0; font-size: 0.85em; line-height: 1.6;"><strong style="color: #c0a062;">How Territories Work:</strong> Every territory is controlled by a rival NPC boss. Challenge them to seize control! Wars require 5+ gang members. The owner collects 10% tax on all resident income. Relocating costs money and has a 1-hour cooldown.</p>
             </div>
         `;
     }
@@ -3885,12 +3859,6 @@ function doDistrictJob(districtName) {
     const riskMultiplier = crimeLevel / 100;
     const rewardMultiplier = 1 + (riskMultiplier * 0.5); // Higher crime = 0-50% more reward
     const dangerMultiplier = 1 + (riskMultiplier * 0.4); // Higher crime = 0-40% more danger
-    const energyCost = 8;
-
-    if (player.energy < energyCost) {
-        showSystemMessage(`Not enough energy! Need ${energyCost} to work in ${districtName}.`, '#8b3a3a');
-        return;
-    }
 
     // District-specific job pools
     const districtJobs = {
@@ -3929,9 +3897,6 @@ function doDistrictJob(districtName) {
     const maxReward = Math.floor(job.baseReward[1] * rewardMultiplier);
     const adjustedJailChance = Math.min(0.5, job.jailChance * dangerMultiplier);
     const adjustedXp = Math.floor(job.xp * rewardMultiplier);
-
-    // Deduct energy
-    player.energy -= energyCost;
 
     // Check for arrest
     const arrested = Math.random() < adjustedJailChance;
@@ -3993,10 +3958,6 @@ function doDistrictJob(districtName) {
                     <div class="popup-stat">
                         <div class="popup-stat-value" style="color:#8b6a4a;">+${adjustedXp} XP</div>
                         <div class="popup-stat-label">Experience</div>
-                    </div>
-                    <div class="popup-stat">
-                        <div class="popup-stat-value" style="color:#e67e22;">-${energyCost}</div>
-                        <div class="popup-stat-label">Energy</div>
                     </div>
                 </div>
                 <div class="popup-actions">
@@ -4190,7 +4151,7 @@ function showAssassination() {
                     <div style="color: #ccc;">Base Chance: <span style="color: #888;">8%</span></div>
                 </div>
                 <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #5a0000;">
-                <div style="color: #ff6666; font-size: 0.85em;">Costs 30 energy + 3-5 bullets. You WILL take heavy damage. 40% arrest chance on failure.</div>
+                <div style="color: #ff6666; font-size: 0.85em;">Costs 3-5 bullets. You WILL take heavy damage. 40% arrest chance on failure.</div>
                     <div style="color: #ff6666; font-size: 0.85em; margin-top: 4px;">Gang members sent may be killed in the firefight (20% each).</div>
                     <div style="color: #c0a062; font-size: 0.85em; margin-top: 4px;">Steal 8-20% of target's cash on success.</div>
                     <div style="color: #ff8800; font-size: 0.85em; margin-top: 4px;">10 minute cooldown between attempts.</div>
@@ -4240,12 +4201,10 @@ async function attemptAssassination(targetName) {
     if (guns.length < 1) { window.ui.toast('You need at least one gun!', 'error'); return; }
     if (bullets < 3) { window.ui.toast('You need at least 3 bullets!', 'error'); return; }
     if (totalVehicles < 1) { window.ui.toast('You need a getaway vehicle!', 'error'); return; }
-    if ((player.energy || 0) < 30) { window.ui.toast('Not enough energy! You need 30 energy.', 'error'); return; }
 
     const confirmHit = await window.ui.confirm(
         `ORDER HIT ON ${targetName}?\n\n` +
         `This will cost:\n` +
-        `◆ 30 Energy\n` +
         `◆ 3-5 Bullets\n` +
         `◆ You WILL take heavy health damage\n` +
         `◆ Gang members may die in the firefight\n` +
@@ -4318,7 +4277,6 @@ function handleAssassinationResult(message) {
         if (typeof message.newMoney === 'number') player.money = message.newMoney;
         if (typeof message.newReputation === 'number') player.reputation = message.newReputation;
         if (typeof message.wantedLevel === 'number') player.wantedLevel = message.wantedLevel;
-        player.energy = Math.max(0, (player.energy || 0) - 30);
 
         // Apply health damage
         if (typeof message.newHealth === 'number') player.health = message.newHealth;
@@ -4379,7 +4337,6 @@ function handleAssassinationResult(message) {
     } else {
         // Failed
         player.ammo = Math.max(0, (player.ammo || 0) - (message.bulletsUsed || 3));
-        player.energy = Math.max(0, (player.energy || 0) - 30);
         if (typeof message.wantedLevel === 'number') player.wantedLevel = message.wantedLevel;
 
         // Apply health damage
@@ -4484,12 +4441,6 @@ function challengePlayer(playerName) {
         return;
     }
 
-    const energyCost = 5;
-    if (player.energy < energyCost) {
-        showSystemMessage(`Not enough energy! Need ${energyCost} to fight.`, '#8b3a3a');
-        return;
-    }
-
     if (player.inJail) {
         showSystemMessage('You can\'t fight while in jail!', '#8b3a3a');
         return;
@@ -4525,23 +4476,19 @@ function challengePlayer(playerName) {
                     <div style="color:#888;font-size:0.85em;">Rep: ${targetRep}</div>
                 </div>
             </div>
-            <p class="popup-subtitle">Cost: ${energyCost} energy | Winner gains Don Rep</p>
+            <p class="popup-subtitle">Winner gains Don Rep</p>
             <div class="popup-actions">
-                <button onclick="executePvpChallenge('${escapeHTML(playerName)}', ${energyCost})" class="popup-btn popup-btn-crimson">Fight</button>
+                <button onclick="executePvpChallenge('${escapeHTML(playerName)}')" class="popup-btn popup-btn-crimson">Fight</button>
                 <button onclick="document.getElementById('pvp-challenge-modal').remove();" class="popup-btn popup-btn-secondary">Walk Away</button>
             </div>
         </div>
     `;
 }
 
-function executePvpChallenge(playerName, energyCost) {
+function executePvpChallenge(playerName) {
     // Remove confirmation modal
     const modal = document.getElementById('pvp-challenge-modal');
     if (modal) modal.remove();
-
-    // Deduct energy
-    player.energy -= energyCost;
-    if (typeof updateUI === 'function') updateUI();
 
     // Send challenge to server for authoritative resolution
     // Include combat stats so server can use the balanced formula
@@ -4560,8 +4507,6 @@ function executePvpChallenge(playerName, energyCost) {
         showSystemMessage(`Engaging ${playerName} in combat...`, '#c0a040');
         _safeLogAction(`Challenged ${playerName} to combat!`);
     } else {
-        // Refund energy on connection failure
-        player.energy += energyCost;
         showSystemMessage('Connection lost. Try reconnecting.', '#8b3a3a');
         if (typeof updateUI === 'function') updateUI();
     }
@@ -4617,13 +4562,6 @@ function participateInEvent(eventType, district) {
         return;
     }
 
-    // Energy cost to participate
-    const energyCost = 10;
-    if (player.energy < energyCost) {
-        showSystemMessage(`Not enough energy! Need ${energyCost} energy to participate.`, '#8b3a3a');
-        return;
-    }
-
     // Define event outcomes based on type
     const eventOutcomes = {
         police_raid: {
@@ -4666,9 +4604,6 @@ function participateInEvent(eventType, district) {
 
     // Pick a random scenario
     const scenario = eventData.scenarios[Math.floor(Math.random() * eventData.scenarios.length)];
-
-    // Deduct energy
-    player.energy -= energyCost;
 
     // Level bonus: higher level = slightly better success chance
     const levelBonus = Math.min(0.15, (player.level || 1) * 0.01);

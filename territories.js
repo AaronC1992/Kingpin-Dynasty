@@ -197,9 +197,6 @@ export const CLAIM_COSTS = [10000, 20000, 50000, 40000, 25000, 30000, 80000, 350
 /** Minimum gang members required to wage territory war */
 export const MIN_WAR_GANG_SIZE = 5;
 
-/** Energy cost for waging territory war */
-export const WAR_ENERGY_COST = 40;
-
 /** Tax rate territory owners collect on business income earned in their district */
 export const BUSINESS_TAX_RATE = 0.10;
 

@@ -43,7 +43,7 @@ setInterval(() => {
 
 // ── Allowed fields for admin modifications ─────────────────────
 const ADMIN_ALLOWED_FIELDS = new Set([
-    'money', 'level', 'experience', 'health', 'energy', 'maxEnergy',
+    'money', 'level', 'experience', 'health',
     'power', 'reputation', 'wantedLevel', 'ammo', 'gas', 'skillPoints',
     'territory', 'dirtyMoney'
 ]);
@@ -1208,7 +1208,6 @@ function handlePlayerConnect(clientId, message, ws) {
         inJail: message.playerStats?.inJail || false,
         jailTime: message.playerStats?.jailTime || 0,
         health: message.playerStats?.health || 100,
-        energy: message.playerStats?.energy || 100,
         wantedLevel: message.playerStats?.wantedLevel || 0,
         lastUpdate: Date.now()
     };
@@ -1460,7 +1459,7 @@ function handleTerritoryInfo(clientId, message, ws) {
 // ==================== PHASE 2: TERRITORY OWNERSHIP CLAIM ====================
 // ==================== PHASE 2: TERRITORY WAR (GANG WAR CONQUEST) ====================
 // A player attacks a district owned by another player. Server-authoritative power comparison.
-// Requires: ≥5 gang members, 40 energy, and target district must have an owner.
+// Requires: ≥5 gang members, and target district must have an owner.
 const TERRITORY_WAR_COOLDOWN_MS = 30 * 60 * 1000; // 30 minutes
 const territoryWarCooldowns = new Map();
 
@@ -1489,19 +1488,12 @@ function handleTerritoryWar(clientId, message) {
     // Jail check
     if (attackerState.inJail) return fail('Can\'t wage war from behind bars.');
 
-    // Energy cost: 40
-    const energyCost = 40;
-    if ((attackerState.energy || 0) < energyCost) return fail('Not enough energy (40 required).');
-
     // Validate client-reported resources (trust minimally, cap values)
     const gangMembers = Math.max(0, Math.min(message.gangMembers || 0, 100));
     const attackPower = Math.max(0, Math.min(message.power || 0, 5000));
     const gangLoyalty = Math.max(0, Math.min(message.gangLoyalty || 100, 200));
 
     if (gangMembers < 5) return fail('You need at least 5 gang members to wage a territory war.');
-
-    // Deduct energy
-    attackerState.energy = Math.max(0, (attackerState.energy || 100) - energyCost);
 
     // Set cooldown
     territoryWarCooldowns.set(clientId, now);
@@ -1595,7 +1587,6 @@ function handleTerritoryWar(clientId, message) {
                 healthDamage: healthDamage,
                 newHealth: attackerState.health,
                 wantedLevel: attackerState.wantedLevel,
-                energy: attackerState.energy,
                 territories: gameState.territories
             }));
         }
@@ -1659,7 +1650,6 @@ function handleTerritoryWar(clientId, message) {
                 healthDamage: healthDamage,
                 newHealth: attackerState.health,
                 wantedLevel: attackerState.wantedLevel,
-                energy: attackerState.energy,
                 jailed: jailed,
                 jailTime: jailTime,
                 error: jailed
@@ -1802,16 +1792,11 @@ function handlePlayerChallenge(clientId, message) {
     if (challengerState.inJail) return fail('You can\'t fight while in jail.');
     if (targetState.inJail) return fail('Target is in jail — protected by the feds.');
 
-    // Energy check — server validates, costs 5
-    const energyCost = 5;
-    if ((challengerState.energy || 0) < energyCost) return fail('Not enough energy.');
-    challengerState.energy = Math.max(0, (challengerState.energy || 100) - energyCost);
-
     // Set cooldown
     pvpCooldowns.set(clientId, now);
 
     // === BALANCED COMBAT FORMULA ===
-    // Factors: level (~25%), reputation (~15%), gear/power (~25%), gang (~15%), health/energy (~10%), randomness (~10%)
+    // Factors: level (~25%), reputation (~15%), gear/power (~25%), gang (~15%), health (~10%), randomness (~10%)
     // Client-reported stats (power, gangMembers) are capped server-side to prevent inflated values.
     const cLevel = challenger.level || 1;
     const tLevel = targetPlayer.level || 1;
@@ -1822,27 +1807,24 @@ function handlePlayerChallenge(clientId, message) {
     const cPower = Math.max(0, Math.min(message.power || 0, 5000));
     const cGang = Math.max(0, Math.min(message.gangMembers || 0, 100));
     const cHealth = Math.max(0, Math.min(challengerState.health || 100, 200));
-    const cEnergy = Math.max(0, Math.min(challengerState.energy || 100, 200));
 
     // Target stats from server-authoritative state (no client trust)
     const tPower = Math.max(0, Math.min(targetState.power || 0, 5000));
     const tGang = Math.max(0, Math.min(targetState.gangMembers || 0, 100));
     const tHealth = Math.max(0, Math.min(targetState.health || 100, 200));
-    const tEnergy = Math.max(0, Math.min(targetState.energy || 100, 200));
 
     // Composite combat score
-    function combatScore(lvl, rep, power, gang, hp, en) {
+    function combatScore(lvl, rep, power, gang, hp) {
         return (lvl * 5) // Level: max ~250 @ lvl 50
              + (rep * 0.3) // Reputation: max ~150 @ 500 rep
              + (power * 0.08) // Gear power: max ~400 @ 5000
              + (gang * 3) // Gang: max ~300 @ 100 members
              + ((hp / 100) * 20) // Health: max ~40 @ 200 HP
-             + ((en / 100) * 10) // Energy: max ~20 @ 200
              + (Math.random() * 40); // Randomness: 0-40 (upset factor)
     }
 
-    const challengerScore = combatScore(cLevel, cRep, cPower, cGang, cHealth, cEnergy);
-    const targetScore = combatScore(tLevel, tRep, tPower, tGang, tHealth, tEnergy);
+    const challengerScore = combatScore(cLevel, cRep, cPower, cGang, cHealth);
+    const targetScore = combatScore(tLevel, tRep, tPower, tGang, tHealth);
     const victory = challengerScore > targetScore;
 
     // Health damage from the fight (both take damage)
@@ -1929,7 +1911,7 @@ function handlePlayerChallenge(clientId, message) {
         scheduleWorldSave();
     }
 
-    // Broadcast updated states so both players see HP/energy changes
+    // Broadcast updated states so both players see HP changes
     broadcastPlayerStates();
 }
 
@@ -2067,7 +2049,7 @@ function handlePlayerUpdate(clientId, message) {
     }
     
     // Update allowed state fields from message (whitelist approach)
-    // SECURITY: gameplay-sensitive fields (health, energy, inJail, jailTime, wantedLevel)
+    // SECURITY: gameplay-sensitive fields (health, inJail, jailTime, wantedLevel)
     // are only updated by server-side handlers (jobs, combat, jailbreak, etc.)
     if (message.playerState) {
         // Display-sync only — these help other clients see you accurately
@@ -2553,9 +2535,9 @@ function handleSendGift(senderId, message) {
 // ==================== JOB INTENT HANDLER (SERVER AUTHORITATIVE) ====================
 // Minimal first-pass job definitions. In future, load from shared balance config.
 const JOB_DEFS = {
-    pickpocket: { base: 200, risk: 'low', wanted: 1, jailChance: 2, energyCost: 5 },
-    carTheft: { base: 1200, risk: 'medium', wanted: 3, jailChance: 5, energyCost: 15 },
-    bankRobbery: { base: 25000, risk: 'high', wanted: 8, jailChance: 15, energyCost: 35 }
+    pickpocket: { base: 200, risk: 'low', wanted: 1, jailChance: 2 },
+    carTheft: { base: 1200, risk: 'medium', wanted: 3, jailChance: 5 },
+    bankRobbery: { base: 25000, risk: 'high', wanted: 8, jailChance: 15 }
 };
 
 function handleJobIntent(clientId, message) {
@@ -2573,20 +2555,12 @@ function handleJobIntent(clientId, message) {
         return;
     }
 
-    // Validation: jail & energy
+    // Validation: jail
     if (ps.inJail) {
         const ws = clients.get(clientId);
         if (ws) ws.send(JSON.stringify({ type: 'job_result', jobId, success: false, error: 'Player in jail' }));
         return;
     }
-    if ((ps.energy || 0) < jobDef.energyCost) {
-        const ws = clients.get(clientId);
-        if (ws) ws.send(JSON.stringify({ type: 'job_result', jobId, success: false, error: 'Not enough energy' }));
-        return;
-    }
-
-    // Deduct energy
-    ps.energy = Math.max(0, (ps.energy || 0) - jobDef.energyCost);
 
     // Compute reward authoritatively
     const variance = 0.5 + Math.random(); // 0.5x - 1.5x
@@ -2672,8 +2646,7 @@ function handleJobIntent(clientId, message) {
             jailTime: ps.jailTime || 0,
             money: ps.money,
             reputation: ps.reputation,
-            wantedLevel: ps.wantedLevel,
-            energy: ps.energy
+            wantedLevel: ps.wantedLevel
         }));
     }
 
@@ -3128,16 +3101,6 @@ function handleAssassinationAttempt(clientId, message) {
         return;
     }
 
-    // Energy check (costs 30 energy)
-    const energyCost = 30;
-    if ((attackerState.energy || 0) < energyCost) {
-        const ws = clients.get(clientId);
-        if (ws && ws.readyState === 1) {
-            ws.send(JSON.stringify({ type: 'assassination_result', success: false, error: 'Not enough energy. You need 30 energy to plan a hit.' }));
-        }
-        return;
-    }
-
     // Validate client-reported resources (trust minimally, cap bonuses)
     const bulletsSent = Math.max(0, Math.min(message.bullets || 0, 999));
     const gunCount = Math.max(0, Math.min(message.gunCount || 0, 50));
@@ -3202,9 +3165,6 @@ function handleAssassinationAttempt(clientId, message) {
 
     // Clamp to 3%-15% — always risky, never guaranteed
     chance = Math.max(3, Math.min(chance, 15));
-
-    // Deduct energy
-    attackerState.energy = Math.max(0, (attackerState.energy || 100) - energyCost);
 
     // Consume 3-5 bullets regardless (shots fired)
     const bulletsUsed = Math.min(bulletsSent, 5);

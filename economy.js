@@ -33,10 +33,6 @@ export const storeItems = [
     // === Supplies ===
     { name: "Bullets", price: 100000, power: 0, type: "ammo", description: "Premium black-market ammunition. Extremely scarce — only 10 rounds hit the streets each day. Required for firearms." },
     { name: "Gasoline", price: 50000, power: 0, type: "gas", description: "Fuel for your vehicles. Hard to come by on the black market. Required to operate cars and planes. Consumed per use." },
-    // === Energy Items — v1.11.0: significantly more expensive to prevent energy-buy spam ===
-    { name: "Strong Coffee", price: 2500, power: 0, type: "energy", energyRestore: 15, description: "Cheap caffeine boost. Restores 15 energy instantly. No side effects." },
-    { name: "Energy Drink", price: 6000, power: 0, type: "energy", energyRestore: 30, description: "Chemical energy, slight health risk. Restores 30 energy instantly. (-1 health)" },
-    { name: "Steroids", price: 10000, power: 0, type: "energy", energyRestore: 60, description: "Maximum energy, maximum risk. Restores 60 energy instantly. (-5 health, +5 suspicion)" },
     // === Utility Items ===
     { name: "Lockpick Set", price: 15000, power: 0, type: "utility", description: "Passively grants +10% success chance on all jobs while owned." },
     { name: "Police Scanner", price: 50000, power: 0, type: "utility", description: "Passively reduces wanted level gain by 20% on every job and combat action while owned." },
@@ -253,7 +249,6 @@ export const launderingMethods = [
         suspicionRisk: 15, // % chance of raising suspicion
         minAmount: 100000,
         maxAmount: 5000000,
-        energyCost: 10,
         businessRequired: "casino"
     },
     {
@@ -265,7 +260,6 @@ export const launderingMethods = [
         suspicionRisk: 10,
         minAmount: 50000,
         maxAmount: 2000000,
-        energyCost: 15,
         businessRequired: "restaurant"
     },
     {
@@ -277,7 +271,6 @@ export const launderingMethods = [
         suspicionRisk: 25,
         minAmount: 200000,
         maxAmount: 10000000,
-        energyCost: 20,
         businessRequired: null // Any business works
     },
     {
@@ -289,7 +282,6 @@ export const launderingMethods = [
         suspicionRisk: 30,
         minAmount: 1000000,
         maxAmount: 50000000,
-        energyCost: 30,
         minReputation: 40
     },
     {
@@ -301,7 +293,6 @@ export const launderingMethods = [
         suspicionRisk: 5,
         minAmount: 5000000,
         maxAmount: 100000000,
-        energyCost: 25,
         minReputation: 60,
         oneTimeSetupCost: 2500000
     }

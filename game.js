@@ -1,7 +1,7 @@
 // onboarding removed -- tutorial system fully stripped
 import { applyDailyPassives, getDrugIncomeMultiplier, getViolenceHeatMultiplier, getWeaponPriceMultiplier } from './passiveManager.js';
 import { showEmpireOverview } from './empireOverview.js';
-import { player, gainExperience, checkLevelUp, regenerateEnergy, startEnergyRegenTimer, startEnergyRegeneration, SKILL_TREE_DEFS, getTreePointsSpent, canUnlockNode, isNodeAccessible, achievements, CHARACTER_BACKGROUNDS, CHARACTER_PERKS } from './player.js';
+import { player, gainExperience, checkLevelUp, SKILL_TREE_DEFS, getTreePointsSpent, canUnlockNode, isNodeAccessible, achievements, CHARACTER_BACKGROUNDS, CHARACTER_PERKS } from './player.js';
 import { jobs, stolenCarTypes } from './jobs.js';
 import { crimeFamilies, factionEffects } from './factions.js';
 import { familyStories, missionProgress, factionMissions } from './missions.js?v=1.8.1';
@@ -33,7 +33,7 @@ import {
   startSnakeGame, restartSnake,
   startQuickDraw, startReactionTest, handleReactionClick
 } from './miniGames.js';
-import { DISTRICTS, getDistrict, MOVE_COOLDOWN_MS, MIN_CLAIM_LEVEL, CLAIM_COSTS, MIN_WAR_GANG_SIZE, WAR_ENERGY_COST, BUSINESS_TAX_RATE, getBusinessMultiplier, getDistrictBenefit, NPC_OWNER_NAMES } from './territories.js';
+import { DISTRICTS, getDistrict, MOVE_COOLDOWN_MS, MIN_CLAIM_LEVEL, CLAIM_COSTS, MIN_WAR_GANG_SIZE, BUSINESS_TAX_RATE, getBusinessMultiplier, getDistrictBenefit, NPC_OWNER_NAMES } from './territories.js';
 import { STREET_STORIES, SIDE_QUESTS, POST_DON_ARCS, DEEP_NARRATIONS } from './storyExpansion.js';
 
 // Expose to window for legacy compatibility
@@ -85,6 +85,78 @@ function escapeHTML(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 window.escapeHTML = escapeHTML;
+
+// ==================== CRIME COOLDOWN SYSTEM ====================
+// Each job has a cooldown based on its risk level. Planning skill & Quick Hands perk reduce cooldowns.
+const RISK_COOLDOWNS = {
+  low: 15,        // 15 seconds
+  medium: 45,     // 45 seconds
+  high: 120,      // 2 minutes
+  'very high': 300, // 5 minutes
+  extreme: 600,   // 10 minutes
+  legendary: 1200  // 20 minutes
+};
+
+// Get the cooldown duration (in seconds) for a job, reduced by Planning skill, Unstoppable skill & Quick Hands perk
+function getJobCooldown(job) {
+  const baseCooldown = RISK_COOLDOWNS[job.risk] || 15;
+  const planningLevel = (player.skillTree && player.skillTree.intelligence) ? (player.skillTree.intelligence.planning || 0) : 0;
+  const unstoppableLevel = (player.skillTree && player.skillTree.endurance) ? (player.skillTree.endurance.unstoppable || 0) : 0;
+  let cooldown = baseCooldown * (1 - planningLevel * 0.05); // -5% per Planning rank
+  cooldown = cooldown * (1 - unstoppableLevel * 0.08); // -8% per Unstoppable rank
+  if (typeof hasPlayerPerk === 'function' && hasPlayerPerk('quick_hands')) {
+    cooldown = cooldown * 0.85; // Quick Hands: -15% cooldown
+  }
+  return Math.max(5, Math.ceil(cooldown)); // Minimum 5 seconds
+}
+
+// Check if a job is on cooldown. Returns remaining seconds or 0 if ready.
+function getJobCooldownRemaining(index) {
+  if (!player.jobCooldowns) player.jobCooldowns = {};
+  const expires = player.jobCooldowns[index];
+  if (!expires) return 0;
+  const remaining = Math.ceil((expires - Date.now()) / 1000);
+  if (remaining <= 0) {
+    delete player.jobCooldowns[index];
+    return 0;
+  }
+  return remaining;
+}
+
+// Set cooldown on a job after completion
+function setJobCooldown(index, job) {
+  if (!player.jobCooldowns) player.jobCooldowns = {};
+  const cooldownSec = getJobCooldown(job);
+  player.jobCooldowns[index] = Date.now() + cooldownSec * 1000;
+}
+
+// Format seconds into a human-readable string like "2m 30s" or "15s"
+function formatCooldownTime(seconds) {
+  if (seconds <= 0) return 'Ready';
+  if (seconds >= 60) {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return s > 0 ? `${m}m ${s}s` : `${m}m`;
+  }
+  return `${seconds}s`;
+}
+
+// Cooldown tick — refreshes job list UI every second while any cooldown is active
+let _cooldownTickInterval = null;
+function startCooldownTick() {
+  if (_cooldownTickInterval) return; // Already running
+  _cooldownTickInterval = setInterval(() => {
+    if (!player.jobCooldowns || Object.keys(player.jobCooldowns).length === 0) {
+      clearInterval(_cooldownTickInterval);
+      _cooldownTickInterval = null;
+      return;
+    }
+    // Only refresh if jobs screen is visible
+    if (document.getElementById('jobs-screen') && document.getElementById('jobs-screen').style.display === 'block') {
+      refreshJobsList();
+    }
+  }, 1000);
+}
 
 // ==================== POWER RECALCULATION ====================
 // Power is derived from: equipped weapon + equipped armor + equipped vehicle + real estate + gang members
@@ -825,14 +897,6 @@ async function startStoryBossFight(chapterId) {
 
   const boss = chapter.boss;
 
-  // Require enough energy (flat 25 for story bosses)
-  const energyCost = 25;
-  if (player.energy < energyCost) {
-    showBriefNotification(`Need ${energyCost} energy for this confrontation!`, 'danger');
-    return;
-  }
-  player.energy -= energyCost;
-
   // Battle calculation
   const enforcerBonus = (player.skillTree.combat.enforcer || 0) * 0.15; // +15% boss power per rank
   const playerStrength = Math.floor((player.power + (player.gang.members * 8) + (player.skillTree.combat.brawler * 10)) * (1 + enforcerBonus));
@@ -952,11 +1016,6 @@ async function startFactionMission(familyKey, missionId) {
   if (!mission) return;
 
   // Check requirements
-  if (player.energy < mission.energyCost) {
-    showBriefNotification(`Need ${mission.energyCost} energy for this mission!`, 'danger');
-    return;
-  }
-
   if (!hasRequiredItems(mission.requiredItems)) {
     showBriefNotification(`Need: ${mission.requiredItems.join(', ')}`, 'danger');
     return;
@@ -966,9 +1025,6 @@ async function startFactionMission(familyKey, missionId) {
     showBriefNotification(`Need ${mission.reputation} reputation for this mission!`, 'danger');
     return;
   }
-
-  // Consume energy
-  player.energy -= mission.energyCost;
 
   // Calculate success chance
   let successChance = 60 + (player.power * 0.5) + (player.skillTree.intelligence.quick_study * 2);
@@ -1035,16 +1091,6 @@ function startSignatureJob(familyKey) {
     showBriefNotification(`This signature job is on cooldown. Try again in ${remaining >= 60 ? Math.floor(remaining/60) + 'h ' + (remaining%60) + 'm' : remaining + 'm'}.`, 'warning');
     return;
   }
-
-  // Energy cost (flat 20)
-  const energyCost = 20;
-  if (player.energy < energyCost) {
-    showBriefNotification(`You need ${energyCost} energy for this signature job.`, 'danger');
-    return;
-  }
-
-  player.energy -= energyCost;
-  startEnergyRegenTimer();
 
   // Success chance based on the signature job's type (maps to player skill tree)
   const skillMap = { charisma: player.skillTree.charisma.smooth_talker, violence: player.skillTree.combat.brawler, intelligence: player.skillTree.intelligence.quick_study, stealth: player.skillTree.stealth.shadow_step };
@@ -1602,8 +1648,7 @@ const RIVAL_FAMILIES = {
         buff: {
             id: "cartel_connections",
             name: "Cartel Supply Line",
-            description: "+20% energy regen speed, violent jobs generate 25% less heat",
-            energyRegenBonus: 0.20,
+            description: "Violent jobs generate 25% less heat",
             violentHeatReduction: 0.25
         },
         turfZones: ["redlight_district", "the_sprawl"],
@@ -4866,7 +4911,6 @@ function buildLaunderingHTML() {
                 <p style="margin: 5px 0;"><strong>Processing Time:</strong> ${method.timeRequired} min</p>
                 <p style="margin: 5px 0;"><strong>Interception Risk:</strong> ${method.suspicionRisk}%</p>
                 <p style="margin: 5px 0;"><strong>Range:</strong> $${method.minAmount.toLocaleString()} - $${method.maxAmount.toLocaleString()}</p>
-                <p style="margin: 5px 0;"><strong>Energy Cost:</strong> ${method.energyCost}</p>
                 ${method.businessRequired ? `<p style="margin: 5px 0; color: #c0a040;"><strong>Requires:</strong> ${businessTypes.find(bt => bt.id === method.businessRequired)?.name || 'Business'}</p>` : ''}
               </div>
 
@@ -4932,7 +4976,6 @@ function checkLaunderingEligibility(method) {
   if (method.oneTimeSetupCost && !player.launderingSetups) {
     if (player.money < method.oneTimeSetupCost) return false;
   }
-  if (player.energy < method.energyCost) return false;
   return true;
 }
 
@@ -4952,11 +4995,6 @@ function startLaundering(methodId) {
 
   if (amount > player.dirtyMoney) {
     showToast("You don't have enough dirty money!", 'error');
-    return;
-  }
-
-  if (player.energy < method.energyCost) {
-    showToast("Not enough energy for this operation!", 'error');
     return;
   }
 
@@ -4990,8 +5028,7 @@ function startLaundering(methodId) {
     showToast(`Setup complete! Paid $${method.oneTimeSetupCost.toLocaleString()} for ${method.name}.`, 'success');
   }
 
-  // Deduct energy and dirty money
-  player.energy -= method.energyCost;
+  // Deduct dirty money
   player.dirtyMoney -= amount;
 
   // Roll for interception (heat-based risk)
@@ -8124,7 +8161,6 @@ function updateUI() {
           dirtyMoney: dirty,
           reputation: player.reputation,
           wantedLevel: player.wantedLevel,
-          energy: player.energy,
           health: player.health,
           inJail: player.inJail,
           jailTime: player.jailTime,
@@ -8153,7 +8189,6 @@ function updateUI() {
       emitNum('dirtyMoney', dirty, 'dirtyMoneyChanged');
       emitNum('reputation', Math.floor(player.reputation), 'reputationChanged');
       emitNum('wantedLevel', player.wantedLevel, 'wantedLevelChanged');
-      emitNum('energy', player.energy, 'energyChanged');
       emitNum('health', player.health, 'healthChanged');
       emitNum('territoryCount', (player.turf?.owned || []).length, 'territoryChanged');
       emitNum('level', player.level, 'levelChanged');
@@ -8203,17 +8238,6 @@ function updateUI() {
 
   document.getElementById("health-display").innerText = `Health: ${player.health}`;
 
-  // Update energy display with timer (compact format)
-  let energyText = `Energy: ${player.energy}/${player.maxEnergy}`;
-  if (player.energy < player.maxEnergy && !player.inJail) {
-    energyText += ` (${player.energyRegenTimer}s)`;
-  } else if (player.energy >= player.maxEnergy) {
-    energyText += ` `;
-  } else if (player.inJail) {
-    energyText += ` `;
-  }
-  document.getElementById("energy-display").innerText = energyText;
-
   // Update Empire Rating (passive calculation)
   calculateEmpireRating();
 
@@ -8226,7 +8250,19 @@ function updateUI() {
     document.getElementById("experience-display").innerText = `XP: ${player.experience}/${xpNeeded}`;
   }
   if (document.getElementById("skill-points-display")) {
-    document.getElementById("skill-points-display").innerText = `Skill Points: ${player.skillPoints}`;
+    if (player.activeTraining) {
+      const t = player.activeTraining;
+      const remaining = Math.max(0, t.duration - (Date.now() - t.startTime));
+      const sec = Math.ceil(remaining / 1000);
+      const nodeDef = SKILL_TREE_DEFS[t.tree]?.nodes[t.node];
+      document.getElementById("skill-points-display").innerText = `Training: ${nodeDef?.name || t.node} (${formatTrainingTime(sec)})`;
+    } else if (player.activeHealing) {
+      const h = player.activeHealing;
+      const remaining = Math.max(0, h.duration - Math.floor((Date.now() - h.startTime) / 1000));
+      document.getElementById("skill-points-display").innerText = `Healing: ${remaining}s remaining`;
+    } else {
+      document.getElementById("skill-points-display").innerText = `Training: Idle`;
+    }
   }
   if (document.getElementById("season-display")) {
     document.getElementById("season-display").innerText = `Season: ${currentSeason}`;
@@ -8296,7 +8332,7 @@ function updateUI() {
     updateJailUI();
   }
 
-  // Refresh current screen if it depends on energy/money/stats
+  // Refresh current screen if it depends on money/stats
   refreshCurrentScreen();
 
   // Check for level up
@@ -8348,7 +8384,7 @@ function showAdminPanel() {
       <button onclick="adminQuickGrant('dirtyMoney', 100000)" style="border-color:#8b3a3a;">+$100K Dirty</button>
       <button onclick="adminQuickGrant('skillPoints', 100)" style="border-color:#8b3a3a;">+100 Skill Pts</button>
       <button onclick="adminQuickGrant('experience', 100000)" style="border-color:#8b3a3a;">+100K XP</button>
-      <button onclick="adminQuickGrant('energy', 100)" style="border-color:#8b3a3a;">+100 Energy</button>
+      <button onclick="adminClearCooldowns()" style="border-color:#8b3a3a;">Clear Cooldowns</button>
       <button onclick="adminQuickGrant('health', 100)" style="border-color:#8b3a3a;">+100 Health</button>
       <button onclick="adminQuickGrant('reputation', 500)" style="border-color:#8b3a3a;">+500 Rep</button>
       <button onclick="adminQuickGrant('ammo', 500)" style="border-color:#8b3a3a;">+500 Ammo</button>
@@ -8383,10 +8419,6 @@ function showAdminPanel() {
           <input type="number" id="admin-sp" value="${player.skillPoints || 0}" min="0" style="padding:6px; background:#14120a; color:#e0e0e0; border:1px solid #444; border-radius:4px;">
         </label>
         <label style="display:flex; flex-direction:column; gap:4px;">
-          <span>Energy (${player.energy}/${player.maxEnergy})</span>
-          <input type="number" id="admin-energy" value="${player.energy}" min="0" style="padding:6px; background:#14120a; color:#e0e0e0; border:1px solid #444; border-radius:4px;">
-        </label>
-        <label style="display:flex; flex-direction:column; gap:4px;">
           <span>Health (${player.health})</span>
           <input type="number" id="admin-health" value="${player.health}" min="0" max="100" style="padding:6px; background:#14120a; color:#e0e0e0; border:1px solid #444; border-radius:4px;">
         </label>
@@ -8413,7 +8445,7 @@ function showAdminPanel() {
     <div class="content-card" style="display:flex; flex-wrap:wrap; gap:8px;">
       <button onclick="adminJailRelease()" style="border-color:#8b3a3a;">Release from Jail</button>
       <button onclick="adminClearWanted()" style="border-color:#8b3a3a;">Clear Wanted Level</button>
-      <button onclick="adminFullHeal()" style="border-color:#8b3a3a;">Full Heal + Energy</button>
+      <button onclick="adminFullHeal()" style="border-color:#8b3a3a;">Full Heal</button>
     </div>
 
     <div class="section-header" style="color: #8b3a3a;">Skills (Set All)</div>
@@ -8472,7 +8504,6 @@ function adminApplyStats() {
   player.dirtyMoney = Math.max(0, getValue('admin-dirty'));
   player.reputation = Math.max(0, getValue('admin-rep'));
   player.skillPoints = Math.max(0, getValue('admin-sp'));
-  player.energy = Math.max(0, getValue('admin-energy'));
   player.health = Math.max(0, Math.min(100, getValue('admin-health')));
   player.wantedLevel = Math.max(0, Math.min(100, getValue('admin-wanted')));
   player.gang.members = Math.max(0, getValue('admin-gang'));
@@ -8493,8 +8524,6 @@ function adminResetStats() {
       player.dirtyMoney = 0;
       player.reputation = 0;
       player.skillPoints = 0;
-      player.energy = 100;
-      player.maxEnergy = 100;
       player.health = 100;
       player.wantedLevel = 0;
       player.gang.members = 0;
@@ -8530,9 +8559,17 @@ function adminClearWanted() {
 
 function adminFullHeal() {
   player.health = 100;
-  player.energy = player.maxEnergy || 100;
-  showBriefNotification('Admin: Fully healed + energy restored!', 'success');
-  logAction('[Admin] Full heal and energy restore');
+  player.jobCooldowns = {};
+  showBriefNotification('Admin: Fully healed + cooldowns cleared!', 'success');
+  logAction('[Admin] Full heal and cooldowns cleared');
+  updateUI();
+  showAdminPanel();
+}
+
+function adminClearCooldowns() {
+  player.jobCooldowns = {};
+  showBriefNotification('Admin: All job cooldowns cleared!', 'success');
+  logAction('[Admin] Job cooldowns cleared');
   updateUI();
   showAdminPanel();
 }
@@ -8623,7 +8660,7 @@ function executeAdminKill(targetPlayerId, targetName) {
 }
 
 // Function to refresh the currently active screen
-// IMPORTANT: This runs every ~1 second via the energy regen loop.
+// IMPORTANT: This runs periodically via the screen refresh timer.
 // Never do a full innerHTML rebuild here -- only patch individual elements
 // to avoid destroying hover/focus states and causing visible flicker.
 function refreshCurrentScreen() {
@@ -8695,7 +8732,7 @@ function refreshJobsButtons() {
     if (!job) return;
 
     const hasRequirements = hasRequiredItems(job.requiredItems);
-    const actualEnergyCost = Math.max(1, job.energyCost - player.skillTree.endurance.vitality);
+    const cooldownLeft = getJobCooldownRemaining(index);
 
     let buttonColor = "green";
     let buttonText = "Work";
@@ -8705,9 +8742,9 @@ function refreshJobsButtons() {
       buttonColor = "red";
       buttonText = "Requirements Not Met";
       isDisabled = true;
-    } else if (player.energy < actualEnergyCost) {
+    } else if (cooldownLeft > 0) {
       buttonColor = "orange";
-      buttonText = `Need ${actualEnergyCost} Energy`;
+      buttonText = `Cooldown: ${formatCooldownTime(cooldownLeft)}`;
       isDisabled = true;
     } else if (job.risk === "legendary") {
       buttonColor = "#8b6a4a";
@@ -8730,8 +8767,7 @@ function refreshJobsButtons() {
   });
 }
 
-// Full job-list rebuild -- called by showJobs() and energy-purchase helpers.
-// NOT called on the per-second timer.
+// Full job-list rebuild -- called by showJobs() and cooldown timer tick.
 function refreshJobsList() {
   const jobListElement = document.getElementById("job-list");
   if (!jobListElement) {
@@ -8747,11 +8783,8 @@ function refreshJobsList() {
   let jobListHTML = jobs.map((job, index) => {
     const hasItems = hasRequiredItems(job.requiredItems);
     const hasRequirements = hasItems;
-    const actualEnergyCost = Math.max(1, job.energyCost - player.skillTree.endurance.vitality);
-
-    // Check cooldown
     const cooldownLeft = getJobCooldownRemaining(index);
-    const onCooldown = cooldownLeft > 0;
+    const cooldownTotal = getJobCooldown(job);
 
     let payoutText = "";
     if (job.special === "car_theft") {
@@ -8766,17 +8799,13 @@ function refreshJobsList() {
     let buttonText = "Work";
     let isDisabled = false;
 
-    if (onCooldown) {
-      buttonColor = "#555";
-      buttonText = `Cooling Down: ${formatCooldown(cooldownLeft)}`;
-      isDisabled = true;
-    } else if (!hasRequirements) {
+    if (!hasRequirements) {
       buttonColor = "red";
       buttonText = "Requirements Not Met";
       isDisabled = true;
-    } else if (player.energy < actualEnergyCost) {
+    } else if (cooldownLeft > 0) {
       buttonColor = "orange";
-      buttonText = `Need ${actualEnergyCost} Energy`;
+      buttonText = `Cooldown: ${formatCooldownTime(cooldownLeft)}`;
       isDisabled = true;
     } else if (job.risk === "legendary") {
       buttonColor = "#8b6a4a";
@@ -8791,10 +8820,6 @@ function refreshJobsList() {
       buttonColor = "gold";
       buttonText = "Execute";
     }
-
-    let energyDisplay = actualEnergyCost < job.energyCost ?
-      `${actualEnergyCost} (reduced from ${job.energyCost})` :
-      `${actualEnergyCost}`;
 
     // Build inline details visible without hover
     let detailParts = [];
@@ -8811,23 +8836,18 @@ function refreshJobsList() {
     if (detailParts.length > 0) {
       detailsHTML += `<br><small style="line-height:1.6;">${detailParts.join(' &nbsp; ')}</small>`;
     }
-    detailsHTML += `<br><small style="color:#8a7a5a;">Jail: ${job.jailChance}% | Damage: ${job.healthLoss} | Wanted: +${job.wantedLevelGain} | XP: <span style="color:#c0a062;">${JOB_XP_BY_RISK[job.risk] || 2}</span> | Cooldown: ${formatCooldown(JOB_COOLDOWN_BY_RISK[job.risk] || 15000)}</small>`;
+    detailsHTML += `<br><small style="color:#8a7a5a;">Jail: ${job.jailChance}% | Damage: ${job.healthLoss} | Wanted: +${job.wantedLevelGain} | XP: <span style="color:#c0a062;">${JOB_XP_BY_RISK[job.risk] || 2}</span></small>`;
 
-    let cooldownBarHTML = '';
-    if (onCooldown) {
-      const totalCd = JOB_COOLDOWN_BY_RISK[job.risk] || 15000;
-      const pct = Math.min(100, ((totalCd - cooldownLeft) / totalCd) * 100);
-      cooldownBarHTML = `<div style="background:#222;border-radius:4px;height:6px;margin:4px 0;overflow:hidden;border:1px solid #555;">
-        <div style="background:linear-gradient(90deg,#8b6a4a,#d4af37);height:100%;width:${pct}%;transition:width 1s linear;"></div>
-      </div>`;
-    }
+    // Cooldown display
+    const cooldownDisplay = cooldownLeft > 0
+      ? `<span style="color:#e67e22;">Cooldown: ${formatCooldownTime(cooldownLeft)}</span>`
+      : `<span style="color:#8a9a6a;">Ready</span>`;
 
     return `
       <li>
         <strong>${job.name}</strong> - ${payoutText}
-        <br><small>Risk: ${job.risk.toUpperCase()} | Energy: ${energyDisplay}</small>
+        <br><small>Risk: ${job.risk.toUpperCase()} | ${cooldownDisplay} | Base: ${formatCooldownTime(cooldownTotal)}</small>
         ${detailsHTML}
-        ${cooldownBarHTML}
         <button data-job-index="${index}" style="background-color: ${buttonColor};"
             onclick="startJob(${index})"
             ${isDisabled ? 'disabled' : ''}>
@@ -8843,15 +8863,6 @@ function refreshJobsList() {
 // Function to update the right panel
 function updateRightPanel() {
   // Quick stats removed; guard retained for future restore
-
-  // Update energy bar
-  if (document.getElementById("energy-fill")) {
-    const energyPercentage = (player.energy / player.maxEnergy) * 100;
-    document.getElementById("energy-fill").style.width = energyPercentage + "%";
-  }
-  if (document.getElementById("energy-text")) {
-    document.getElementById("energy-text").innerText = `${player.energy}/${player.maxEnergy}`;
-  }
 }
 
 // Quick Actions panel -- respects the progressive unlock system
@@ -9117,7 +9128,7 @@ window.applyUIToggles = applyUIToggles;
 // -- Status-bar customisation ---
 // List of every toggleable stat-bar element id and its localStorage key
 const STAT_BAR_ITEMS = [
-  'money-display', 'health-display', 'energy-display',
+  'money-display', 'health-display',
   'wanted-level-display', 'level-display', 'dirty-money-display',
   'power-display', 'territory-display',
   'current-territory-display', 'experience-display', 'skill-points-display',
@@ -9167,34 +9178,8 @@ function syncStatBarCheckboxes() {
   });
 }
 
-// Update remaining right-panel elements (energy timer, quick buy labels, etc.)
+// Update remaining right-panel elements (jail status, cars count, etc.)
 function updateRightPanelExtras() {
-  // Update energy timer
-  if (document.getElementById("energy-timer")) {
-    if (player.energy < player.maxEnergy && !player.inJail) {
-      document.getElementById("energy-timer").innerText = `${player.energyRegenTimer}s`;
-    } else if (player.energy >= player.maxEnergy) {
-      document.getElementById("energy-timer").innerText = "Full";
-    } else {
-      document.getElementById("energy-timer").innerText = "Paused";
-    }
-  }
-
-  // Update quick buy labels for energy options
-  const energyDrink = storeItems.find(item => item.name === "Energy Drink");
-  const strongCoffee = storeItems.find(item => item.name === "Strong Coffee");
-  const steroids = storeItems.find(item => item.name === "Steroids");
-
-  if (document.getElementById('quick-buy-energydrink') && energyDrink) {
-    document.getElementById('quick-buy-energydrink').innerText = `${energyDrink.name} ($${formatShortMoney(energyDrink.price)})`;
-  }
-  if (document.getElementById('quick-buy-coffee') && strongCoffee) {
-    document.getElementById('quick-buy-coffee').innerText = `${strongCoffee.name} ($${formatShortMoney(strongCoffee.price)})`;
-  }
-  if (document.getElementById('quick-buy-steroids') && steroids) {
-    document.getElementById('quick-buy-steroids').innerText = `${steroids.name} ($${formatShortMoney(steroids.price)})`;
-  }
-
   // Update jail status
   if (document.getElementById("jail-status")) {
     document.getElementById("jail-status").innerText = player.inJail ? `${player.jailTime}s` : "Free";
@@ -9206,89 +9191,7 @@ function updateRightPanelExtras() {
   }
 }
 
-// Quick energy purchase functions
-function buyEnergyDrink() {
-  const energyDrink = storeItems.find(item => item.name === "Energy Drink");
-  if (player.money >= energyDrink.price) {
-    // Enforce daily limit on energy drink usage
-    const today = new Date();
-    const dayKey = `${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()}`;
-    if (!player.dailyCounters) player.dailyCounters = {};
-    if (player.dailyCounters.energyDrinksDay !== dayKey) {
-      player.dailyCounters.energyDrinksDay = dayKey;
-      player.dailyCounters.energyDrinksUsed = 0;
-    }
-    const MAX_ENERGY_DRINKS_PER_DAY = 5;
-    if ((player.dailyCounters.energyDrinksUsed || 0) >= MAX_ENERGY_DRINKS_PER_DAY) {
-      showBriefNotification(`You've reached today's limit for Energy Drinks (${MAX_ENERGY_DRINKS_PER_DAY}). Try coffee or rest up.`, 'warning');
-      return;
-    }
-
-    const energyBefore = player.energy;
-    player.money -= energyDrink.price;
-    player.energy = Math.min(player.maxEnergy, player.energy + energyDrink.energyRestore);
-    player.health = Math.max(0, player.health - 1); // Health penalty
-
-    const energyGained = player.energy - energyBefore;
-    player.dailyCounters.energyDrinksUsed = (player.dailyCounters.energyDrinksUsed || 0) + 1;
-
-    showBriefNotification(`Bought Energy Drink! Restored ${energyGained} energy but ${getRandomNarration('healthLoss')}\n\nNew Energy: ${player.energy}/${player.maxEnergy}`, 'success');
-    logAction(`${getRandomNarration('healthLoss')} The chemical rush comes with a price, but the energy boost might be worth it.`);
-    logAction(" You chug down the energy drink. The caffeine hits your bloodstream like liquid lightning, but your body pays the price (+30 energy, -1 health).");
-
-    if (player.health <= 0) {
-      showDeathScreen('Overdosed on energy drinks');
-    }
-    updateUI(); // This will now refresh the jobs screen if it's visible
-  } else {
-    showBriefNotification("You don't have enough money!", 'danger');
-  }
-}
-
-function buyCoffee() {
-  const coffee = storeItems.find(item => item.name === "Strong Coffee");
-  if (player.money >= coffee.price) {
-    const energyBefore = player.energy;
-    player.money -= coffee.price;
-    player.energy = Math.min(player.maxEnergy, player.energy + coffee.energyRestore);
-
-    const energyGained = player.energy - energyBefore;
-
-    showBriefNotification(`Bought Strong Coffee! Restored ${energyGained} energy.\n\nNew Energy: ${player.energy}/${player.maxEnergy}`, 'success');
-    logAction("Hot coffee burns your throat as you down it in one gulp. The warmth spreads through your chest, pushing back the exhaustion (+15 energy).");
-    updateUI(); // This will now refresh the jobs screen if it's visible
-  } else {
-    showBriefNotification("You don't have enough money!", 'danger');
-  }
-}
-
-function buySteroids() {
-  const steroid = storeItems.find(item => item.name === "Steroids");
-  if (!steroid) {
-    showBriefNotification("Steroids are not available right now.", 'danger');
-    return;
-  }
-
-  if (player.money >= steroid.price) {
-    const energyBefore = player.energy;
-    player.money -= steroid.price;
-    player.energy = Math.min(player.maxEnergy, player.energy + (steroid.energyRestore || 60));
-    // Steroids are risky -- small health cost and heat bump
-    player.health = Math.max(0, player.health - 5);
-    player.wantedLevel = Math.min(100, player.wantedLevel + 3);
-
-    const energyGained = player.energy - energyBefore;
-    showBriefNotification(`Bought Steroids! +${energyGained} energy (risky). Energy: ${player.energy}/${player.maxEnergy}`, 'warning');
-    logAction(`Steroids used for a quick boost. ${getRandomNarration('healthLoss')}`);
-
-    if (player.health <= 0) {
-      showDeathScreen('Heart failure from steroid abuse');
-    }
-    updateUI();
-  } else {
-    showBriefNotification("You don't have enough money!", 'danger');
-  }
-}
+// Quick energy purchase functions removed -- energy system replaced by crime cooldowns
 
 // Function to check if the player has required items for a job
 function hasRequiredItems(requiredItems) {
@@ -9328,8 +9231,7 @@ function hideAllScreens(skipScroll) {
     "money-laundering-screen", "territory-control-screen", "territories-screen",
     "events-screen", "map-screen", "calendar-screen", "statistics-screen",
     "options-screen", "player-stats-screen", "safehouse", "multiplayer-screen",
-    "friends-screen",
-    "gym-screen", "bounty-screen", "newspaper-screen"
+    "friends-screen", "bountyboard-screen"
   ];
   screenIds.forEach(id => {
     const el = document.getElementById(id);
@@ -9347,7 +9249,7 @@ const TUTORIAL_CONTENT = {
     title: 'Welcome to Mafia Born',
     sections: [
       { heading: 'Your SafeHouse', text: 'This is your base of operations -- the hub of your criminal empire. Every journey into the city starts from here. As you level up, new locations and features will unlock on the navigation buttons below.' },
-      { heading: 'The Status Bar (Top)', text: 'The bar running across the top of the screen shows your vital stats at a glance:<br><b>Cash</b> -- your spending money.<br><b>Health</b> -- drops from fights and failed jobs; if it hits 0, your character dies permanently (permadeath).<br><b>Energy</b> -- most actions cost energy; it regenerates over time or can be restored with items.<br><b>Heat</b> -- your wanted level; rises from crime, attracts police attention, and decays over time.<br><b>Rank</b> -- your current level in the underworld; level up to unlock new content.<br>You can customise which stats are shown in Settings > UI Toggles.' },
+      { heading: 'The Status Bar (Top)', text: 'The bar running across the top of the screen shows your vital stats at a glance:<br><b>Cash</b> -- your spending money.<br><b>Health</b> -- drops from fights and failed jobs; if it hits 0, your character dies permanently (permadeath).<br><b>Heat</b> -- your wanted level; rises from crime, attracts police attention, and decays over time.<br><b>Rank</b> -- your current level in the underworld; level up to unlock new content.<br>You can customise which stats are shown in Settings > UI Toggles.' },
       { heading: 'The Ledger (Activity Log)', text: 'Below the status bar is The Ledger -- a scrolling log that records everything you do: jobs, fights, purchases, story events, and more. Keep an eye on it for confirmation of your actions and narrative flavour.' },
       { heading: 'Quick Actions Bar (Right Panel)', text: 'On the right (desktop) or accessible via the mobile menu, the Quick Actions bar provides one-tap shortcuts to your most-used screens. It also has a Save button, Help button, and a Skip Tutorials option. You can customise which shortcuts appear in Settings.' },
       { heading: 'Navigation Buttons', text: 'The main buttons in the SafeHouse let you visit Jobs, the Black Market, Missions, the Casino, Hospital, and more. Buttons are locked until you reach the required level -- keep grinding!' },
@@ -9357,8 +9259,8 @@ const TUTORIAL_CONTENT = {
   jobs: {
     title: 'Jobs & Hustles',
     sections: [
-      { heading: 'Earn Cash & XP', text: 'Pick a job from the list to earn money and experience. Higher-tier jobs pay more but cost more energy.' },
-      { heading: 'Energy Cost', text: 'Every job costs energy. When you run out, wait for it to regenerate, rest at the hospital, or buy Coffee/Energy Drinks from the Black Market or quick-buy buttons.' },
+      { heading: 'Earn Cash & XP', text: 'Pick a job from the list to earn money and experience. Higher-tier jobs pay more but have longer cooldown timers.' },
+      { heading: 'Crime Cooldowns', text: 'Every job triggers a cooldown timer after completion. Higher-risk jobs have longer cooldowns. The Planning and Unstoppable skills reduce cooldown times.' },
       { heading: 'Heat Warning', text: 'Some jobs raise your Heat (wanted level). Higher heat means more police encounters and bigger penalties if caught.' },
       { heading: 'Levelling Up', text: 'XP from jobs levels you up, unlocking new screens, gear, and story chapters. Check your XP bar in the status bar.' },
     ]
@@ -9369,7 +9271,7 @@ const TUTORIAL_CONTENT = {
       { heading: 'Buy Tab', text: 'Browse weapons, armour, and consumables. Equipping better gear directly increases your Attack and Defence stats in combat.' },
       { heading: 'The Fence', text: 'Sell stolen goods from heists and jobs at premium rates. Fence prices fluctuate based on your Heat level -- riskier sales can be more profitable.' },
       { heading: 'Player Market', text: 'Buy and sell vehicles, weapons, armor, ammo, gas, utility items, and trade goods with other real players through The Commission.' },
-      { heading: 'Consumables', text: 'Coffee, Energy Drinks, and Steroids restore your energy. Medkits restore health. Stock up before long grinding sessions.' },
+      { heading: 'Consumables', text: 'Medkits restore health. Stock up before long grinding sessions.' },
     ]
   },
   missions: {
@@ -9418,22 +9320,22 @@ const TUTORIAL_CONTENT = {
     sections: [
       { heading: 'Full Treatment', text: 'Pay the back-alley doctor to restore health to 100%. Expensive but worth it when you\'re critically low.' },
       { heading: 'Patch Job', text: 'Cheaper partial heal -- restores up to 25 HP. Good for a quick fix between jobs.' },
-      { heading: 'Rest', text: 'Spend energy instead of cash to heal a small amount. Useful when you\'re broke but have energy to spare.' },
+      { heading: 'Rest', text: 'Rest to heal a small amount over time. Uses a timer-based recovery system.' },
       { heading: 'Why Heal?', text: 'If your health drops to 0 during a fight or failed job, your character dies permanently -- this is permadeath! Keep your health topped up.' },
     ]
   },
   skills: {
     title: 'Talents & Skills',
     sections: [
-      { heading: 'Six Skill Trees', text: 'Spend skill points in: <b>Combat</b> (attack, crit), <b>Stealth</b> (dodge, heat reduction), <b>Business</b> (income, prices), <b>Endurance</b> (HP, energy), <b>Street Smarts</b> (XP, loot), <b>Leadership</b> (crew, territory).' },
+      { heading: 'Six Skill Trees', text: 'Spend skill points in: <b>Combat</b> (attack, crit), <b>Stealth</b> (dodge, heat reduction), <b>Business</b> (income, prices), <b>Endurance</b> (HP, cooldowns), <b>Street Smarts</b> (XP, loot), <b>Leadership</b> (crew, territory).' },
       { heading: 'Skill Points', text: 'You earn skill points when you level up. Spend them wisely -- each node gives permanent passive bonuses to your character.' },
-      { heading: 'Passive Bonuses', text: 'Examples: extra damage per hit, higher income from jobs, cheaper hospital visits, faster energy regen, better loot drops, and stronger crew defence.' },
+      { heading: 'Passive Bonuses', text: 'Examples: extra damage per hit, higher income from jobs, cheaper hospital visits, reduced cooldown times, better loot drops, and stronger crew defence.' },
     ]
   },
   stats: {
     title: 'Player Stats',
     sections: [
-      { heading: 'Overview', text: 'Full breakdown of your character: level, cash, dirty money, health, energy, attack, defence, influence, reputation, and more.' },
+      { heading: 'Overview', text: 'Full breakdown of your character: level, cash, dirty money, health, attack, defence, influence, reputation, and more.' },
       { heading: 'Empire Rating', text: 'A composite score measuring your overall power -- based on territory controlled, income streams, crew size, properties, and story progress.' },
       { heading: 'Empire Overview', text: 'A visual dashboard showing all your assets, income sources, crew members, and territory at a glance. Great for tracking your empire\'s growth.' },
     ]
@@ -9626,7 +9528,6 @@ const HELP_TOPICS = [
     <p>Welcome to <strong>Mafia-Born</strong> -- a browser-based crime RPG where you rise from street thug to Don of your own criminal empire.</p>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Core Concepts</h4>
     <ul>
-      <li><strong>Energy</strong> -- Most actions (jobs, heists, fights) cost energy. It regenerates over time (~1 per minute), or you can restore it instantly with Coffee, Energy Drinks, or Steroids from the Black Market.</li>
       <li><strong>Cash</strong> -- Your main currency. Earned from jobs, businesses, missions, and the casino. Spend it on gear, properties, heals, and more.</li>
       <li><strong>Dirty Money</strong> -- Earned from heists and illegal activities. Cannot be spent directly -- you must launder it through Business Fronts (Properties screen) to convert it into clean Cash.</li>
       <li><strong>Health</strong> -- Drops from combat, failed jobs, and random events. If it hits 0, your character dies permanently (permadeath). Heal at the Hospital or use Medkits.</li>
@@ -9650,7 +9551,6 @@ const HELP_TOPICS = [
     <ul>
       <li><strong>Cash</strong> -- Your clean, spendable money.</li>
       <li><strong>Health</strong> -- Your current HP. If it reaches 0, your character dies permanently (permadeath).</li>
-      <li><strong>Energy</strong> -- Shows current/max energy. Regenerates over time. Most actions cost energy.</li>
       <li><strong>Heat</strong> -- Your wanted level (0-100). Higher = more police attention.</li>
       <li><strong>Rank</strong> -- Your character level. Level up to unlock content.</li>
       <li><strong>Dirty Money</strong> -- Cash from illegal activities that needs laundering.</li>
@@ -9672,7 +9572,6 @@ const HELP_TOPICS = [
       <li><strong>Save Records</strong> -- Quick-save your game.</li>
       <li><strong>Skip Tutorials</strong> -- Disable all tutorial pop-ups (if tutorials are active).</li>
       <li><strong>Help</strong> -- Open this guide.</li>
-      <li><strong>Energy Quick-Buy</strong> -- Buy Coffee, Energy Drinks, or Steroids directly.</li>
     </ul>
     <p style="color:#8a7a5a; font-style:italic;">Tip: On mobile, access quick actions from the hamburger menu or swipe panel.</p>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Navigation Buttons</h4>
@@ -9683,7 +9582,7 @@ const HELP_TOPICS = [
     <ul>
       <li><strong>Navigation</strong> -- Tap any unlocked button to visit that area. Buttons unlock as you level up through Jobs and Missions.</li>
       <li><strong>Quick Actions</strong> -- The right panel (desktop) or mobile menu provides fast shortcuts to your favourite screens, a save button, and help.</li>
-      <li><strong>Status Bar</strong> -- The top bar shows your cash, health, energy, heat, rank, and more at all times. Customise it in Settings > UI Toggles.</li>
+      <li><strong>Status Bar</strong> -- The top bar shows your cash, health, heat, rank, and more at all times. Customise it in Settings > UI Toggles.</li>
       <li><strong>The Ledger</strong> -- The scrolling activity log below the status bar records all your actions, purchases, fights, and story events.</li>
       <li><strong>Portrait</strong> -- Your character portrait is shown in the top-left. You can change it from Settings.</li>
     </ul>
@@ -9692,26 +9591,26 @@ const HELP_TOPICS = [
     <p>Your main source of income and XP, especially early on.</p>
     <h4 style="color:#c0a062; margin:14px 0 6px;">How Jobs Work</h4>
     <ul>
-      <li>Each job has an <strong>energy cost</strong> and pays <strong>cash + XP</strong> on success.</li>
-      <li>Higher-tier jobs unlock at higher levels and pay significantly more, but cost more energy.</li>
+      <li>Each job pays <strong>cash + XP</strong> on success and triggers a <strong>cooldown timer</strong> before you can do it again.</li>
+      <li>Higher-tier jobs unlock at higher levels and pay significantly more, but have longer cooldowns.</li>
       <li>Some jobs have a <strong>chance to fail</strong>, especially risky ones. Failure may cost health or attract heat.</li>
       <li>Some jobs increase <strong>Heat</strong> (wanted level), which makes cops more aggressive.</li>
       <li>Jobs may reward <strong>stolen goods</strong> that you can sell at the Fence (Black Market) for extra profit.</li>
     </ul>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Tips</h4>
     <ul>
-      <li>Grind low-energy jobs early to build a cash reserve before buying gear.</li>
+      <li>Grind low-risk jobs early to build a cash reserve before buying gear.</li>
       <li>Watch your heat -- if it gets too high, lay low for a while.</li>
-      <li>Buy Coffee or Energy Drinks from the quick-buy panel to keep grinding without waiting.</li>
+      <li>Invest in the Planning skill to reduce cooldown times between jobs.</li>
     </ul>
   `},
   { id: 'store-help', icon: '', title: 'Black Market', content: `
     <p>Three tabs for all your shopping needs: <strong>Buy</strong>, <strong>The Fence</strong>, and <strong>Player Market</strong>.</p>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Buy Tab</h4>
     <ul>
-      <li>Purchase <strong>weapons</strong> (increase Attack), <strong>armour</strong> (increase Defence), and <strong>consumables</strong> (restore energy/health).</li>
+      <li>Purchase <strong>weapons</strong> (increase Attack), <strong>armour</strong> (increase Defence), and <strong>consumables</strong> (restore health).</li>
       <li>Better gear costs more but gives you a massive edge in combat and job success rates.</li>
-      <li>Consumables include Coffee (small energy), Energy Drinks (moderate energy), Steroids (large energy), and Medkits (restore health).</li>
+      <li>Consumables include Medkits (restore health). Stock up before dangerous missions.</li>
     </ul>
     <h4 style="color:#c0a062; margin:14px 0 6px;">The Fence</h4>
     <ul>
@@ -9823,7 +9722,7 @@ const HELP_TOPICS = [
     <ul>
       <li><strong>Full Treatment</strong> -- Restores health to 100%. Expensive, but the most thorough option.</li>
       <li><strong>Patch Job</strong> -- Cheaper partial heal (restores up to ~25 HP). Good for a quick fix between jobs.</li>
-      <li><strong>Rest</strong> -- Costs energy instead of cash. Heals a small amount. Useful when you're broke.</li>
+      <li><strong>Rest</strong> -- Heals a small amount over time using a timer-based recovery system.</li>
     </ul>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Why Healing Matters</h4>
     <ul>
@@ -9839,7 +9738,7 @@ const HELP_TOPICS = [
       <li><strong>Combat</strong> -- Increase attack power, critical hit chance, and armour penetration. Best for fighters.</li>
       <li><strong>Stealth</strong> -- Boost dodge chance, theft success rate, and reduce heat gained from crimes. Best for sneaky players.</li>
       <li><strong>Business</strong> -- Increase income from jobs and properties, reduce purchase prices, and improve front efficiency. Best for empire builders.</li>
-      <li><strong>Endurance</strong> -- Raise max energy, speed up energy regen, and gain bonus HP. Best for grinders.</li>
+      <li><strong>Endurance</strong> -- Reduce cooldown times, gain damage reduction, and boost max health recovery. Best for grinders.</li>
       <li><strong>Street Smarts</strong> -- Boost XP gains, reduce jail time, and improve loot quality. Best for fast levellers.</li>
       <li><strong>Leadership</strong> -- Strengthen crew bonuses, family buffs, and territory defence. Best for gang leaders.</li>
     </ul>
@@ -9893,7 +9792,7 @@ const HELP_TOPICS = [
     <p>Track every detail of your criminal career.</p>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Player Stats</h4>
     <ul>
-      <li>Full breakdown of your character: <strong>Level, Cash, Dirty Money, Health, Energy, Attack, Defence, Influence, Reputation</strong>, and more.</li>
+      <li>Full breakdown of your character: <strong>Level, Cash, Dirty Money, Health, Attack, Defence, Influence, Reputation</strong>, and more.</li>
       <li>See your equipped weapon and armour, total jobs completed, missions finished, and crimes committed.</li>
     </ul>
     <h4 style="color:#c0a062; margin:14px 0 6px;">Empire Rating</h4>
@@ -9933,25 +9832,25 @@ const HELP_TOPICS = [
       <li><strong>Stealth Skills</strong> -- The Stealth skill tree has nodes that reduce heat gain and increase decay speed.</li>
     </ul>
   `},
-  { id: 'energy-help', icon: '', title: 'Energy System', content: `
-    <p><strong>Energy</strong> is the fuel for almost everything you do in Mafia Born.</p>
-    <h4 style="color:#c0a062; margin:14px 0 6px;">How Energy Works</h4>
+  { id: 'cooldown-help', icon: '', title: 'Crime Cooldowns', content: `
+    <p><strong>Crime Cooldowns</strong> control how often you can perform jobs in Mafia Born.</p>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">How Cooldowns Work</h4>
     <ul>
-      <li>You start with a maximum energy pool (default: 100). This can be increased via the <strong>Endurance</strong> skill tree.</li>
-      <li>Most actions -- jobs, heists, side ops, combat -- cost energy.</li>
-      <li>Energy regenerates slowly over real time (approximately 1 point per minute).</li>
+      <li>Every job triggers a cooldown timer after completion. You must wait for the timer to expire before doing that job again.</li>
+      <li>Higher-risk jobs have longer cooldowns: Low risk (15s), Medium (45s), High (2min), Very High (5min), Extreme (10min), Legendary (20min).</li>
+      <li>Cooldowns are per-job, so you can switch between different jobs while one is cooling down.</li>
     </ul>
-    <h4 style="color:#c0a062; margin:14px 0 6px;">Restoring Energy</h4>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">Reducing Cooldowns</h4>
     <ul>
-      <li><strong>Coffee</strong> -- Cheap. Restores a small amount of energy. Available from Black Market or quick-buy.</li>
-      <li><strong>Energy Drink</strong> -- Moderate cost and restore. Good mid-game option.</li>
-      <li><strong>Steroids</strong> -- Expensive. Restores a large amount. Use for long grinding sessions.</li>
+      <li><strong>Planning Skill</strong> -- Each rank reduces cooldowns by 5% (up to 50% at max rank).</li>
+      <li><strong>Unstoppable Skill</strong> -- Each rank reduces all cooldowns by 8%.</li>
+      <li><strong>Quick Hands Perk</strong> -- Provides a flat 15% cooldown reduction.</li>
     </ul>
-    <h4 style="color:#c0a062; margin:14px 0 6px;">Energy Tips</h4>
+    <h4 style="color:#c0a062; margin:14px 0 6px;">Cooldown Tips</h4>
     <ul>
-      <li>Plan your sessions -- do the most expensive jobs first, then switch to cheaper ones as energy runs low.</li>
-      <li>Invest in the <strong>Endurance</strong> skill tree to raise your max energy and regen rate.</li>
-      <li>The quick-buy buttons on the Quick Actions bar let you buy energy items without visiting the store.</li>
+      <li>Rotate between multiple jobs to maximise your earnings while cooldowns expire.</li>
+      <li>Invest in the <strong>Planning</strong> and <strong>Unstoppable</strong> skills to dramatically reduce wait times.</li>
+      <li>Low-risk jobs have short cooldowns -- great for steady income grinding.</li>
     </ul>
   `},
   { id: 'combat-help', icon: '', title: 'Combat & Equipment', content: `
@@ -10184,72 +10083,6 @@ window.syncTutorialToggleButton = syncTutorialToggleButton;
 // Function to show jobs
 const JOB_XP_BY_RISK = { low: 2, medium: 8, high: 20, 'very high': 32, extreme: 100, legendary: 160 };
 
-// ==================== JOB COOLDOWN SYSTEM ====================
-// Real-time cooldowns per risk tier (in milliseconds)
-const JOB_COOLDOWN_BY_RISK = {
-  low: 15000,         // 15 seconds
-  medium: 45000,      // 45 seconds
-  high: 120000,       // 2 minutes
-  'very high': 300000, // 5 minutes
-  extreme: 600000,    // 10 minutes
-  legendary: 1200000  // 20 minutes
-};
-
-// Initialize cooldown tracker on player if missing
-function ensureJobCooldowns() {
-  if (!player.jobCooldowns) player.jobCooldowns = {};
-  // Clean expired cooldowns
-  const now = Date.now();
-  for (const key of Object.keys(player.jobCooldowns)) {
-    if (player.jobCooldowns[key] <= now) delete player.jobCooldowns[key];
-  }
-}
-
-function getJobCooldownRemaining(jobIndex) {
-  ensureJobCooldowns();
-  const expiresAt = player.jobCooldowns[jobIndex];
-  if (!expiresAt) return 0;
-  return Math.max(0, expiresAt - Date.now());
-}
-
-function formatCooldown(ms) {
-  if (ms <= 0) return '';
-  const totalSec = Math.ceil(ms / 1000);
-  const min = Math.floor(totalSec / 60);
-  const sec = totalSec % 60;
-  return min > 0 ? `${min}m ${sec}s` : `${sec}s`;
-}
-
-function setJobCooldown(jobIndex) {
-  ensureJobCooldowns();
-  const job = jobs[jobIndex];
-  if (!job) return;
-  let cooldownMs = JOB_COOLDOWN_BY_RISK[job.risk] || 15000;
-  // Planning skill reduces cooldowns by 5% per rank
-  const planningLevel = (player.skillTree && player.skillTree.intelligence && player.skillTree.intelligence.planning) || 0;
-  if (planningLevel > 0) {
-    cooldownMs = Math.max(5000, Math.floor(cooldownMs * (1 - planningLevel * 0.05)));
-  }
-  player.jobCooldowns[jobIndex] = Date.now() + cooldownMs;
-}
-
-// Auto-refresh job list while on jobs screen (updates cooldown timers)
-let _jobCooldownInterval = null;
-function startJobCooldownRefresh() {
-  stopJobCooldownRefresh();
-  _jobCooldownInterval = setInterval(() => {
-    const jobsScreen = document.getElementById('jobs-screen');
-    if (jobsScreen && jobsScreen.style.display !== 'none') {
-      showJobs();
-    } else {
-      stopJobCooldownRefresh();
-    }
-  }, 1000);
-}
-function stopJobCooldownRefresh() {
-  if (_jobCooldownInterval) { clearInterval(_jobCooldownInterval); _jobCooldownInterval = null; }
-}
-
 function showJobs() {
   if (player.inJail) {
     showBriefNotification("You can't work while you're in jail!", 'danger');
@@ -10263,12 +10096,8 @@ function showJobs() {
         const hasItems = hasRequiredItems(job.requiredItems);
         const hasRequirements = hasItems;
 
-        // Calculate actual energy cost with endurance skill
-        const actualEnergyCost = Math.max(1, job.energyCost - player.skillTree.endurance.vitality);
-
-        // Check cooldown
-        const cooldownLeft = getJobCooldownRemaining(index);
-        const onCooldown = cooldownLeft > 0;
+        // Check cooldown status
+        const cooldownRemaining = getJobCooldownRemaining(index);
 
         let payoutText = "";
         if (job.special === "car_theft") {
@@ -10283,17 +10112,13 @@ function showJobs() {
         let buttonText = "Work";
         let isDisabled = false;
 
-        if (onCooldown) {
-          buttonColor = "#555";
-          buttonText = `Cooling Down: ${formatCooldown(cooldownLeft)}`;
-          isDisabled = true;
-        } else if (!hasRequirements) {
+        if (!hasRequirements) {
           buttonColor = "red";
           buttonText = "Requirements Not Met";
           isDisabled = true;
-        } else if (player.energy < actualEnergyCost) {
+        } else if (cooldownRemaining > 0) {
           buttonColor = "orange";
-          buttonText = `Need ${actualEnergyCost} Energy`;
+          buttonText = formatCooldownTime(cooldownRemaining);
           isDisabled = true;
         } else if (job.risk === "legendary") {
           buttonColor = "#8b6a4a";
@@ -10309,9 +10134,10 @@ function showJobs() {
           buttonText = "Execute";
         }
 
-        let energyDisplay = actualEnergyCost < job.energyCost ?
-          `${actualEnergyCost} (reduced from ${job.energyCost})` :
-          `${actualEnergyCost}`;
+        const baseCooldown = getJobCooldown(job);
+        const cooldownLabel = cooldownRemaining > 0
+          ? `<span style="color:#e67e22;">${formatCooldownTime(cooldownRemaining)}</span>`
+          : `<span style="color:#8a9a6a;">Ready</span>`;
 
         // Build inline details visible without hover
         let detailParts = [];
@@ -10328,24 +10154,13 @@ function showJobs() {
         if (detailParts.length > 0) {
           detailsHTML += `<br><small style="line-height:1.6;">${detailParts.join(' &nbsp; ')}</small>`;
         }
-        detailsHTML += `<br><small style="color:#8a7a5a;">Jail: ${job.jailChance}% | Damage: ${job.healthLoss} | Wanted: +${job.wantedLevelGain} | XP: <span style="color:#c0a062;">${JOB_XP_BY_RISK[job.risk] || 2}</span> | Cooldown: ${formatCooldown(JOB_COOLDOWN_BY_RISK[job.risk] || 15000)}</small>`;
-
-        // Show cooldown bar if on cooldown
-        let cooldownBarHTML = '';
-        if (onCooldown) {
-          const totalCd = JOB_COOLDOWN_BY_RISK[job.risk] || 15000;
-          const pct = Math.min(100, ((totalCd - cooldownLeft) / totalCd) * 100);
-          cooldownBarHTML = `<div style="background:#222;border-radius:4px;height:6px;margin:4px 0;overflow:hidden;border:1px solid #555;">
-            <div style="background:linear-gradient(90deg,#8b6a4a,#d4af37);height:100%;width:${pct}%;transition:width 1s linear;"></div>
-          </div>`;
-        }
+        detailsHTML += `<br><small style="color:#8a7a5a;">Jail: ${job.jailChance}% | Damage: ${job.healthLoss} | Wanted: +${job.wantedLevelGain} | XP: <span style="color:#c0a062;">${JOB_XP_BY_RISK[job.risk] || 2}</span></small>`;
 
         return `
           <li>
             <strong>${job.name}</strong> - ${payoutText}
-            <br><small>Risk: ${job.risk.toUpperCase()} | Energy: ${energyDisplay}</small>
+            <br><small>Risk: ${job.risk.toUpperCase()} | Cooldown: ${formatCooldownTime(baseCooldown)} | ${cooldownLabel}</small>
             ${detailsHTML}
-            ${cooldownBarHTML}
             <button data-job-index="${index}" style="background-color: ${buttonColor};"
                 onclick="startJob(${index})"
                 ${isDisabled ? 'disabled' : ''}>
@@ -10360,7 +10175,6 @@ function showJobs() {
   document.getElementById("job-list").innerHTML = jobListHTML;
   hideAllScreens();
   document.getElementById("jobs-screen").style.display = "block";
-  startJobCooldownRefresh();
 }
 
 // Function to log actions
@@ -10576,48 +10390,15 @@ async function startJob(index) {
     return;
   }
 
-  // Cooldown check
-  const cooldownLeft = getJobCooldownRemaining(index);
-  if (cooldownLeft > 0) {
-    showBriefNotification(`This job is on cooldown! Wait ${formatCooldown(cooldownLeft)}.`, 'danger');
-    return;
-  }
-
   let job = jobs[index];
 
   // Get active events and weather effects early
   const activeEffects = getActiveEffects();
 
-  // Calculate actual energy cost with endurance skill reduction
-  let actualEnergyCost = Math.max(1, job.energyCost - player.skillTree.endurance.vitality); // Minimum 1 energy
-
-  // Light Feet: -1 energy cost per rank
-  actualEnergyCost = Math.max(1, actualEnergyCost - (player.skillTree.stealth.light_feet || 0));
-
-  // Unstoppable: -20% energy cost per rank (multiplicative)
-  const unstoppableLevel = player.skillTree.endurance.unstoppable || 0;
-  if (unstoppableLevel > 0) {
-    actualEnergyCost = Math.max(1, Math.floor(actualEnergyCost * (1 - unstoppableLevel * 0.08)));
-  }
-
-  // Quick Hands perk: -15% energy cost on all jobs
-  if (hasPlayerPerk('quick_hands')) {
-    actualEnergyCost = Math.max(1, Math.floor(actualEnergyCost * 0.85));
-  }
-
-  // Apply event effects to energy cost
-  if (activeEffects.energyReduction) {
-    const reducedCost = Math.floor(actualEnergyCost * (1 - activeEffects.energyReduction));
-    const energySaved = actualEnergyCost - reducedCost;
-    actualEnergyCost = Math.max(1, reducedCost); // Still minimum 1 energy
-    if (energySaved > 0) {
-      logAction(`Favorable conditions make the job less taxing (${energySaved} energy saved)!`);
-    }
-  }
-
-  // Check if the player has enough energy
-  if (player.energy < actualEnergyCost) {
-    showBriefNotification(`You don't have enough energy to do this job! You need ${actualEnergyCost} energy but only have ${player.energy}. Wait for energy to regenerate or buy an energy drink.`, 'danger');
+  // Check if job is on cooldown
+  const cooldownRemaining = getJobCooldownRemaining(index);
+  if (cooldownRemaining > 0) {
+    showBriefNotification(`This job is on cooldown! Available in ${formatCooldownTime(cooldownRemaining)}.`, 'danger');
     return;
   }
 
@@ -10704,8 +10485,8 @@ async function startJob(index) {
   // For now, proceed with local simulation to support the full perk/skill system.
 
   // OFFLINE / FALLBACK: proceed with legacy local simulation
-  player.energy -= actualEnergyCost;
-  startEnergyRegenTimer(); // Start the regeneration timer
+  setJobCooldown(index, job); // Set crime cooldown timer
+  startCooldownTick(); // Start the cooldown refresh tick
 
   // Calculate job success chance based on player's power level and skills
   let successChance;
@@ -10805,7 +10586,7 @@ async function startJob(index) {
     updateFactionReputation(job, false);
     trackJobPlaystyle(job, false);
 
-    showBriefNotification(`${getFamilyNarration('jobFailure')} You lost ${actualEnergyCost} energy.`, 'danger');
+    showBriefNotification(`${getFamilyNarration('jobFailure')} The job went sideways.`, 'danger');
     logAction(getFamilyNarration('jobFailure'));
     // Still gain some experience for trying (reduced in v1.11.0 rebalance)
     gainExperience(1);
@@ -10815,22 +10596,20 @@ async function startJob(index) {
 
   // Handle special car theft job
   if (job.special === "car_theft") {
-    handleCarTheft(job, actualEnergyCost);
-    updateUI(); // Update UI after energy consumption
+    handleCarTheft(job);
+    updateUI();
     return;
   }
 
   // Handle special money laundering job -- converts dirty money to clean money
   if (job.special === "launder_money") {
-    // Check dirty money BEFORE deducting energy (already deducted above)
+    // Check dirty money
     if (!player.dirtyMoney || player.dirtyMoney <= 0) {
-      // Refund energy since we already deducted it
-      player.energy += actualEnergyCost;
       showBriefNotification("You don't have any dirty money to launder! Earn dirty money from Bank Jobs or Counterfeiting first.", 'danger');
       updateUI();
       return;
     }
-    handleLaunderMoneyJob(job, approachLabel, actualEnergyCost);
+    handleLaunderMoneyJob(job, approachLabel);
     updateUI();
     return;
   }
@@ -10842,11 +10621,6 @@ async function startJob(index) {
     earnings += Math.floor(earnings * (player.skillTree.luck.fortune * 0.02));
   } else {
     earnings = job.payout;
-  }
-
-  // Gym strength bonus: +2% payout per strength level
-  if (player.gymStats && player.gymStats.strength > 0) {
-    earnings += Math.floor(earnings * (player.gymStats.strength * 0.02));
   }
 
   // Chen Triad passive: drug/smuggling jobs earn 30% more
@@ -11247,10 +11021,8 @@ async function startJob(index) {
     flashSuccessScreen();
     showBriefNotification(`You completed the job as a ${job.name} (${job.risk} risk) and earned $${earnings.toLocaleString()}${moneyType}!`, 'success');
     logAction(`${getFamilyNarration('jobSuccess')} (+$${earnings.toLocaleString()}${moneyType}).`);
-    addNewspaperEntry(`Police are investigating a ${job.risk}-risk crime in the area. A suspect earned an estimated $${earnings.toLocaleString()}.`, 'crime');
   }
 
-  setJobCooldown(index);
   degradeEquipment('job');
   updateUI();
   // Only refresh the job list instead of reloading the entire jobs screen to prevent flashing
@@ -11264,7 +11036,7 @@ async function startJob(index) {
 }
 
 // Function to handle car theft
-function handleCarTheft(job, actualEnergyCost) {
+function handleCarTheft(job) {
   // Calculate jail chance with stealth skill reducing it
   let adjustedJailChance = Math.max(10, job.jailChance - (player.skillTree.stealth.shadow_step * 2));
   // Quick Hands perk: +10% car theft success (reduces jail chance)
@@ -11275,14 +11047,14 @@ function handleCarTheft(job, actualEnergyCost) {
 
   if (jailChance <= adjustedJailChance) {
     sendToJail(job.wantedLevelGain);
-    logAction(`Busted! You barely get the door open before the cops swarm you. The owner was watching from their window the whole time (-${actualEnergyCost} energy).`);
+    logAction(`Busted! You barely get the door open before the cops swarm you. The owner was watching from their window the whole time.`);
     return;
   }
 
   // Check if player actually finds a car to steal (15% base chance -- very hard)
   let findCarChance = 15 + (player.skillTree.luck.fortune * 2); // Luck skill helps find cars
   if (Math.random() * 100 > findCarChance) {
-    showBriefNotification(`${getRandomNarration('carTheftFailure')} Lost ${actualEnergyCost} energy.`, 'danger');
+    showBriefNotification(`${getRandomNarration('carTheftFailure')} On cooldown.`, 'danger');
     logAction(`${getRandomNarration('carTheftFailure')} The streets can be unforgiving to those seeking easy rides.`);
     player.wantedLevel += 1; // Small wanted level increase for suspicious activity
     gainExperience(2);
@@ -11376,9 +11148,8 @@ function handleCarTheft(job, actualEnergyCost) {
 }
 
 // Function to handle money laundering job -- converts dirty money to clean money
-function handleLaunderMoneyJob(job, approachLabel, actualEnergyCost) {
-  // Energy was already deducted and dirty-money check done in startJob()
-  // actualEnergyCost is passed in with all skill/perk reductions already applied
+function handleLaunderMoneyJob(job, approachLabel) {
+  // Cooldown was already set and dirty-money check done in startJob()
 
   // Calculate how much dirty money we can launder this run (based on job payout range + luck)
   let launderCapacity;
@@ -11897,7 +11668,6 @@ function sendToJail(wantedLevelLoss) {
   updateJailUI(); // Ensure jail-specific UI elements are synced
   updateJailTimer(); // Start the jail timer
   logAction(getRandomNarration('jailSentences'));
-  addNewspaperEntry(`A known criminal was arrested and sentenced to ${calculatedJailTime} seconds behind bars.`, 'crime');
 
   // Sync jail status to server so other players can see us in the jail list
   if (typeof syncJailStatus === 'function') syncJailStatus(true, player.jailTime);
@@ -12032,10 +11802,34 @@ function getSynergyBonus(bonusType) {
 }
 window.getSynergyBonus = getSynergyBonus;
 
-// Soft cap: diminishing returns above rank 7 (each point above 7 costs 2 skill points instead of 1)
-function getUpgradeCost(treeName, nodeId) {
+// ── Gym-Style Skill Training Config ──
+// Training costs scale with tier and current rank.
+const SKILL_TRAINING_CONFIG = {
+  1: { baseMoney: 200, moneyPerRank: 150, baseTime: 20, timePerRank: 12 },
+  2: { baseMoney: 1000, moneyPerRank: 500, baseTime: 45, timePerRank: 20 },
+  3: { baseMoney: 3000, moneyPerRank: 1500, baseTime: 90, timePerRank: 30 }
+};
+
+function getTrainingCost(treeName, nodeId) {
+  const treeDef = SKILL_TREE_DEFS[treeName];
+  if (!treeDef) return null;
+  const nodeDef = treeDef.nodes[nodeId];
+  if (!nodeDef) return null;
   const rank = player.skillTree[treeName][nodeId] || 0;
-  return rank >= 7 ? 2 : 1;
+  const cfg = SKILL_TRAINING_CONFIG[nodeDef.tier];
+  return {
+    money: cfg.baseMoney + rank * cfg.moneyPerRank,
+    time: cfg.baseTime + rank * cfg.timePerRank
+  };
+}
+
+function formatTrainingTime(seconds) {
+  if (seconds >= 60) {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return s > 0 ? `${m}m ${s}s` : `${m}m`;
+  }
+  return `${seconds}s`;
 }
 
 // Currently selected tree in the skill UI
@@ -12053,6 +11847,29 @@ function showSkills() {
 
 function renderSkillTreeUI() {
   const totalPts = Object.values(player.skillTree).reduce((s, nodes) => s + Object.values(nodes).reduce((a, b) => a + b, 0), 0);
+  const isTraining = player.activeTraining != null;
+
+  // Training status banner
+  let trainingBannerHTML = '';
+  if (isTraining) {
+    const t = player.activeTraining;
+    const elapsed = Date.now() - t.startTime;
+    const remaining = Math.max(0, t.duration - elapsed);
+    const remainSec = Math.ceil(remaining / 1000);
+    const pct = Math.min(100, (elapsed / t.duration) * 100);
+    const nodeDef = SKILL_TREE_DEFS[t.tree]?.nodes[t.node];
+    trainingBannerHTML = `
+      <div class="skill-training-banner">
+        <div class="skill-training-banner-info">
+          Currently Training: <strong>${nodeDef?.name || t.node}</strong>
+          <span class="skill-training-countdown" id="training-countdown">${formatTrainingTime(remainSec)}</span>
+        </div>
+        <div class="skill-training-progress">
+          <div class="skill-training-progress-fill" id="training-progress-fill" style="width:${pct}%"></div>
+        </div>
+        <button onclick="cancelSkillTraining()" class="skill-training-cancel-btn">Cancel Training (50% refund)</button>
+      </div>`;
+  }
 
   // Build tree selector tabs
   const treeTabs = Object.entries(SKILL_TREE_DEFS).map(([id, def]) => {
@@ -12094,12 +11911,17 @@ function renderSkillTreeUI() {
     for (const [nodeId, nodeDef] of tierNodes) {
       const rank = treeData[nodeId] || 0;
       const maxRank = nodeDef.maxRank;
-      const canUpgrade = canUnlockNode(_activeSkillTree, nodeId);
+      const prereqsMet = canUnlockNode(_activeSkillTree, nodeId);
       const isMaxed = rank >= maxRank;
       const meetsPrereqs = nodeDef.prereqs.every(req => (treeData[req.node] || 0) >= req.rank);
       const isLocked = !tierUnlocked || !meetsPrereqs;
       const pctFill = Math.round((rank / maxRank) * 100);
-      const upgCost = rank >= 7 ? 2 : 1;
+
+      // Training state for this node
+      const isThisNodeTraining = isTraining && player.activeTraining.tree === _activeSkillTree && player.activeTraining.node === nodeId;
+      const cost = getTrainingCost(_activeSkillTree, nodeId);
+      const canAfford = cost && player.money >= cost.money;
+      const canTrain = prereqsMet && !isTraining && canAfford;
 
       // Prereq display
       let prereqText = '';
@@ -12111,8 +11933,42 @@ function renderSkillTreeUI() {
         }).join(' ');
       }
 
+      // Build button
+      let buttonHTML = '';
+      if (isMaxed) {
+        buttonHTML = `<button class="rpg-node-btn" disabled>MASTERED</button>`;
+      } else if (isLocked) {
+        buttonHTML = `<button class="rpg-node-btn" disabled>Locked</button>`;
+      } else if (isThisNodeTraining) {
+        const t = player.activeTraining;
+        const elapsed = Date.now() - t.startTime;
+        const remaining = Math.max(0, t.duration - elapsed);
+        const remainSec = Math.ceil(remaining / 1000);
+        const trainPct = Math.min(100, (elapsed / t.duration) * 100);
+        buttonHTML = `
+          <div class="rpg-node-training-timer">
+            <div class="rpg-node-training-bar"><div class="rpg-node-training-bar-fill" style="width:${trainPct}%"></div></div>
+            <span class="rpg-node-training-time" id="node-train-time-${nodeId}">${formatTrainingTime(remainSec)}</span>
+          </div>
+          <button onclick="cancelSkillTraining()" class="rpg-node-btn rpg-node-btn-cancel">Cancel</button>`;
+      } else if (isTraining) {
+        buttonHTML = `<button class="rpg-node-btn" disabled>Busy Training</button>`;
+      } else if (!prereqsMet) {
+        buttonHTML = `<button class="rpg-node-btn" disabled>Locked</button>`;
+      } else {
+        const costLabel = `${formatTrainingTime(cost.time)} | $${cost.money.toLocaleString()}`;
+        buttonHTML = `<button onclick="startSkillTraining('${_activeSkillTree}', '${nodeId}')" class="rpg-node-btn ${canTrain ? 'rpg-node-btn-active' : ''}" ${!canTrain ? 'disabled' : ''}>
+          Train (${costLabel})
+        </button>`;
+        if (!canAfford && cost) {
+          const reasons = [];
+          if (player.money < cost.money) reasons.push(`Need $${cost.money.toLocaleString()}`);
+          buttonHTML += `<small class="rpg-node-cost-warn">${reasons.join(' | ')}</small>`;
+        }
+      }
+
       treeNodesHTML += `
-        <div class="rpg-node ${isMaxed ? 'rpg-node-maxed' : ''} ${isLocked ? 'rpg-node-locked' : ''} ${canUpgrade ? 'rpg-node-available' : ''}" style="--node-color:${treeDef.color}">
+        <div class="rpg-node ${isMaxed ? 'rpg-node-maxed' : ''} ${isLocked ? 'rpg-node-locked' : ''} ${canTrain ? 'rpg-node-available' : ''} ${isThisNodeTraining ? 'rpg-node-training' : ''}" style="--node-color:${treeDef.color}">
           <div class="rpg-node-header">
             <span class="rpg-node-icon">${nodeDef.icon}</span>
             <div class="rpg-node-title">
@@ -12126,9 +11982,7 @@ function renderSkillTreeUI() {
           <p class="rpg-node-desc">${nodeDef.desc}</p>
           <p class="rpg-node-effect">${nodeDef.effect}</p>
           ${prereqText ? `<div class="rpg-node-prereqs">Requires: ${prereqText}</div>` : ''}
-          <button onclick="upgradeNode('${_activeSkillTree}', '${nodeId}')" class="rpg-node-btn ${canUpgrade ? 'rpg-node-btn-active' : ''}" ${!canUpgrade ? 'disabled' : ''}>
-            ${isMaxed ? ' MAXED' : isLocked ? ' Locked' : canUpgrade ? `Upgrade (${upgCost} pt${upgCost>1?'s':''})${upgCost>1?' [Soft Cap]':''}` : 'No Points'}
-          </button>
+          ${buttonHTML}
         </div>
       `;
     }
@@ -12138,13 +11992,11 @@ function renderSkillTreeUI() {
   document.getElementById("skills-content").innerHTML = `
     <div class="rpg-skill-container">
       <div class="rpg-skill-header">
-        <h2 class="rpg-skill-title">Skill Trees</h2>
-        <div class="rpg-skill-points">
-          <span class="rpg-sp-label">Skill Points</span>
-          <span class="rpg-sp-value">${player.skillPoints}</span>
-        </div>
-        <div class="rpg-skill-summary">Total invested: ${totalPts} pts across all trees</div>
+        <h2 class="rpg-skill-title">Training Gym</h2>
+        <div class="rpg-skill-summary">Total trained: ${totalPts} ranks across all trees</div>
       </div>
+
+      ${trainingBannerHTML}
 
       <div class="rpg-tree-tabs">${treeTabs}</div>
 
@@ -12181,7 +12033,7 @@ function renderSkillTreeUI() {
       </div>
 
       <div style="text-align:center;margin-top:20px;">
-        <button class="nav-btn-back" onclick="respecSkillTree()" style="background:#8b3a3a;color:#f5e6c8;border:none;padding:10px 20px;border-radius:6px;cursor:pointer;margin-right:8px;font-weight:bold;">Respec Skills ($${(10000 * Math.pow(2, player.respecCount || 0)).toLocaleString()})</button>
+        <button class="nav-btn-back" onclick="respecSkillTree()" style="background:#8b3a3a;color:#f5e6c8;border:none;padding:10px 20px;border-radius:6px;cursor:pointer;margin-right:8px;font-weight:bold;">Reset Skills ($${(10000 * Math.pow(2, player.respecCount || 0)).toLocaleString()})</button>
         <button class="nav-btn-back" onclick="goBackToMainMenu()"><- Back to SafeHouse</button>
       </div>
     </div>
@@ -12199,9 +12051,9 @@ function selectSkillTree(treeId) {
   }
 }
 
-function upgradeNode(treeName, nodeId) {
-  if (window.upgradingSkill) {
-    setTimeout(() => { window.upgradingSkill = false; }, 1000);
+function startSkillTraining(treeName, nodeId) {
+  if (player.activeTraining) {
+    showBriefNotification("Already training a skill! Finish or cancel first.", 'warning');
     return;
   }
   if (!canUnlockNode(treeName, nodeId)) {
@@ -12210,47 +12062,122 @@ function upgradeNode(treeName, nodeId) {
     const rank = player.skillTree[treeName][nodeId] || 0;
     if (rank >= nodeDef.maxRank) {
       showBriefNotification(`${nodeDef.name} is already maxed out!`, 'warning');
-    } else if (player.skillPoints < getUpgradeCost(treeName, nodeId)) {
-      showBriefNotification(`Need ${getUpgradeCost(treeName, nodeId)} skill points (soft cap above rank 7)! Level up to earn more.`, 'danger');
     } else {
       showBriefNotification(`Prerequisites not met for ${nodeDef.name}.`, 'warning');
     }
     return;
   }
 
-  const upgradeCost = getUpgradeCost(treeName, nodeId);
-  if (player.skillPoints < upgradeCost) {
-    showBriefNotification(`Need ${upgradeCost} skill points (soft cap above rank 7).`, 'danger');
+  const cost = getTrainingCost(treeName, nodeId);
+  if (!cost) return;
+
+  if (player.money < cost.money) {
+    showBriefNotification(`Not enough money! Need $${cost.money.toLocaleString()}.`, 'danger');
     return;
   }
 
-  window.upgradingSkill = true;
-  player.skillTree[treeName][nodeId]++;
-  player.skillPoints -= upgradeCost;
+  // Deduct costs upfront
+  player.money -= cost.money;
+
+  // Start training timer
+  player.activeTraining = {
+    tree: treeName,
+    node: nodeId,
+    startTime: Date.now(),
+    duration: cost.time * 1000,
+    moneyCost: cost.money
+  };
 
   const nodeDef = SKILL_TREE_DEFS[treeName].nodes[nodeId];
-  const newRank = player.skillTree[treeName][nodeId];
+  logAction(`You begin training ${nodeDef.name}. This will take ${formatTrainingTime(cost.time)}.`);
+  showBriefNotification(`Training ${nodeDef.name}... ${formatTrainingTime(cost.time)}`, 'info');
+
+  updateUI();
+  _refreshSkillTreeUI();
+}
+
+function cancelSkillTraining() {
+  if (!player.activeTraining) return;
+
+  const t = player.activeTraining;
+  const nodeDef = SKILL_TREE_DEFS[t.tree]?.nodes[t.node];
+  const refund = Math.floor(t.moneyCost * 0.5);
+  player.money += refund;
+  player.activeTraining = null;
+
+  showBriefNotification(`Training cancelled. $${refund.toLocaleString()} refunded.`, 'warning');
+  logAction(`You stopped training ${nodeDef?.name || t.node}. Half of the training fee was refunded.`);
+
+  updateUI();
+  _refreshSkillTreeUI();
+}
+
+function completeSkillTraining() {
+  if (!player.activeTraining) return;
+
+  const t = player.activeTraining;
+  player.skillTree[t.tree][t.node]++;
+  const nodeDef = SKILL_TREE_DEFS[t.tree].nodes[t.node];
+  const newRank = player.skillTree[t.tree][t.node];
+  player.activeTraining = null;
 
   if (newRank >= nodeDef.maxRank) {
-    showBriefNotification(` MASTERED: ${nodeDef.name}! Maximum rank reached.`, 'success');
+    showBriefNotification(`MASTERED: ${nodeDef.name}! Maximum rank reached.`, 'success');
     logAction(`${nodeDef.name} MASTERED! You've reached rank ${newRank} -- the pinnacle of this discipline.`);
   } else {
+    showBriefNotification(`${nodeDef.name} trained to rank ${newRank}!`, 'success');
     logAction(`Training complete! ${nodeDef.name} improved to rank ${newRank}. ${nodeDef.effect}`);
   }
 
-  // Track playstyle
   player.playstyleStats.skillTreeUpgrades = (player.playstyleStats.skillTreeUpgrades || 0) + 1;
 
   updateUI();
-  // Re-render skill tree in correct context (stats tab or standalone)
+  _refreshSkillTreeUI();
+}
+
+// Called every second to update training countdown and check completion
+function tickSkillTraining() {
+  if (!player.activeTraining) return;
+
+  const t = player.activeTraining;
+  const elapsed = Date.now() - t.startTime;
+
+  if (elapsed >= t.duration) {
+    completeSkillTraining();
+    return;
+  }
+
+  // Update countdown display without full re-render
+  const remaining = Math.max(0, t.duration - elapsed);
+  const remainSec = Math.ceil(remaining / 1000);
+  const pct = Math.min(100, (elapsed / t.duration) * 100);
+
+  const countdownEl = document.getElementById('training-countdown');
+  if (countdownEl) countdownEl.textContent = formatTrainingTime(remainSec);
+
+  const progressEl = document.getElementById('training-progress-fill');
+  if (progressEl) progressEl.style.width = pct + '%';
+
+  // Update node-level timer if visible
+  const nodeTimeEl = document.getElementById(`node-train-time-${t.node}`);
+  if (nodeTimeEl) nodeTimeEl.textContent = formatTrainingTime(remainSec);
+}
+
+// Helper: re-render skill tree in correct context (stats tab or standalone)
+function _refreshSkillTreeUI() {
   const panelSkills = document.getElementById('panel-skills');
   if (panelSkills && panelSkills.style.display !== 'none') {
     showPlayerStatsTab('skills');
   } else {
     renderSkillTreeUI();
   }
+}
 
-  setTimeout(() => { window.upgradingSkill = false; }, 1000);
+// Start the 1-second skill training timer
+let _skillTrainingInterval = null;
+function startSkillTrainingTimer() {
+  if (_skillTrainingInterval) clearInterval(_skillTrainingInterval);
+  _skillTrainingInterval = setInterval(tickSkillTraining, 1000);
 }
 
 // Gang rescue attempt -- send your crew to break you out of jail
@@ -12397,20 +12324,14 @@ function expandTerritory() {
     return;
   }
 
-  // Territory expansion costs energy and money
-  const energyCost = 15;
+  // Territory expansion costs money
   const moneyCost = Math.floor(2000 + (player.turf?.owned || []).length * 3000); // Scales with holdings
 
-  if (player.energy < energyCost) {
-    showBriefNotification(`Need ${energyCost} energy to expand territory. You have ${player.energy}.`, 'warning');
-    return;
-  }
   if (player.money < moneyCost) {
     showBriefNotification(`Need $${moneyCost.toLocaleString()} to fund the expansion. You have $${Math.floor(player.money).toLocaleString()}.`, 'warning');
     return;
   }
 
-  player.energy -= energyCost;
   player.money -= moneyCost;
 
   // Success chance scales: 70% base, +3% per gang member beyond 5, +2% per leadership level, cap at 95%
@@ -13730,17 +13651,15 @@ const menuUnlockConfig = [
   { id: 'store', fn: 'showStore()', label: 'Black Market', tip: 'Buy weapons, armor & supplies', level: 0 },
   { id: 'inventory', fn: 'showInventory()', label: 'Stash', tip: 'Inventory, equipment & motor pool', level: 0 },
   { id: 'hospital', fn: 'showHospital()', label: 'The Doctor', tip: 'Heal your injuries', level: 0 },
+  { id: 'bountyboard', fn: 'showBountyBoard()', label: 'Bounty Board', tip: 'Hunt high-value targets for cash', level: 3 },
   { id: 'casino', fn: 'showCasino()', label: 'Gambling', tip: 'Slots, roulette, cards & mini games', level: 0 },
 
   // === EARLY GAME (Level 2-3) ===
-  { id: 'gym', fn: 'showGym()', label: 'The Gym', tip: 'Train your stats over time', level: 2 },
   { id: 'playerstats', fn: 'showPlayerStats()', label: 'Stats', tip: 'Stats, skills, empire & overview', level: 2 },
   { id: 'relocate', fn: 'showTerritoryRelocation()', label: 'Relocate', tip: 'Move to a different district', level: 2 },
-  { id: 'newspaper', fn: 'showNewspaper()', label: 'The Daily Racket', tip: 'Your criminal news feed', level: 2 },
   { id: 'realestate', fn: 'showRealEstate()', label: 'Properties', tip: 'Real estate & business fronts', level: 3 },
 
   // === MID GAME (Level 5-8) ===
-  { id: 'bountyboard', fn: 'showBountyBoard()', label: 'Bounty Board', tip: 'Hunt targets for cash rewards', level: 5 },
   { id: 'gang', fn: 'showGang()', label: 'The Family', tip: 'Recruit & manage your crew', level: 5 },
   { id: 'territories', fn: 'showTerritories()', label: 'Territories', tip: 'Manage your owned territories', level: 5 },
   { id: 'courthouse', fn: 'showCourtHouse()', label: 'Legal Aid', tip: 'Pay to reduce your wanted level', level: 5 },
@@ -13958,7 +13877,6 @@ function showPlayerStats() {
   }
 
   // ---- SECTION 1: Core Stats ----
-  const maxEnergy = 100 + ((st.endurance?.vitality || 0) * 2) + ((st.endurance?.conditioning || 0) * 3);
   const familyNames = { torrino: 'Torrino Family', kozlov: 'Kozlov Bratva', chen: 'Chen Triad', morales: 'Morales Cartel' };
   const familyDisplay = player.chosenFamily ? familyNames[player.chosenFamily] || player.chosenFamily : 'None';
   const rankDisplay = player.familyRank ? player.familyRank.charAt(0).toUpperCase() + player.familyRank.slice(1) : 'Associate';
@@ -13968,7 +13886,6 @@ function showPlayerStats() {
     row('Level', player.level, '#d4af37'),
     row('XP', `${player.experience} / ${Math.floor(player.level * 350 + Math.pow(player.level, 2) * 75 + Math.pow(player.level, 3) * 5)}`, '#c0a062'),
     row('Health', `${player.health !== undefined ? player.health : 100} / 100`, '#8b3a3a'),
-    row('Energy', `${player.energy !== undefined ? player.energy : maxEnergy} / ${maxEnergy}`, '#8a9a6a'),
     row('Cash', `$${(player.money || 0).toLocaleString()}`, '#7a8a5a'),
     row('Dirty Money', `$${(player.dirtyMoney || 0).toLocaleString()}`, '#7a2a2a'),
     row('Ammo', player.ammo || 0, '#8b3a3a'),
@@ -13976,7 +13893,7 @@ function showPlayerStats() {
     row('Power', player.power || 0, '#e67e22'),
     row('Reputation', player.reputation || 0, '#8b6a4a'),
     row('Wanted Level', `${player.wantedLevel || 0} / 100`, '#8b3a3a'),
-    row('Skill Points', player.skillPoints || 0, '#d4af37'),
+    row('Training', player.activeTraining ? 'In Progress' : 'Idle', player.activeTraining ? '#1abc9c' : '#d4af37'),
     row('Breakout Chance', `${player.breakoutChance || 45}%`, '#c0a062'),
     row('Jail Status', player.inJail ? `In Jail (${player.jailTime}s)` : 'Free', player.inJail ? '#8b3a3a' : '#8a9a6a'),
     row('Family', familyDisplay, '#d4af37'),
@@ -14083,7 +14000,7 @@ function showPlayerStats() {
       <button id="tab-showcase" onclick="showPlayerStatsTab('showcase')" style="background:rgba(155,89,182,0.3);color:#8b6a4a;padding:8px 16px;border:1px solid #8b6a4a;border-radius:8px 8px 0 0;cursor:pointer;font-weight:bold;font-size:0.95em;">Character Showcase</button>
       <button id="tab-empire" onclick="showPlayerStatsTab('empire')" style="background:rgba(231,76,60,0.3);color:#8b3a3a;padding:8px 16px;border:1px solid #8b3a3a;border-radius:8px 8px 0 0;cursor:pointer;font-weight:bold;font-size:0.95em;">Empire Rating</button>
       <button id="tab-overview" onclick="showPlayerStatsTab('overview')" style="background:rgba(230,126,34,0.3);color:#e67e22;padding:8px 16px;border:1px solid #e67e22;border-radius:8px 8px 0 0;cursor:pointer;font-weight:bold;font-size:0.95em;">Empire Overview</button>
-      <button id="tab-skills" onclick="showPlayerStatsTab('skills')" style="background:rgba(138, 154, 106,0.3);color:#8a9a6a;padding:8px 16px;border:1px solid #8a9a6a;border-radius:8px 8px 0 0;cursor:pointer;font-weight:bold;font-size:0.95em;">Expertise</button>
+      <button id="tab-skills" onclick="showPlayerStatsTab('skills')" style="background:rgba(138, 154, 106,0.3);color:#8a9a6a;padding:8px 16px;border:1px solid #8a9a6a;border-radius:8px 8px 0 0;cursor:pointer;font-weight:bold;font-size:0.95em;">Training Gym</button>
     </div>
 
     <!-- Stats Tab (default) -->
@@ -14451,7 +14368,6 @@ function updateJailbreakPrisonerList() {
 
   if (onlinePlayers.length > 0) {
     onlinePlayers.forEach(p => {
-      const energyCheck = player.energy >= 15;
       prisonerHTML += `
         <div style="background: rgba(139, 0, 0, 0.2); padding: 15px; margin: 10px 0; border-radius: 8px; border: 2px solid #8b0000;">
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
@@ -14460,12 +14376,11 @@ function updateJailbreakPrisonerList() {
               <p><strong>Status:</strong> <span style="color: #8b3a3a;">Online Player</span></p>
               <p><strong>Time Left:</strong> ${Math.max(0, Math.ceil(p.jailTime))}s</p>
               <p><strong>Level:</strong> ${p.level || 1}</p>
-              <p><strong>Energy Cost:</strong> 15</p>
             </div>
             <div style="text-align: center; min-width: 180px;">
-              <button onclick="attemptPlayerJailbreak('${p.playerId}', '${p.name}')" ${energyCheck ? '' : 'disabled'}
-                      style="margin-top: 10px; width: 100%; background: ${energyCheck ? '#c0a040' : '#555'}; color: white; border: none; padding: 10px; border-radius: 4px; cursor: ${energyCheck ? 'pointer' : 'not-allowed'};">
-                ${energyCheck ? 'Break Out Player' : 'Not Enough Energy'}
+              <button onclick="attemptPlayerJailbreak('${p.playerId}', '${p.name}')"
+                      style="margin-top: 10px; width: 100%; background: #c0a040; color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer;">
+                Break Out Player
               </button>
             </div>
           </div>
@@ -14488,7 +14403,6 @@ function updateJailbreakPrisonerList() {
     serverBots.forEach(bot => {
       const difficultyColor = ['#8a9a6a', '#c0a040', '#8b3a3a'][bot.difficulty - 1] || '#c0a040';
       const difficultyText = bot.securityLevel || ['Minimum', 'Medium', 'Maximum'][bot.difficulty - 1] || 'Unknown';
-      const energyCheck = player.energy >= 15;
       prisonerHTML += `
         <div style="background: rgba(20, 18, 10, 0.5); padding: 15px; margin: 10px 0; border-radius: 8px; border: 2px solid ${difficultyColor};">
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
@@ -14496,13 +14410,12 @@ function updateJailbreakPrisonerList() {
               <h3 style="color: ${difficultyColor}; margin: 0 0 8px 0;">${bot.name}</h3>
               <p><strong>Security:</strong> <span style="color: ${difficultyColor};">${difficultyText}</span></p>
               <p><strong>Sentence:</strong> ${bot.sentence}s</p>
-              <p><strong>Energy Cost:</strong> 15</p>
             </div>
             <div style="text-align: center; min-width: 180px;">
               <p><strong>Success Rate:</strong> <span style="color: #c0a062">${bot.breakoutSuccess}%</span></p>
-              <button onclick="attemptBotJailbreak('${bot.botId}', '${bot.name.replace(/'/g, "\\'").replace(/"/g, '&quot;')}')" ${energyCheck ? '' : 'disabled'}
-                      style="margin-top: 10px; width: 100%; background: ${energyCheck ? '#c0a062' : '#555'}; color: white; border: none; padding: 10px; border-radius: 4px; cursor: ${energyCheck ? 'pointer' : 'not-allowed'};">
-                ${energyCheck ? 'Attempt Breakout' : 'Not Enough Energy'}
+              <button onclick="attemptBotJailbreak('${bot.botId}', '${bot.name.replace(/'/g, "\\'").replace(/"/g, '&quot;')}')"
+                      style="margin-top: 10px; width: 100%; background: #c0a062; color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer;">
+                Attempt Breakout
               </button>
             </div>
           </div>
@@ -14522,15 +14435,6 @@ function updateJailbreakPrisonerList() {
 function attemptJailbreak(prisonerIndex) {
   const prisoner = jailbreakPrisoners[prisonerIndex];
   if (!prisoner) return;
-
-  // Check energy
-  if (player.energy < prisoner.energyCost) {
-    showBriefNotification("You don't have enough energy for this jailbreak attempt!", 'danger');
-    return;
-  }
-
-  // Consume energy
-  player.energy = Math.max(0, player.energy - prisoner.energyCost);
 
   // Calculate success chance with stealth bonus
   const successChance = prisoner.breakoutSuccess + (player.skillTree.stealth.shadow_step * 2);
@@ -14574,12 +14478,6 @@ function attemptJailbreak(prisonerIndex) {
 
 // Function to refresh the prisoner list
 function refreshPrisoners() {
-  if (player.energy < 5) {
-    showBriefNotification("You need at least 5 energy to scout for new prisoners!", 'danger');
-    return;
-  }
-
-  player.energy = Math.max(0, player.energy - 5);
   generateJailbreakPrisoners();
   updateJailbreakPrisonerList();
   updateUI();
@@ -14844,7 +14742,6 @@ const storeCategories = [
   { id: 'armor', label: 'Armor', icon: '', types: ['armor'] },
   { id: 'vehicles', label: 'Vehicles', icon: '', types: ['vehicle'] },
   { id: 'supplies', label: 'Supplies', icon: '', types: ['ammo', 'gas'] },
-  { id: 'energy', label: 'Energy', icon: '', types: ['energy'] },
   { id: 'utility', label: 'Utility', icon: '', types: ['utility'] },
   { id: 'trade', label: 'Trade Goods', icon: '', types: ['highLevelDrug'] }
 ];
@@ -15172,15 +15069,13 @@ function renderStoreTab(tabId) {
     let discountText = player.skillTree.charisma.smooth_talker > 0 ? ` (${((1 - finalPrice/item.price) * 100).toFixed(0)}% off!)` : '';
 
     let itemDescription = "";
-    if (item.type === "energy") {
-      itemDescription = `(Restores ${item.energyRestore} energy)`;
-    } else {
+    if (item.power > 0) {
       itemDescription = `(Power: ${item.power})`;
     }
 
     // Item comparison: show upgrade/downgrade vs currently owned items of same type
     let comparisonHTML = "";
-    if (item.power > 0 && item.type !== "energy" && item.type !== "ammo" && item.type !== "gas") {
+    if (item.power > 0 && item.type !== "ammo" && item.type !== "gas") {
       const ownedSameType = player.inventory.filter(inv => inv.type === item.type);
       if (ownedSameType.length > 0) {
         const bestOwned = ownedSameType.reduce((best, cur) => cur.power > best.power ? cur : best, ownedSameType[0]);
@@ -15246,7 +15141,7 @@ function renderStoreTab(tabId) {
     const btnText = isEquipType && alreadyOwned ? 'Already Owned' : bulletSoldOut ? 'Sold Out' : (player.money >= finalPrice ? 'Purchase' : 'Too Expensive');
 
     // Category-specific border color
-    const borderColorMap = { weapon: '#8b3a3a', armor: '#c0a062', vehicle: '#c0a040', ammo: '#8a7a5a', gas: '#8a7a5a', energy: '#8a9a6a', utility: '#8b6a4a', highLevelDrug: '#e67e22' };
+    const borderColorMap = { weapon: '#8b3a3a', armor: '#c0a062', vehicle: '#c0a040', ammo: '#8a7a5a', gas: '#8a7a5a', utility: '#8b6a4a', highLevelDrug: '#e67e22' };
     const borderColor = borderColorMap[item.type] || '#c0a062';
 
     return `
@@ -15386,7 +15281,7 @@ async function buyItem(index) {
     }
 
     // Confirmation for expensive purchases (over $100K)
-    if (finalPrice >= 100000 && item.type !== "ammo" && item.type !== "gas" && item.type !== "energy") {
+    if (finalPrice >= 100000 && item.type !== "ammo" && item.type !== "gas") {
       const pctOfWallet = ((finalPrice / player.money) * 100).toFixed(0);
       const confirmed = await ui.confirm(`Purchase ${item.name} for $${finalPrice.toLocaleString()}?\n\nThis is ${pctOfWallet}% of your wallet ($${player.money.toLocaleString()}).`);
       if (!confirmed) return;
@@ -15438,16 +15333,6 @@ async function buyItem(index) {
       player.gas++;
     } else if (item.type === "health") {
       player.health = Math.min(player.health + item.healthRestore, 100);
-    } else if (item.type === "energy") {
-      player.energy = Math.min(player.energy + item.energyRestore, player.maxEnergy);
-      // Energy drinks take a toll on your health
-      player.health = Math.max(player.health - 1, 0);
-      // Reset timer if energy is now full
-      if (player.energy >= player.maxEnergy) {
-        player.energyRegenTimer = 0;
-      }
-      showBriefNotification(`You consumed ${item.name} and restored ${item.energyRestore} energy! The rush comes with a cost (-1 health).`, 'success');
-      logAction(`You down the ${item.name} in one gulp. The caffeine and chemicals surge through your veins - energy restored but your body pays the price (+${item.energyRestore} energy, -1 health).`);
     } else if (item.type === "utility") {
       // Utility items go to inventory and provide passive bonuses
       const itemCopy = Object.assign({}, item);
@@ -15473,7 +15358,7 @@ async function buyItem(index) {
       player.streetReputation.underground = Math.min(100, (player.streetReputation.underground || 0) + 1);
     }
 
-    if (item.type !== "energy" && item.type !== "vehicle" && item.type !== "utility") {
+    if (item.type !== "vehicle" && item.type !== "utility") {
       showBriefNotification(`You bought a ${item.name} for $${finalPrice.toLocaleString()}.`, 'success');
       logAction(`' Deal sealed with a firm handshake. The ${item.name} is yours now - power on the streets costs $${finalPrice.toLocaleString()}, but respect is priceless.`);
     }
@@ -15934,9 +15819,6 @@ function resetPlayerForNewGame() {
     inventory: [],
     stolenCars: [],
     selectedCar: null,
-    energy: 100,
-    maxEnergy: 100,
-    energyRegenTimer: 0,
     ammo: 0,
     gas: 0,
     health: 100,
@@ -16619,8 +16501,6 @@ function applyBackgroundBonuses(bgId) {
   if (bonus.luck) player.skillTree.luck.fortune += bonus.luck;
   if (bonus.endurance) player.skillTree.endurance.vitality += bonus.endurance;
   if (bonus.money) player.money += bonus.money;
-  if (bonus.energy) player.maxEnergy += bonus.energy;
-  if (bonus.energy) player.energy = player.maxEnergy;
   if (bonus.reputation) player.reputation += bonus.reputation;
   if (bonus.power) player.power += bonus.power;
 }
@@ -16629,7 +16509,6 @@ function applyPerkBonuses(perkId) {
   // One-time stat bonuses applied at character creation
   if (perkId === 'thick_skin') {
     player.health += 15;
-    player.maxEnergy = player.maxEnergy; // no change, just for clarity
   }
   // Other perks are passive and checked at runtime via hasPlayerPerk()
 }
@@ -16913,13 +16792,12 @@ function renderTerritoriesScreen() {
       const resCount = terr.residents ? terr.residents.length : 0;
       const defRating = terr.defenseRating || 100;
       const isCurrent = d.id === player.currentTerritory;
-      const canWar = isCurrent && gangSize >= MIN_WAR_GANG_SIZE && player.energy >= WAR_ENERGY_COST;
+      const canWar = isCurrent && gangSize >= MIN_WAR_GANG_SIZE;
       const isNPC = ownerName && NPC_OWNER_NAMES && NPC_OWNER_NAMES.has ? NPC_OWNER_NAMES.has(ownerName) : false;
 
       let warBtnTitle = '';
       if (!isCurrent) warBtnTitle = 'You must live in this district to wage war';
       else if (gangSize < MIN_WAR_GANG_SIZE) warBtnTitle = `Need ${MIN_WAR_GANG_SIZE}+ gang members (you have ${gangSize})`;
-      else if (player.energy < WAR_ENERGY_COST) warBtnTitle = `Need ${WAR_ENERGY_COST} energy (you have ${player.energy || 0})`;
       else warBtnTitle = 'Wage war to conquer this territory!';
 
       // Owner badge
@@ -17180,17 +17058,13 @@ async function wageWar(districtId) {
     showBriefNotification(`You need at least ${MIN_WAR_GANG_SIZE} gang members to wage territory war. You have ${gangSize}.`, 'danger');
     return;
   }
-  if ((player.energy || 0) < WAR_ENERGY_COST) {
-    showBriefNotification(`Not enough energy. War costs ${WAR_ENERGY_COST} energy. You have ${player.energy || 0}.`, 'danger');
-    return;
-  }
 
   const tState = (typeof onlineWorldState !== 'undefined' && onlineWorldState.territories) || {};
   const terrData = tState[districtId] || {};
   const ownerName = terrData.owner || 'Uncontrolled';
   const defRating = terrData.defenseRating || 100;
 
-  const confirmed = await ui.confirm(`Wage war for control of ${d.shortName}?<br><br>Current controller: <strong>${ownerName}</strong> (Defense: ${defRating})<br>Cost: ${WAR_ENERGY_COST} energy | Risks gang casualties<br>Your crew: ${gangSize} members`);
+  const confirmed = await ui.confirm(`Wage war for control of ${d.shortName}?<br><br>Current controller: <strong>${ownerName}</strong> (Defense: ${defRating})<br>Risks gang casualties<br>Your crew: ${gangSize} members`);
   if (!confirmed) return;
 
   if (typeof onlineWorldState !== 'undefined' && onlineWorldState.isConnected && onlineWorldState.socket) {
@@ -18388,7 +18262,6 @@ function buyProperty(index) {
 
   showBriefNotification(`Congratulations! You now own ${property.name}. Your gang capacity has increased by ${property.gangCapacity} members!`, 'success');
   logAction(`Real estate empire grows! You've acquired ${property.name} for $${property.price.toLocaleString()}. Your criminal organization now has more room to expand.`);
-  addNewspaperEntry(`A mysterious buyer just purchased ${property.name} for $${property.price.toLocaleString()}. Neighbors are concerned.`, 'business');
 
   // Track mission progress for property ownership
   updateMissionProgress('property_acquired');
@@ -18999,41 +18872,203 @@ function fenceSellAllCars() {
   showStore('fence');
 }
 
-// Function to show the hospital screen
+// ==================== BOUNTY BOARD SYSTEM ====================
+// 12 NPC targets across 4 difficulty tiers. Refreshes every 4 hours.
+
+const BOUNTY_TARGETS = [
+  // Tier 1: Street (easy)
+  { name: 'Danny "Two-Shoes" Malone', tier: 1, power: 30, reward: 2000, xp: 50, desc: 'Small-time pickpocket with a bad habit of running his mouth.' },
+  { name: '"Slippery" Pete Vasquez', tier: 1, power: 40, reward: 3000, xp: 60, desc: 'Con artist who fleeced the wrong bookie.' },
+  { name: 'Louie "The Rat" Bianchi', tier: 1, power: 35, reward: 2500, xp: 55, desc: 'Snitch who sold out a crew to the feds.' },
+  // Tier 2: Enforcer (medium)
+  { name: 'Viktor "Iron Jaw" Kozlov', tier: 2, power: 80, reward: 8000, xp: 120, desc: 'Ex-boxer who runs protection rackets downtown.' },
+  { name: 'Marcus "The Bull" Jefferson', tier: 2, power: 90, reward: 10000, xp: 140, desc: 'Enforcer for a rival family. Built like a tank.' },
+  { name: 'Chen "Razor" Wei', tier: 2, power: 85, reward: 9000, xp: 130, desc: 'Triad lieutenant who controls the docks.' },
+  // Tier 3: Underboss (hard)
+  { name: 'Salvatore "The Ghost" Moretti', tier: 3, power: 150, reward: 25000, xp: 250, desc: 'Elusive underboss with a network of safe houses.' },
+  { name: 'Nikolai "Black Ice" Petrov', tier: 3, power: 170, reward: 30000, xp: 280, desc: 'Bratva arms dealer. Heavily guarded at all times.' },
+  { name: 'Isabella "La Sombra" Cruz', tier: 3, power: 160, reward: 28000, xp: 260, desc: 'Cartel queen who controls half the supply chain.' },
+  // Tier 4: Kingpin (extreme)
+  { name: 'Antonio "The Don" Calabrese', tier: 4, power: 250, reward: 60000, xp: 500, desc: 'Old-school boss. Every cop in town is on his payroll.' },
+  { name: 'Yuri "The Hammer" Volkov', tier: 4, power: 280, reward: 75000, xp: 550, desc: 'Bratva kingpin. Disappeared three assassins last month.' },
+  { name: 'Hector "El Rey" Fuentes', tier: 4, power: 300, reward: 90000, xp: 600, desc: 'Cartel kingpin. Owns an army and a private airstrip.' },
+];
+
+const BOUNTY_TIER_LABELS = { 1: 'Street', 2: 'Enforcer', 3: 'Underboss', 4: 'Kingpin' };
+const BOUNTY_TIER_COLORS = { 1: '#8a9a6a', 2: '#c0a040', 3: '#e67e22', 4: '#8b3a3a' };
+const BOUNTY_REFRESH_MS = 4 * 60 * 60 * 1000; // 4 hours
+const BOUNTY_ENERGY_COST = {}; // Legacy (energy system removed)
+
+function generateBountyBoard() {
+  if (!player.bountyBoard) player.bountyBoard = { targets: [], lastRefresh: 0 };
+  const now = Date.now();
+  if (player.bountyBoard.targets.length > 0 && (now - player.bountyBoard.lastRefresh) < BOUNTY_REFRESH_MS) return;
+
+  // Pick 4 random bounties (1 per tier)
+  const selected = [];
+  for (let tier = 1; tier <= 4; tier++) {
+    const pool = BOUNTY_TARGETS.filter(t => t.tier === tier);
+    const pick = pool[Math.floor(Math.random() * pool.length)];
+    selected.push({ ...pick, completed: false, failed: false });
+  }
+  player.bountyBoard.targets = selected;
+  player.bountyBoard.lastRefresh = now;
+}
+
+function getBountySuccessChance(bounty) {
+  let attackPower = player.power || 0;
+  // Combat skills boost
+  attackPower += (player.skillTree?.combat?.brawler || 0) * 4;
+  attackPower += (player.skillTree?.combat?.firearms || 0) * 3;
+  attackPower += (player.skillTree?.combat?.intimidation || 0) * 5;
+  // Weapon/armor bonus
+  if (player.equippedWeapon) attackPower += player.equippedWeapon.power || 0;
+  if (player.equippedArmor) attackPower += player.equippedArmor.power || 0;
+  // Calculate chance using sigmoid
+  const defense = bounty.power;
+  if (defense <= 0) return 99;
+  const ratio = attackPower / defense;
+  const raw = 1 / (1 + Math.exp(-4 * (ratio - 1)));
+  return Math.max(5, Math.min(95, Math.round(raw * 100)));
+}
+
+function showBountyBoard() {
+  hideAllScreens();
+  document.getElementById("bountyboard-screen").style.display = "block";
+  generateBountyBoard();
+  renderBountyBoard();
+}
+
+function renderBountyBoard() {
+  const container = document.getElementById("bountyboard-content");
+  if (!container) return;
+
+  const now = Date.now();
+  const timeLeft = Math.max(0, BOUNTY_REFRESH_MS - (now - (player.bountyBoard?.lastRefresh || 0)));
+  const hrs = Math.floor(timeLeft / 3600000);
+  const mins = Math.floor((timeLeft % 3600000) / 60000);
+  const refreshText = timeLeft > 0 ? `${hrs}h ${mins}m` : 'Refreshing...';
+
+  let html = `<div class="bounty-refresh-timer">New contracts in: <strong>${refreshText}</strong></div>`;
+  html += `<div class="bounty-grid">`;
+
+  const targets = player.bountyBoard?.targets || [];
+  for (const bounty of targets) {
+    const chance = getBountySuccessChance(bounty);
+    const tierLabel = BOUNTY_TIER_LABELS[bounty.tier];
+    const tierColor = BOUNTY_TIER_COLORS[bounty.tier];
+    const canAttempt = !bounty.completed && !bounty.failed && !player.inJail;
+
+    let statusHTML = '';
+    if (bounty.completed) {
+      statusHTML = `<div class="bounty-status bounty-complete">ELIMINATED</div>`;
+    } else if (bounty.failed) {
+      statusHTML = `<div class="bounty-status bounty-failed">ESCAPED</div>`;
+    } else {
+      statusHTML = `<button onclick="attemptBounty(${targets.indexOf(bounty)})" class="bounty-attempt-btn" ${!canAttempt ? 'disabled' : ''}>
+        ${player.inJail ? 'In Jail' : 'Hunt Target'}
+      </button>`;
+    }
+
+    html += `
+      <div class="bounty-card ${bounty.completed ? 'bounty-card-done' : ''} ${bounty.failed ? 'bounty-card-failed' : ''}" style="--tier-color:${tierColor}">
+        <div class="bounty-card-tier" style="background:${tierColor}">${tierLabel}</div>
+        <div class="bounty-card-name">${bounty.name}</div>
+        <p class="bounty-card-desc">${bounty.desc}</p>
+        <div class="bounty-card-stats">
+          <span>Reward: <strong>$${bounty.reward.toLocaleString()}</strong></span>
+          <span>XP: <strong>${bounty.xp}</strong></span>
+        </div>
+        <div class="bounty-card-chance">
+          <span>Success: </span>
+          <div class="bounty-chance-bar"><div class="bounty-chance-fill" style="width:${chance}%;background:${chance > 60 ? '#8a9a6a' : chance > 35 ? '#c0a040' : '#8b3a3a'}"></div></div>
+          <span class="bounty-chance-pct">${chance}%</span>
+        </div>
+        ${statusHTML}
+      </div>`;
+  }
+
+  html += `</div>`;
+  container.innerHTML = html;
+}
+
+function attemptBounty(index) {
+  const targets = player.bountyBoard?.targets;
+  if (!targets || !targets[index]) return;
+  const bounty = targets[index];
+  if (bounty.completed || bounty.failed) return;
+
+  if (player.inJail) {
+    showBriefNotification("Can't hunt bounties from jail.", 'danger');
+    return;
+  }
+
+  const chance = getBountySuccessChance(bounty);
+  const roll = Math.random() * 100;
+
+  if (roll < chance) {
+    // Success
+    bounty.completed = true;
+    player.money += bounty.reward;
+    if (typeof gainExperience === 'function') gainExperience(bounty.xp);
+    const heatGain = Math.floor(bounty.tier * 3);
+    player.wantedLevel = Math.min(100, (player.wantedLevel || 0) + heatGain);
+
+    showBriefNotification(`Bounty collected! $${bounty.reward.toLocaleString()} + ${bounty.xp} XP`, 'success');
+    logAction(`You tracked down ${bounty.name} and collected the bounty. $${bounty.reward.toLocaleString()} earned. +${heatGain} heat.`);
+  } else {
+    // Failure
+    bounty.failed = true;
+    const damage = Math.floor(Math.random() * (bounty.tier * 8)) + bounty.tier * 5;
+    const heatGain = Math.floor(bounty.tier * 5);
+    player.health = Math.max(1, player.health - damage);
+    player.wantedLevel = Math.min(100, (player.wantedLevel || 0) + heatGain);
+
+    showBriefNotification(`Bounty failed! -${damage} HP, +${heatGain} heat`, 'danger');
+    logAction(`The hit on ${bounty.name} went sideways. You took ${damage} damage and drew attention. +${heatGain} heat.`);
+  }
+
+  player.playstyleStats.violentJobs = (player.playstyleStats.violentJobs || 0) + 1;
+  updateUI();
+  renderBountyBoard();
+}
+
+function refreshBountyBoardIfNeeded() {
+  if (!player.bountyBoard) player.bountyBoard = { targets: [], lastRefresh: 0 };
+  const now = Date.now();
+  if ((now - player.bountyBoard.lastRefresh) >= BOUNTY_REFRESH_MS) {
+    generateBountyBoard();
+  }
+}
+
+// ==================== HOSPITAL TIMER HEALING ====================
+// 3 heal types with countdown timers. Recovery skill reduces wait time.
+
+const HEAL_TYPES = {
+  full:    { label: 'Full Treatment', baseDuration: 90, desc: 'The doc patches you up completely. No questions asked.' },
+  partial: { label: 'Quick Patch-Up', baseDuration: 60, desc: 'A hasty job -- bandages and painkillers. Gets you back on the street fast.' },
+  rest:    { label: 'Rest & Recover', baseDuration: 30, desc: 'Lay low for a while. Free, but drains your energy.' },
+};
+
+function getHealDuration(baseDuration) {
+  const recoveryRank = player.skillTree?.endurance?.recovery || 0;
+  const reduction = recoveryRank * 0.05; // 5% per rank
+  return Math.max(5, Math.round(baseDuration * (1 - reduction)));
+}
+
+function getHealValues() {
+  const missingHealth = 100 - player.health;
+  return {
+    full:    { healAmount: missingHealth, cost: missingHealth * 25 },
+    partial: { healAmount: Math.min(missingHealth, 25), cost: Math.min(missingHealth, 25) * 20 },
+    rest:    { healAmount: Math.min(12, missingHealth), cost: 0 },
+  };
+}
+
 function showHospital() {
   hideAllScreens();
   document.getElementById("hospital-screen").style.display = "block";
-  ensureHospitalTimer();
-  checkHospitalTimer();
   renderHospitalContent();
-
-  // Auto-refresh for hospital timer
-  if (window._hospitalRefreshInterval) clearInterval(window._hospitalRefreshInterval);
-  window._hospitalRefreshInterval = setInterval(() => {
-    if (document.getElementById('hospital-screen').style.display === 'none') {
-      clearInterval(window._hospitalRefreshInterval);
-      return;
-    }
-    if (checkHospitalTimer()) {
-      renderHospitalContent();
-    } else {
-      updateHospitalTimer();
-    }
-  }, 1000);
-}
-
-function updateHospitalTimer() {
-  ensureHospitalTimer();
-  if (!player.hospitalTimer) return;
-  const remaining = Math.max(0, player.hospitalTimer.completesAt - Date.now());
-  const el = document.getElementById('hospital-timer-display');
-  if (el) el.textContent = formatGymTime(remaining);
-  const bar = document.getElementById('hospital-timer-bar');
-  if (bar) {
-    const total = player.hospitalTimer.completesAt - player.hospitalTimer.startedAt;
-    const elapsed = Date.now() - player.hospitalTimer.startedAt;
-    bar.style.width = Math.min(100, (elapsed / total) * 100) + '%';
-  }
 }
 
 function renderHospitalContent() {
@@ -19041,189 +19076,194 @@ function renderHospitalContent() {
   if (!container) return;
 
   const missingHealth = 100 - player.health;
-  const fullHealCost = missingHealth * 25;
-  const partialHealAmount = 25;
-  const partialHealCost = Math.min(missingHealth, partialHealAmount) * 20; // Slightly cheaper per HP
-  const restHealAmount = Math.min(12, missingHealth);
-  const restEnergyCost = 25;
-
-  // Health bar color
   const healthColor = player.health > 60 ? '#8a9a6a' : player.health > 30 ? '#c0a040' : '#8b3a3a';
-  const healthBar = `<div style="background: #333; border-radius: 8px; height: 24px; margin: 10px 0 20px; overflow: hidden; border: 1px solid #555;">
-    <div style="background: ${healthColor}; height: 100%; width: ${player.health}%; transition: width 0.5s; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.85em; color: #fff; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);">
+
+  let html = `<div class="content-card">`;
+  html += `<div style="background:#333;border-radius:8px;height:24px;margin:10px 0 20px;overflow:hidden;border:1px solid #555;">
+    <div style="background:${healthColor};height:100%;width:${player.health}%;transition:width 0.5s;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:0.85em;color:#fff;text-shadow:1px 1px 2px rgba(0,0,0,0.5);">
       ${player.health}/100 HP
     </div>
   </div>`;
 
-  let html = `<div class="content-card">${healthBar}`;
+  // If actively healing, show timer
+  if (player.activeHealing) {
+    const h = player.activeHealing;
+    const elapsed = Math.floor((Date.now() - h.startTime) / 1000);
+    const remaining = Math.max(0, h.duration - elapsed);
+    const pct = Math.min(100, ((h.duration - remaining) / h.duration) * 100);
+    const mins = Math.floor(remaining / 60);
+    const secs = remaining % 60;
 
-  // Show active hospital timer if treatment in progress
-  ensureHospitalTimer();
-  if (player.hospitalTimer) {
-    const ht = player.hospitalTimer;
-    const remaining = Math.max(0, ht.completesAt - Date.now());
-    const total = ht.completesAt - ht.startedAt;
-    const elapsed = Date.now() - ht.startedAt;
-    const pct = Math.min(100, (elapsed / total) * 100);
-    const typeLabel = ht.healType === 'full' ? 'Full Treatment' : ht.healType === 'partial' ? 'Quick Patch-Up' : 'Rest & Recovery';
-
-    html += `<div style="background:#1a1a12;border:1px solid #8a9a6a;border-radius:8px;padding:16px;margin-bottom:16px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;">
-        <div>
-          <strong style="color:#8a9a6a;">Treatment In Progress: ${typeLabel}</strong>
-          <p style="color:#999;font-size:0.85em;margin:4px 0 0;">Healing +${ht.amount} HP when done.</p>
-        </div>
-        <div style="text-align:right;">
-          <div style="font-size:1.3em;font-weight:bold;color:#f0e6d3;" id="hospital-timer-display">${formatGymTime(remaining)}</div>
-          <div style="font-size:0.75em;color:#888;">remaining</div>
-        </div>
-      </div>
-      <div style="background:#333;border-radius:8px;height:12px;margin-top:12px;overflow:hidden;">
-        <div id="hospital-timer-bar" style="background:linear-gradient(90deg,#8a9a6a,#d4af37);height:100%;width:${pct}%;transition:width 1s linear;border-radius:8px;"></div>
-      </div>
+    html += `<div class="hospital-healing-active">
+      <div class="hospital-healing-label">Treatment in progress: <strong>${HEAL_TYPES[h.type]?.label || h.type}</strong></div>
+      <div class="hospital-progress-bar"><div class="hospital-progress-fill" style="width:${pct}%"></div></div>
+      <div class="hospital-healing-time">${mins}:${secs.toString().padStart(2,'0')} remaining (+${h.healAmount} HP)</div>
+      <button onclick="cancelHospitalHealing()" class="hospital-cancel-btn">Cancel Treatment (50% refund)</button>
     </div>`;
-  }
-
-  if (player.health >= 100) {
-    html += `<p style="color: #8a9a6a; text-align: center; font-size: 1.1em;">You're in perfect health. No treatment needed.</p>`;
+  } else if (player.health >= 100) {
+    html += `<p style="color:#8a9a6a;text-align:center;font-size:1.1em;">You're in perfect health. No treatment needed.</p>`;
   } else {
-    const timerActive = !!player.hospitalTimer;
+    const vals = getHealValues();
+    const recoveryRank = player.skillTree?.endurance?.recovery || 0;
+    if (recoveryRank > 0) {
+      html += `<p style="color:#c0a062;text-align:center;font-size:0.85em;margin-bottom:12px;">Recovery Skill (Rank ${recoveryRank}): -${recoveryRank * 5}% treatment time</p>`;
+    }
     html += `<div class="hospital-services">`;
 
-    // Full heal
+    // Full Treatment (90s base)
+    const fullDur = getHealDuration(HEAL_TYPES.full.baseDuration);
     html += `<div class="hospital-option">
       <div class="hospital-option-header">
         <span class="hospital-icon"></span>
         <div>
-          <strong>Full Treatment</strong>
-          <p>The doc patches you up completely. No questions asked. Takes ~90s.</p>
+          <strong>${HEAL_TYPES.full.label}</strong>
+          <p>${HEAL_TYPES.full.desc}</p>
         </div>
       </div>
       <div class="hospital-option-footer">
-        <span class="hospital-cost">$${fullHealCost.toLocaleString()}</span>
-        <button onclick="healAtHospital('full')" ${timerActive || player.money < fullHealCost ? 'disabled' : ''}>
-          ${timerActive ? 'Treatment In Progress' : player.money < fullHealCost ? 'Can\'t Afford' : `Heal to 100% (+${missingHealth} HP)`}
+        <span class="hospital-cost">$${vals.full.cost.toLocaleString()} | ${fullDur}s</span>
+        <button onclick="startHospitalHealing('full')" ${player.money < vals.full.cost || missingHealth <= 0 ? 'disabled' : ''}>
+          ${player.money < vals.full.cost ? "Can't Afford" : `Heal to 100% (+${vals.full.healAmount} HP)`}
         </button>
       </div>
     </div>`;
 
-    // Partial heal (if missing more than 25)
+    // Partial Heal (60s base)
     if (missingHealth > 10) {
+      const partDur = getHealDuration(HEAL_TYPES.partial.baseDuration);
       html += `<div class="hospital-option">
         <div class="hospital-option-header">
           <span class="hospital-icon"></span>
           <div>
-            <strong>Quick Patch-Up</strong>
-            <p>A hasty job -- bandages and painkillers. Gets you back on the street fast.</p>
+            <strong>${HEAL_TYPES.partial.label}</strong>
+            <p>${HEAL_TYPES.partial.desc}</p>
           </div>
         </div>
         <div class="hospital-option-footer">
-          <span class="hospital-cost">$${partialHealCost.toLocaleString()}</span>
-          <button onclick="healAtHospital('partial')" ${timerActive || player.money < partialHealCost ? 'disabled' : ''}>
-            ${timerActive ? 'Treatment In Progress' : player.money < partialHealCost ? 'Can\'t Afford' : `Patch Up (+${Math.min(missingHealth, partialHealAmount)} HP)`}
+          <span class="hospital-cost">$${vals.partial.cost.toLocaleString()} | ${partDur}s</span>
+          <button onclick="startHospitalHealing('partial')" ${player.money < vals.partial.cost ? 'disabled' : ''}>
+            ${player.money < vals.partial.cost ? "Can't Afford" : `Patch Up (+${vals.partial.healAmount} HP)`}
           </button>
         </div>
       </div>`;
     }
 
-    // Rest option (free but costs energy)
+    // Rest (30s base)
+    const restDur = getHealDuration(HEAL_TYPES.rest.baseDuration);
     html += `<div class="hospital-option">
       <div class="hospital-option-header">
         <span class="hospital-icon"></span>
         <div>
-          <strong>Rest & Recover</strong>
-          <p>Lay low for a while. Free, but drains your energy.</p>
+          <strong>${HEAL_TYPES.rest.label}</strong>
+          <p>${HEAL_TYPES.rest.desc}</p>
         </div>
       </div>
       <div class="hospital-option-footer">
-        <span class="hospital-cost" style="color: #c0a062;">${restEnergyCost} Energy</span>
-        <button onclick="healAtHospital('rest')" ${timerActive || player.energy < restEnergyCost || restHealAmount <= 0 ? 'disabled' : ''}>
-          ${timerActive ? 'Treatment In Progress' : player.energy < restEnergyCost ? 'Not Enough Energy' : restHealAmount <= 0 ? 'Too Healthy to Rest' : `Rest (+${restHealAmount} HP)`}
+        <span class="hospital-cost" style="color:#c0a062;">Free | ${restDur}s</span>
+        <button onclick="startHospitalHealing('rest')" ${vals.rest.healAmount <= 0 ? 'disabled' : ''}>
+          ${vals.rest.healAmount <= 0 ? 'Too Healthy to Rest' : `Rest (+${vals.rest.healAmount} HP)`}
         </button>
       </div>
     </div>`;
 
-    html += `</div>`; // close hospital-services
+    html += `</div>`;
   }
 
-  html += `</div>`; // close content-card
+  html += `</div>`;
   container.innerHTML = html;
 }
 
-// Function to heal player at the hospital -- v1.11.0+ Timer-based healing
-function healAtHospital(healType) {
-  ensureHospitalTimer();
-  if (player.hospitalTimer) {
-    showBriefNotification("Treatment already in progress. Wait for it to finish.", 'warning');
+function startHospitalHealing(healType) {
+  if (player.activeHealing) {
+    showBriefNotification('Already receiving treatment.', 'danger');
+    return;
+  }
+  const vals = getHealValues();
+  const info = vals[healType];
+  if (!info) return;
+  const missingHealth = 100 - player.health;
+  if (missingHealth <= 0) {
+    showBriefNotification("You're already at full health.", 'danger');
     return;
   }
 
-  const missingHealth = 100 - player.health;
-
-  if (healType === 'full') {
-    const cost = missingHealth * 25;
-    if (player.money < cost) {
-      showBriefNotification("You don't have enough money to heal to full health.", 'danger');
-      return;
-    }
-    player.money -= cost;
-    // Recovery skill: -10% heal time per rank
-    const recoveryRank = (player.skillTree && player.skillTree.endurance && player.skillTree.endurance.recovery) || 0;
-    const timeReduction = 1 - (recoveryRank * 0.10);
-    const duration = Math.floor(90000 * timeReduction); // 90 seconds base
-    player.hospitalTimer = {
-      healType: 'full',
-      amount: missingHealth,
-      cost: cost,
-      startedAt: Date.now(),
-      completesAt: Date.now() + duration
-    };
-    showBriefNotification(`Full treatment started. ${formatGymTime(duration)} to heal.`, 'success');
-    logAction("Clean white sheets and the smell of antiseptic. The doc starts patching you up -- this will take a little while.");
-    addNewspaperEntry('An injured individual checked into the back-alley clinic for full treatment.', 'lifestyle');
-  } else if (healType === 'partial') {
-    const healAmount = Math.min(missingHealth, 25);
-    const cost = healAmount * 20;
-    if (player.money < cost) {
+  if (healType === 'rest') {
+    // Rest is free — timer-gated only
+  } else {
+    if (player.money < info.cost) {
       showBriefNotification("You don't have enough money for this treatment.", 'danger');
       return;
     }
-    player.money -= cost;
-    const recoveryRank = (player.skillTree && player.skillTree.endurance && player.skillTree.endurance.recovery) || 0;
-    const timeReduction = 1 - (recoveryRank * 0.10);
-    const duration = Math.floor(30000 * timeReduction); // 30 seconds base
-    player.hospitalTimer = {
-      healType: 'partial',
-      amount: healAmount,
-      cost: cost,
-      startedAt: Date.now(),
-      completesAt: Date.now() + duration
-    };
-    showBriefNotification(`Quick patch-up started. ${formatGymTime(duration)} to heal.`, 'success');
-    logAction(`A quick patch job -- bandages and painkillers. Give it a minute to work (+${healAmount} HP incoming).`);
-  } else if (healType === 'rest') {
-    if (player.energy < 25) {
-      showBriefNotification("You're too exhausted to rest effectively.", 'warning');
-      return;
-    }
-    const healAmount = Math.min(12, missingHealth);
-    player.energy -= 25;
-    const recoveryRank = (player.skillTree && player.skillTree.endurance && player.skillTree.endurance.recovery) || 0;
-    const timeReduction = 1 - (recoveryRank * 0.10);
-    const duration = Math.floor(60000 * timeReduction); // 60 seconds base
-    player.hospitalTimer = {
-      healType: 'rest',
-      amount: healAmount,
-      cost: 0,
-      startedAt: Date.now(),
-      completesAt: Date.now() + duration
-    };
-    showBriefNotification(`Resting up. ${formatGymTime(duration)} to recover.`, 'success');
-    logAction(`You find a quiet corner and lay low. Sleep takes time but does its work (+${healAmount} HP incoming, -25 energy).`);
+    player.money -= info.cost;
   }
 
+  const duration = getHealDuration(HEAL_TYPES[healType].baseDuration);
+  player.activeHealing = {
+    type: healType,
+    healAmount: info.healAmount,
+    cost: info.cost,
+    duration: duration,
+    startTime: Date.now(),
+  };
+
+  logAction(`Treatment started: ${HEAL_TYPES[healType].label} (${duration}s). Come back when it's done.`);
+  showBriefNotification(`${HEAL_TYPES[healType].label} started. ${duration}s remaining.`, 'success');
   updateUI();
   renderHospitalContent();
+}
+
+function cancelHospitalHealing() {
+  if (!player.activeHealing) return;
+  const h = player.activeHealing;
+
+  // 50% refund
+  if (h.type === 'rest') {
+    showBriefNotification(`Rest cancelled.`, 'info');
+  } else {
+    const refund = Math.floor(h.cost * 0.5);
+    player.money += refund;
+    showBriefNotification(`Treatment cancelled. $${refund.toLocaleString()} refunded.`, 'info');
+  }
+
+  player.activeHealing = null;
+  logAction('You got up off the table. Treatment cancelled.');
+  updateUI();
+  renderHospitalContent();
+}
+
+function tickHospitalHealing() {
+  if (!player.activeHealing) return;
+  const h = player.activeHealing;
+  const elapsed = Math.floor((Date.now() - h.startTime) / 1000);
+  if (elapsed >= h.duration) {
+    // Healing complete
+    player.health = Math.min(100, player.health + h.healAmount);
+    showBriefNotification(`${HEAL_TYPES[h.type]?.label || 'Treatment'} complete! +${h.healAmount} HP`, 'success');
+    logAction(`The doc finishes up. You feel a lot better. (+${h.healAmount} HP)`);
+    player.activeHealing = null;
+    updateUI();
+  }
+  // Re-render if hospital screen is visible
+  const hospitalScreen = document.getElementById("hospital-screen");
+  if (hospitalScreen && hospitalScreen.style.display !== 'none') {
+    renderHospitalContent();
+  }
+}
+
+// Keep backward compat for any old save references
+function healAtHospital(healType) {
+  startHospitalHealing(healType);
+}
+
+function completeOfflineHealing() {
+  if (!player.activeHealing) return;
+  const h = player.activeHealing;
+  const elapsed = Math.floor((Date.now() - h.startTime) / 1000);
+  if (elapsed >= h.duration) {
+    player.health = Math.min(100, player.health + h.healAmount);
+    logAction(`While you were away, your treatment finished. (+${h.healAmount} HP)`);
+    player.activeHealing = null;
+  }
 }
 
 // Function to show the death screen
@@ -19845,8 +19885,6 @@ function policeInformant() {
   updateUI();
 }
 
-// (Removed duplicate regenerateEnergy, startEnergyRegenTimer, startEnergyRegeneration; using player.js exports)
-
 // Passive income system -- v1.11.0 Rebalance: halved rates
 function generatePassiveIncome() {
   let income = 0;
@@ -19891,8 +19929,6 @@ function startPassiveIncomeGenerator() {
     applyDailyPassives(); // Apply faction passives (interest, ammo regen, etc.)
     releaseArrestedGangMembers(); // Check if any arrested members should be released
     processGangPassiveIncome(); // Idle gang members earn from street hustles
-    checkHospitalTimer(); // Check if hospital treatment is done
-    completeGymTraining(); // Check if gym training session is done
 
     // Auto-collect helpers when Bookie is hired
     if (!player.services) player.services = {};
@@ -20833,11 +20869,6 @@ function initGame() {
   // Initialize territory system
   calculateTotalTerritoryIncome();
 
-  // Start energy regeneration if needed
-  if (player.energy < player.maxEnergy && !player.inJail) {
-    startEnergyRegenTimer();
-  }
-
   // Show the title screen and let the player choose
   document.getElementById("menu").style.display = "none";
   document.getElementById("intro-screen").style.display = "block";
@@ -20869,9 +20900,12 @@ function activateGameplaySystems() {
   // Start event & timer systems
   startRandomEventChecker();
   startPassiveIncomeGenerator();
-  startEnergyRegeneration();
   startGangTributeTimer();
   startScreenRefreshTimer();
+  startSkillTrainingTimer();
+  // Hospital healing + bounty board tick timers (1s intervals)
+  gameplayIntervals.push(setInterval(() => { if (gameplayActive) tickHospitalHealing(); }, 1000));
+  gameplayIntervals.push(setInterval(() => { if (gameplayActive) refreshBountyBoardIfNeeded(); }, 60000));
   initializeEventsSystem();
   initializeCompetitionSystem();
 
@@ -22118,32 +22152,30 @@ function applySaveData(saveData) {
     }
   }
 
-  // --- Offline Energy Regeneration ---
-  if (player.energy < (player.maxEnergy || 100)) {
-    // Calculate how many regen ticks would have occurred offline
-    // Base regen: 2 energy every 30 seconds (matching current regen settings)
-    const recoveryLevel = (player.skillTree && player.skillTree.endurance && player.skillTree.endurance.recovery) || 0;
-    const extraPerTick = Math.floor(recoveryLevel / 2);
-    const energyPerTick = Math.max(2, 2 + extraPerTick);
-    const regenIntervalSecs = Math.max(15, 30 - Math.floor(recoveryLevel / 2));
-
-    const ticksElapsed = Math.floor(elapsedSeconds / regenIntervalSecs);
-    const energyGained = ticksElapsed * energyPerTick;
-
-    if (energyGained > 0) {
-      const maxEnergy = player.maxEnergy || 100;
-      const oldEnergy = player.energy;
-      player.energy = Math.min(maxEnergy, player.energy + energyGained);
-      const actualGain = player.energy - oldEnergy;
-      if (actualGain > 0) {
-        offlineSummary.push(`+${actualGain} energy regenerated`);
-        logAction(`You rested while away. Energy restored by ${actualGain}.`);
-      }
-    }
-  }
+  // --- Offline energy regen removed (cooldown system) ---
 
   // --- Offline Tribute Collection (via bookie, if hired) ---
   // Already handled by bookieAutoCollect on next tick, no extra work needed.
+
+  // --- Offline Hospital Healing Completion ---
+  completeOfflineHealing();
+
+  // --- Offline Skill Training Completion ---
+  if (player.activeTraining) {
+    const t = player.activeTraining;
+    const elapsed = Date.now() - t.startTime;
+    if (elapsed >= t.duration) {
+      const nodeDef = SKILL_TREE_DEFS[t.tree]?.nodes[t.node];
+      if (nodeDef && player.skillTree[t.tree]) {
+        player.skillTree[t.tree][t.node] = (player.skillTree[t.tree][t.node] || 0) + 1;
+        const newRank = player.skillTree[t.tree][t.node];
+        offlineSummary.push(`${nodeDef.name} trained to rank ${newRank}`);
+        logAction(`Training completed while you were away! ${nodeDef.name} is now rank ${newRank}.`);
+        player.playstyleStats.skillTreeUpgrades = (player.playstyleStats.skillTreeUpgrades || 0) + 1;
+      }
+      player.activeTraining = null;
+    }
+  }
 
   // --- Resume Gang Operations & Training ---
   // Complete any operations/training that should have finished while offline,
@@ -24101,61 +24133,52 @@ function processEconomySinks() {
 
 // ==================== DAILY LOGIN REWARDS ====================
 const DAILY_LOGIN_REWARDS = [
-  // Week 1
-  { day: 1,  money: 2000,  xp: 100,  label: '$2,000 + 100 XP' },
-  { day: 2,  money: 3500,  xp: 150,  label: '$3,500 + 150 XP' },
-  { day: 3,  money: 5000,  xp: 200,  buff: { type: 'energy_regen', multiplier: 1.5, duration: 3600000, name: 'Energy Boost' }, label: '$5K + 200 XP + Energy Boost (1h)' },
-  { day: 4,  money: 7500,  xp: 300,  label: '$7,500 + 300 XP' },
-  { day: 5,  money: 10000, xp: 400,  buff: { type: 'job_pay', multiplier: 1.25, duration: 3600000, name: 'Pay Day' }, label: '$10K + 400 XP + Pay Boost (1h)' },
-  { day: 6,  money: 15000, xp: 500,  label: '$15,000 + 500 XP' },
-  { day: 7,  money: 25000, xp: 750,  buff: { type: 'xp_boost', multiplier: 1.5, duration: 7200000, name: 'XP Surge' }, label: '$25K + 750 XP + 1.5x XP (2h)' },
-  // Week 2
-  { day: 8,  money: 5000,  xp: 250,  energy: 50,  label: '$5K + 250 XP + 50 Energy' },
-  { day: 9,  money: 8000,  xp: 350,  buff: { type: 'heat_shield', multiplier: 0.5, duration: 3600000, name: 'Low Profile' }, label: '$8K + 350 XP + Half Heat (1h)' },
-  { day: 10, money: 12000, xp: 450,  label: '$12K + 450 XP' },
-  { day: 11, money: 15000, xp: 500,  buff: { type: 'job_pay', multiplier: 1.5, duration: 3600000, name: 'Big Score' }, label: '$15K + 500 XP + 1.5x Job Pay (1h)' },
-  { day: 12, money: 20000, xp: 600,  energy: 100, label: '$20K + 600 XP + Full Energy' },
-  { day: 13, money: 30000, xp: 800,  buff: { type: 'xp_boost', multiplier: 2.0, duration: 3600000, name: 'XP Frenzy' }, label: '$30K + 800 XP + 2x XP (1h)' },
-  { day: 14, money: 50000, xp: 1500, buff: { type: 'all_boost', multiplier: 1.5, duration: 7200000, name: 'Made Man' }, label: '$50K + 1500 XP + All Boosts (2h)', skillPoint: true }
+  { day: 1, money: 2000, xp: 100, label: '$2,000 + 100 XP' },
+  { day: 2, money: 3500, xp: 150, label: '$3,500 + 150 XP' },
+  { day: 3, money: 5000, xp: 200, buff: { type: 'cooldown_reduction', multiplier: 0.75, duration: 3600000, name: 'Quick Fingers' }, label: '$5K + 200 XP + Quick Fingers (1h)' },
+  { day: 4, money: 7500, xp: 300, label: '$7,500 + 300 XP' },
+  { day: 5, money: 10000, xp: 400, buff: { type: 'job_pay', multiplier: 1.25, duration: 3600000, name: 'Pay Day' }, label: '$10K + 400 XP + Job Pay Boost (1h)' },
+  { day: 6, money: 15000, xp: 500, label: '$15,000 + 500 XP' },
+  { day: 7, money: 25000, xp: 750, buff: { type: 'xp_boost', multiplier: 1.5, duration: 7200000, name: 'XP Surge' }, label: '$25K + 750 XP + 1.5x XP (2h)' }
 ];
 
 function checkDailyLogin() {
   if (!player.dailyLogin) player.dailyLogin = { lastClaimDate: null, streak: 0, totalDays: 0 };
 
   const today = new Date().toDateString();
-  if (player.dailyLogin.lastClaimDate === today) return;
+  if (player.dailyLogin.lastClaimDate === today) return; // Already claimed
 
-  const dayIndex = (player.dailyLogin.streak || 0) % 14;
+  // Show daily login popup
+  const dayIndex = (player.dailyLogin.streak || 0) % 7;
   const reward = DAILY_LOGIN_REWARDS[dayIndex];
 
   let html = `<div style="text-align:center;padding:20px;">
-    <h2 style="color:#d4af37;margin-bottom:6px;">Daily Login Reward</h2>
-    <p style="color:#d4c4a0;margin-bottom:4px;">Day ${dayIndex + 1} of 14 -- Streak: ${player.dailyLogin.streak || 0} days</p>
-    <p style="color:#8a7a5a;font-size:0.85em;margin-bottom:12px;">Miss a day and your streak resets!</p>
-    <div style="background:rgba(20,18,10,0.6);border:2px solid #d4af37;border-radius:12px;padding:16px;margin:12px auto;max-width:340px;">
-      <p style="color:#d4af37;font-size:1.3em;font-weight:bold;margin:0;">${reward.label}</p>
+    <h2 style="color:#d4af37;margin-bottom:16px;">Daily Login Reward</h2>
+    <p style="color:#d4c4a0;margin-bottom:8px;">Day ${dayIndex + 1} of 7 — Streak: ${player.dailyLogin.streak || 0} days</p>
+    <div style="background:rgba(20,18,10,0.6);border:2px solid #d4af37;border-radius:12px;padding:20px;margin:16px auto;max-width:300px;">
+      <p style="color:#d4af37;font-size:1.3em;font-weight:bold;">${reward.label}</p>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin:16px auto;max-width:340px;">`;
+    <div style="margin:16px 0;">`;
 
+  // Show future rewards preview
   DAILY_LOGIN_REWARDS.forEach((r, i) => {
     const isCurrent = i === dayIndex;
     const isPast = i < dayIndex;
-    const isWeek2 = i >= 7;
-    const borderCol = isCurrent ? '#fff' : isWeek2 ? '#8b6a4a' : '#555';
-    html += `<div style="width:100%;aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:6px;font-size:0.8em;font-weight:bold;border:2px solid ${borderCol};${isCurrent ? 'background:#d4af37;color:#14120a;' : isPast ? 'background:#27ae60;color:#fff;' : 'background:#3a3520;color:#8a7a5a;'}">${i + 1}</div>`;
+    html += `<div style="display:inline-block;width:40px;height:40px;line-height:40px;margin:4px;border-radius:50%;font-size:0.8em;font-weight:bold;${isCurrent ? 'background:#d4af37;color:#14120a;border:2px solid #fff;' : isPast ? 'background:#27ae60;color:#fff;' : 'background:#3a3520;color:#8a7a5a;'}">${i + 1}</div>`;
   });
 
   html += `</div>
-    <button onclick="claimDailyLogin()" style="background:linear-gradient(135deg,#d4af37,#b8962e);color:#14120a;border:none;padding:14px 32px;border-radius:8px;cursor:pointer;font-weight:bold;font-size:1.1em;margin-top:8px;">Claim Reward</button>
+    <button onclick="claimDailyLogin()" style="background:linear-gradient(135deg,#d4af37,#b8962e);color:#14120a;border:none;padding:14px 32px;border-radius:8px;cursor:pointer;font-weight:bold;font-size:1.1em;margin-top:12px;">Claim Reward</button>
   </div>`;
 
+  // Use an overlay div
   const existing = document.getElementById('daily-login-overlay');
   if (existing) existing.remove();
 
   const overlay = document.createElement('div');
   overlay.id = 'daily-login-overlay';
   overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:99999;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;';
-  overlay.innerHTML = `<div style="background:linear-gradient(135deg,#14120a,#0d0b07);border:2px solid #c0a062;border-radius:16px;padding:30px;max-width:520px;width:95%;box-shadow:0 20px 60px rgba(0,0,0,0.8);">${html}</div>`;
+  overlay.innerHTML = `<div style="background:linear-gradient(135deg,#14120a,#0d0b07);border:2px solid #c0a062;border-radius:16px;padding:30px;max-width:480px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.8);">${html}</div>`;
   document.body.appendChild(overlay);
 }
 
@@ -24174,20 +24197,11 @@ function claimDailyLogin() {
     player.dailyLogin.streak = 0; // Reset streak
   }
 
-  const dayIndex = player.dailyLogin.streak % 14;
+  const dayIndex = player.dailyLogin.streak % 7;
   const reward = DAILY_LOGIN_REWARDS[dayIndex];
 
   player.money += reward.money;
   gainExperience(reward.xp);
-
-  if (reward.energy) {
-    player.energy = Math.min(player.maxEnergy, player.energy + reward.energy);
-  }
-
-  if (reward.skillPoint) {
-    player.skillPoints = (player.skillPoints || 0) + 1;
-    showBriefNotification('Bonus Skill Point awarded!', 'success');
-  }
 
   if (reward.buff) {
     if (!player.activeBuffs) player.activeBuffs = [];
@@ -24262,34 +24276,38 @@ function respecSkillTree() {
   const cost = 10000 * Math.pow(2, player.respecCount); // Doubles each time
 
   if (player.money < cost) {
-    showBriefNotification(`Not enough money! Respec costs $${cost.toLocaleString()}.`, 'error');
+    showBriefNotification(`Not enough money! Reset costs $${cost.toLocaleString()}.`, 'error');
     return;
   }
 
-  // Count total invested skill points
-  let refundedPoints = 0;
+  // Cancel any active training
+  if (player.activeTraining) {
+    player.activeTraining = null;
+  }
+
+  // Count total invested ranks
+  let totalRanks = 0;
   if (player.skillTree) {
     for (const [treeName, nodes] of Object.entries(player.skillTree)) {
       for (const [nodeName, rank] of Object.entries(nodes)) {
         if (rank > 0) {
-          refundedPoints += rank;
+          totalRanks += rank;
           player.skillTree[treeName][nodeName] = 0;
         }
       }
     }
   }
 
-  if (refundedPoints === 0) {
-    showBriefNotification('No skill points to refund.', 'error');
+  if (totalRanks === 0) {
+    showBriefNotification('No skills to reset.', 'error');
     return;
   }
 
   player.money -= cost;
-  player.skillPoints = (player.skillPoints || 0) + refundedPoints;
   player.respecCount++;
 
-  showBriefNotification(`Skills reset! ${refundedPoints} points refunded. Cost: $${cost.toLocaleString()}`, 'success');
-  logAction(`Skill tree reset! ${refundedPoints} points refunded for $${cost.toLocaleString()}.`, 'skills');
+  showBriefNotification(`Skills reset! ${totalRanks} ranks cleared. Cost: $${cost.toLocaleString()}`, 'success');
+  logAction(`All skills reset! ${totalRanks} ranks cleared for $${cost.toLocaleString()}. Train them again from scratch.`, 'skills');
   updateUI();
 }
 
@@ -24426,630 +24444,6 @@ function checkNewAchievements() {
   }
 }
 
-// ==================== GYM / TRAINING SYSTEM ====================
-// Timer-based stat training. Each stat has its own training regimen.
-// Training takes real time, costs energy, and permanently boosts base stats.
-
-const GYM_TRAINING_CONFIG = {
-  strength: {
-    label: 'Strength',
-    desc: 'Heavy bag work & weightlifting. Boosts melee damage and intimidation.',
-    duration: 60000,    // 60 seconds
-    energyCost: 15,
-    baseCost: 500,
-    statGain: 1
-  },
-  defense: {
-    label: 'Defense',
-    desc: 'Sparring and endurance drills. Reduces damage taken in fights.',
-    duration: 90000,    // 90 seconds
-    energyCost: 20,
-    baseCost: 750,
-    statGain: 1
-  },
-  speed: {
-    label: 'Speed',
-    desc: 'Sprints & agility courses. Improves escape chance and initiative.',
-    duration: 45000,    // 45 seconds
-    energyCost: 10,
-    baseCost: 400,
-    statGain: 1
-  },
-  endurance: {
-    label: 'Endurance',
-    desc: 'Long-distance runs & stamina circuits. Boosts max energy recovery.',
-    duration: 120000,   // 2 minutes
-    energyCost: 25,
-    baseCost: 1000,
-    statGain: 1
-  }
-};
-
-function ensureGymStats() {
-  if (!player.gymStats) player.gymStats = { strength: 0, defense: 0, speed: 0, endurance: 0 };
-  if (player.gymTraining === undefined) player.gymTraining = null;
-  if (!player.gymTotalSessions) player.gymTotalSessions = 0;
-}
-
-function getGymTrainingCost(stat) {
-  ensureGymStats();
-  const config = GYM_TRAINING_CONFIG[stat];
-  const currentLevel = player.gymStats[stat] || 0;
-  // Cost scales: baseCost * (1 + 0.15 * currentLevel)
-  return Math.floor(config.baseCost * (1 + 0.15 * currentLevel));
-}
-
-function getGymTrainingDuration(stat) {
-  ensureGymStats();
-  const config = GYM_TRAINING_CONFIG[stat];
-  const currentLevel = player.gymStats[stat] || 0;
-  // Duration increases 5% per level, capped at 3x base
-  const multiplier = Math.min(3, 1 + 0.05 * currentLevel);
-  // Conditioning skill: -5% training time per rank
-  const conditioningRank = (player.skillTree && player.skillTree.endurance && player.skillTree.endurance.conditioning) || 0;
-  const skillReduction = 1 - (conditioningRank * 0.05);
-  return Math.floor(config.duration * multiplier * skillReduction);
-}
-
-function startGymTraining(stat) {
-  ensureGymStats();
-  if (player.gymTraining) {
-    showBriefNotification("You're already in the middle of a training session.", 'warning');
-    return;
-  }
-  const config = GYM_TRAINING_CONFIG[stat];
-  if (!config) return;
-
-  const cost = getGymTrainingCost(stat);
-  if (player.money < cost) {
-    showBriefNotification(`Not enough cash. Training costs $${cost.toLocaleString()}.`, 'danger');
-    return;
-  }
-  if (player.energy < config.energyCost) {
-    showBriefNotification(`Not enough energy. Need ${config.energyCost} energy.`, 'danger');
-    return;
-  }
-
-  player.money -= cost;
-  player.energy -= config.energyCost;
-  const duration = getGymTrainingDuration(stat);
-  player.gymTraining = {
-    stat: stat,
-    startedAt: Date.now(),
-    completesAt: Date.now() + duration
-  };
-
-  logAction(`You hit the gym and start ${config.label.toLowerCase()} training. Should take about ${formatGymTime(duration)}.`);
-  addNewspaperEntry(`Someone was seen hitting the ${config.label.toLowerCase()} equipment hard at the gym.`, 'lifestyle');
-  showBriefNotification(`Training ${config.label} -- ${formatGymTime(duration)} remaining.`, 'success');
-  updateUI();
-  showGym();
-}
-
-function completeGymTraining() {
-  ensureGymStats();
-  if (!player.gymTraining) return false;
-  if (Date.now() < player.gymTraining.completesAt) return false;
-
-  const stat = player.gymTraining.stat;
-  const config = GYM_TRAINING_CONFIG[stat];
-  const gain = config.statGain;
-
-  player.gymStats[stat] = (player.gymStats[stat] || 0) + gain;
-  player.gymTotalSessions = (player.gymTotalSessions || 0) + 1;
-  player.gymTraining = null;
-
-  logAction(`Training complete! Your ${config.label.toLowerCase()} increased by ${gain}. Total: ${player.gymStats[stat]}.`);
-  addNewspaperEntry(`Word on the street: someone's been getting stronger. ${config.label} training pays off.`, 'lifestyle');
-  showBriefNotification(`${config.label} training complete! +${gain} ${config.label}.`, 'success');
-
-  // XP reward for training
-  const xpGain = 25 + (player.gymStats[stat] * 5);
-  if (typeof gainExperience === 'function') {
-    gainExperience(xpGain);
-  } else if (typeof window.gainExperience === 'function') {
-    window.gainExperience(xpGain);
-  }
-
-  updateUI();
-  return true;
-}
-
-function formatGymTime(ms) {
-  const totalSeconds = Math.ceil(ms / 1000);
-  if (totalSeconds >= 60) {
-    const m = Math.floor(totalSeconds / 60);
-    const s = totalSeconds % 60;
-    return s > 0 ? `${m}m ${s}s` : `${m}m`;
-  }
-  return `${totalSeconds}s`;
-}
-
-let gymRefreshInterval = null;
-
-function showGym() {
-  hideAllScreens();
-  document.getElementById('gym-screen').style.display = 'block';
-  ensureGymStats();
-
-  // Check if current training is done
-  completeGymTraining();
-
-  renderGymContent();
-
-  // Start auto-refresh for countdown timers
-  if (gymRefreshInterval) clearInterval(gymRefreshInterval);
-  gymRefreshInterval = setInterval(() => {
-    if (document.getElementById('gym-screen').style.display === 'none') {
-      clearInterval(gymRefreshInterval);
-      gymRefreshInterval = null;
-      return;
-    }
-    // Check completion
-    if (completeGymTraining()) {
-      renderGymContent();
-    } else {
-      updateGymTimers();
-    }
-  }, 1000);
-}
-
-function updateGymTimers() {
-  if (!player.gymTraining) return;
-  const remaining = Math.max(0, player.gymTraining.completesAt - Date.now());
-  const timerEl = document.getElementById('gym-active-timer');
-  if (timerEl) timerEl.textContent = formatGymTime(remaining);
-  const progressEl = document.getElementById('gym-active-progress');
-  if (progressEl) {
-    const total = player.gymTraining.completesAt - player.gymTraining.startedAt;
-    const elapsed = Date.now() - player.gymTraining.startedAt;
-    progressEl.style.width = Math.min(100, (elapsed / total) * 100) + '%';
-  }
-}
-
-function renderGymContent() {
-  const container = document.getElementById('gym-content');
-  if (!container) return;
-  ensureGymStats();
-
-  // Stat totals display
-  let statsHtml = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;">';
-  for (const [stat, config] of Object.entries(GYM_TRAINING_CONFIG)) {
-    const val = player.gymStats[stat] || 0;
-    statsHtml += `<div style="text-align:center;background:#1a1a12;padding:10px 6px;border-radius:6px;border:1px solid #333;">
-      <div style="font-size:1.3em;font-weight:bold;color:#d4af37;">${val}</div>
-      <div style="font-size:0.8em;color:#aaa;margin-top:2px;">${config.label}</div>
-    </div>`;
-  }
-  statsHtml += '</div>';
-
-  let html = `<div class="content-card">
-    <div style="text-align:center;margin-bottom:12px;">
-      <p style="color:#999;font-size:0.9em;">Train your body. Stats from the gym boost combat, evasion, and survival.</p>
-      <p style="color:#666;font-size:0.8em;">Sessions completed: ${player.gymTotalSessions || 0}</p>
-    </div>
-    ${statsHtml}`;
-
-  // Active training display
-  if (player.gymTraining) {
-    const t = player.gymTraining;
-    const config = GYM_TRAINING_CONFIG[t.stat];
-    const remaining = Math.max(0, t.completesAt - Date.now());
-    const total = t.completesAt - t.startedAt;
-    const elapsed = Date.now() - t.startedAt;
-    const pct = Math.min(100, (elapsed / total) * 100);
-
-    html += `<div style="background:#1a1a12;border:1px solid #d4af37;border-radius:8px;padding:16px;margin-bottom:16px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;">
-        <div>
-          <strong style="color:#d4af37;">Training: ${config.label}</strong>
-          <p style="color:#999;font-size:0.85em;margin:4px 0 0;">${config.desc}</p>
-        </div>
-        <div style="text-align:right;">
-          <div style="font-size:1.3em;font-weight:bold;color:#f0e6d3;" id="gym-active-timer">${formatGymTime(remaining)}</div>
-          <div style="font-size:0.75em;color:#888;">remaining</div>
-        </div>
-      </div>
-      <div style="background:#333;border-radius:8px;height:12px;margin-top:12px;overflow:hidden;">
-        <div id="gym-active-progress" style="background:linear-gradient(90deg,#d4af37,#8a9a6a);height:100%;width:${pct}%;transition:width 1s linear;border-radius:8px;"></div>
-      </div>
-    </div>`;
-  }
-
-  // Training options
-  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
-  for (const [stat, config] of Object.entries(GYM_TRAINING_CONFIG)) {
-    const cost = getGymTrainingCost(stat);
-    const duration = getGymTrainingDuration(stat);
-    const currentLevel = player.gymStats[stat] || 0;
-    const isTraining = !!player.gymTraining;
-    const canAfford = player.money >= cost && player.energy >= config.energyCost;
-    const disabled = isTraining || !canAfford;
-
-    html += `<div style="background:#1a1a12;border:1px solid ${disabled ? '#333' : '#555'};border-radius:8px;padding:12px;opacity:${disabled ? '0.6' : '1'};">
-      <div style="display:flex;justify-content:space-between;align-items:start;">
-        <strong style="color:${disabled ? '#666' : '#f0e6d3'};">${config.label}</strong>
-        <span style="color:#d4af37;font-size:0.8em;">Lv.${currentLevel}</span>
-      </div>
-      <p style="color:#888;font-size:0.8em;margin:4px 0 8px;">${config.desc}</p>
-      <div style="font-size:0.8em;color:#999;margin-bottom:8px;">
-        $${cost.toLocaleString()} | ${config.energyCost} Energy | ${formatGymTime(duration)}
-      </div>
-      <button onclick="startGymTraining('${stat}')" ${disabled ? 'disabled' : ''} style="width:100%;padding:8px;border-radius:4px;border:1px solid ${disabled ? '#333' : '#d4af37'};background:${disabled ? '#222' : 'rgba(212,175,55,0.15)'};color:${disabled ? '#555' : '#d4af37'};cursor:${disabled ? 'not-allowed' : 'pointer'};font-weight:bold;">
-        ${isTraining ? 'Training in Progress' : !canAfford ? 'Can\'t Afford' : `Train ${config.label}`}
-      </button>
-    </div>`;
-  }
-  html += '</div>';
-
-  // Gym stat bonuses explanation
-  html += `<div style="margin-top:16px;padding:12px;background:#1a1a12;border-radius:6px;border:1px solid #333;">
-    <div style="color:#d4af37;font-weight:bold;margin-bottom:6px;">Gym Bonus Effects</div>
-    <div style="font-size:0.8em;color:#999;line-height:1.6;">
-      <strong>Strength:</strong> +2% job payout per level, +1% combat damage<br>
-      <strong>Defense:</strong> -2% damage taken, +1% survival chance<br>
-      <strong>Speed:</strong> +1% escape chance, +2% theft success<br>
-      <strong>Endurance:</strong> +1 max energy per 5 levels, faster energy regen
-    </div>
-  </div>`;
-
-  html += '</div>'; // close content-card
-  container.innerHTML = html;
-}
-
-// ==================== BOUNTY BOARD SYSTEM ====================
-// NPC-generated bounties with timers. Complete them for cash & XP.
-
-const BOUNTY_TARGETS = [
-  { name: 'Vinnie "Two-Fingers" Mancuso', difficulty: 'easy', desc: 'Small-time bookie who skipped town on his debts.' },
-  { name: 'Deshawn "Ice Pick" Williams', difficulty: 'easy', desc: 'Street dealer who shorted the wrong people.' },
-  { name: 'Paddy O\'Sullivan', difficulty: 'easy', desc: 'Irish enforcer who talked to the feds.' },
-  { name: 'Tommy "The Rat" Rosetti', difficulty: 'medium', desc: 'Made man turned informant. The family wants him silenced.' },
-  { name: 'Nikolai Volkov', difficulty: 'medium', desc: 'Arms dealer who sold defective merchandise to our crew.' },
-  { name: 'Jackie Chen', difficulty: 'medium', desc: 'Triad accountant skimming from the top. His bosses want him found.' },
-  { name: 'Marco "The Bull" Bianchi', difficulty: 'hard', desc: 'Former enforcer who went rogue. Armed and dangerous.' },
-  { name: 'Elena Vasquez', difficulty: 'hard', desc: 'Cartel courier who disappeared with a shipment worth $500K.' },
-  { name: 'Sergei "The Bear" Kozlov', difficulty: 'hard', desc: 'Bratva lieutenant who tried to start his own operation.' },
-  { name: 'Don Calabrese', difficulty: 'extreme', desc: 'Retired boss in witness protection. Triple security detail.' },
-  { name: 'Agent Morrison', difficulty: 'extreme', desc: 'Corrupt FBI agent blackmailing the families. Untouchable? We\'ll see.' },
-  { name: 'The Ghost', difficulty: 'extreme', desc: 'No one knows who he is. Only a codename and a body count.' }
-];
-
-const BOUNTY_DIFFICULTY = {
-  easy:    { reward: [2000, 5000],   xp: [50, 100],   time: 1800000,  energyCost: 10, successBase: 80, heat: 5 },
-  medium:  { reward: [5000, 15000],  xp: [100, 250],  time: 3600000,  energyCost: 20, successBase: 60, heat: 12 },
-  hard:    { reward: [15000, 40000], xp: [250, 500],  time: 7200000,  energyCost: 35, successBase: 40, heat: 25 },
-  extreme: { reward: [40000, 100000],xp: [500, 1000], time: 14400000, energyCost: 50, successBase: 20, heat: 40 }
-};
-
-function ensureBountySystem() {
-  if (!player.bounties) player.bounties = [];
-  if (!player.bountiesCompleted) player.bountiesCompleted = 0;
-  if (!player.lastBountyRefresh) player.lastBountyRefresh = 0;
-}
-
-function generateBounties() {
-  ensureBountySystem();
-  const now = Date.now();
-  // Refresh every 4 hours
-  if (now - player.lastBountyRefresh < 14400000 && player.bounties.length > 0) return;
-
-  player.bounties = [];
-  player.lastBountyRefresh = now;
-
-  // Generate 3-5 bounties based on level
-  const count = Math.min(5, 3 + Math.floor(player.level / 10));
-  const available = [...BOUNTY_TARGETS];
-
-  for (let i = 0; i < count && available.length > 0; i++) {
-    const idx = Math.floor(Math.random() * available.length);
-    const target = available.splice(idx, 1)[0];
-    const config = BOUNTY_DIFFICULTY[target.difficulty];
-
-    const reward = config.reward[0] + Math.floor(Math.random() * (config.reward[1] - config.reward[0]));
-    const xpReward = config.xp[0] + Math.floor(Math.random() * (config.xp[1] - config.xp[0]));
-
-    player.bounties.push({
-      id: 'bounty_' + now + '_' + i,
-      targetName: target.name,
-      description: target.desc,
-      difficulty: target.difficulty,
-      reward: reward,
-      xpReward: xpReward,
-      expiresAt: now + config.time,
-      status: 'available' // available, accepted, completed, failed
-    });
-  }
-}
-
-function showBountyBoard() {
-  hideAllScreens();
-  document.getElementById('bounty-screen').style.display = 'block';
-  ensureBountySystem();
-  generateBounties();
-
-  // Remove expired bounties
-  const now = Date.now();
-  player.bounties = player.bounties.filter(b => b.status === 'completed' || b.expiresAt > now);
-
-  renderBountyContent();
-
-  // Auto-refresh countdown every second
-  if (window._bountyRefreshInterval) clearInterval(window._bountyRefreshInterval);
-  window._bountyRefreshInterval = setInterval(() => {
-    if (document.getElementById('bounty-screen').style.display === 'none') {
-      clearInterval(window._bountyRefreshInterval);
-      return;
-    }
-    renderBountyTimers();
-  }, 1000);
-}
-
-function renderBountyContent() {
-  const container = document.getElementById('bounty-content');
-  if (!container) return;
-
-  const now = Date.now();
-  const nextRefresh = player.lastBountyRefresh + 14400000;
-  const refreshRemaining = Math.max(0, nextRefresh - now);
-
-  let html = `<div class="content-card">
-    <div style="text-align:center;margin-bottom:12px;">
-      <p style="color:#999;font-size:0.9em;">Contracts from the underworld. Hunt down targets for cash and reputation.</p>
-      <p style="color:#666;font-size:0.8em;">Bounties completed: ${player.bountiesCompleted || 0} | Board refreshes in: <span id="bounty-refresh-timer">${formatGymTime(refreshRemaining)}</span></p>
-    </div>`;
-
-  const activeBounties = player.bounties.filter(b => b.status === 'available');
-
-  if (activeBounties.length === 0) {
-    html += '<p style="text-align:center;color:#666;padding:20px;">No bounties available. Check back later.</p>';
-  } else {
-    html += '<div style="display:flex;flex-direction:column;gap:10px;">';
-    for (const bounty of activeBounties) {
-      const config = BOUNTY_DIFFICULTY[bounty.difficulty];
-      const timeLeft = Math.max(0, bounty.expiresAt - now);
-      const diffColor = { easy: '#8a9a6a', medium: '#c0a040', hard: '#c07030', extreme: '#8b3a3a' }[bounty.difficulty];
-      const canAfford = player.energy >= config.energyCost;
-
-      html += `<div style="background:#1a1a12;border:1px solid ${diffColor};border-radius:8px;padding:14px;">
-        <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px;">
-          <div>
-            <strong style="color:#f0e6d3;font-size:1em;">${bounty.targetName}</strong>
-            <span style="background:${diffColor};color:#000;font-size:0.7em;padding:2px 6px;border-radius:3px;margin-left:8px;font-weight:bold;">${bounty.difficulty.toUpperCase()}</span>
-          </div>
-          <div style="text-align:right;font-size:0.8em;color:#888;" id="bounty-timer-${bounty.id}">${formatGymTime(timeLeft)}</div>
-        </div>
-        <p style="color:#999;font-size:0.85em;margin:0 0 10px;">${bounty.description}</p>
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <div style="font-size:0.8em;color:#999;">
-            <span style="color:#8a9a6a;">$${bounty.reward.toLocaleString()}</span> | 
-            <span style="color:#6a8a9a;">${bounty.xpReward} XP</span> | 
-            ${config.energyCost} Energy | 
-            <span style="color:${diffColor};">${config.successBase}% base chance</span>
-          </div>
-          <button onclick="attemptBounty('${bounty.id}')" ${!canAfford ? 'disabled' : ''} style="padding:6px 16px;border-radius:4px;border:1px solid ${!canAfford ? '#333' : diffColor};background:${!canAfford ? '#222' : `rgba(${diffColor === '#8a9a6a' ? '138,154,106' : diffColor === '#c0a040' ? '192,160,64' : diffColor === '#c07030' ? '192,112,48' : '139,58,58'},0.2)`};color:${!canAfford ? '#555' : diffColor};cursor:${!canAfford ? 'not-allowed' : 'pointer'};font-weight:bold;">
-            ${!canAfford ? 'Need Energy' : 'Hunt Target'}
-          </button>
-        </div>
-      </div>`;
-    }
-    html += '</div>';
-  }
-
-  html += '</div>';
-  container.innerHTML = html;
-}
-
-function renderBountyTimers() {
-  const now = Date.now();
-  for (const bounty of (player.bounties || [])) {
-    if (bounty.status !== 'available') continue;
-    const el = document.getElementById('bounty-timer-' + bounty.id);
-    if (el) {
-      const remaining = Math.max(0, bounty.expiresAt - now);
-      el.textContent = formatGymTime(remaining);
-    }
-  }
-  // Refresh board timer
-  const refreshEl = document.getElementById('bounty-refresh-timer');
-  if (refreshEl) {
-    const nextRefresh = (player.lastBountyRefresh || 0) + 14400000;
-    refreshEl.textContent = formatGymTime(Math.max(0, nextRefresh - now));
-  }
-}
-
-function attemptBounty(bountyId) {
-  ensureBountySystem();
-  const bounty = player.bounties.find(b => b.id === bountyId);
-  if (!bounty || bounty.status !== 'available') {
-    showBriefNotification('This bounty is no longer available.', 'danger');
-    return;
-  }
-
-  const config = BOUNTY_DIFFICULTY[bounty.difficulty];
-  if (player.energy < config.energyCost) {
-    showBriefNotification(`Not enough energy. Need ${config.energyCost}.`, 'danger');
-    return;
-  }
-
-  if (Date.now() > bounty.expiresAt) {
-    showBriefNotification('This bounty has expired.', 'danger');
-    player.bounties = player.bounties.filter(b => b.id !== bountyId);
-    renderBountyContent();
-    return;
-  }
-
-  player.energy -= config.energyCost;
-
-  // Calculate success chance
-  let chance = config.successBase;
-  // Combat skill bonuses
-  const firearms = (player.skillTree && player.skillTree.combat && player.skillTree.combat.firearms) || 0;
-  const brawler = (player.skillTree && player.skillTree.combat && player.skillTree.combat.brawler) || 0;
-  chance += (firearms + brawler) * 2;
-  // Gym strength bonus
-  chance += (player.gymStats && player.gymStats.strength || 0) * 1;
-  // Level bonus
-  chance += Math.floor(player.level / 2);
-  chance = Math.min(95, Math.max(5, chance));
-
-  const roll = Math.random() * 100;
-
-  if (roll < chance) {
-    // Success
-    bounty.status = 'completed';
-    player.money += bounty.reward;
-    player.bountiesCompleted = (player.bountiesCompleted || 0) + 1;
-    player.wantedLevel = Math.min(100, (player.wantedLevel || 0) + config.heat);
-
-    if (typeof gainExperience === 'function') {
-      gainExperience(bounty.xpReward);
-    } else if (typeof window.gainExperience === 'function') {
-      window.gainExperience(bounty.xpReward);
-    }
-
-    logAction(`Bounty complete: ${bounty.targetName} has been dealt with. Collected $${bounty.reward.toLocaleString()} and earned ${bounty.xpReward} XP.`);
-    addNewspaperEntry(`${bounty.targetName} was found dead in an alley. Police have no leads.`, 'crime');
-    showBriefNotification(`Bounty collected! $${bounty.reward.toLocaleString()} + ${bounty.xpReward} XP`, 'success');
-  } else {
-    // Failure
-    bounty.status = 'completed'; // Remove from board either way
-    const heatPenalty = Math.floor(config.heat / 2);
-    player.wantedLevel = Math.min(100, (player.wantedLevel || 0) + heatPenalty);
-
-    // Chance of taking damage on failure
-    const damage = Math.floor(Math.random() * 20) + 5;
-    player.health = Math.max(1, player.health - damage);
-
-    logAction(`Bounty failed: ${bounty.targetName} got away. You took ${damage} damage in the struggle and drew some heat.`);
-    addNewspaperEntry(`A violent altercation was reported downtown. The intended target escaped.`, 'crime');
-    showBriefNotification(`Bounty failed! ${bounty.targetName} escaped. -${damage} HP`, 'danger');
-  }
-
-  player.bounties = player.bounties.filter(b => b.status === 'available');
-  updateUI();
-  renderBountyContent();
-}
-
-function forceRefreshBounties() {
-  player.lastBountyRefresh = 0;
-  player.bounties = [];
-  generateBounties();
-  renderBountyContent();
-}
-
-// ==================== NEWSPAPER / ACTIVITY FEED ====================
-// Aggregates game events into an immersive in-game newspaper.
-
-function ensureNewspaper() {
-  if (!player.newspaper) player.newspaper = [];
-}
-
-function addNewspaperEntry(headline, category) {
-  ensureNewspaper();
-  player.newspaper.unshift({
-    headline: headline,
-    timestamp: Date.now(),
-    category: category || 'general'
-  });
-  // Keep max 50 entries
-  if (player.newspaper.length > 50) {
-    player.newspaper = player.newspaper.slice(0, 50);
-  }
-}
-
-function showNewspaper() {
-  hideAllScreens();
-  document.getElementById('newspaper-screen').style.display = 'block';
-  ensureNewspaper();
-  renderNewspaperContent();
-}
-
-function renderNewspaperContent() {
-  const container = document.getElementById('newspaper-feed-content');
-  if (!container) return;
-
-  const entries = player.newspaper || [];
-  const categoryColors = {
-    crime: '#8b3a3a',
-    business: '#8a9a6a',
-    lifestyle: '#6a8a9a',
-    territory: '#c0a040',
-    general: '#888'
-  };
-
-  const categoryLabels = {
-    crime: 'CRIME',
-    business: 'BUSINESS',
-    lifestyle: 'LIFESTYLE',
-    territory: 'TERRITORY',
-    general: 'NEWS'
-  };
-
-  let html = `<div class="content-card">
-    <div style="text-align:center;margin-bottom:16px;">
-      <div style="font-family:Georgia,serif;font-size:1.8em;color:#d4af37;font-weight:bold;letter-spacing:2px;border-bottom:2px solid #d4af37;padding-bottom:8px;">THE DAILY RACKET</div>
-      <p style="color:#666;font-size:0.8em;margin-top:4px;">All the news that's unfit to print | ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
-    </div>`;
-
-  if (entries.length === 0) {
-    html += '<p style="text-align:center;color:#666;padding:30px;font-style:italic;">No news yet. Get out there and make some headlines.</p>';
-  } else {
-    html += '<div style="display:flex;flex-direction:column;gap:8px;">';
-    for (const entry of entries) {
-      const color = categoryColors[entry.category] || categoryColors.general;
-      const label = categoryLabels[entry.category] || 'NEWS';
-      const timeAgo = getTimeAgo(entry.timestamp);
-
-      html += `<div style="background:#1a1a12;border-left:3px solid ${color};padding:10px 14px;border-radius:0 6px 6px 0;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-          <span style="color:${color};font-size:0.7em;font-weight:bold;letter-spacing:1px;">${label}</span>
-          <span style="color:#555;font-size:0.7em;">${timeAgo}</span>
-        </div>
-        <p style="color:#ccc;font-size:0.9em;margin:0;line-height:1.4;">${entry.headline}</p>
-      </div>`;
-    }
-    html += '</div>';
-  }
-
-  html += '</div>';
-  container.innerHTML = html;
-}
-
-function getTimeAgo(timestamp) {
-  const diff = Date.now() - timestamp;
-  const minutes = Math.floor(diff / 60000);
-  if (minutes < 1) return 'Just now';
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
-}
-
-// ==================== HOSPITAL TIMER UPGRADE ====================
-// Adds timer-based healing with wait mechanic for retention.
-
-function ensureHospitalTimer() {
-  if (player.hospitalTimer === undefined) player.hospitalTimer = null;
-}
-
-function checkHospitalTimer() {
-  ensureHospitalTimer();
-  if (!player.hospitalTimer) return false;
-  if (Date.now() >= player.hospitalTimer.completesAt) {
-    const ht = player.hospitalTimer;
-    player.health = Math.min(100, player.health + ht.amount);
-    player.hospitalTimer = null;
-    logAction(`The doc finishes patching you up. +${ht.amount} HP restored.`);
-    addNewspaperEntry('A patient was discharged from the back-alley clinic, looking much better.', 'lifestyle');
-    showBriefNotification(`Treatment complete! +${ht.amount} HP`, 'success');
-    updateUI();
-    return true;
-  }
-  return false;
-}
-
 // ==================== EXPOSE FUNCTIONS TO GLOBAL SCOPE ====================
 // This is required because this file is now a module, but the HTML onclick handlers
 // expect these functions to be available on the window object.
@@ -25108,9 +24502,6 @@ window.renderStoreTab = renderStoreTab;
 window.refreshStoreAfterPurchase = refreshStoreAfterPurchase;
 window.buyItem = buyItem;
 window.refreshStoreDynamicElements = refreshStoreDynamicElements;
-window.buyEnergyDrink = buyEnergyDrink;
-window.buyCoffee = buyCoffee;
-window.buySteroids = buySteroids;
 window.showVehiclePurchaseResult = showVehiclePurchaseResult;
 window.closeVehiclePurchaseResult = closeVehiclePurchaseResult;
 
@@ -25168,7 +24559,8 @@ window.showSkills = showSkills;
 window.showSkillTab = showSkillTab;
 window.selectSkillTree = selectSkillTree;
 window.renderSkillTreeUI = renderSkillTreeUI;
-window.upgradeNode = upgradeNode;
+window.startSkillTraining = startSkillTraining;
+window.cancelSkillTraining = cancelSkillTraining;
 window.upgradeSkillTree = upgradeSkillTree;
 window.upgradeSkill = upgradeSkill;
 window.gainExperience = gainExperience;
@@ -25371,10 +24763,15 @@ window.showLeaderboards = showLeaderboards;
 window.showWeeklyChallenges = showWeeklyChallenges;
 window.submitToLeaderboards = submitToLeaderboards;
 window.showHospital = showHospital;
+window.startHospitalHealing = startHospitalHealing;
+window.cancelHospitalHealing = cancelHospitalHealing;
 window.showCasino = showCasino;
 window.showCasinoTab = showCasinoTab;
 window.healAtHospital = healAtHospital;
 window.renderHospitalContent = renderHospitalContent;
+window.showBountyBoard = showBountyBoard;
+window.attemptBounty = attemptBounty;
+window.renderBountyBoard = renderBountyBoard;
 
 // Player Stats (combined screen)
 window.exportStatistics = exportStatistics;
@@ -25413,23 +24810,6 @@ window.respecSkillTree = respecSkillTree;
 window.getNotificationBadges = getNotificationBadges;
 window.renderNotificationBadges = renderNotificationBadges;
 window.checkNewAchievements = checkNewAchievements;
-
-// Gym / Training System
-window.showGym = showGym;
-window.startGymTraining = startGymTraining;
-window.completeGymTraining = completeGymTraining;
-
-// Bounty Board
-window.showBountyBoard = showBountyBoard;
-window.attemptBounty = attemptBounty;
-window.forceRefreshBounties = forceRefreshBounties;
-
-// Newspaper / Activity Feed
-window.showNewspaper = showNewspaper;
-window.addNewspaperEntry = addNewspaperEntry;
-
-// Hospital Timer
-window.checkHospitalTimer = checkHospitalTimer;
 
 
 

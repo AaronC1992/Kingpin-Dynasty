@@ -438,12 +438,6 @@ export const MobileSystem = {
                     Talents
                 </button>
                 
-                <button onclick="buyEnergyDrink(); MobileSystem.toggleMobileMenu();" 
-                        style="width: 100%; margin: 5px 0; padding: 12px; background: linear-gradient(45deg, #c0a040, #d35400); 
-                               color: white; border: 1px solid #c0a040; border-radius: 6px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
-                    Boost
-                </button>
-                
                 <button onclick="MobileSystem.scrollToActionLog();" 
                         style="width: 100%; margin: 5px 0; padding: 12px; background: linear-gradient(45deg, #333, #000); 
                                color: #c0a062; border: 1px solid #c0a062; border-radius: 6px; font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;">
@@ -592,9 +586,6 @@ export const MobileSystem = {
         properties: { label: 'Property',  action: 'showRealEstate()' },
         missions:   { label: 'Missions',  action: 'showMissions()' },
         stats:      { label: 'Stats',     action: 'showPlayerStats()' },
-        coffee:     { label: 'Coffee',  action: 'buyCoffee()' },
-        energydrink:{ label: 'Energy',  action: 'buyEnergyDrink()' },
-        steroids:   { label: 'Steroids', action: 'buySteroids()' },
     },
     
     // Default tabs (these are used when no customization has been saved)

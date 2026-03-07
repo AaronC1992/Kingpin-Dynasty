@@ -911,15 +911,11 @@ export function gameOverSnake() {
   let earnings = snakeGame.score * perFoodReward;
   let bonusMessage = '';
 
-  const staminaBonus = Math.min(2, Math.floor(snakeGame.score / 5));
-  if (!player.maxEnergy) player.maxEnergy = 100;
-  player.maxEnergy = Math.min(120, player.maxEnergy + staminaBonus);
-
   if (snakeGame.score > 0) {
     player.money += earnings;
     _updateUI();
-    bonusMessage = ` You earned $${earnings.toLocaleString()} ($${perFoodReward} per food)${staminaBonus > 0 ? ` + ${staminaBonus} max energy` : ''}!`;
-    _logAction(`Snake game over! Final score: ${snakeGame.score}. Your reflexes earned you $${earnings.toLocaleString()}${staminaBonus > 0 ? ' + stamina boost' : ''}!`);
+    bonusMessage = ` You earned $${earnings.toLocaleString()} ($${perFoodReward} per food)!`;
+    _logAction(`Snake game over! Final score: ${snakeGame.score}. Your reflexes earned you $${earnings.toLocaleString()}!`);
   } else {
     _logAction(`Snake game over! Final score: ${snakeGame.score}. Your reflexes were tested and measured.`);
   }
