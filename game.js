@@ -11790,7 +11790,7 @@ window.getSynergyBonus = getSynergyBonus;
 // ── Gym-Style Skill Training Config ──
 // Training costs scale with tier and current rank.
 const SKILL_TRAINING_CONFIG = {
-  1: { baseMoney: 200, moneyPerRank: 150, baseTime: 20, timePerRank: 12 },
+  1: { baseMoney: 200, moneyPerRank: 150, baseTime: 45, timePerRank: 12 },
   2: { baseMoney: 1000, moneyPerRank: 500, baseTime: 45, timePerRank: 20 },
   3: { baseMoney: 3000, moneyPerRank: 1500, baseTime: 90, timePerRank: 30 }
 };
