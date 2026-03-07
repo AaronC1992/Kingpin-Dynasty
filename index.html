@@ -14,7 +14,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Playfair+Display+SC:wght@400;700;900&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Special+Elite&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=1.18.0">
+    <link rel="stylesheet" href="styles.css?v=1.19.0">
 </head>
 <body>
     <noscript>
@@ -453,6 +453,16 @@
                 <button id="newspaper-close-btn" onclick="closeDeathNewspaper()" title="Close">&times;</button>
                 <div id="newspaper-content">
                     <!-- Filled dynamically by showDeathNewspaper() -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Newspaper Jail Popup (full-screen overlay) -->
+        <div id="jail-newspaper-overlay" style="display:none;" onclick="if(event.target===this)closeJailNewspaper()">
+            <div id="jail-newspaper">
+                <button class="newspaper-close-btn" onclick="closeJailNewspaper()" title="Close">&times;</button>
+                <div id="jail-newspaper-content">
+                    <!-- Filled dynamically by showJailNewspaper() -->
                 </div>
             </div>
         </div>
@@ -978,6 +988,6 @@
     <!-- Multiplayer client (global script, must load before game.js module) -->
     <script src="multiplayer.js"></script>
     <!-- Main game logic (Module) -->
-    <script type="module" src="game.js?v=1.18.0"></script>
+    <script type="module" src="game.js?v=1.19.0"></script>
 </body>
 </html>

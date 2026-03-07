@@ -1050,7 +1050,7 @@ async function startFactionMission(familyKey, missionId) {
   } else {
     // Mission failed
     if (Math.random() * 100 < mission.jailChance) {
-      sendToJail(5);
+      sendToJail(5, { crimeName: mission.name, riskLevel: 'high' });
       return;
     }
 
@@ -1118,7 +1118,7 @@ function startSignatureJob(familyKey) {
     // Failure
     const jailRoll = Math.random() * 100;
     if (jailRoll < 25) {
-      sendToJail(3);
+      sendToJail(3, { crimeName: sigJob.name, riskLevel: 'very high' });
       logAction(`Signature job "${sigJob.name}" went sideways -- you got pinched!`);
       return;
     }
@@ -3576,7 +3576,7 @@ window.makeEventChoice = function(choiceIndex) {
   if (result.result.jailed) {
     setTimeout(() => {
       closeScreen();
-      sendToJail();
+      sendToJail(0, { crimeName: 'Story Event', riskLevel: 'medium' });
     }, 3000);
   }
 };
@@ -10763,7 +10763,7 @@ async function startJob(index) {
       logAction(`Your captain on the payroll tipped you off \u2014 you slipped away before the bust!`);
       showBriefNotification(`Raid warning! Your corrupt contact saved you from arrest.`, 'warning');
     } else {
-      sendToJail(job.wantedLevelGain);
+      sendToJail(job.wantedLevelGain, { crimeName: job.name, riskLevel: job.risk });
       logAction(`Sirens wail behind you! Cold metal cuffs bite into your wrists as the cops drag you away. The ${job.name} was a setup all along...`);
       return;
     }
@@ -11059,7 +11059,7 @@ function handleCarTheft(job) {
   let jailChance = Math.random() * 100;
 
   if (jailChance <= adjustedJailChance) {
-    sendToJail(job.wantedLevelGain);
+    sendToJail(job.wantedLevelGain, { crimeName: job.name, riskLevel: job.risk });
     logAction(`Busted! You barely get the door open before the cops swarm you. The owner was watching from their window the whole time.`);
     return;
   }
@@ -11201,7 +11201,7 @@ function handleLaunderMoneyJob(job, approachLabel) {
     const seized = Math.floor(amountToLaunder * (0.3 + Math.random() * 0.4)); // Feds seize 30-70%
     player.dirtyMoney = Math.max(0, player.dirtyMoney - seized);
     player.wantedLevel = Math.min(100, player.wantedLevel + 8);
-    sendToJail(job.wantedLevelGain);
+    sendToJail(job.wantedLevelGain, { crimeName: job.name, riskLevel: job.risk });
     logAction(`The feds bust your laundering operation! $${seized.toLocaleString()} in dirty money seized as evidence. You're dragged away in cuffs.`);
     return;
   }
@@ -11566,7 +11566,7 @@ function damageCar(carIndex, damageAmount) {
       logAction(`BOOM! The car erupts in flames! You dive clear as metal and glass rain down around you. The explosion echoes through the streets (-30 health).`);
       flashHurtScreen();
     } else if (catastrophe < 0.7) { // 30% chance - breakdown and caught
-      sendToJail(5);
+      sendToJail(5, { crimeName: 'Vehicle Breakdown', riskLevel: 'medium' });
       showBriefNotification("Your car broke down and you were caught by police!", 'success');
       logAction("The engine dies with a pathetic wheeze. Steam rises from the hood as cop cars surround you. Should've maintained your ride better!");
     } else { // 30% chance - just destroyed
@@ -11607,7 +11607,7 @@ function flashSuccessScreen() {
 }
 
 // Function to send player to jail
-function sendToJail(wantedLevelLoss) {
+function sendToJail(wantedLevelLoss, crimeContext) {
   stopJailTimer();
 
   player.inJail = true;
@@ -11679,6 +11679,16 @@ function sendToJail(wantedLevelLoss) {
   updateJailUI(); // Ensure jail-specific UI elements are synced
   updateJailTimer(); // Start the jail timer
   logAction(getRandomNarration('jailSentences'));
+
+  // Generate and show jail newspaper headline
+  const jailNewspaperData = generateJailNewspaperData(crimeContext);
+  lastJailNewspaperData = jailNewspaperData;
+  logAction(`<span class="newspaper-chat-link" onclick="showJailNewspaper(lastJailNewspaperData)">Read the Headlines: ${player.name} ARRESTED!</span>`, 'chat');
+
+  // Broadcast jail newspaper to world chat via multiplayer (if connected)
+  if (typeof broadcastJailNewspaper === 'function') {
+    broadcastJailNewspaper(jailNewspaperData);
+  }
 
   // Sync jail status to server so other players can see us in the jail list
   if (typeof syncJailStatus === 'function') syncJailStatus(true, player.jailTime);
@@ -12775,7 +12785,7 @@ function breakoutPrisoner(prisonerIndex) {
       logAction(`Busted! The guards catch you red-handed helping ${prisoner.name}. They're dragging you to a cell of your own.`);
 
       // Send player to jail properly
-      sendToJail(2); // Lose 2 wanted levels and go to jail
+      sendToJail(2, { crimeName: 'Aiding a Prison Escape', riskLevel: 'high' }); // Lose 2 wanted levels and go to jail
 
       // Add additional jail time for the failed breakout attempt (minimum 20 seconds)
       player.jailTime += Math.max(20, 15);
@@ -14452,7 +14462,7 @@ function attemptJailbreak(prisonerIndex) {
       // Got caught - go to jail
       logAction(`Busted during the ${prisoner.name} jailbreak! Guards swarm you as alarms blare. The operation was blown from the start.`);
       showBriefNotification(`${getRandomNarration('prisonerBreakoutFailure')} You're being arrested.`, 'danger');
-      sendToJail(prisoner.difficulty + 2);
+      sendToJail(prisoner.difficulty + 2, { crimeName: 'Jailbreak Attempt', riskLevel: 'extreme' });
       return;
     } else {
       // Failed but escaped
@@ -18391,7 +18401,7 @@ function resetWantedLevelCourtHouse() {
       "Report to Jail",
       function() {
         // This callback executes after player clicks the button
-        sendToJail(1); // Serve a base jail time since fine was paid
+        sendToJail(1, { crimeName: 'Outstanding Warrants', riskLevel: 'low' }); // Serve a base jail time since fine was paid
         logAction("You walk into the courthouse with cash in hand. Justice may be blind, but it's not deaf to the sound of money. Fine paid, but time must still be served.");
       }
     );
@@ -19546,6 +19556,197 @@ function closeDeathNewspaper() {
   if (overlay) overlay.style.display = 'none';
 }
 window.closeDeathNewspaper = closeDeathNewspaper;
+
+// ==================== JAIL NEWSPAPER SYSTEM ====================
+let lastJailNewspaperData = null;
+
+function getJailNewspaperTone(riskLevel) {
+  const r = (riskLevel || 'medium').toLowerCase();
+  if (r === 'low' || r === 'medium') return 'funny';
+  if (r === 'high' || r === 'very high') return 'serious';
+  return 'breaking'; // extreme, legendary
+}
+
+function generateJailNewspaperData(crimeContext) {
+  const ctx = crimeContext || {};
+  const totalCrimes = (player.playstyleStats.stealthyJobs || 0) + (player.playstyleStats.violentJobs || 0) + (player.playstyleStats.diplomaticActions || 0);
+  const gangSize = player.gang ? player.gang.members : 0;
+  const familyName = player.chosenFamily ? player.chosenFamily.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'Unaffiliated';
+  let legacyTitle = 'Street Rat';
+  if ((player.reputation || 0) >= 1000) legacyTitle = 'Legendary Kingpin';
+  else if ((player.reputation || 0) >= 500) legacyTitle = 'Crime Lord';
+  else if ((player.reputation || 0) >= 350) legacyTitle = 'Underboss';
+  else if ((player.reputation || 0) >= 150) legacyTitle = 'Made Man';
+  else if ((player.reputation || 0) >= 75) legacyTitle = 'Enforcer';
+  else if ((player.reputation || 0) >= 25) legacyTitle = 'Hustler';
+  return {
+    name: player.name || 'Unknown',
+    portrait: player.portrait || '',
+    level: player.level || 1,
+    reputation: Math.floor(player.reputation || 0),
+    legacyTitle: legacyTitle,
+    crimeName: ctx.crimeName || 'Criminal Activity',
+    riskLevel: ctx.riskLevel || 'medium',
+    tone: getJailNewspaperTone(ctx.riskLevel),
+    jailTime: player.jailTime || 15,
+    wantedLevel: player.wantedLevel || 0,
+    money: player.money || 0,
+    totalCrimes: totalCrimes,
+    gangSize: gangSize,
+    family: familyName,
+    timestamp: Date.now()
+  };
+}
+
+function buildJailNewspaperHTML(data) {
+  const jailDate = new Date(data.timestamp);
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const dateStr = `${months[jailDate.getMonth()]} ${jailDate.getDate()}, ${jailDate.getFullYear()}`;
+  const edition = ['Morning','Evening','Late','Final'][Math.floor(Math.random() * 4)] + ' Edition';
+  const price = 'Price: Two Cents';
+  const crime = data.crimeName;
+  const name = data.name;
+  const tone = data.tone;
+
+  // ---- HEADLINES by tone ----
+  const funnyHeadlines = [
+    `${name.toUpperCase()} NABBED IN COMICALLY BOTCHED ${crime.toUpperCase()} SCHEME`,
+    `WORLD'S WORST CRIMINAL: ${name.toUpperCase()} CAUGHT AT ${crime.toUpperCase()}`,
+    `"I WOULD HAVE GOTTEN AWAY WITH IT" &mdash; ${name.toUpperCase()} ARRESTED`,
+    `${name.toUpperCase()} TRIPS ALARM, TRIPS OVER CAT, TRIPS INTO HANDCUFFS`,
+    `PUBLIC MENACE OR PUBLIC JOKE? ${name.toUpperCase()} BEHIND BARS`
+  ];
+  const seriousHeadlines = [
+    `${name.toUpperCase()} ARRESTED IN ${crime.toUpperCase()} BUST`,
+    `POLICE CLOSE IN: ${name.toUpperCase()} BEHIND BARS`,
+    `AUTHORITIES NAB ${name.toUpperCase()} IN ${crime.toUpperCase()} CRACKDOWN`,
+    `${name.toUpperCase()} TAKEN INTO CUSTODY AFTER ${crime.toUpperCase()} GONE WRONG`
+  ];
+  const breakingHeadlines = [
+    `BREAKING: ${name.toUpperCase()} SEIZED IN MASSIVE ${crime.toUpperCase()} OPERATION`,
+    `BREAKING: NOTORIOUS ${name.toUpperCase()} FINALLY IN FEDERAL CUSTODY`,
+    `BREAKING: FEDS STORM ${crime.toUpperCase()} RING &mdash; ${name.toUpperCase()} IN CHAINS`,
+    `BREAKING: ${name.toUpperCase()} APPREHENDED IN LANDMARK ${crime.toUpperCase()} STING`
+  ];
+
+  // ---- SUBHEADS by tone ----
+  const funnySubheads = [
+    `Witnesses still laughing as police file report`,
+    `Arresting officer says suspect "made it easy"`,
+    `"Barely qualifies as a crime," says judge between chuckles`,
+    `Onlookers give standing ovation to responding officers`
+  ];
+  const seriousSubheads = [
+    `District attorney vows to prosecute to full extent of the law`,
+    `Investigators say operation was months in the making`,
+    `${data.family} family connections under scrutiny`,
+    `Police urge remaining associates to cooperate`
+  ];
+  const breakingSubheads = [
+    `Federal task force concludes year-long investigation`,
+    `Mayor calls arrest "a turning point for this city"`,
+    `DA presses for maximum sentence &mdash; city breathes easier`,
+    `Joint federal operation dismantles criminal empire`
+  ];
+
+  let headlines, subheads;
+  if (tone === 'funny') { headlines = funnyHeadlines; subheads = funnySubheads; }
+  else if (tone === 'serious') { headlines = seriousHeadlines; subheads = seriousSubheads; }
+  else { headlines = breakingHeadlines; subheads = breakingSubheads; }
+
+  const headline = headlines[Math.floor(Math.random() * headlines.length)];
+  const subhead = subheads[Math.floor(Math.random() * subheads.length)];
+
+  // ---- BODY paragraphs by tone ----
+  let openingP, detailP, sentenceP;
+
+  if (tone === 'funny') {
+    const openings = [
+      `In what can only be described as a masterclass in incompetence, <strong>${name}</strong> was arrested today after a ${crime} operation that fell apart faster than a house of cards in a hurricane.`,
+      `Local authorities could barely contain their amusement as they booked <strong>${name}</strong>, self-styled ${data.legacyTitle} of the ${data.family} family, on charges related to a spectacularly bungled ${crime}.`,
+      `In what neighbors are calling "the least threatening criminal act in city history," <strong>${name}</strong> was apprehended mid-${crime} after reportedly alerting every officer within earshot.`
+    ];
+    openingP = openings[Math.floor(Math.random() * openings.length)];
+    detailP = `Eyewitnesses report that ${name} appeared genuinely surprised when the handcuffs came out. "I've seen smoother criminals in the funny pages," remarked one bystander. Police say the arrest required minimal effort and even less detective work.`;
+    sentenceP = `The judge, barely suppressing a grin, handed down a sentence of <strong>${data.jailTime} seconds</strong>. ${name} was led away muttering something about "next time."`;
+  } else if (tone === 'serious') {
+    const openings = [
+      `Authorities confirmed today the arrest of <strong>${name}</strong>, a known associate of the ${data.family} family, in connection with a failed ${crime} operation that has drawn increased scrutiny on organized crime in the city.`,
+      `In a significant blow to the city's underworld, <strong>${name}</strong> was taken into custody following a botched ${crime} that left investigators with a trail of evidence too damning to ignore.`,
+      `The long arm of the law caught up with <strong>${name}</strong> today as detectives closed in on the ${data.legacyTitle}'s involvement in a ${crime} ring operating across multiple districts.`
+    ];
+    openingP = openings[Math.floor(Math.random() * openings.length)];
+    detailP = `Sources close to the investigation say ${name} had been under surveillance for some time. With a reputation score of ${data.reputation} and ${data.totalCrimes} known crimes on the books, prosecutors are calling this arrest long overdue. The ${data.family} family has declined to comment.`;
+    sentenceP = `The presiding judge sentenced ${name} to <strong>${data.jailTime} seconds</strong> behind bars, citing the severity of the charges and the defendant's growing criminal record.`;
+  } else {
+    const openings = [
+      `In a dramatic operation that has sent shockwaves through the underworld, federal agents confirmed the high-profile arrest of <strong>${name}</strong>, the notorious ${data.legacyTitle} of the ${data.family} family, in connection with a ${crime} operation of unprecedented scale.`,
+      `The city awoke to sirens and searchlights this morning as a joint federal task force descended on <strong>${name}</strong>, apprehending the ${data.legacyTitle} after a ${crime} operation that authorities say threatened the very fabric of civil order.`,
+      `Federal authorities today announced the capture of <strong>${name}</strong>, one of the most wanted figures in the city's criminal underworld, following a massive ${crime} bust that mobilized dozens of agents.`
+    ];
+    openingP = openings[Math.floor(Math.random() * openings.length)];
+    detailP = `With a feared reputation of ${data.reputation}, a gang of ${data.gangSize}, and ${data.totalCrimes} crimes attributed to their organization, ${name} had long been considered untouchable. "Today proves no one is above the law," declared the lead federal agent at a press conference. The arrest is expected to trigger a power vacuum in the ${data.family} family's operations.`;
+    sentenceP = `The judge threw the book at ${name}, handing down a <strong>${data.jailTime}-second</strong> sentence with no possibility of early release through good behavior. The district attorney hinted at further charges pending investigation.`;
+  }
+
+  const portraitHTML = data.portrait
+    ? `<div class="newspaper-portrait-wrap"><img src="${data.portrait}" alt="${name}"><div class="newspaper-portrait-caption">${name}, apprehended</div></div>`
+    : '';
+
+  return `
+    <div class="newspaper-masthead">
+      <h2 class="newspaper-title">The Daily Racketeer</h2>
+      <p class="newspaper-subtitle">All the News That&rsquo;s Fit to Print &mdash; And Plenty That Isn&rsquo;t</p>
+    </div>
+    <div class="newspaper-dateline">
+      <span>${dateStr}</span>
+      <span>${edition}</span>
+      <span>${price}</span>
+    </div>
+    <h3 class="newspaper-headline">${headline}</h3>
+    <p class="newspaper-subhead">${subhead}</p>
+    <hr class="newspaper-rule-double">
+    <div class="newspaper-body">
+      ${portraitHTML}
+      <p>${openingP}</p>
+      <p>${detailP}</p>
+      <p>${sentenceP}</p>
+      <div class="newspaper-stats-box">
+        <h4>Arrest Record</h4>
+        <div class="newspaper-stat-row"><span>Crime</span><span>${crime}</span></div>
+        <div class="newspaper-stat-row"><span>Risk Level</span><span style="text-transform:capitalize;">${data.riskLevel}</span></div>
+        <div class="newspaper-stat-row"><span>Sentence</span><span>${data.jailTime}s</span></div>
+        <div class="newspaper-stat-row"><span>Wanted Level</span><span>${data.wantedLevel}</span></div>
+        <div class="newspaper-stat-row"><span>Net Worth</span><span>$${data.money.toLocaleString()}</span></div>
+        <div class="newspaper-stat-row"><span>Known Crimes</span><span>${data.totalCrimes}</span></div>
+        <div class="newspaper-stat-row"><span>Gang Size</span><span>${data.gangSize}</span></div>
+        <div class="newspaper-stat-row"><span>Reputation</span><span>${data.reputation} (${data.legacyTitle})</span></div>
+      </div>
+    </div>
+    <div class="newspaper-footer">
+      &ldquo;The law always catches up &mdash; sooner or later.&rdquo;<br>
+      &mdash; The Daily Racketeer, est. 1923
+    </div>
+  `;
+}
+
+function showJailNewspaper(data) {
+  if (!data) return;
+  lastJailNewspaperData = data;
+  const overlay = document.getElementById('jail-newspaper-overlay');
+  const content = document.getElementById('jail-newspaper-content');
+  if (!overlay || !content) return;
+  content.innerHTML = buildJailNewspaperHTML(data);
+  overlay.style.display = 'flex';
+}
+
+function closeJailNewspaper() {
+  const overlay = document.getElementById('jail-newspaper-overlay');
+  if (overlay) overlay.style.display = 'none';
+}
+window.showJailNewspaper = showJailNewspaper;
+window.closeJailNewspaper = closeJailNewspaper;
+window.generateJailNewspaperData = generateJailNewspaperData;
 
 // Function to show achievements
 function showAchievements() {

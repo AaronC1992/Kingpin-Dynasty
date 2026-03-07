@@ -1029,6 +1029,10 @@ function handleClientMessage(clientId, message, ws) {
             handlePlayerDeath(clientId, message);
             break;
 
+        case 'player_jail_newspaper':
+            handlePlayerJailNewspaper(clientId, message);
+            break;
+
         case 'admin_kill_player':
             handleAdminKillPlayer(clientId, message);
             break;
@@ -2940,6 +2944,39 @@ function handlePlayerDeath(clientId, message) {
         type: 'player_death_newspaper',
         newspaperData: sanitized
     });
+}
+
+// ==================== JAIL NEWSPAPER BROADCAST ====================
+function handlePlayerJailNewspaper(clientId, message) {
+    const playerData = gameState.players.get(clientId);
+    if (!playerData) return;
+    const nd = message.newspaperData;
+    if (!nd || !nd.name) return;
+
+    const sanitized = {
+        name: String(nd.name).slice(0, 30),
+        portrait: nd.portrait ? String(nd.portrait).slice(0, 200) : '',
+        level: Math.max(1, Math.min(100, parseInt(nd.level) || 1)),
+        legacyTitle: String(nd.legacyTitle || 'Street Rat').slice(0, 30),
+        crimeName: String(nd.crimeName || 'Criminal Activity').slice(0, 60),
+        riskLevel: String(nd.riskLevel || 'medium').slice(0, 20),
+        tone: String(nd.tone || 'funny').slice(0, 10),
+        jailTime: Math.max(0, Math.min(999, parseInt(nd.jailTime) || 15)),
+        wantedLevel: Math.max(0, Math.min(100, parseInt(nd.wantedLevel) || 0)),
+        money: Math.max(0, parseInt(nd.money) || 0),
+        reputation: Math.max(0, parseInt(nd.reputation) || 0),
+        totalCrimes: Math.max(0, parseInt(nd.totalCrimes) || 0),
+        gangSize: Math.max(0, parseInt(nd.gangSize) || 0),
+        family: String(nd.family || 'Unaffiliated').slice(0, 30),
+        timestamp: Date.now()
+    };
+
+    addGlobalChatMessage('The Daily Racketeer', ` ARRESTED! ${sanitized.name} has been sent to jail for "${sanitized.crimeName}" — Click to read the headlines!`, '#8b0000');
+
+    broadcastToAll({
+        type: 'player_jail_newspaper',
+        newspaperData: sanitized
+    }, clientId);
 }
 
 // ==================== ADMIN KILL PLAYER ====================

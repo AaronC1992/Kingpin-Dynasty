@@ -1224,6 +1224,35 @@ async function handleServerMessage(message) {
                 showSystemMessage(arrestMsg, '#8b0000');
             }
             break;
+
+        case 'player_jail_newspaper':
+            // Another player was arrested — store the newspaper data and add a clickable entry to chat & ledger
+            if (message.newspaperData) {
+                lastReceivedJailNewspaper = message.newspaperData;
+                if (typeof logAction === 'function') {
+                    _safeLogAction(`ARRESTED! ${message.newspaperData.name} has been sent to jail for "${message.newspaperData.crimeName}" — <span class="newspaper-chat-link" onclick="showJailNewspaper(lastReceivedJailNewspaper)">Read the Headlines!</span>`, 'chat');
+                }
+                const jailChatArea = document.getElementById('global-chat-area');
+                if (jailChatArea) {
+                    const nd = message.newspaperData;
+                    const jailDiv = document.createElement('div');
+                    jailDiv.style.cssText = 'margin: 8px 0; padding: 10px; background: rgba(30, 26, 16, 0.6); border-radius: 2px; border-left: 3px solid #8b0000; border: 1px solid #8b7355; cursor: pointer;';
+                    jailDiv.innerHTML = `
+                        <div style="font-family: var(--font-heading); color: #c0a040; font-size: 1.05em; letter-spacing: 1px;">THE DAILY RACKETEER</div>
+                        <div style="color: #f5e6c8; margin: 4px 0;"><strong>${escapeHTML(nd.name)}</strong> has been ARRESTED!</div>
+                        <div style="color: #8a7a5a; font-style: italic; font-size: 0.9em;">"${escapeHTML(nd.crimeName)}" &mdash; ${escapeHTML(nd.riskLevel)} risk</div>
+                        <div class="newspaper-chat-link" style="margin-top: 6px;">Click to read the headlines</div>
+                    `;
+                    jailDiv.onclick = function() {
+                        if (typeof showJailNewspaper === 'function') {
+                            showJailNewspaper(lastReceivedJailNewspaper);
+                        }
+                    };
+                    jailChatArea.appendChild(jailDiv);
+                    jailChatArea.scrollTop = jailChatArea.scrollHeight;
+                }
+            }
+            break;
             
         case 'territory_taken':
             onlineWorldState.cityDistricts[message.district].controlledBy = message.playerName;
@@ -5389,6 +5418,20 @@ function broadcastDeathNewspaper(newspaperData) {
     });
 }
 window.broadcastDeathNewspaper = broadcastDeathNewspaper;
+
+// Jail newspaper data from other players
+let lastReceivedJailNewspaper = null;
+
+function broadcastJailNewspaper(newspaperData) {
+    if (!onlineWorldState.isConnected || !onlineWorldState.socket || onlineWorldState.socket.readyState !== WebSocket.OPEN) {
+        return;
+    }
+    sendMP({
+        type: 'player_jail_newspaper',
+        newspaperData: newspaperData
+    });
+}
+window.broadcastJailNewspaper = broadcastJailNewspaper;
 
 function sendMP(msg) {
     if (onlineWorldState.socket && onlineWorldState.socket.readyState === WebSocket.OPEN) {
