@@ -6137,7 +6137,6 @@ function renderTurfControlContent() {
     <div style="display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap;">
       <button onclick="showTurfMap()" style="flex: 1; min-width: 150px; padding: 12px 20px; background: linear-gradient(135deg, #7a8a5a, #8a9a6a); border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer;">Turf Map</button>
       <button onclick="showProtectionRackets()" style="flex: 1; min-width: 150px; padding: 12px 20px; background: linear-gradient(135deg, #e67e22, #c0a040); border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer;">Protection Rackets</button>
-      <button onclick="showCorruption()" style="flex: 1; min-width: 150px; padding: 12px 20px; background: linear-gradient(135deg, #7a5a3a, #8b6a4a); border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer;">Corruption</button>
     </div>`;
 
   if (ownedZones.length > 0) {
