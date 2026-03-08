@@ -18917,10 +18917,8 @@ function buildMotorPoolHTML() {
     <h2>Vehicle Garage</h2>
     <p>Your collection of acquired vehicles. Scrap them for parts or sell through <strong style="color:#7a5a3a;">The Fence</strong> for full black market value!</p>
     <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
-      <button onclick="showFence()" style="background: linear-gradient(45deg, #7a5a3a, #6c3483); color: white; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">
-        Sell at The Fence
-      </button>
-      ${(typeof showVehicleMarketplace === 'function' || window.showVehicleMarketplace) ? '<button onclick="showVehicleMarketplace()" style="background: linear-gradient(45deg, #a08850, #1a5276); color: white; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">Player Market</button>' : ''}
+      <button onclick="showFence()">Sell at The Fence</button>
+      ${(typeof showVehicleMarketplace === 'function' || window.showVehicleMarketplace) ? '<button onclick="showVehicleMarketplace()">Player Market</button>' : ''}
     </div>
   `;
 
@@ -18965,18 +18963,11 @@ function buildMotorPoolHTML() {
                 </div>
 
                 <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
-                  <button onclick="scrapStolenCar(${index})"
-                      style="background: linear-gradient(45deg, #e67e22, #d35400); color: white; padding: 12px 18px;
-                          border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 15px;
-                          transition: all 0.3s ease; min-width: 120px;">
+                  <button onclick="scrapStolenCar(${index})">
                     Scrap ($${Math.floor(car.currentValue * 0.35).toLocaleString()})
                   </button>
-                  <button onclick="useCar(${index}, 'job')" ${car.damagePercentage >= 90 ? 'disabled' : ''}
-                      style="background: ${car.damagePercentage >= 90 ? '#6a5a3a' : 'linear-gradient(45deg, #8a9a6a, #7a8a5a)'};
-                          color: white; padding: 12px 18px; border: none; border-radius: 10px;
-                          font-weight: bold; cursor: ${car.damagePercentage >= 90 ? 'not-allowed' : 'pointer'}; font-size: 15px;
-                          transition: all 0.3s ease; min-width: 120px;">
-                    ${car.damagePercentage >= 90 ? ' Too Damaged' : 'Use for Job'}
+                  <button onclick="useCar(${index}, 'job')" ${car.damagePercentage >= 90 ? 'disabled' : ''}>
+                    ${car.damagePercentage >= 90 ? 'Too Damaged' : 'Use for Job'}
                   </button>
                 </div>
               </div>
