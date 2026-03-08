@@ -19,9 +19,18 @@ const mailTransporter = (function () {
         console.log('[mail] SMTP_USER / SMTP_PASS not set -- email notifications disabled.');
         return null;
     }
+    const dns = require('dns');
     const t = nodemailer.createTransport({
-        service: 'gmail',
-        auth: { user, pass }
+        host: 'smtp.gmail.com',
+        port: 587,
+        secure: false,
+        auth: { user, pass },
+        dnsLookup: (hostname, options, callback) => {
+            dns.resolve4(hostname, (err, addresses) => {
+                if (err) return callback(err);
+                callback(null, addresses[0], 4);
+            });
+        }
     });
     // Verify connection at startup
     t.verify().then(() => {
