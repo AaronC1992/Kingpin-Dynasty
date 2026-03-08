@@ -1865,6 +1865,18 @@ function handleHeistCreate(clientId, message) {
     const existingHeist = gameState.activeHeists.find(h => h.organizerId === clientId);
     if (existingHeist) return;
 
+    // Server-authoritative heist target definitions — ignore client reward/successBase
+    const SERVER_HEIST_TARGETS = {
+        'jewelry_store':   { reward: 50000,  successBase: 75, maxCrew: 3, minCrew: 1 },
+        'bank_vault':      { reward: 150000, successBase: 60, maxCrew: 4, minCrew: 2 },
+        'armored_truck':   { reward: 200000, successBase: 55, maxCrew: 4, minCrew: 2 },
+        'casino_heist':    { reward: 400000, successBase: 40, maxCrew: 5, minCrew: 3 },
+        'art_museum':      { reward: 350000, successBase: 45, maxCrew: 4, minCrew: 2 },
+        'federal_reserve': { reward: 800000, successBase: 25, maxCrew: 6, minCrew: 4 },
+        'drug_cartel':     { reward: 600000, successBase: 30, maxCrew: 5, minCrew: 3 }
+    };
+    const serverTarget = SERVER_HEIST_TARGETS[message.targetId];
+
     const heist = {
         id: `heist_${Date.now()}_${clientId}`,
         target: message.target,
@@ -1875,11 +1887,11 @@ function handleHeistCreate(clientId, message) {
         roles: {},  // playerId -> role (driver/hacker/muscle/lookout)
         equipment: {}, // playerId -> { weapon, armor, vehicle }
         open: message.open !== false, // default open unless explicitly private
-        maxParticipants: message.maxParticipants || 4,
-        minCrew: message.minCrew || 1,
+        maxParticipants: serverTarget ? serverTarget.maxCrew : (message.maxParticipants || 4),
+        minCrew: serverTarget ? serverTarget.minCrew : (message.minCrew || 1),
         difficulty: message.difficulty || 'Medium',
-        reward: message.reward || 100000,
-        successBase: message.successBase || 60,
+        reward: serverTarget ? serverTarget.reward : 100000,
+        successBase: serverTarget ? serverTarget.successBase : 60,
         district: message.district,
         createdAt: Date.now()
     };

@@ -17,7 +17,7 @@ export const crimeFamilies = {
         lore: "Founded in the 1920s by Italian immigrants, the Torrino family built their empire on respect, loyalty, and swift retribution. They control the restaurant district and numerous legitimate businesses as fronts.",
         passive: {
             name: "The Books",
-            description: "Earn 5% interest on unspent cash daily.",
+            description: "Earn 5% interest on unspent cash daily (capped at $50K).",
             effectId: "interest_cash",
             value: 0.05
         },

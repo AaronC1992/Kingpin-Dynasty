@@ -25,6 +25,9 @@ function refreshMoneyDisplay() {
 }
 
 export function initUIEvents() {
+    if (window._uiEventsInit) return;
+    window._uiEventsInit = true;
+
     EventBus.on('moneyChanged', ({ oldValue, newValue }) => {
         refreshMoneyDisplay();
     });

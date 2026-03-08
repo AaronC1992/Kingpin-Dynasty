@@ -26,6 +26,8 @@ function hasPassive(factionKey) {
  * Applies daily passive effects. Should be called once per in-game day.
  */
 export function applyDailyPassives() {
+    if (!player.missions || !player.missions.factionReputation) return;
+
     // Torrino: "The Books" - 5% interest on unspent cash (capped)
     if (hasPassive('torrino')) {
         const interestRate = crimeFamilies.torrino.passive.value;

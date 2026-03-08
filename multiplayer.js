@@ -249,6 +249,7 @@ function showActiveHeists() {
     const content = document.getElementById('multiplayer-content');
     if (!content) return;
     
+    content.dataset.activeScreen = 'heists';
     if (typeof hideAllScreens === 'function') hideAllScreens();
     const mpScreen = document.getElementById("multiplayer-screen");
     if (mpScreen) mpScreen.style.display = 'block';
@@ -1427,8 +1428,9 @@ async function handleServerMessage(message) {
                         }
                     };
                 } else {
-                    messageDiv.style.cssText = 'margin: 8px 0; padding: 8px; background: rgba(20, 18, 10, 0.3); border-radius: 5px; border-left: 3px solid ' + chatMessage.color + ';';
-                    messageDiv.innerHTML = `<strong style="color: ${chatMessage.color};">${escapeHTML(chatMessage.player)}:</strong> ${escapeHTML(chatMessage.message)} <small style="color: #8a7a5a; float: right;">${chatMessage.time}</small>`;
+                    const safeChatColor = sanitizeColor(chatMessage.color, '#c0a062');
+                    messageDiv.style.cssText = 'margin: 8px 0; padding: 8px; background: rgba(20, 18, 10, 0.3); border-radius: 5px; border-left: 3px solid ' + safeChatColor + ';';
+                    messageDiv.innerHTML = `<strong style="color: ${safeChatColor};">${escapeHTML(chatMessage.player)}:</strong> ${escapeHTML(chatMessage.message)} <small style="color: #8a7a5a; float: right;">${chatMessage.time}</small>`;
                 }
                 chatArea.appendChild(messageDiv);
                 chatArea.scrollTop = chatArea.scrollHeight;
@@ -1882,7 +1884,7 @@ async function handleServerMessage(message) {
                 }
             }
             // Refresh heists screen if it's currently shown
-            if (document.getElementById('multiplayer-content') && document.getElementById('multiplayer-content').innerHTML.includes('Big Scores')) {
+            if (document.getElementById('multiplayer-content')?.dataset.activeScreen === 'heists') {
                 showActiveHeists();
             }
             break;
@@ -1896,7 +1898,7 @@ async function handleServerMessage(message) {
                 addWorldEvent(message.message);
             }
             // Refresh heists screen if shown
-            if (document.getElementById('multiplayer-content') && document.getElementById('multiplayer-content').innerHTML.includes('Big Scores')) {
+            if (document.getElementById('multiplayer-content')?.dataset.activeScreen === 'heists') {
                 showActiveHeists();
             }
             break;
@@ -1915,7 +1917,7 @@ async function handleServerMessage(message) {
                 showMPToast(message.worldMessage || 'A heist just went down!', message.success ? '#8a9a6a' : '#8b3a3a');
             }
             // Refresh heists screen if shown
-            if (document.getElementById('multiplayer-content') && document.getElementById('multiplayer-content').innerHTML.includes('Big Scores')) {
+            if (document.getElementById('multiplayer-content')?.dataset.activeScreen === 'heists') {
                 showActiveHeists();
             }
             break;
@@ -1958,8 +1960,9 @@ async function handleServerMessage(message) {
             const chatAreaSys = document.getElementById('global-chat-area');
             if (chatAreaSys) {
                 const messageDiv = document.createElement('div');
-                messageDiv.style.cssText = 'margin: 8px 0; padding: 8px; background: rgba(20, 18, 10, 0.3); border-radius: 5px; border-left: 3px solid ' + systemMsg.color + ';';
-                messageDiv.innerHTML = `<strong style="color: ${systemMsg.color};">System:</strong> ${escapeHTML(systemMsg.message)} <small style="color: #8a7a5a; float: right;">${systemMsg.time}</small>`;
+                const safeSysColor = sanitizeColor(systemMsg.color, '#8e44ad');
+                messageDiv.style.cssText = 'margin: 8px 0; padding: 8px; background: rgba(20, 18, 10, 0.3); border-radius: 5px; border-left: 3px solid ' + safeSysColor + ';';
+                messageDiv.innerHTML = `<strong style="color: ${safeSysColor};">System:</strong> ${escapeHTML(systemMsg.message)} <small style="color: #8a7a5a; float: right;">${systemMsg.time}</small>`;
                 chatAreaSys.appendChild(messageDiv);
                 chatAreaSys.scrollTop = chatAreaSys.scrollHeight;
             }
@@ -3157,13 +3160,24 @@ function generateChatHTML() {
                 </div>
             `;
         }
+        const safeMsgColor = sanitizeColor(msg.color, '#c0a062');
         return `
-            <div style="margin: 8px 0; padding: 8px; background: rgba(20, 18, 10, 0.3); border-radius: 5px; border-left: 3px solid ${msg.color};">
-                <strong style="color: ${msg.color};">${escapeHTML(msg.player)}:</strong> ${escapeHTML(msg.message)} 
+            <div style="margin: 8px 0; padding: 8px; background: rgba(20, 18, 10, 0.3); border-radius: 5px; border-left: 3px solid ${safeMsgColor};">
+                <strong style="color: ${safeMsgColor};">${escapeHTML(msg.player)}:</strong> ${escapeHTML(msg.message)} 
                 <small style="color: #8a7a5a; float: right;">${msg.time}</small>
             </div>
         `;
     }).join('');
+}
+
+// Validate color values to prevent style injection
+function sanitizeColor(color, fallback) {
+    if (!color) return fallback || '#c0a062';
+    // Allow hex colors and common CSS named colors only
+    if (/^#[0-9a-fA-F]{3,8}$/.test(color)) return color;
+    const safeColors = ['red','green','blue','orange','yellow','purple','cyan','white','gold','silver','crimson','tomato'];
+    if (safeColors.includes(color.toLowerCase())) return color;
+    return fallback || '#c0a062';
 }
 
 // Simple HTML escape to prevent XSS in chat messages and other user-generated content
@@ -3386,7 +3400,7 @@ function renderChatChannelContent(channel) {
         return `
             <h4 style="color:#c0a062;margin:0 0 10px 0;font-family:'Georgia',serif;">The Wire</h4>
             <div class="channel-messages" style="max-height:220px;overflow-y:auto;background:rgba(20,20,20,0.8);padding:10px;border-radius:5px;border:1px solid #444;margin-bottom:10px;">
-                ${msgs.length ? msgs.map(m => `<div style="margin:4px 0;font-size:0.9em;"><strong style="color:${m.color||'#c0a062'};">${escapeHTML(m.player)}:</strong> ${escapeHTML(m.message)} <small style="color:#8a7a5a;float:right;">${m.time}</small></div>`).join('') : '<p style="color:#8a7a5a;text-align:center;">No messages yet.</p>'}
+                ${msgs.length ? msgs.map(m => `<div style="margin:4px 0;font-size:0.9em;"><strong style="color:${sanitizeColor(m.color,'#c0a062')};">${escapeHTML(m.player)}:</strong> ${escapeHTML(m.message)} <small style="color:#8a7a5a;float:right;">${m.time}</small></div>`).join('') : '<p style="color:#8a7a5a;text-align:center;">No messages yet.</p>'}
             </div>
             <div style="display:flex;gap:8px;">
                 <input type="text" id="channel-chat-input" placeholder="Speak to the family..." maxlength="200"
@@ -3401,7 +3415,7 @@ function renderChatChannelContent(channel) {
         return `
             <h4 style="color:#3498db;margin:0 0 10px 0;font-family:'Georgia',serif;">Crew Channel</h4>
             <div class="channel-messages" style="max-height:220px;overflow-y:auto;background:rgba(20,20,20,0.8);padding:10px;border-radius:5px;border:1px solid #3498db33;margin-bottom:10px;">
-                ${msgs.length ? msgs.map(m => `<div style="margin:4px 0;font-size:0.9em;"><strong style="color:${m.color||'#3498db'};">${escapeHTML(m.player)}:</strong> ${escapeHTML(m.message)} <small style="color:#8a7a5a;float:right;">${m.time}</small></div>`).join('') : '<p style="color:#8a7a5a;text-align:center;">No crew messages. Your crew will see messages here.</p>'}
+                ${msgs.length ? msgs.map(m => `<div style="margin:4px 0;font-size:0.9em;"><strong style="color:${sanitizeColor(m.color,'#3498db')};">${escapeHTML(m.player)}:</strong> ${escapeHTML(m.message)} <small style="color:#8a7a5a;float:right;">${m.time}</small></div>`).join('') : '<p style="color:#8a7a5a;text-align:center;">No crew messages. Your crew will see messages here.</p>'}
             </div>
             <div style="display:flex;gap:8px;">
                 <input type="text" id="channel-chat-input" placeholder="Message your crew..." maxlength="200"
@@ -3416,7 +3430,7 @@ function renderChatChannelContent(channel) {
         return `
             <h4 style="color:#9b59b6;margin:0 0 10px 0;font-family:'Georgia',serif;">Alliance Channel</h4>
             <div class="channel-messages" style="max-height:220px;overflow-y:auto;background:rgba(20,20,20,0.8);padding:10px;border-radius:5px;border:1px solid #9b59b633;margin-bottom:10px;">
-                ${msgs.length ? msgs.map(m => `<div style="margin:4px 0;font-size:0.9em;"><strong style="color:${m.color||'#9b59b6'};">${escapeHTML(m.player)}:</strong> ${escapeHTML(m.message)} <small style="color:#8a7a5a;float:right;">${m.time}</small></div>`).join('') : '<p style="color:#8a7a5a;text-align:center;">No alliance messages. Allied players will see messages here.</p>'}
+                ${msgs.length ? msgs.map(m => `<div style="margin:4px 0;font-size:0.9em;"><strong style="color:${sanitizeColor(m.color,'#9b59b6')};">${escapeHTML(m.player)}:</strong> ${escapeHTML(m.message)} <small style="color:#8a7a5a;float:right;">${m.time}</small></div>`).join('') : '<p style="color:#8a7a5a;text-align:center;">No alliance messages. Allied players will see messages here.</p>'}
             </div>
             <div style="display:flex;gap:8px;">
                 <input type="text" id="channel-chat-input" placeholder="Message your alliance..." maxlength="200"
@@ -3455,7 +3469,7 @@ function renderPrivateChatUI() {
     <div class="channel-messages" style="max-height:220px;overflow-y:auto;background:rgba(20,20,20,0.8);padding:10px;border-radius:5px;border:1px solid #e67e2233;margin-bottom:10px;">
         ${msgs.length ? msgs.map(m => {
             const label = m.player === 'You' && m.toName ? `You -> ${escapeHTML(m.toName)}` : escapeHTML(m.player);
-            return `<div style="margin:4px 0;font-size:0.9em;"><strong style="color:${m.color||'#e67e22'};">${label}:</strong> ${escapeHTML(m.message)} <small style="color:#8a7a5a;float:right;">${m.time}</small></div>`;
+            return `<div style="margin:4px 0;font-size:0.9em;"><strong style="color:${sanitizeColor(m.color,'#e67e22')};">${label}:</strong> ${escapeHTML(m.message)} <small style="color:#8a7a5a;float:right;">${m.time}</small></div>`;
         }).join('') : '<p style="color:#8a7a5a;text-align:center;">No private messages yet. Select a player above to start a conversation.</p>'}
     </div>`;
 
@@ -3571,7 +3585,7 @@ function generateOnlinePlayersHTML() {
     
     return onlineWorldState.nearbyPlayers.map(p => `
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 5px 8px; margin: 2px 0; background: rgba(20, 18, 10, 0.3); border-radius: 5px;">
-            <span style="color: ${p.color};"> ${escapeHTML(p.name)}</span>
+            <span style="color: ${sanitizeColor(p.color, '#c0a062')};"> ${escapeHTML(p.name)}</span>
             <span style="color: #8a7a5a; font-size: 12px;">Level ${p.level}</span>
         </div>
     `).join('');
@@ -4506,7 +4520,7 @@ function updateQuickChatDisplay() {
         const recentMessages = onlineWorldState.globalChat.slice(-3);
         quickChatMessages.innerHTML = recentMessages.map(msg => `
             <div style="margin: 4px 0; font-size: 0.9em;">
-                <strong style="color: ${msg.color || '#c0a062'};">${escapeHTML(msg.player)}:</strong> ${escapeHTML(msg.message)}
+                <strong style="color: ${sanitizeColor(msg.color, '#c0a062')};">${escapeHTML(msg.player)}:</strong> ${escapeHTML(msg.message)}
             </div>
         `).join('');
     }
@@ -4530,7 +4544,7 @@ function simulateGlobalChatResponse() {
     if (chatArea) {
         const messageDiv = document.createElement('div');
         messageDiv.style.cssText = 'margin: 8px 0; padding: 8px; background: rgba(20, 18, 10, 0.3); border-radius: 5px;';
-        messageDiv.innerHTML = `<strong style="color: ${response.color};">${escapeHTML(response.player)}:</strong> ${escapeHTML(response.message)} <small style="color: #8a7a5a; float: right;">${response.time}</small>`;
+        messageDiv.innerHTML = `<strong style="color: ${sanitizeColor(response.color, '#c0a062')};">${escapeHTML(response.player)}:</strong> ${escapeHTML(response.message)} <small style="color: #8a7a5a; float: right;">${response.time}</small>`;
         chatArea.appendChild(messageDiv);
         chatArea.scrollTop = chatArea.scrollHeight;
     }
