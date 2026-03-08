@@ -21493,6 +21493,9 @@ async function showBurnRecordsModal() {
       console.warn('Cloud save delete failed:', e.message);
     }
 
+    // Clear cached save so Resume / Join the Family no longer find it
+    window._pendingCloudSave = null;
+
     // Reset runtime state
     gameplayActive = false;
     clearAllGameplayIntervals();
@@ -21526,6 +21529,9 @@ async function showBurnRecordsModal() {
     } catch (e) {
       console.error('Delete account error:', e);
     }
+
+    // Clear cached save and auth state
+    window._pendingCloudSave = null;
 
     // Reset runtime state
     gameplayActive = false;
