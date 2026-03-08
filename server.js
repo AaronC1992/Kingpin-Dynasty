@@ -11,6 +11,27 @@ const mongodb = require('./db');
 // User accounts & authentication
 const userDB = require('./userDB');
 
+// ── Email transporter (created once at startup) ────────────────
+const mailTransporter = (function () {
+    const user = process.env.SMTP_USER;
+    const pass = process.env.SMTP_PASS;
+    if (!user || !pass) {
+        console.log('[mail] SMTP_USER / SMTP_PASS not set -- email notifications disabled.');
+        return null;
+    }
+    const t = nodemailer.createTransport({
+        service: 'gmail',
+        auth: { user, pass }
+    });
+    // Verify connection at startup
+    t.verify().then(() => {
+        console.log('[mail] Gmail SMTP connection verified successfully.');
+    }).catch(err => {
+        console.error('[mail] Gmail SMTP verification FAILED:', err.message);
+    });
+    return t;
+})();
+
 // ── Admin accounts (lowercase usernames) ───────────────────────
 const ADMIN_USERNAMES = new Set(['admin']);
 function isAdmin(username) {
@@ -305,22 +326,20 @@ const server = http.createServer(async (req, res) => {
                     return json(500, { error: 'Failed to save report. Please try again later.' });
                 }
 
-                // Try to email as a bonus (non-blocking, don't fail if email isn't configured)
-                const smtpUser = process.env.SMTP_USER;
-                const smtpPass = process.env.SMTP_PASS;
-                if (smtpUser && smtpPass) {
+                // Try to email (await it so it actually completes)
+                if (mailTransporter) {
                     try {
-                        const transporter = nodemailer.createTransport({
-                            service: 'gmail',
-                            auth: { user: smtpUser, pass: smtpPass }
-                        });
-                        transporter.sendMail({
+                        const smtpUser = process.env.SMTP_USER;
+                        await mailTransporter.sendMail({
                             from: `"Mafia Born Reports" <${smtpUser}>`,
                             to: 'aaroncue92@gmail.com',
                             subject: `[Mafia Born] ${safeType.charAt(0).toUpperCase() + safeType.slice(1)} from ${safeName}`,
                             text: `Type: ${safeType}\nPlayer: ${safeName}\nDate: ${new Date().toISOString()}\n\n${safeDesc}`,
-                        }).catch(e => console.error('Bug report email failed:', e.message));
-                    } catch (e) { /* email is best-effort */ }
+                        });
+                        console.log('[mail] Bug report email sent successfully.');
+                    } catch (mailErr) {
+                        console.error('[mail] Bug report email FAILED:', mailErr.message);
+                    }
                 }
 
                 return json(200, { ok: true });
