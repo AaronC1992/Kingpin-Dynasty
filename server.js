@@ -1,4 +1,6 @@
 // ==================== MAFIA BORN - MULTIPLAYER SERVER ====================
+const dns = require('dns');
+dns.setDefaultResultOrder('ipv4first');
 const WebSocket = require('ws');
 const http = require('http');
 const fs = require('fs');
@@ -19,18 +21,11 @@ const mailTransporter = (function () {
         console.log('[mail] SMTP_USER / SMTP_PASS not set -- email notifications disabled.');
         return null;
     }
-    const dns = require('dns');
     const t = nodemailer.createTransport({
         host: 'smtp.gmail.com',
         port: 587,
         secure: false,
-        auth: { user, pass },
-        dnsLookup: (hostname, options, callback) => {
-            dns.resolve4(hostname, (err, addresses) => {
-                if (err) return callback(err);
-                callback(null, addresses[0], 4);
-            });
-        }
+        auth: { user, pass }
     });
     // Verify connection at startup
     t.verify().then(() => {
