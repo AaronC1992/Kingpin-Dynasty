@@ -54,6 +54,11 @@ let onlineWorldState = {
     },
     nearbyPlayers: [],
     globalChat: [],
+    crewChat: [],
+    allianceChat: [],
+    privateChats: {},  // { playerName: [ {player, message, time, color} ] }
+    activeChatChannel: 'world', // 'world', 'crew', 'alliance', 'private'
+    activePrivateChatTarget: null, // name of the player we're DMing
     // Multiplayer area-control zones — controlled by real players or NPC gangs.
     // These are broad city zones for PvP territory control, separate from the
     // economic districtTypes in game.js (single-player neighborhoods) and the
@@ -255,35 +260,43 @@ function showActiveHeists() {
     
     let heistListHTML;
     if (heists.length > 0) {
-        heistListHTML = heists.map(h => {
+        // Filter: show open heists + your own + heists you joined
+        const visibleHeists = heists.filter(h => h.open !== false || h.organizerId === myPlayerId || (Array.isArray(h.participants) && h.participants.includes(myPlayerId)));
+        heistListHTML = visibleHeists.map(h => {
             const participantCount = Array.isArray(h.participants) ? h.participants.length : (h.participants || 0);
             const maxCount = h.maxParticipants || 4;
             const isMyHeist = h.organizerId === myPlayerId;
             const alreadyJoined = Array.isArray(h.participants) && h.participants.includes(myPlayerId);
             const isFull = participantCount >= maxCount;
             const diffColor = h.difficulty === 'Easy' ? '#8a9a6a' : h.difficulty === 'Medium' ? '#c0a040' : h.difficulty === 'Hard' ? '#8b3a3a' : '#ff00ff';
+            const isOpen = h.open !== false;
+            const roles = h.roles || {};
             
-            // Get participant names from playerStates
-            let crewNames = '';
+            // Get participant names + roles from playerStates
+            let crewInfo = '';
             if (Array.isArray(h.participants)) {
-                const names = h.participants.map(pid => {
+                const entries = h.participants.map(pid => {
                     const ps = Object.values(onlineWorldState.playerStates || {}).find(p => p.playerId === pid);
-                    return ps ? escapeHTML(ps.name) : 'Unknown';
+                    const name = ps ? escapeHTML(ps.name) : 'Unknown';
+                    const role = roles[pid] ? roles[pid].charAt(0).toUpperCase() + roles[pid].slice(1) : '';
+                    return role ? `${name} <span style="color:#8a7a5a;font-size:0.8em;">(${role})</span>` : name;
                 });
-                crewNames = names.join(', ');
+                crewInfo = entries.join(', ');
             }
             
             return `
             <div style="background: rgba(0,0,0,0.6); padding: 18px; border-radius: 10px; margin: 12px 0; border: 1px solid ${isMyHeist ? '#c0a062' : '#5a0000'};">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px;">
                     <div style="flex: 1; min-width: 200px;">
-                        <div style="color: #c0a062; font-weight: bold; font-size: 1.1em; font-family: 'Georgia', serif;">${escapeHTML(h.target || 'Unknown Heist')}</div>
+                        <div style="color: #c0a062; font-weight: bold; font-size: 1.1em; font-family: 'Georgia', serif;">${escapeHTML(h.target || 'Unknown Heist')}
+                            <span style="color:${isOpen ? '#27ae60' : '#8b3a3a'};font-size:0.75em;margin-left:8px;padding:2px 6px;border:1px solid ${isOpen ? '#27ae60' : '#8b3a3a'};border-radius:4px;">${isOpen ? 'Open' : 'Private'}</span>
+                        </div>
                         <div style="margin-top: 6px;">
                             <span style="color: ${diffColor}; font-size: 0.85em; padding: 2px 8px; border: 1px solid ${diffColor}; border-radius: 4px;">${escapeHTML(h.difficulty || 'Unknown')}</span>
                             <span style="color: #8a9a6a; margin-left: 10px; font-size: 0.9em;">$${(h.reward || 0).toLocaleString()}</span>
                         </div>
                         <div style="color: #ccc; font-size: 0.85em; margin-top: 8px;">
-                            Crew: ${participantCount}/${maxCount} ${crewNames ? '— ' + crewNames : ''}
+                            Crew: ${participantCount}/${maxCount} ${crewInfo ? '&mdash; ' + crewInfo : ''}
                         </div>
                         <div style="color: #888; font-size: 0.8em; margin-top: 4px;">Organized by: ${escapeHTML(h.organizer || 'Unknown')}</div>
                     </div>
@@ -298,14 +311,14 @@ function showActiveHeists() {
                             </button>` : `
                             <div style="color: #ff8800; font-size: 0.8em; text-align: center;">Need ${h.minCrew || 1}+ crew</div>`}
                         ` : alreadyJoined ? `
-                            <div style="color: #8a9a6a; padding: 10px; text-align: center; font-weight: bold;">? Joined</div>
+                            <div style="color: #8a9a6a; padding: 10px; text-align: center; font-weight: bold;">Joined</div>
                             <button onclick="leaveHeist('${h.id}')" style="background: #333; color: #ff4444; padding: 8px 15px; border: 1px solid #ff4444; border-radius: 6px; cursor: pointer; font-size: 0.85em;">
                                 Leave
                             </button>
                         ` : isFull ? `
                             <div style="color: #888; padding: 10px; text-align: center;">Crew Full</div>
                         ` : `
-                            <button onclick="joinHeist('${h.id}')" style="background: linear-gradient(180deg, #8b0000, #3a0000); color: #ff4444; padding: 10px 18px; border: 1px solid #ff0000; border-radius: 6px; cursor: pointer; font-family: 'Georgia', serif; font-weight: bold;">
+                            <button onclick="showJoinHeistRolePicker('${h.id}')" style="background: linear-gradient(180deg, #8b0000, #3a0000); color: #ff4444; padding: 10px 18px; border: 1px solid #ff0000; border-radius: 6px; cursor: pointer; font-family: 'Georgia', serif; font-weight: bold;">
                                 Join Crew
                             </button>
                         `}
@@ -434,9 +447,80 @@ async function createHeist(targetId) {
         return;
     }
 
-    if (!await window.ui.confirm(`Plan heist on ${target.name}?\n\nReward: $${target.reward.toLocaleString()} (split among crew)\nCrew needed: ${target.minCrew}-${target.maxCrew}\nBase success: ${target.successBase}%\n\nYou'll be the organizer. Other players can join.`)) {
-        return;
-    }
+    // Show heist setup screen
+    showHeistSetup(target);
+}
+
+// Heist setup screen: pick role and open/private
+function showHeistSetup(target) {
+    const content = document.getElementById('multiplayer-content');
+    if (!content) return;
+
+    const diffColor = target.difficulty === 'Easy' ? '#8a9a6a' : target.difficulty === 'Medium' ? '#c0a040' : target.difficulty === 'Hard' ? '#8b3a3a' : '#ff00ff';
+
+    const roleDescriptions = {
+        driver: { label: 'Driver', desc: '+5% success, less rep loss on failure', color: '#3498db' },
+        hacker: { label: 'Hacker', desc: '+8% success chance', color: '#9b59b6' },
+        muscle: { label: 'Muscle', desc: '+5% success, +15% reward bonus', color: '#e74c3c' },
+        lookout: { label: 'Lookout', desc: '+5% success, -50% rep loss on failure', color: '#2ecc71' }
+    };
+
+    let rolesHTML = Object.entries(roleDescriptions).map(([key, r]) => `
+        <label style="display:flex;align-items:center;gap:10px;padding:10px;background:rgba(0,0,0,0.4);border-radius:8px;border:1px solid #333;cursor:pointer;" onclick="document.getElementById('heist-role-${key}').checked=true">
+            <input type="radio" name="heist-role" id="heist-role-${key}" value="${key}" ${key === 'muscle' ? 'checked' : ''} style="accent-color:${r.color};">
+            <div>
+                <span style="color:${r.color};font-weight:bold;">${r.label}</span>
+                <span style="color:#8a7a5a;font-size:0.85em;margin-left:6px;">${r.desc}</span>
+            </div>
+        </label>
+    `).join('');
+
+    content.innerHTML = `
+        <div style="background: rgba(0,0,0,0.95); padding: 30px; border-radius: 15px; border: 3px solid #c0a062;">
+            <h2 style="color: #c0a062; font-family: 'Georgia', serif; text-align:center; margin: 0 0 5px 0;">Heist Setup</h2>
+            <p style="color: #ccc; text-align:center; margin: 0 0 20px 0;">${escapeHTML(target.name)} &mdash; <span style="color:${diffColor};">${target.difficulty}</span></p>
+
+            <div style="background:rgba(0,0,0,0.5);padding:15px;border-radius:10px;margin-bottom:20px;border:1px solid #555;">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                    <div style="color:#ccc;">Reward: <span style="color:#8a9a6a;font-weight:bold;">$${target.reward.toLocaleString()}</span></div>
+                    <div style="color:#ccc;">Crew: <span style="color:#d4c4a0;">${target.minCrew}-${target.maxCrew}</span></div>
+                    <div style="color:#ccc;">Base success: <span style="color:#c0a040;">${target.successBase}%</span></div>
+                </div>
+            </div>
+
+            <h3 style="color:#c0a062;margin:0 0 10px 0;">Your Role</h3>
+            <p style="color:#8a7a5a;font-size:0.9em;margin:0 0 10px 0;">Pick a role for the heist. A balanced crew (all 4 roles) gets a +10% bonus.</p>
+            <div style="display:grid;gap:8px;margin-bottom:20px;">${rolesHTML}</div>
+
+            <h3 style="color:#c0a062;margin:0 0 10px 0;">Lobby Type</h3>
+            <div style="display:flex;gap:12px;margin-bottom:25px;">
+                <label style="display:flex;align-items:center;gap:8px;padding:10px 16px;background:rgba(0,0,0,0.4);border-radius:8px;border:1px solid #333;cursor:pointer;">
+                    <input type="radio" name="heist-lobby" id="heist-lobby-open" value="open" checked style="accent-color:#27ae60;">
+                    <div><span style="color:#27ae60;font-weight:bold;">Open Lobby</span><br><span style="color:#8a7a5a;font-size:0.85em;">Anyone can join from the heist board</span></div>
+                </label>
+                <label style="display:flex;align-items:center;gap:8px;padding:10px 16px;background:rgba(0,0,0,0.4);border-radius:8px;border:1px solid #333;cursor:pointer;">
+                    <input type="radio" name="heist-lobby" id="heist-lobby-private" value="private" style="accent-color:#8b3a3a;">
+                    <div><span style="color:#8b3a3a;font-weight:bold;">Private</span><br><span style="color:#8a7a5a;font-size:0.85em;">Invite-only, hidden from the board</span></div>
+                </label>
+            </div>
+
+            <div style="display:flex;justify-content:center;gap:12px;">
+                <button onclick="confirmCreateHeist('${target.id}')" style="background:linear-gradient(180deg,#8b0000,#3a0000);color:#ff4444;padding:14px 30px;border:1px solid #ff0000;border-radius:8px;cursor:pointer;font-family:'Georgia',serif;font-weight:bold;font-size:1.05em;">Create Heist</button>
+                <button onclick="showCreateHeist()" style="background:#333;color:#c0a062;padding:14px 25px;border:1px solid #c0a062;border-radius:8px;cursor:pointer;font-family:'Georgia',serif;">Back</button>
+            </div>
+        </div>
+    `;
+}
+
+// Confirm and send heist creation to server
+function confirmCreateHeist(targetId) {
+    const target = HEIST_TARGETS.find(t => t.id === targetId);
+    if (!target) return;
+
+    const roleEl = document.querySelector('input[name="heist-role"]:checked');
+    const lobbyEl = document.querySelector('input[name="heist-lobby"]:checked');
+    const role = roleEl ? roleEl.value : 'muscle';
+    const isOpen = lobbyEl ? lobbyEl.value === 'open' : true;
 
     onlineWorldState.socket.send(JSON.stringify({
         type: 'heist_create',
@@ -446,12 +530,12 @@ async function createHeist(targetId) {
         difficulty: target.difficulty,
         maxParticipants: target.maxCrew,
         minCrew: target.minCrew,
-        successBase: target.successBase
+        successBase: target.successBase,
+        role: role,
+        open: isOpen
     }));
 
     _safeLogAction(`Planning heist: ${target.name}. Looking for crew...`);
-    
-    // Brief delay then show heists list
     setTimeout(() => showActiveHeists(), 500);
 }
 
@@ -472,6 +556,14 @@ function manageHeist(heistId) {
     const canLaunch = participantCount >= minCrew;
     const diffColor = heist.difficulty === 'Easy' ? '#8a9a6a' : heist.difficulty === 'Medium' ? '#c0a040' : heist.difficulty === 'Hard' ? '#8b3a3a' : '#ff00ff';
 
+    const roleColors = { driver: '#3498db', hacker: '#9b59b6', muscle: '#e74c3c', lookout: '#2ecc71' };
+    const roleLabels = { driver: 'Driver', hacker: 'Hacker', muscle: 'Muscle', lookout: 'Lookout' };
+    const roles = heist.roles || {};
+
+    // Count unique roles for balance indicator
+    const uniqueRoles = new Set(Object.values(roles));
+    const isBalanced = uniqueRoles.size >= 4;
+
     // Build crew list
     let crewHTML = '';
     if (Array.isArray(heist.participants)) {
@@ -481,18 +573,23 @@ function manageHeist(heistId) {
             const level = ps ? ps.level || 1 : '?';
             const isOrganizer = pid === heist.organizerId;
             const isMe = pid === onlineWorldState.playerId;
+            const pRole = roles[pid];
+            const roleColor = pRole ? roleColors[pRole] || '#888' : '#555';
+            const roleLabel = pRole ? roleLabels[pRole] || pRole : 'No Role';
             
             return `
             <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; margin: 6px 0; background: rgba(${isOrganizer ? '192,160,98' : '139,0,0'},0.15); border-radius: 6px; border: 1px solid ${isOrganizer ? '#c0a062' : '#3a0000'};">
                 <div>
                     <span style="color: ${isOrganizer ? '#c0a062' : '#ff4444'}; font-weight: bold;">${name}</span>
                     <span style="color: #888; font-size: 0.85em;"> Lvl ${level}</span>
-                    ${isOrganizer ? '<span style="color: #c0a062; font-size: 0.8em; margin-left: 8px;">Leader</span>' : ''}
-                    ${isMe && !isOrganizer ? '<span style="color: #8a9a6a; font-size: 0.8em; margin-left: 8px;">(You)</span>' : ''}
+                    <span style="color: ${roleColor}; font-size: 0.8em; margin-left: 8px; border: 1px solid ${roleColor}; padding: 1px 6px; border-radius: 3px;">${roleLabel}</span>
+                    ${isOrganizer ? '<span style="color: #c0a062; font-size: 0.8em; margin-left: 6px;">Leader</span>' : ''}
+                    ${isMe && !isOrganizer ? '<span style="color: #8a9a6a; font-size: 0.8em; margin-left: 6px;">(You)</span>' : ''}
                 </div>
-                ${isOrganizer || !isMe ? '' : `
-                    <button onclick="leaveHeist('${heistId}')" style="background: #333; color: #ff4444; padding: 5px 12px; border: 1px solid #ff4444; border-radius: 4px; cursor: pointer; font-size: 0.85em;">Leave</button>
-                `}
+                <div style="display:flex;gap:6px;">
+                    ${isMe ? `<button onclick="showChangeRolePopup('${heistId}')" style="background:#222;color:${roleColor};padding:5px 10px;border:1px solid ${roleColor};border-radius:4px;cursor:pointer;font-size:0.8em;">Change Role</button>` : ''}
+                    ${!isOrganizer && isMe ? `<button onclick="leaveHeist('${heistId}')" style="background:#333;color:#ff4444;padding:5px 12px;border:1px solid #ff4444;border-radius:4px;cursor:pointer;font-size:0.85em;">Leave</button>` : ''}
+                </div>
             </div>`;
         }).join('');
     }
@@ -520,6 +617,8 @@ function manageHeist(heistId) {
                     <div style="color: #ccc;">Reward: <span style="color: #8a9a6a; font-weight: bold;">$${(heist.reward || 0).toLocaleString()}</span></div>
                     <div style="color: #ccc;">Per person: <span style="color: #8a9a6a;">~$${participantCount > 0 ? Math.floor((heist.reward || 0) / participantCount).toLocaleString() : '?'}</span></div>
                     <div style="color: #ccc;">Base success: <span style="color: #c0a040;">${heist.successBase || 60}%</span></div>
+                    <div style="color: #ccc;">Lobby: <span style="color: ${heist.open !== false ? '#2ecc71' : '#e74c3c'};">${heist.open !== false ? 'Open' : 'Private'}</span></div>
+                    <div style="color: #ccc;">Crew balance: <span style="color: ${isBalanced ? '#2ecc71' : '#c0a040'};">${isBalanced ? 'Balanced (+10%)' : uniqueRoles.size + '/4 roles'}</span></div>
                 </div>
             </div>
 
@@ -553,6 +652,54 @@ function manageHeist(heistId) {
             </div>
         </div>
     `;
+}
+
+// Show a role change popup for an active heist
+function showChangeRolePopup(heistId) {
+    const existing = document.getElementById('heist-role-picker-overlay');
+    if (existing) existing.remove();
+
+    const roleDescs = {
+        driver:  { label: 'Driver',  desc: '+5% success, less rep loss',  color: '#3498db' },
+        hacker:  { label: 'Hacker',  desc: '+8% success chance',          color: '#9b59b6' },
+        muscle:  { label: 'Muscle',  desc: '+5% success, +15% reward',    color: '#e74c3c' },
+        lookout: { label: 'Lookout', desc: '+5% success, -50% rep loss',  color: '#2ecc71' }
+    };
+
+    let btns = Object.entries(roleDescs).map(([key, r]) => `
+        <button onclick="changeHeistRole('${heistId}','${key}')" style="display:block;width:100%;text-align:left;padding:10px 14px;background:rgba(0,0,0,0.6);border:1px solid ${r.color};border-radius:6px;cursor:pointer;color:#d4c4a0;margin:6px 0;">
+            <span style="color:${r.color};font-weight:bold;">${r.label}</span> &mdash; <span style="font-size:0.9em;color:#8a7a5a;">${r.desc}</span>
+        </button>
+    `).join('');
+
+    const overlay = document.createElement('div');
+    overlay.id = 'heist-role-picker-overlay';
+    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:10000;display:flex;align-items:center;justify-content:center;';
+    overlay.innerHTML = `
+        <div style="background:#1a1810;border:2px solid #c0a062;border-radius:12px;padding:25px;max-width:400px;width:90%;">
+            <h3 style="color:#c0a062;margin:0 0 12px 0;">Change Your Role</h3>
+            ${btns}
+            <button onclick="document.getElementById('heist-role-picker-overlay').remove()" style="margin-top:10px;background:#333;color:#c0a062;border:1px solid #c0a062;padding:8px 18px;border-radius:6px;cursor:pointer;width:100%;">Cancel</button>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+}
+
+// Send role change to server
+function changeHeistRole(heistId, role) {
+    const picker = document.getElementById('heist-role-picker-overlay');
+    if (picker) picker.remove();
+
+    if (onlineWorldState.socket && onlineWorldState.socket.readyState === WebSocket.OPEN) {
+        onlineWorldState.socket.send(JSON.stringify({ type: 'heist_set_role', heistId, role }));
+        // Optimistic update
+        const heist = (onlineWorldState.activeHeists || []).find(h => h.id === heistId);
+        if (heist) {
+            if (!heist.roles) heist.roles = {};
+            heist.roles[onlineWorldState.playerId] = role;
+            manageHeist(heistId);
+        }
+    }
 }
 
 // Force start a heist (organizer only)
@@ -659,7 +806,47 @@ function inviteToHeist(playerName) {
 }
 
 // Join any heist by ID
-function joinHeist(heistId) {
+// Role picker popup before joining a heist
+function showJoinHeistRolePicker(heistId) {
+    const heist = (onlineWorldState.activeHeists || []).find(h => h.id === heistId);
+    if (!heist) { window.ui.toast('Heist not found!', 'error'); return; }
+
+    // Remove existing picker if any
+    const existing = document.getElementById('heist-role-picker-overlay');
+    if (existing) existing.remove();
+
+    const roleDescs = {
+        driver:  { label: 'Driver',  desc: '+5% success, less rep loss',  color: '#3498db' },
+        hacker:  { label: 'Hacker',  desc: '+8% success chance',          color: '#9b59b6' },
+        muscle:  { label: 'Muscle',  desc: '+5% success, +15% reward',    color: '#e74c3c' },
+        lookout: { label: 'Lookout', desc: '+5% success, -50% rep loss',  color: '#2ecc71' }
+    };
+
+    let btns = Object.entries(roleDescs).map(([key, r]) => `
+        <button onclick="joinHeist('${heistId}','${key}')" style="display:block;width:100%;text-align:left;padding:10px 14px;background:rgba(0,0,0,0.6);border:1px solid ${r.color};border-radius:6px;cursor:pointer;color:#d4c4a0;margin:6px 0;">
+            <span style="color:${r.color};font-weight:bold;">${r.label}</span> &mdash; <span style="font-size:0.9em;color:#8a7a5a;">${r.desc}</span>
+        </button>
+    `).join('');
+
+    const overlay = document.createElement('div');
+    overlay.id = 'heist-role-picker-overlay';
+    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:10000;display:flex;align-items:center;justify-content:center;';
+    overlay.innerHTML = `
+        <div style="background:#1a1810;border:2px solid #c0a062;border-radius:12px;padding:25px;max-width:400px;width:90%;">
+            <h3 style="color:#c0a062;margin:0 0 6px 0;">Choose Your Role</h3>
+            <p style="color:#8a7a5a;font-size:0.9em;margin:0 0 12px 0;">Pick a role for the ${escapeHTML(heist.target)} heist. A balanced crew gets a +10% bonus.</p>
+            ${btns}
+            <button onclick="document.getElementById('heist-role-picker-overlay').remove()" style="margin-top:10px;background:#333;color:#c0a062;border:1px solid #c0a062;padding:8px 18px;border-radius:6px;cursor:pointer;width:100%;">Cancel</button>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+}
+
+function joinHeist(heistId, role) {
+    // Remove role picker overlay if present
+    const picker = document.getElementById('heist-role-picker-overlay');
+    if (picker) picker.remove();
+
     const heist = (onlineWorldState.activeHeists || []).find(h => h.id === heistId);
     if (!heist) {
         window.ui.toast('Heist not found!', 'error');
@@ -680,15 +867,18 @@ function joinHeist(heistId) {
     }
     
     if (onlineWorldState.socket && onlineWorldState.socket.readyState === WebSocket.OPEN) {
-        onlineWorldState.socket.send(JSON.stringify({
-            type: 'heist_join',
-            heistId: heistId
-        }));
-        _safeLogAction(`Requested to join heist: ${heist.target}`);
+        const msg = { type: 'heist_join', heistId: heistId };
+        if (role) msg.role = role;
+        onlineWorldState.socket.send(JSON.stringify(msg));
+        _safeLogAction(`Requested to join heist: ${heist.target} as ${role || 'unassigned'}`);
         
         // Optimistic local update
         if (Array.isArray(heist.participants)) {
             heist.participants.push(onlineWorldState.playerId);
+        }
+        if (role) {
+            if (!heist.roles) heist.roles = {};
+            heist.roles[onlineWorldState.playerId] = role;
         }
         showActiveHeists();
     } else {
@@ -1156,6 +1346,45 @@ async function handleServerMessage(message) {
                 updateMobileActionLog();
             }
             break;
+
+        case 'crew_chat': {
+            const crewMsg = { player: message.playerName, message: message.message, time: new Date(message.timestamp).toLocaleTimeString(), color: '#3498db' };
+            onlineWorldState.crewChat.push(crewMsg);
+            if (onlineWorldState.crewChat.length > 50) onlineWorldState.crewChat = onlineWorldState.crewChat.slice(-50);
+            updateChannelChatDisplay('crew');
+            break;
+        }
+
+        case 'alliance_chat': {
+            const allyMsg = { player: message.playerName, message: message.message, time: new Date(message.timestamp).toLocaleTimeString(), color: '#9b59b6' };
+            onlineWorldState.allianceChat.push(allyMsg);
+            if (onlineWorldState.allianceChat.length > 50) onlineWorldState.allianceChat = onlineWorldState.allianceChat.slice(-50);
+            updateChannelChatDisplay('alliance');
+            break;
+        }
+
+        case 'private_chat': {
+            const fromName = message.fromName || message.playerName || 'Unknown';
+            const pmMsg = { player: fromName, message: message.message, time: new Date(message.timestamp).toLocaleTimeString(), color: '#e67e22' };
+            if (!onlineWorldState.privateChats[fromName]) onlineWorldState.privateChats[fromName] = [];
+            onlineWorldState.privateChats[fromName].push(pmMsg);
+            if (onlineWorldState.privateChats[fromName].length > 50) onlineWorldState.privateChats[fromName] = onlineWorldState.privateChats[fromName].slice(-50);
+            updateChannelChatDisplay('private');
+            if (onlineWorldState.activeChatChannel !== 'private' || onlineWorldState.activePrivateChatTarget !== fromName) {
+                showMPToast(`DM from ${fromName}: ${message.message.substring(0, 40)}`, '#e67e22');
+            }
+            break;
+        }
+
+        case 'private_chat_sent': {
+            const toName = message.toName;
+            const sentMsg = { player: 'You', message: message.message, time: new Date(message.timestamp).toLocaleTimeString(), color: '#c0a062' };
+            if (!onlineWorldState.privateChats[toName]) onlineWorldState.privateChats[toName] = [];
+            onlineWorldState.privateChats[toName].push(sentMsg);
+            if (onlineWorldState.privateChats[toName].length > 50) onlineWorldState.privateChats[toName] = onlineWorldState.privateChats[toName].slice(-50);
+            updateChannelChatDisplay('private');
+            break;
+        }
 
         case 'player_death_newspaper':
             // Another player died — store the newspaper data and add a clickable entry to chat & ledger
@@ -2908,6 +3137,183 @@ function addChatMessage(playerName, message, color = '#f5e6c8') {
     }
 }
 
+// ---- Multi-channel chat system ----
+
+function switchChatChannel(channel) {
+    onlineWorldState.activeChatChannel = channel;
+    const container = document.getElementById('chat-channel-content');
+    if (container) {
+        container.innerHTML = renderChatChannelContent(channel);
+        // Scroll the message area
+        const area = container.querySelector('.channel-messages');
+        if (area) area.scrollTop = area.scrollHeight;
+    }
+    // Update tab buttons highlight
+    const tabs = container ? container.parentElement.querySelectorAll('[onclick^="switchChatChannel"]') : [];
+    tabs.forEach(btn => {
+        const id = btn.getAttribute('onclick').match(/'(\w+)'/)?.[1];
+        const active = id === channel;
+        btn.style.border = `1px solid ${active ? '#c0a062' : '#555'}`;
+        btn.style.background = active ? 'rgba(192,160,98,0.2)' : 'rgba(0,0,0,0.4)';
+        btn.style.color = active ? '#c0a062' : '#888';
+    });
+}
+
+function renderChatChannelContent(channel) {
+    if (channel === 'world') {
+        const msgs = onlineWorldState.globalChat.slice(-30);
+        return `
+            <h4 style="color:#c0a062;margin:0 0 10px 0;font-family:'Georgia',serif;">The Wire</h4>
+            <div class="channel-messages" style="max-height:220px;overflow-y:auto;background:rgba(20,20,20,0.8);padding:10px;border-radius:5px;border:1px solid #444;margin-bottom:10px;">
+                ${msgs.length ? msgs.map(m => `<div style="margin:4px 0;font-size:0.9em;"><strong style="color:${m.color||'#c0a062'};">${escapeHTML(m.player)}:</strong> ${escapeHTML(m.message)} <small style="color:#8a7a5a;float:right;">${m.time}</small></div>`).join('') : '<p style="color:#8a7a5a;text-align:center;">No messages yet.</p>'}
+            </div>
+            <div style="display:flex;gap:8px;">
+                <input type="text" id="channel-chat-input" placeholder="Speak to the family..." maxlength="200"
+                       style="flex:1;padding:10px;border-radius:5px;border:1px solid #c0a062;background:#222;color:#c0a062;font-size:1em;"
+                       onkeypress="if(event.key==='Enter') sendChannelMessage('world')">
+                <button onclick="sendChannelMessage('world')" style="background:#c0a062;color:#000;padding:10px 18px;border:none;border-radius:5px;cursor:pointer;font-weight:bold;">Send</button>
+            </div>`;
+    }
+
+    if (channel === 'crew') {
+        const msgs = onlineWorldState.crewChat.slice(-30);
+        return `
+            <h4 style="color:#3498db;margin:0 0 10px 0;font-family:'Georgia',serif;">Crew Channel</h4>
+            <div class="channel-messages" style="max-height:220px;overflow-y:auto;background:rgba(20,20,20,0.8);padding:10px;border-radius:5px;border:1px solid #3498db33;margin-bottom:10px;">
+                ${msgs.length ? msgs.map(m => `<div style="margin:4px 0;font-size:0.9em;"><strong style="color:${m.color||'#3498db'};">${escapeHTML(m.player)}:</strong> ${escapeHTML(m.message)} <small style="color:#8a7a5a;float:right;">${m.time}</small></div>`).join('') : '<p style="color:#8a7a5a;text-align:center;">No crew messages. Your crew will see messages here.</p>'}
+            </div>
+            <div style="display:flex;gap:8px;">
+                <input type="text" id="channel-chat-input" placeholder="Message your crew..." maxlength="200"
+                       style="flex:1;padding:10px;border-radius:5px;border:1px solid #3498db;background:#222;color:#3498db;font-size:1em;"
+                       onkeypress="if(event.key==='Enter') sendChannelMessage('crew')">
+                <button onclick="sendChannelMessage('crew')" style="background:#3498db;color:#000;padding:10px 18px;border:none;border-radius:5px;cursor:pointer;font-weight:bold;">Send</button>
+            </div>`;
+    }
+
+    if (channel === 'alliance') {
+        const msgs = onlineWorldState.allianceChat.slice(-30);
+        return `
+            <h4 style="color:#9b59b6;margin:0 0 10px 0;font-family:'Georgia',serif;">Alliance Channel</h4>
+            <div class="channel-messages" style="max-height:220px;overflow-y:auto;background:rgba(20,20,20,0.8);padding:10px;border-radius:5px;border:1px solid #9b59b633;margin-bottom:10px;">
+                ${msgs.length ? msgs.map(m => `<div style="margin:4px 0;font-size:0.9em;"><strong style="color:${m.color||'#9b59b6'};">${escapeHTML(m.player)}:</strong> ${escapeHTML(m.message)} <small style="color:#8a7a5a;float:right;">${m.time}</small></div>`).join('') : '<p style="color:#8a7a5a;text-align:center;">No alliance messages. Allied players will see messages here.</p>'}
+            </div>
+            <div style="display:flex;gap:8px;">
+                <input type="text" id="channel-chat-input" placeholder="Message your alliance..." maxlength="200"
+                       style="flex:1;padding:10px;border-radius:5px;border:1px solid #9b59b6;background:#222;color:#9b59b6;font-size:1em;"
+                       onkeypress="if(event.key==='Enter') sendChannelMessage('alliance')">
+                <button onclick="sendChannelMessage('alliance')" style="background:#9b59b6;color:#000;padding:10px 18px;border:none;border-radius:5px;cursor:pointer;font-weight:bold;">Send</button>
+            </div>`;
+    }
+
+    if (channel === 'private') {
+        return renderPrivateChatUI();
+    }
+
+    return '';
+}
+
+function renderPrivateChatUI() {
+    const target = onlineWorldState.activePrivateChatTarget;
+    const convos = Object.keys(onlineWorldState.privateChats);
+
+    // Online player list for starting a new DM
+    const onlinePlayers = (onlineWorldState.nearbyPlayers || []).filter(p => p.name && p.name !== (typeof player !== 'undefined' ? player.name : ''));
+
+    let html = `<h4 style="color:#e67e22;margin:0 0 10px 0;font-family:'Georgia',serif;">Private Messages</h4>`;
+
+    // Conversation list
+    html += `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">`;
+    convos.forEach(name => {
+        const active = target === name;
+        html += `<button onclick="openPrivateChat('${escapeHTML(name)}')" style="padding:5px 12px;border-radius:4px;border:1px solid ${active?'#e67e22':'#555'};background:${active?'rgba(230,126,34,0.2)':'rgba(0,0,0,0.4)'};color:${active?'#e67e22':'#888'};cursor:pointer;font-size:0.85em;">${escapeHTML(name)}</button>`;
+    });
+    html += `</div>`;
+
+    // New DM dropdown
+    if (onlinePlayers.length > 0) {
+        html += `<div style="margin-bottom:10px;display:flex;gap:8px;align-items:center;">
+            <select id="dm-target-select" style="flex:1;padding:8px;background:#222;color:#e67e22;border:1px solid #e67e22;border-radius:5px;">
+                <option value="">-- Start new DM --</option>
+                ${onlinePlayers.map(p => `<option value="${escapeHTML(p.name)}">${escapeHTML(p.name)} (Lvl ${p.level||'?'})</option>`).join('')}
+            </select>
+            <button onclick="startNewDM()" style="padding:8px 14px;background:#e67e22;color:#000;border:none;border-radius:5px;cursor:pointer;font-weight:bold;">Open</button>
+        </div>`;
+    }
+
+    // Message area
+    if (target) {
+        const msgs = (onlineWorldState.privateChats[target] || []).slice(-30);
+        html += `
+        <div class="channel-messages" style="max-height:180px;overflow-y:auto;background:rgba(20,20,20,0.8);padding:10px;border-radius:5px;border:1px solid #e67e2233;margin-bottom:10px;">
+            ${msgs.length ? msgs.map(m => `<div style="margin:4px 0;font-size:0.9em;"><strong style="color:${m.color||'#e67e22'};">${escapeHTML(m.player)}:</strong> ${escapeHTML(m.message)} <small style="color:#8a7a5a;float:right;">${m.time}</small></div>`).join('') : '<p style="color:#8a7a5a;text-align:center;">No messages with ' + escapeHTML(target) + ' yet.</p>'}
+        </div>
+        <div style="display:flex;gap:8px;">
+            <input type="text" id="channel-chat-input" placeholder="Message ${escapeHTML(target)}..." maxlength="200"
+                   style="flex:1;padding:10px;border-radius:5px;border:1px solid #e67e22;background:#222;color:#e67e22;font-size:1em;"
+                   onkeypress="if(event.key==='Enter') sendChannelMessage('private')">
+            <button onclick="sendChannelMessage('private')" style="background:#e67e22;color:#000;padding:10px 18px;border:none;border-radius:5px;cursor:pointer;font-weight:bold;">Send</button>
+        </div>`;
+    } else {
+        html += `<p style="color:#8a7a5a;text-align:center;padding:20px;">Select a conversation or start a new DM above.</p>`;
+    }
+    return html;
+}
+
+function openPrivateChat(name) {
+    onlineWorldState.activePrivateChatTarget = name;
+    const container = document.getElementById('chat-channel-content');
+    if (container) {
+        container.innerHTML = renderPrivateChatUI();
+        const area = container.querySelector('.channel-messages');
+        if (area) area.scrollTop = area.scrollHeight;
+    }
+}
+
+function startNewDM() {
+    const sel = document.getElementById('dm-target-select');
+    if (!sel || !sel.value) return;
+    onlineWorldState.activePrivateChatTarget = sel.value;
+    if (!onlineWorldState.privateChats[sel.value]) onlineWorldState.privateChats[sel.value] = [];
+    openPrivateChat(sel.value);
+}
+
+async function sendChannelMessage(channel) {
+    const playerName = await ensurePlayerNameForChat();
+    if (!playerName) return;
+
+    const input = document.getElementById('channel-chat-input');
+    if (!input || !input.value.trim()) return;
+    const msg = input.value.trim();
+    input.value = '';
+
+    if (!onlineWorldState.socket || onlineWorldState.socket.readyState !== WebSocket.OPEN) {
+        window.ui.toast('Not connected to the server!', 'error');
+        return;
+    }
+
+    if (channel === 'world') {
+        onlineWorldState.socket.send(JSON.stringify({ type: 'global_chat', playerId: onlineWorldState.playerId, message: msg, playerName: playerName, timestamp: Date.now() }));
+    } else if (channel === 'crew') {
+        onlineWorldState.socket.send(JSON.stringify({ type: 'crew_chat', message: msg, timestamp: Date.now() }));
+    } else if (channel === 'alliance') {
+        onlineWorldState.socket.send(JSON.stringify({ type: 'alliance_chat', message: msg, timestamp: Date.now() }));
+    } else if (channel === 'private') {
+        const target = onlineWorldState.activePrivateChatTarget;
+        if (!target) { window.ui.toast('Select a player to message first!', 'error'); return; }
+        onlineWorldState.socket.send(JSON.stringify({ type: 'private_chat', targetName: target, message: msg, timestamp: Date.now() }));
+    }
+}
+
+function updateChannelChatDisplay(channel) {
+    // Only update if the active channel matches
+    if (onlineWorldState.activeChatChannel !== channel) return;
+    const container = document.getElementById('chat-channel-content');
+    if (!container) return;
+    container.innerHTML = renderChatChannelContent(channel);
+    const area = container.querySelector('.channel-messages');
+    if (area) area.scrollTop = area.scrollHeight;
+}
+
 // Get connection status HTML for chat
 function getConnectionStatusHTML() {
     const status = onlineWorldState.connectionStatus;
@@ -3226,27 +3632,22 @@ function showOnlineWorld(activeTab) {
     
     // -- CHAT TAB --
     if (tab === 'chat') {
+        const ch = onlineWorldState.activeChatChannel || 'world';
+        const tabBtnStyle = (id) => `padding:8px 16px;border:1px solid ${ch===id?'#c0a062':'#555'};background:${ch===id?'rgba(192,160,98,0.2)':'rgba(0,0,0,0.4)'};color:${ch===id?'#c0a062':'#888'};border-radius:6px 6px 0 0;cursor:pointer;font-family:'Georgia',serif;font-size:0.9em;`;
+
         worldHTML += `
-            <!-- Quick Wire -->
-            <h3 style="color: #c0a062; margin: 0 0 15px 0; font-family: 'Georgia', serif;">The Wire</h3>
-            <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
-                <input type="text" id="quick-chat-input" placeholder="Send a message to the family..." 
-                       style="flex: 1; padding: 10px; border-radius: 5px; border: 1px solid #c0a062; background: #222; color: #c0a062; font-size: 1em;"
-                       onkeypress="if(event.key==='Enter') sendQuickChatMessage()" maxlength="200">
-                <button onclick="sendQuickChatMessage()" style="background: #c0a062; color: #000; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
-                    Send
-                </button>
+            <!-- Chat Channel Tabs -->
+            <div style="display:flex;gap:4px;margin-bottom:0;flex-wrap:wrap;">
+                <button onclick="switchChatChannel('world')" style="${tabBtnStyle('world')}">World</button>
+                <button onclick="switchChatChannel('crew')" style="${tabBtnStyle('crew')}">Crew</button>
+                <button onclick="switchChatChannel('alliance')" style="${tabBtnStyle('alliance')}">Alliance</button>
+                <button onclick="switchChatChannel('private')" style="${tabBtnStyle('private')}">Private</button>
             </div>
-            <div style="max-height: 200px; overflow-y: auto; background: rgba(20, 20, 20, 0.8); padding: 12px; border-radius: 5px; border: 1px solid #555; margin-bottom: 20px;">
-                <div id="quick-chat-messages">
-                    ${onlineWorldState.globalChat.slice(-10).map(msg => `
-                        <div style="margin: 4px 0; font-size: 0.9em;">
-                            <strong style="color: ${msg.color || '#c0a062'};">${escapeHTML(msg.player)}:</strong> ${escapeHTML(msg.message)}
-                        </div>
-                    `).join('')}
-                </div>
+
+            <div id="chat-channel-content" style="background:rgba(0,0,0,0.6);border:1px solid #555;border-top:none;border-radius:0 0 8px 8px;padding:15px;margin-bottom:20px;">
+                ${renderChatChannelContent(ch)}
             </div>
-            
+
             <!-- Street Activity -->
             <h3 style="color: #ccc; font-family: 'Georgia', serif;">Street Activity</h3>
             <div id="world-activity-feed" style="height: 250px; overflow-y: auto; background: rgba(20, 20, 20, 0.8); padding: 12px; border-radius: 5px; border: 1px solid #555;">
@@ -3858,6 +4259,8 @@ function updateQuickChatDisplay() {
             </div>
         `).join('');
     }
+    // Also update the world channel tab if it's active
+    updateChannelChatDisplay('world');
 }
 
 function simulateGlobalChatResponse() {

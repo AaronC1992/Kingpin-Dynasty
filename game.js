@@ -17413,8 +17413,21 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = "1.24.0";
+const CURRENT_VERSION = "1.25.0";
 const VERSION_UPDATES = {
+  "1.25.0": {
+    title: "Heist Roles, Chat Channels & Open Lobbies",
+    date: "June 2025",
+    changes: [
+      "Crew Heist Roles: pick Driver, Hacker, Muscle, or Lookout when creating or joining a heist",
+      "Each role gives unique bonuses -- balanced crews with all 4 roles get +10% success",
+      "Change your heist role from the Heist Management screen before launch",
+      "Open & Private heist lobbies: mark your heist as Open for anyone or Private for invited-only",
+      "Chat channel tabs: World, Crew, Alliance, and Private message channels",
+      "Crew chat visible only to your crew members, alliance chat for allied crews",
+      "Private DMs: start conversations with any online player from the Private tab",
+    ]
+  },
   "1.24.0": {
     title: "Crew Recruitment & Party Check",
     date: "March 2026",

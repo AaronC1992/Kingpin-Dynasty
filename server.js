@@ -550,6 +550,9 @@ const gameState = {
     heistQueue: [], // { playerId, playerName, level, joinedAt }
     // Crews — player-created social groups
     crews: new Map(), // crewId -> { id, name, tag, motto, emblem, leader, officers[], members[], createdAt }
+    // Chat channels (crew/alliance)
+    crewChats: new Map(),      // crewId -> messages[] (last 50)
+    allianceChats: new Map(),  // allianceId -> messages[] (last 50)
     // Player gambling tables
     gamblingTables: new Map(), // tableId -> { id, type, hostId, hostName, guestId, guestName, bet, state, gameData, createdAt }
     // Seasonal events
@@ -1100,6 +1103,22 @@ function handleClientMessage(clientId, message, ws) {
             break;
         case 'crew_update':
             handleCrewUpdate(clientId, message);
+            break;
+
+        // Heist role selection
+        case 'heist_set_role':
+            handleHeistSetRole(clientId, message);
+            break;
+
+        // Chat channels
+        case 'crew_chat':
+            handleCrewChat(clientId, message);
+            break;
+        case 'alliance_chat':
+            handleAllianceChat(clientId, message);
+            break;
+        case 'private_chat':
+            handlePrivateChat(clientId, message);
             break;
 
         // Player gambling
@@ -1704,6 +1723,8 @@ function handleHeistCreate(clientId, message) {
         organizer: player.name,
         organizerId: clientId,
         participants: [clientId],
+        roles: {},  // playerId -> role (driver/hacker/muscle/lookout)
+        open: message.open !== false, // default open unless explicitly private
         maxParticipants: message.maxParticipants || 4,
         minCrew: message.minCrew || 1,
         difficulty: message.difficulty || 'Medium',
@@ -1712,6 +1733,10 @@ function handleHeistCreate(clientId, message) {
         district: message.district,
         createdAt: Date.now()
     };
+    // Set organizer's chosen role
+    if (message.role && ['driver','hacker','muscle','lookout'].includes(message.role)) {
+        heist.roles[clientId] = message.role;
+    }
     
     gameState.activeHeists.push(heist);
     
@@ -1736,9 +1761,20 @@ function handleHeistJoin(clientId, message) {
     
     const heist = gameState.activeHeists.find(h => h.id === message.heistId);
     if (!heist) return;
+
+    // Check if heist is open or player was invited
+    if (!heist.open && !heist.participants.includes(clientId)) {
+        const ws = clients.get(clientId);
+        if (ws) ws.send(JSON.stringify({ type: 'system_message', message: 'This heist is invite-only.', color: '#e74c3c' }));
+        return;
+    }
     
     if (heist.participants.length < heist.maxParticipants && !heist.participants.includes(clientId)) {
         heist.participants.push(clientId);
+        // Set role if provided
+        if (message.role && ['driver','hacker','muscle','lookout'].includes(message.role)) {
+            heist.roles[clientId] = message.role;
+        }
         
         console.log(` ${player.name} joined heist: ${heist.target}`);
         
@@ -2013,6 +2049,119 @@ function handleHeistInvite(clientId, message) {
             reward: heist.reward,
             difficulty: heist.difficulty
         }));
+    }
+}
+
+// Heist set role handler — change your role in a heist
+function handleHeistSetRole(clientId, message) {
+    const heist = gameState.activeHeists.find(h => h.id === message.heistId);
+    if (!heist) return;
+    if (!heist.participants.includes(clientId)) return;
+    const validRoles = ['driver','hacker','muscle','lookout'];
+    if (!message.role || !validRoles.includes(message.role)) return;
+    if (!heist.roles) heist.roles = {};
+    heist.roles[clientId] = message.role;
+    const player = gameState.players.get(clientId);
+    broadcastToAll({
+        type: 'heist_update',
+        heist: heist,
+        action: 'role_changed',
+        playerName: player ? player.name : 'Unknown'
+    });
+}
+
+// ==================== CREW / ALLIANCE / PRIVATE CHAT ====================
+
+function handleCrewChat(clientId, message) {
+    const player = gameState.players.get(clientId);
+    if (!player) return;
+    if (!checkRateLimit(clientId)) return;
+    let text = (message.message || '').replace(/<[^>]*>/g, '').substring(0, 200);
+    if (!text || isProfane(text)) return;
+
+    // Find player's crew
+    let playerCrew = null;
+    for (const [, c] of gameState.crews) {
+        if (c.members.find(m => m.name === player.name)) { playerCrew = c; break; }
+    }
+    if (!playerCrew) return;
+
+    const chatMsg = { playerId: clientId, playerName: player.name, message: text, timestamp: Date.now() };
+    // Store in crew chat history
+    if (!gameState.crewChats.has(playerCrew.id)) gameState.crewChats.set(playerCrew.id, []);
+    const history = gameState.crewChats.get(playerCrew.id);
+    history.push(chatMsg);
+    if (history.length > 50) history.splice(0, history.length - 50);
+
+    // Send to all online crew members
+    for (const member of playerCrew.members) {
+        const ws = clients.get(member.playerId);
+        if (ws && ws.readyState === 1) {
+            ws.send(JSON.stringify({ type: 'crew_chat', ...chatMsg }));
+        }
+    }
+}
+
+function handleAllianceChat(clientId, message) {
+    const player = gameState.players.get(clientId);
+    if (!player) return;
+    if (!checkRateLimit(clientId)) return;
+    let text = (message.message || '').replace(/<[^>]*>/g, '').substring(0, 200);
+    if (!text || isProfane(text)) return;
+
+    const alliance = findPlayerAlliance(clientId);
+    if (!alliance) return;
+
+    const chatMsg = { playerId: clientId, playerName: player.name, message: text, timestamp: Date.now() };
+    // Store in alliance chat history
+    if (!gameState.allianceChats.has(alliance.id)) gameState.allianceChats.set(alliance.id, []);
+    const history = gameState.allianceChats.get(alliance.id);
+    history.push(chatMsg);
+    if (history.length > 50) history.splice(0, history.length - 50);
+
+    // Send to all online alliance members
+    for (const memberId of alliance.members) {
+        const ws = clients.get(memberId);
+        if (ws && ws.readyState === 1) {
+            ws.send(JSON.stringify({ type: 'alliance_chat', ...chatMsg }));
+        }
+    }
+}
+
+function handlePrivateChat(clientId, message) {
+    const player = gameState.players.get(clientId);
+    if (!player) return;
+    if (!checkRateLimit(clientId)) return;
+    let text = (message.message || '').replace(/<[^>]*>/g, '').substring(0, 200);
+    if (!text || isProfane(text)) return;
+
+    const targetName = (message.targetName || '').trim();
+    if (!targetName) return;
+    let targetId = null;
+    for (const [id, p] of gameState.players) {
+        if (p.name === targetName) { targetId = id; break; }
+    }
+    if (!targetId) {
+        const ws = clients.get(clientId);
+        if (ws) ws.send(JSON.stringify({ type: 'system_message', message: 'Player not found online.', color: '#e74c3c' }));
+        return;
+    }
+
+    // Check if sender is blocked by target
+    const targetPlayer = gameState.players.get(targetId);
+    if (targetPlayer && targetPlayer.blockedPlayers && targetPlayer.blockedPlayers.includes(player.name)) return;
+
+    const chatMsg = { fromId: clientId, fromName: player.name, toId: targetId, toName: targetName, message: text, timestamp: Date.now() };
+
+    // Send to target
+    const targetWs = clients.get(targetId);
+    if (targetWs && targetWs.readyState === 1) {
+        targetWs.send(JSON.stringify({ type: 'private_chat', ...chatMsg }));
+    }
+    // Echo back to sender so they see their own message
+    const senderWs = clients.get(clientId);
+    if (senderWs && senderWs.readyState === 1) {
+        senderWs.send(JSON.stringify({ type: 'private_chat', ...chatMsg }));
     }
 }
 
@@ -2747,9 +2896,31 @@ function executeHeist(heist) {
     const baseSuccess = (heist.successBase || 60) / 100;
     // Crew size bonus: +5% per extra member beyond 1
     const crewBonus = (heist.participants.length - 1) * 0.05;
-    const successChance = Math.min(baseSuccess + crewBonus, 0.95);
+
+    // Role bonuses
+    const roles = heist.roles || {};
+    const roleList = Object.values(roles);
+    let roleSuccessBonus = 0;
+    let roleRewardBonus = 0;     // multiplier added to reward (muscle)
+    let roleRepLossReduction = 0; // fraction to reduce rep loss on failure
+    if (roleList.includes('driver'))  roleSuccessBonus += 0.05;
+    if (roleList.includes('hacker'))  roleSuccessBonus += 0.08;
+    if (roleList.includes('muscle'))  { roleSuccessBonus += 0.05; roleRewardBonus += 0.15; }
+    if (roleList.includes('lookout')) { roleSuccessBonus += 0.05; roleRepLossReduction += 0.50; }
+    // Balanced crew bonus: all 4 roles present
+    const uniqueRoles = new Set(roleList);
+    if (uniqueRoles.size >= 4) roleSuccessBonus += 0.10;
+
+    const successChance = Math.min(baseSuccess + crewBonus + roleSuccessBonus, 0.95);
     const success = Math.random() < successChance;
     
+    // Build role summary for results
+    const participantRoles = {};
+    heist.participants.forEach(pid => {
+        const p = gameState.players.get(pid);
+        participantRoles[pid] = { name: p ? p.name : 'Unknown', role: roles[pid] || 'none' };
+    });
+
     // Get participant names for the world message
     const participantNames = heist.participants.map(pid => {
         const p = gameState.players.get(pid);
@@ -2759,7 +2930,9 @@ function executeHeist(heist) {
     if (success) {
         // Apply Top Don heist bonus policy
         const heistBonusMod = gameState.politics.policies.heistBonus || 0;
-        const effectiveReward = heistBonusMod > 0 ? Math.floor(heist.reward * (1 + heistBonusMod / 100)) : heist.reward;
+        let effectiveReward = heistBonusMod > 0 ? Math.floor(heist.reward * (1 + heistBonusMod / 100)) : heist.reward;
+        // Muscle role reward bonus
+        if (roleRewardBonus > 0) effectiveReward = Math.floor(effectiveReward * (1 + roleRewardBonus));
         const rewardPerPlayer = Math.floor(effectiveReward / heist.participants.length);
         const repGain = Math.floor(10 + (heist.reward / 100000) * 5);
         
@@ -2782,6 +2955,7 @@ function executeHeist(heist) {
                     repGain: repGain,
                     target: heist.target,
                     crewSize: heist.participants.length,
+                    roles: participantRoles,
                     worldMessage: ` Heist on ${heist.target} was successful! Crew: ${participantNames}`
                 }));
             }
@@ -2802,7 +2976,9 @@ function executeHeist(heist) {
         scheduleWorldSave();
     } else {
         // Failed heist — reputation loss and possible heat
-        const repLoss = Math.floor(5 + (heist.reward / 200000) * 3);
+        let repLoss = Math.floor(5 + (heist.reward / 200000) * 3);
+        // Lookout reduces rep loss
+        if (roleRepLossReduction > 0) repLoss = Math.max(1, Math.floor(repLoss * (1 - roleRepLossReduction)));
         
         heist.participants.forEach(participantId => {
             const participant = gameState.players.get(participantId);
@@ -2821,6 +2997,7 @@ function executeHeist(heist) {
                     repLoss: repLoss,
                     target: heist.target,
                     crewSize: heist.participants.length,
+                    roles: participantRoles,
                     worldMessage: ` Heist on ${heist.target} failed! The crew barely escaped.`
                 }));
             }
