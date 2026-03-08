@@ -1144,6 +1144,10 @@ function connectToOnlineWorld() {
     if (onlineWorldState.isConnected) {
         return;
     }
+    // Don't reconnect if session was blocked (duplicate login)
+    if (onlineWorldState.connectionStatus === 'blocked') {
+        return;
+    }
     
     onlineWorldState.connectionStatus = 'connecting';
     updateConnectionStatus();
@@ -1174,6 +1178,7 @@ function connectToOnlineWorld() {
                 type: 'player_connect',
                 playerId: onlineWorldState.playerId,
                 playerName: playerName, // Use saved name or default
+                authToken: localStorage.getItem('mb_auth_token') || null,
                 playerStats: {
                     money: player.money,
                     reputation: player.reputation,
@@ -1251,6 +1256,36 @@ function connectToLocalDemo() {
 // Handle messages from the server
 async function handleServerMessage(message) {
     switch(message.type) {
+        case 'session_blocked':
+            // Another active session exists for this account — stop reconnecting
+            onlineWorldState.connectionStatus = 'blocked';
+            onlineWorldState.isConnected = false;
+            if (onlineWorldState.socket) {
+                try { onlineWorldState.socket.onclose = null; } catch(_) {} // prevent auto-reconnect
+                try { onlineWorldState.socket.close(); } catch(_) {}
+                onlineWorldState.socket = null;
+            }
+            updateConnectionStatus();
+            if (typeof showBriefNotification === 'function') {
+                showBriefNotification(message.message || 'Account already logged in on another session.', 'error');
+            }
+            _safeLogAction(message.message || 'Session blocked: account is active in another window.', 'chat');
+            // Show a modal so it's unmissable
+            const blockedOverlay = document.createElement('div');
+            blockedOverlay.className = 'popup-overlay';
+            blockedOverlay.id = 'session-blocked-modal';
+            blockedOverlay.innerHTML = `
+                <div class="popup-card popup-danger" style="max-width:420px;">
+                    <h2 class="popup-title" style="color:#e74c3c;">Session Already Active</h2>
+                    <p style="color:#d4c4a0;margin:15px 0;">This account is already playing in another browser tab or window. Only one session per account is allowed.</p>
+                    <p style="color:#888;font-size:0.9em;">Close the other session first, then refresh this page to connect.</p>
+                    <div class="popup-actions" style="margin-top:20px;">
+                        <button onclick="location.reload()" class="popup-btn popup-btn-danger">Refresh Page</button>
+                    </div>
+                </div>`;
+            document.body.appendChild(blockedOverlay);
+            return;
+
         case 'world_update':
             onlineWorldState.serverInfo.playerCount = message.playerCount;
             onlineWorldState.lastUpdate = new Date().toLocaleTimeString();

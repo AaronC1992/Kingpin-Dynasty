@@ -17413,8 +17413,18 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = "1.25.1";
+const CURRENT_VERSION = "1.26.0";
 const VERSION_UPDATES = {
+  "1.26.0": {
+    title: "Duplicate Session Prevention",
+    date: "March 2026",
+    changes: [
+      "Only one game session per account is now allowed at a time",
+      "Opening a second tab or window with the same login will be blocked with a clear message",
+      "Auth token is now sent with WebSocket connections for proper session enforcement",
+      "Reconnect after a dropped connection no longer spams 'joined the underworld' in global chat",
+    ]
+  },
   "1.25.1": {
     title: "Equipment Visibility & Driver Vehicle Bonus",
     date: "June 2025",

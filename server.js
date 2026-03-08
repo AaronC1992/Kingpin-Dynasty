@@ -1178,11 +1178,61 @@ function handlePlayerConnect(clientId, message, ws) {
     // Sanitize and enforce uniqueness on desired name
     const desiredName = sanitizePlayerName(message.playerName || `Player_${clientId.slice(-4)}`);
 
-    // ── Stale-connection cleanup ──────────────────────────────────
+    // ── Authenticated session enforcement ─────────────────────────
+    // If the client sends an auth token, validate it and enforce
+    // one-session-per-account: block if the account is already active
+    // on a live WebSocket connection.
+    const authToken = typeof message.authToken === 'string' ? message.authToken : null;
+    const authenticatedUser = authToken ? userDB.validateToken(authToken) : null;
+    const sess = sessions.get(ws);
+
+    if (authenticatedUser) {
+        if (sess) sess.authenticatedUser = authenticatedUser;
+
+        // Check if this authenticated user already has an active connection
+        for (const [existingId, existingPlayer] of gameState.players.entries()) {
+            if (existingId === clientId) continue;
+            const existingSess = sessions.get(clients.get(existingId));
+            if (existingSess && existingSess.authenticatedUser === authenticatedUser) {
+                const oldWs = clients.get(existingId);
+                const oldAlive = oldWs && oldWs.readyState === 1; // WebSocket.OPEN
+                if (oldAlive) {
+                    // Old connection is still live — block this new one
+                    ws.send(JSON.stringify({
+                        type: 'session_blocked',
+                        message: `This account is already logged in on another session. Close the other tab or window first.`
+                    }));
+                    console.log(` Blocked duplicate session for "${authenticatedUser}" (existing: ${existingId}, blocked: ${clientId})`);
+                    try { ws.close(); } catch (_) {}
+                    clients.delete(clientId);
+                    sessions.delete(ws);
+                    return;
+                }
+                // Old connection is dead/closing — evict it and let this one in
+                if (oldWs) {
+                    try { oldWs.close(); } catch (_) {}
+                    clients.delete(existingId);
+                    sessions.delete(oldWs);
+                }
+                if (existingPlayer.currentTerritory && gameState.territories[existingPlayer.currentTerritory]) {
+                    const residents = gameState.territories[existingPlayer.currentTerritory].residents;
+                    const idx = residents.indexOf(existingPlayer.name);
+                    if (idx !== -1) residents.splice(idx, 1);
+                }
+                gameState.players.delete(existingId);
+                gameState.playerStates.delete(existingId);
+                console.log(` Evicted dead session for "${authenticatedUser}" (old: ${existingId})`);
+                break;
+            }
+        }
+    }
+
+    // ── Stale-connection cleanup (name-based, for unauthenticated or fallback) ──
     // On mobile, minimizing the app may open a new WebSocket before the old one
     // has fully closed.  If a player with the exact same name already exists under
     // a *different* clientId, evict that ghost entry so the reconnecting player
     // gets their real name instead of "Name#2".
+    let wasReconnect = false;
     for (const [existingId, existingPlayer] of gameState.players.entries()) {
         if (existingId !== clientId && existingPlayer.name === desiredName) {
             const oldWs = clients.get(existingId);
@@ -1200,6 +1250,7 @@ function handlePlayerConnect(clientId, message, ws) {
             }
             gameState.players.delete(existingId);
             gameState.playerStates.delete(existingId);
+            wasReconnect = true;
             console.log(` Evicted stale connection for "${desiredName}" (old ID: ${existingId})`);
             break; // only one ghost expected
         }
@@ -1207,7 +1258,6 @@ function handlePlayerConnect(clientId, message, ws) {
 
     const finalName = ensureUniqueName(desiredName);
     // Persist on session for reference
-    const sess = sessions.get(ws);
     if (sess) sess.playerName = finalName;
 
     const player = {
@@ -1288,8 +1338,10 @@ function handlePlayerConnect(clientId, message, ws) {
     // Broadcast updated player states
     broadcastPlayerStates();
     
-    // Add join message to global chat
-    addGlobalChatMessage('System', `${player.name} joined the criminal underworld!`, '#f39c12');
+    // Add join message to global chat (skip on reconnects to avoid spam)
+    if (!wasReconnect) {
+        addGlobalChatMessage('System', `${player.name} joined the criminal underworld!`, '#f39c12');
+    }
 }
 
 // Global chat handler
