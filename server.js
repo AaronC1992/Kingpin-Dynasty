@@ -3,6 +3,7 @@ const WebSocket = require('ws');
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const nodemailer = require('nodemailer');
 // JSON file persistence utilities
 const { loadWorldState, saveWorldState, flushWorldState } = require('./worldPersistence');
 // MongoDB connection
@@ -275,6 +276,43 @@ const server = http.createServer(async (req, res) => {
                 await userDB.destroySession(token);
                 await userDB.deleteUser(username);
                 return json(200, { ok: true });
+            }
+
+            // ── POST /api/report (bug/suggestion email) ─────────
+            if (urlPath === '/api/report' && req.method === 'POST') {
+                const clientIP = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket.remoteAddress;
+                if (!checkAuthRateLimit(clientIP)) return json(429, { error: 'Too many attempts. Please wait a minute.' });
+                const { type, description, playerName } = await readBody();
+                if (!description || typeof description !== 'string' || description.trim().length < 10) {
+                    return json(400, { error: 'Please provide a description (at least 10 characters).' });
+                }
+                const safeType = ['bug', 'suggestion', 'other'].includes(type) ? type : 'other';
+                const safeDesc = description.trim().slice(0, 5000);
+                const safeName = (playerName || 'Unknown').slice(0, 50);
+
+                const smtpUser = process.env.SMTP_USER;
+                const smtpPass = process.env.SMTP_PASS;
+                if (!smtpUser || !smtpPass) {
+                    console.error('Bug report received but SMTP_USER / SMTP_PASS env vars not set.');
+                    return json(500, { error: 'Email service not configured on server.' });
+                }
+
+                try {
+                    const transporter = nodemailer.createTransport({
+                        service: 'gmail',
+                        auth: { user: smtpUser, pass: smtpPass }
+                    });
+                    await transporter.sendMail({
+                        from: `"Mafia Born Reports" <${smtpUser}>`,
+                        to: 'aaroncue92@gmail.com',
+                        subject: `[Mafia Born] ${safeType.charAt(0).toUpperCase() + safeType.slice(1)} from ${safeName}`,
+                        text: `Type: ${safeType}\nPlayer: ${safeName}\nDate: ${new Date().toISOString()}\n\n${safeDesc}`,
+                    });
+                    return json(200, { ok: true });
+                } catch (mailErr) {
+                    console.error('Failed to send bug report email:', mailErr.message);
+                    return json(500, { error: 'Failed to send email. Please try again later.' });
+                }
             }
 
             // Unknown API route

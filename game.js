@@ -18063,7 +18063,7 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = '1.31.0';
+const CURRENT_VERSION = '1.32.0';
 const VERSION_UPDATES = {
   '1.30.0': {
     title: 'Server-Only Saves',
@@ -21440,6 +21440,115 @@ async function loadGameFromIntro() {
 }
 
 // Burn Records modal - asks the player to reset profile or delete everything
+function showBugReportModal() {
+  const overlay = document.createElement('div');
+  overlay.id = 'bug-report-overlay';
+  overlay.style.cssText = `
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.95); display: flex; align-items: center;
+    justify-content: center; z-index: 1000; padding: 20px; box-sizing: border-box;
+  `;
+
+  overlay.innerHTML = `
+    <div style="max-width: 520px; width: 100%; background: linear-gradient(135deg, rgba(20, 18, 10, 0.98), rgba(10, 15, 30, 0.98));
+          padding: 40px; border-radius: 20px; border: 2px solid #5b8dd9; box-shadow: 0 20px 50px rgba(0,0,0,0.8); text-align: center; color: white;">
+      <h2 style="color: #5b8dd9; font-size: 1.8em; margin: 0 0 10px 0;">Report Bug / Suggestion</h2>
+      <p style="color: #d4c4a0; margin-bottom: 20px; font-style: italic; font-size: 0.9em;">
+        Found a problem or have an idea? Let us know.
+      </p>
+
+      <select id="bug-report-type" style="display: block; width: 100%; padding: 12px; margin-bottom: 15px;
+        background: rgba(20, 18, 10, 0.9); border: 1px solid #5b8dd9; border-radius: 8px;
+        color: #d4c4a0; font-size: 1em; cursor: pointer;">
+        <option value="bug">Bug Report</option>
+        <option value="suggestion">Suggestion</option>
+        <option value="other">Other</option>
+      </select>
+
+      <textarea id="bug-report-text" placeholder="Describe the bug or your suggestion in detail..." rows="6"
+        style="display: block; width: 100%; padding: 12px; margin-bottom: 15px; background: rgba(20, 18, 10, 0.9);
+        border: 1px solid #5b8dd9; border-radius: 8px; color: #d4c4a0; font-size: 1em;
+        resize: vertical; min-height: 120px; box-sizing: border-box; font-family: inherit;"></textarea>
+
+      <p id="bug-report-status" style="color: #8a9a6a; margin-bottom: 15px; min-height: 1.2em; font-size: 0.9em;"></p>
+
+      <div style="display: flex; gap: 10px;">
+        <button id="bug-report-cancel-btn" style="flex: 1; padding: 14px; background: linear-gradient(to bottom, #2a2a2a, #1a1a1a);
+          border: 2px solid #666; border-radius: 10px; color: #999; font-size: 1em; cursor: pointer;"
+          >Cancel</button>
+        <button id="bug-report-send-btn" style="flex: 1; padding: 14px; background: linear-gradient(to bottom, #1a2a4a, #0a1020);
+          border: 2px solid #5b8dd9; border-radius: 10px; color: #5b8dd9; font-size: 1em; cursor: pointer; font-weight: bold;"
+          >Send Report</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  overlay.querySelector('#bug-report-cancel-btn').onclick = () => overlay.remove();
+  overlay.querySelector('#bug-report-send-btn').onclick = async () => {
+    const reportType = overlay.querySelector('#bug-report-type').value;
+    const description = overlay.querySelector('#bug-report-text').value.trim();
+    const statusEl = overlay.querySelector('#bug-report-status');
+    const sendBtn = overlay.querySelector('#bug-report-send-btn');
+
+    if (!description) {
+      statusEl.style.color = '#8b3a3a';
+      statusEl.textContent = 'Please enter a description.';
+      return;
+    }
+    if (description.length < 10) {
+      statusEl.style.color = '#8b3a3a';
+      statusEl.textContent = 'Please provide more detail (at least 10 characters).';
+      return;
+    }
+
+    sendBtn.disabled = true;
+    sendBtn.textContent = 'Sending...';
+    statusEl.style.color = '#c0a062';
+    statusEl.textContent = 'Sending your report...';
+
+    let apiBase;
+    try {
+      if (window.__MULTIPLAYER_SERVER_URL__) {
+        apiBase = window.__MULTIPLAYER_SERVER_URL__.replace(/^ws/, 'http').replace(/\/$/, '');
+      } else {
+        const h = window.location.hostname;
+        apiBase = (h === 'localhost' || h === '127.0.0.1') ? 'http://localhost:3000' : 'https://mafia-born.onrender.com';
+      }
+    } catch { apiBase = 'https://mafia-born.onrender.com'; }
+
+    try {
+      const playerName = (typeof player !== 'undefined' && player.name) ? player.name : 'Unknown';
+      const resp = await fetch(`${apiBase}/api/report`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: reportType, description, playerName })
+      });
+      const data = await resp.json();
+      if (resp.ok && data.ok) {
+        statusEl.style.color = '#8a9a6a';
+        statusEl.textContent = 'Report sent -- thank you!';
+        sendBtn.textContent = 'Sent';
+        setTimeout(() => overlay.remove(), 1500);
+      } else {
+        throw new Error(data.error || 'Failed to send report');
+      }
+    } catch (err) {
+      statusEl.style.color = '#8b3a3a';
+      statusEl.textContent = err.message || 'Failed to send. Please try again.';
+      sendBtn.disabled = false;
+      sendBtn.textContent = 'Send Report';
+    }
+  };
+
+  // Close on backdrop click
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.remove();
+  });
+}
+window.showBugReportModal = showBugReportModal;
+
 async function showBurnRecordsModal() {
   const auth = getAuthState();
 
@@ -24472,6 +24581,8 @@ function startLoadingSequence() {
         console.log('[loading] Server not ready, retrying in 3s...', err.message);
         if (stepsComplete) {
           loadingText.textContent = 'Waking up the server...';
+          const serverNote = document.getElementById('loading-server-note');
+          if (serverNote) serverNote.style.display = 'block';
         }
         setTimeout(pingServer, 3000);
       });
@@ -24505,7 +24616,7 @@ function startLoadingSequence() {
     if (currentStep < loadingSteps.length) {
       const step = loadingSteps[currentStep];
       loadingText.textContent = step.text;
-      progress = Math.round(((currentStep + 1) / loadingSteps.length) * 100);
+      progress = Math.min(99, Math.round(((currentStep + 1) / loadingSteps.length) * 100));
       loadingProgress.style.width = progress + '%';
       loadingPercentage.textContent = progress + '%';
 
@@ -24519,10 +24630,12 @@ function startLoadingSequence() {
       if (serverReady) {
         finishLoading();
       } else {
-        // Keep loading screen up while server wakes
-        loadingText.textContent = 'Waking up the server...';
-        loadingProgress.style.width = '100%';
-        loadingPercentage.textContent = '100%';
+        // Keep loading screen up while server wakes -- hold at 99%
+        loadingText.textContent = 'Contacting the server...';
+        loadingProgress.style.width = '99%';
+        loadingPercentage.textContent = '99%';
+        const serverNote = document.getElementById('loading-server-note');
+        if (serverNote) serverNote.style.display = 'block';
         // finishLoading() will be called by pingServer once it succeeds
       }
     }
