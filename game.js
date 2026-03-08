@@ -8525,12 +8525,7 @@ function updateUI() {
     const tier = getReputationTier(player.reputation);
     document.getElementById("level-display").innerText = `Rank: ${tier.name}`;
   }
-  if (document.getElementById("experience-display")) {
-    const next = getNextTier(player.reputation);
-    document.getElementById("experience-display").innerText = next
-      ? `Rep: ${Math.floor(player.reputation)}/${next.minRep}`
-      : `Rep: ${Math.floor(player.reputation)} (Max)`;
-  }
+
   if (document.getElementById("skill-points-display")) {
     if (player.activeTraining) {
       const t = player.activeTraining;
@@ -8582,7 +8577,10 @@ function updateUI() {
   }
   const reputationDisplay = document.getElementById("reputation-display");
   if (reputationDisplay) {
-    reputationDisplay.innerText = `Rep: ${Math.floor(player.reputation || 0)}`;
+    const next = getNextTier(player.reputation);
+    reputationDisplay.innerText = next
+      ? `Respect: ${Math.floor(player.reputation)}/${next.minRep}`
+      : `Respect: ${Math.floor(player.reputation)} (Max)`;
   }
   const jailStatusDisplay = document.getElementById("jail-status-display");
   if (jailStatusDisplay) {
@@ -9392,7 +9390,7 @@ const STAT_BAR_ITEMS = [
   'money-display', 'health-display',
   'wanted-level-display', 'level-display', 'dirty-money-display',
   'power-display', 'territory-display',
-  'current-territory-display', 'experience-display', 'skill-points-display',
+  'current-territory-display', 'skill-points-display',
   'season-display', 'weather-display', 'ammo-display', 'gas-display',
   'reputation-display', 'jail-status-display', 'family-rank-display'
 ];

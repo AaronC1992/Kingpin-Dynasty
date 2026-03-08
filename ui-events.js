@@ -40,7 +40,7 @@ export function initUIEvents() {
 
     EventBus.on('reputationChanged', ({ oldValue, newValue }) => {
         const el = document.getElementById('reputation-display');
-        if (el) el.innerText = `Reputation: ${newValue}`;
+        if (el) el.innerText = `Respect: ${newValue}`;
     });
 
     EventBus.on('jailStatusChanged', ({ inJail, jailTime }) => {
