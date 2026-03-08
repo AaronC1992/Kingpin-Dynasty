@@ -25074,7 +25074,6 @@ window.fireGangMember = fireGangMember;
 window.startTraining = startTraining;
 window.hireSpecialRecruit = hireSpecialRecruit;
 window.showGangManagementScreen = showGangManagementScreen;
-window.deleteGameSlot = deleteGameSlot;
 
 // Skills & Progression (Unified RPG Skill Tree)
 window.showSkills = showSkills;
