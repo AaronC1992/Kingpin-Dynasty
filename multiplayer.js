@@ -3150,12 +3150,23 @@ function generateChatHTML() {
     
     return onlineWorldState.globalChat.map(msg => {
         const isDeathAnnouncement = msg.player === 'The Daily Racketeer' && msg.message.includes('EXTRA!');
+        const isArrestAnnouncement = msg.player === 'The Daily Racketeer' && msg.message.includes('ARRESTED!');
+        if (isArrestAnnouncement) {
+            return `
+                <div onclick="_showReceivedJailNewspaper()" style="margin: 8px 0; padding: 10px; background: rgba(30, 26, 16, 0.6); border-radius: 2px; border: 1px solid #8b7355; border-left: 3px solid #8b0000; cursor: pointer;">
+                    <div style="font-family: var(--font-heading); color: #c0a040; font-size: 1.05em; letter-spacing: 1px;">THE DAILY RACKETEER</div>
+                    <div style="color: #f5e6c8; margin: 4px 0;">${escapeHTML(msg.message.replace(/ — Click to read the headlines!/, ''))}</div>
+                    <div class="newspaper-chat-link" style="margin-top: 4px;">Click to read the headlines</div>
+                    <small style="color: #8a7a5a; float: right;">${msg.time}</small>
+                </div>
+            `;
+        }
         if (isDeathAnnouncement) {
             return `
                 <div onclick="_showReceivedDeathNewspaper()" style="margin: 8px 0; padding: 10px; background: rgba(30, 26, 16, 0.6); border-radius: 2px; border: 1px solid #8b7355; border-left: 3px solid #c0a040; cursor: pointer;">
                     <div style="font-family: var(--font-heading); color: #c0a040; font-size: 1.05em; letter-spacing: 1px;">THE DAILY RACKETEER</div>
                     <div style="color: #f5e6c8; margin: 4px 0;">${escapeHTML(msg.message)}</div>
-                    <div class="newspaper-chat-link" style="margin-top: 4px;">&#128240; Click to read the full obituary</div>
+                    <div class="newspaper-chat-link" style="margin-top: 4px;">Click to read the full obituary</div>
                     <small style="color: #8a7a5a; float: right;">${msg.time}</small>
                 </div>
             `;
@@ -3400,7 +3411,17 @@ function renderChatChannelContent(channel) {
         return `
             <h4 style="color:#c0a062;margin:0 0 10px 0;font-family:'Georgia',serif;">The Wire</h4>
             <div class="channel-messages" style="max-height:220px;overflow-y:auto;background:rgba(20,20,20,0.8);padding:10px;border-radius:5px;border:1px solid #444;margin-bottom:10px;">
-                ${msgs.length ? msgs.map(m => `<div style="margin:4px 0;font-size:0.9em;"><strong style="color:${sanitizeColor(m.color,'#c0a062')};">${escapeHTML(m.player)}:</strong> ${escapeHTML(m.message)} <small style="color:#8a7a5a;float:right;">${m.time}</small></div>`).join('') : '<p style="color:#8a7a5a;text-align:center;">No messages yet.</p>'}
+                ${msgs.length ? msgs.map(m => {
+                    const isArrest = m.player === 'The Daily Racketeer' && m.message.includes('ARRESTED!');
+                    const isDeath = m.player === 'The Daily Racketeer' && m.message.includes('EXTRA!');
+                    if (isArrest) {
+                        return `<div onclick="_showReceivedJailNewspaper()" style="margin:8px 0;padding:10px;background:rgba(30,26,16,0.6);border-radius:2px;border:1px solid #8b7355;border-left:3px solid #8b0000;cursor:pointer;"><div style="font-family:var(--font-heading);color:#c0a040;font-size:1.05em;letter-spacing:1px;">THE DAILY RACKETEER</div><div style="color:#f5e6c8;margin:4px 0;">${escapeHTML(m.message.replace(/ — Click to read the headlines!/, ''))}</div><div class="newspaper-chat-link" style="margin-top:4px;">Click to read the headlines</div><small style="color:#8a7a5a;float:right;">${m.time}</small></div>`;
+                    }
+                    if (isDeath) {
+                        return `<div onclick="_showReceivedDeathNewspaper()" style="margin:8px 0;padding:10px;background:rgba(30,26,16,0.6);border-radius:2px;border:1px solid #8b7355;border-left:3px solid #c0a040;cursor:pointer;"><div style="font-family:var(--font-heading);color:#c0a040;font-size:1.05em;letter-spacing:1px;">THE DAILY RACKETEER</div><div style="color:#f5e6c8;margin:4px 0;">${escapeHTML(m.message)}</div><div class="newspaper-chat-link" style="margin-top:4px;">Click to read the full obituary</div><small style="color:#8a7a5a;float:right;">${m.time}</small></div>`;
+                    }
+                    return `<div style="margin:4px 0;font-size:0.9em;"><strong style="color:${sanitizeColor(m.color,'#c0a062')};">${escapeHTML(m.player)}:</strong> ${escapeHTML(m.message)} <small style="color:#8a7a5a;float:right;">${m.time}</small></div>`;
+                }).join('') : '<p style="color:#8a7a5a;text-align:center;">No messages yet.</p>'}
             </div>
             <div style="display:flex;gap:8px;">
                 <input type="text" id="channel-chat-input" placeholder="Speak to the family..." maxlength="200"
