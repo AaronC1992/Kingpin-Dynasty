@@ -21520,11 +21520,15 @@ function showBugReportModal() {
 
     try {
       const playerName = (typeof player !== 'undefined' && player.name) ? player.name : 'Unknown';
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000);
       const resp = await fetch(`${apiBase}/api/report`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: reportType, description, playerName })
+        body: JSON.stringify({ type: reportType, description, playerName }),
+        signal: controller.signal
       });
+      clearTimeout(timeout);
       const data = await resp.json();
       if (resp.ok && data.ok) {
         statusEl.style.color = '#8a9a6a';

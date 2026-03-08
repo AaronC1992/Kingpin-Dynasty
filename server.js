@@ -278,7 +278,7 @@ const server = http.createServer(async (req, res) => {
                 return json(200, { ok: true });
             }
 
-            // ── POST /api/report (bug/suggestion email) ─────────
+            // ── POST /api/report (bug/suggestion) ─────────────
             if (urlPath === '/api/report' && req.method === 'POST') {
                 const clientIP = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket.remoteAddress;
                 if (!checkAuthRateLimit(clientIP)) return json(429, { error: 'Too many attempts. Please wait a minute.' });
@@ -290,29 +290,40 @@ const server = http.createServer(async (req, res) => {
                 const safeDesc = description.trim().slice(0, 5000);
                 const safeName = (playerName || 'Unknown').slice(0, 50);
 
-                const smtpUser = process.env.SMTP_USER;
-                const smtpPass = process.env.SMTP_PASS;
-                if (!smtpUser || !smtpPass) {
-                    console.error('Bug report received but SMTP_USER / SMTP_PASS env vars not set.');
-                    return json(500, { error: 'Email service not configured on server.' });
+                // Save to MongoDB first (always works)
+                try {
+                    const db = mongodb.getDb();
+                    await db.collection('bug_reports').insertOne({
+                        type: safeType,
+                        description: safeDesc,
+                        playerName: safeName,
+                        ip: clientIP,
+                        createdAt: new Date()
+                    });
+                } catch (dbErr) {
+                    console.error('Failed to save bug report to DB:', dbErr.message);
+                    return json(500, { error: 'Failed to save report. Please try again later.' });
                 }
 
-                try {
-                    const transporter = nodemailer.createTransport({
-                        service: 'gmail',
-                        auth: { user: smtpUser, pass: smtpPass }
-                    });
-                    await transporter.sendMail({
-                        from: `"Mafia Born Reports" <${smtpUser}>`,
-                        to: 'aaroncue92@gmail.com',
-                        subject: `[Mafia Born] ${safeType.charAt(0).toUpperCase() + safeType.slice(1)} from ${safeName}`,
-                        text: `Type: ${safeType}\nPlayer: ${safeName}\nDate: ${new Date().toISOString()}\n\n${safeDesc}`,
-                    });
-                    return json(200, { ok: true });
-                } catch (mailErr) {
-                    console.error('Failed to send bug report email:', mailErr.message);
-                    return json(500, { error: 'Failed to send email. Please try again later.' });
+                // Try to email as a bonus (non-blocking, don't fail if email isn't configured)
+                const smtpUser = process.env.SMTP_USER;
+                const smtpPass = process.env.SMTP_PASS;
+                if (smtpUser && smtpPass) {
+                    try {
+                        const transporter = nodemailer.createTransport({
+                            service: 'gmail',
+                            auth: { user: smtpUser, pass: smtpPass }
+                        });
+                        transporter.sendMail({
+                            from: `"Mafia Born Reports" <${smtpUser}>`,
+                            to: 'aaroncue92@gmail.com',
+                            subject: `[Mafia Born] ${safeType.charAt(0).toUpperCase() + safeType.slice(1)} from ${safeName}`,
+                            text: `Type: ${safeType}\nPlayer: ${safeName}\nDate: ${new Date().toISOString()}\n\n${safeDesc}`,
+                        }).catch(e => console.error('Bug report email failed:', e.message));
+                    } catch (e) { /* email is best-effort */ }
                 }
+
+                return json(200, { ok: true });
             }
 
             // Unknown API route
