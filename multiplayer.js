@@ -1390,17 +1390,36 @@ async function handleServerMessage(message) {
                 const messageDiv = document.createElement('div');
                 // Check if this is a death newspaper announcement
                 const isDeathAnnouncement = chatMessage.player === 'The Daily Racketeer' && chatMessage.message.includes('EXTRA!');
-                if (isDeathAnnouncement) {
+                // Check if this is an arrest newspaper announcement
+                const isArrestAnnouncement = chatMessage.player === 'The Daily Racketeer' && chatMessage.message.includes('ARRESTED!');
+                if (isArrestAnnouncement) {
+                    messageDiv.style.cssText = 'margin: 8px 0; padding: 10px; background: rgba(30, 26, 16, 0.6); border-radius: 2px; border: 1px solid #8b7355; border-left: 3px solid #8b0000; cursor: pointer;';
+                    messageDiv.innerHTML = `
+                        <div style="font-family: var(--font-heading); color: #c0a040; font-size: 1.05em; letter-spacing: 1px;">THE DAILY RACKETEER</div>
+                        <div style="color: #f5e6c8; margin: 4px 0;">${escapeHTML(chatMessage.message.replace(/ — Click to read the headlines!/, ''))}</div>
+                        <div class="newspaper-chat-link" style="margin-top: 4px;">Click to read the headlines</div>
+                        <small style="color: #8a7a5a; float: right;">${chatMessage.time}</small>
+                    `;
+                    messageDiv.onclick = function() {
+                        if (lastReceivedJailNewspaper && typeof showJailNewspaper === 'function') {
+                            showJailNewspaper(lastReceivedJailNewspaper);
+                        } else if (typeof window.showLastJailNewspaper === 'function') {
+                            window.showLastJailNewspaper();
+                        }
+                    };
+                } else if (isDeathAnnouncement) {
                     messageDiv.style.cssText = 'margin: 8px 0; padding: 10px; background: rgba(30, 26, 16, 0.6); border-radius: 2px; border: 1px solid #8b7355; border-left: 3px solid #c0a040; cursor: pointer;';
                     messageDiv.innerHTML = `
                         <div style="font-family: var(--font-heading); color: #c0a040; font-size: 1.05em; letter-spacing: 1px;">THE DAILY RACKETEER</div>
-                        <div style="color: #f5e6c8; margin: 4px 0;">${escapeHTML(chatMessage.message)}</div>
-                        <div class="newspaper-chat-link" style="margin-top: 4px;">&#128240; Click to read the full obituary</div>
+                        <div style="color: #f5e6c8; margin: 4px 0;">${escapeHTML(chatMessage.message.replace(/ — Click to read the full story!/, ''))}</div>
+                        <div class="newspaper-chat-link" style="margin-top: 4px;">Click to read the full obituary</div>
                         <small style="color: #8a7a5a; float: right;">${chatMessage.time}</small>
                     `;
                     messageDiv.onclick = function() {
                         if (lastReceivedDeathNewspaper && typeof showDeathNewspaper === 'function') {
                             showDeathNewspaper(lastReceivedDeathNewspaper);
+                        } else if (typeof window.showLastDeathNewspaper === 'function') {
+                            window.showLastDeathNewspaper();
                         }
                     };
                 } else {
@@ -1464,32 +1483,11 @@ async function handleServerMessage(message) {
         }
 
         case 'player_death_newspaper':
-            // Another player died — store the newspaper data and add a clickable entry to chat & ledger
+            // Another player died — store the newspaper data for the clickable chat card
             if (message.newspaperData) {
                 lastReceivedDeathNewspaper = message.newspaperData;
-                // Add to ledger with a special marker so user knows they can click
                 if (typeof logAction === 'function') {
                     _safeLogAction(`EXTRA! EXTRA! ${message.newspaperData.name} is DEAD! "${message.newspaperData.causeOfDeath}" — Click the chat message to read the full obituary!`, 'chat');
-                }
-                // If world chat is open, add a clickable newspaper link
-                const deathChatArea = document.getElementById('global-chat-area');
-                if (deathChatArea) {
-                    const nd = message.newspaperData;
-                    const deathDiv = document.createElement('div');
-                    deathDiv.style.cssText = 'margin: 8px 0; padding: 10px; background: rgba(30, 26, 16, 0.6); border-radius: 2px; border-left: 3px solid #c0a040; border: 1px solid #8b7355; cursor: pointer;';
-                    deathDiv.innerHTML = `
-                        <div style="font-family: var(--font-heading); color: #c0a040; font-size: 1.05em; letter-spacing: 1px;">THE DAILY RACKETEER</div>
-                        <div style="color: #f5e6c8; margin: 4px 0;"><strong>${escapeHTML(nd.name)}</strong> is DEAD!</div>
-                        <div style="color: #8a7a5a; font-style: italic; font-size: 0.9em;">"${escapeHTML(nd.causeOfDeath)}"</div>
-                        <div class="newspaper-chat-link" style="margin-top: 6px;">&#128240; Click to read the full obituary</div>
-                    `;
-                    deathDiv.onclick = function() {
-                        if (typeof showDeathNewspaper === 'function') {
-                            showDeathNewspaper(lastReceivedDeathNewspaper);
-                        }
-                    };
-                    deathChatArea.appendChild(deathDiv);
-                    deathChatArea.scrollTop = deathChatArea.scrollHeight;
                 }
             }
             break;
@@ -1539,30 +1537,11 @@ async function handleServerMessage(message) {
             break;
 
         case 'player_jail_newspaper':
-            // Another player was arrested — store the newspaper data and add a clickable entry to chat & ledger
+            // Another player was arrested — store the newspaper data for the clickable chat card
             if (message.newspaperData) {
                 lastReceivedJailNewspaper = message.newspaperData;
                 if (typeof logAction === 'function') {
                     _safeLogAction(`ARRESTED! ${message.newspaperData.name} has been sent to jail for "${message.newspaperData.crimeName}" — <span class="newspaper-chat-link" onclick="_showReceivedJailNewspaper()">Read the Headlines!</span>`, 'chat');
-                }
-                const jailChatArea = document.getElementById('global-chat-area');
-                if (jailChatArea) {
-                    const nd = message.newspaperData;
-                    const jailDiv = document.createElement('div');
-                    jailDiv.style.cssText = 'margin: 8px 0; padding: 10px; background: rgba(30, 26, 16, 0.6); border-radius: 2px; border-left: 3px solid #8b0000; border: 1px solid #8b7355; cursor: pointer;';
-                    jailDiv.innerHTML = `
-                        <div style="font-family: var(--font-heading); color: #c0a040; font-size: 1.05em; letter-spacing: 1px;">THE DAILY RACKETEER</div>
-                        <div style="color: #f5e6c8; margin: 4px 0;"><strong>${escapeHTML(nd.name)}</strong> has been ARRESTED!</div>
-                        <div style="color: #8a7a5a; font-style: italic; font-size: 0.9em;">"${escapeHTML(nd.crimeName)}" &mdash; ${escapeHTML(nd.riskLevel)} risk</div>
-                        <div class="newspaper-chat-link" style="margin-top: 6px;">Click to read the headlines</div>
-                    `;
-                    jailDiv.onclick = function() {
-                        if (typeof showJailNewspaper === 'function') {
-                            showJailNewspaper(lastReceivedJailNewspaper);
-                        }
-                    };
-                    jailChatArea.appendChild(jailDiv);
-                    jailChatArea.scrollTop = jailChatArea.scrollHeight;
                 }
             }
             break;
