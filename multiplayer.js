@@ -1439,6 +1439,56 @@ async function handleServerMessage(message) {
             }
             break;
 
+        case 'chat_history': {
+            // Restore persisted chat history on login
+            const myName = message.playerName || onlineWorldState.playerId;
+
+            if (Array.isArray(message.crewChat) && message.crewChat.length) {
+                onlineWorldState.crewChat = message.crewChat.map(m => ({
+                    player: m.playerName, message: m.message,
+                    time: new Date(m.timestamp).toLocaleTimeString(), color: '#3498db'
+                }));
+                updateChannelChatDisplay('crew');
+            }
+
+            if (Array.isArray(message.allianceChat) && message.allianceChat.length) {
+                onlineWorldState.allianceChat = message.allianceChat.map(m => ({
+                    player: m.playerName, message: m.message,
+                    time: new Date(m.timestamp).toLocaleTimeString(), color: '#9b59b6'
+                }));
+                updateChannelChatDisplay('alliance');
+            }
+
+            if (message.privateChats && typeof message.privateChats === 'object') {
+                for (const [key, msgs] of Object.entries(message.privateChats)) {
+                    if (!Array.isArray(msgs)) continue;
+                    for (const m of msgs) {
+                        const isMine = m.fromName === myName;
+                        const otherName = isMine ? m.toName : m.fromName;
+                        const pmMsg = {
+                            player: isMine ? 'You' : m.fromName,
+                            message: m.message,
+                            time: new Date(m.timestamp).toLocaleTimeString(),
+                            color: isMine ? '#c0a062' : '#e67e22',
+                            toName: isMine ? m.toName : undefined
+                        };
+                        if (!onlineWorldState.privateChats[otherName]) onlineWorldState.privateChats[otherName] = [];
+                        onlineWorldState.privateChats[otherName].push(pmMsg);
+                        onlineWorldState.privateChatAll.push(pmMsg);
+                    }
+                }
+                // Trim
+                onlineWorldState.privateChatAll = onlineWorldState.privateChatAll.slice(-100);
+                for (const name of Object.keys(onlineWorldState.privateChats)) {
+                    if (onlineWorldState.privateChats[name].length > 50) {
+                        onlineWorldState.privateChats[name] = onlineWorldState.privateChats[name].slice(-50);
+                    }
+                }
+                updateChannelChatDisplay('private');
+            }
+            break;
+        }
+
         case 'crew_chat': {
             const crewMsg = { player: message.playerName, message: message.message, time: new Date(message.timestamp).toLocaleTimeString(), color: '#3498db' };
             onlineWorldState.crewChat.push(crewMsg);

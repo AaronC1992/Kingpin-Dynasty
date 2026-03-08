@@ -553,6 +553,8 @@ const gameState = {
     // Chat channels (crew/alliance)
     crewChats: new Map(),      // crewId -> messages[] (last 50)
     allianceChats: new Map(),  // allianceId -> messages[] (last 50)
+    // Private chat history — keyed by sorted "nameA|nameB" pair so both sides share one log
+    privateChats: new Map(),   // "nameA|nameB" -> messages[] (last 50)
     // Offline death newspapers — queued for crew/alliance members who are offline when a teammate dies
     // Map: playerName -> [ { newspaperData, context, groupName, timestamp } ]
     offlineDeathNewspapers: new Map(),
@@ -648,6 +650,23 @@ try {
         }
     }
 
+    // Load crew, alliance, and private chat history
+    if (persisted.crewChats && typeof persisted.crewChats === 'object') {
+        for (const [id, msgs] of Object.entries(persisted.crewChats)) {
+            if (Array.isArray(msgs)) gameState.crewChats.set(id, msgs);
+        }
+    }
+    if (persisted.allianceChats && typeof persisted.allianceChats === 'object') {
+        for (const [id, msgs] of Object.entries(persisted.allianceChats)) {
+            if (Array.isArray(msgs)) gameState.allianceChats.set(id, msgs);
+        }
+    }
+    if (persisted.privateChats && typeof persisted.privateChats === 'object') {
+        for (const [key, msgs] of Object.entries(persisted.privateChats)) {
+            if (Array.isArray(msgs)) gameState.privateChats.set(key, msgs);
+        }
+    }
+
     // Load unified player market (supports legacy 'marketplace' key)
     if (Array.isArray(persisted.playerMarket)) {
         gameState.playerMarket = persisted.playerMarket;
@@ -723,6 +742,9 @@ function scheduleWorldSave() {
                 bounties: gameState.bounties,
                 playerMarket: gameState.playerMarket,
                 offlineDeathNewspapers: Object.fromEntries(gameState.offlineDeathNewspapers),
+                crewChats: Object.fromEntries(gameState.crewChats),
+                allianceChats: Object.fromEntries(gameState.allianceChats),
+                privateChats: Object.fromEntries(gameState.privateChats),
                 season: {
                     number: gameState.season.number,
                     startedAt: gameState.season.startedAt,
@@ -1330,6 +1352,41 @@ function handlePlayerConnect(clientId, message, ws) {
         season: gameState.currentSeason,
         politics: sanitizePolitics()
     }));
+
+    // Send persisted crew/alliance/private chat history so chats survive logout
+    {
+        const chatHistory = {};
+
+        // Crew chat — find player's crew by name
+        for (const [, c] of gameState.crews) {
+            if (c.members.find(m => m.name === player.name)) {
+                const history = gameState.crewChats.get(c.id);
+                if (history && history.length) chatHistory.crewChat = history.slice(-50);
+                break;
+            }
+        }
+
+        // Alliance chat — find player's alliance by clientId
+        const playerAlliance = findPlayerAlliance(clientId);
+        if (playerAlliance) {
+            const history = gameState.allianceChats.get(playerAlliance.id);
+            if (history && history.length) chatHistory.allianceChat = history.slice(-50);
+        }
+
+        // Private chats — find all conversation keys that include this player's name
+        const pmChats = {};
+        for (const [key, msgs] of gameState.privateChats) {
+            const names = key.split('|');
+            if (names.includes(player.name) && msgs.length) {
+                pmChats[key] = msgs.slice(-50);
+            }
+        }
+        if (Object.keys(pmChats).length) chatHistory.privateChats = pmChats;
+
+        if (Object.keys(chatHistory).length) {
+            ws.send(JSON.stringify({ type: 'chat_history', ...chatHistory, playerName: player.name }));
+        }
+    }
     
     // Send jail roster immediately
     sendJailRoster(clientId, ws);
@@ -2200,6 +2257,7 @@ function handleCrewChat(clientId, message) {
             ws.send(JSON.stringify({ type: 'crew_chat', ...chatMsg }));
         }
     }
+    scheduleWorldSave();
 }
 
 function handleAllianceChat(clientId, message) {
@@ -2226,6 +2284,7 @@ function handleAllianceChat(clientId, message) {
             ws.send(JSON.stringify({ type: 'alliance_chat', ...chatMsg }));
         }
     }
+    scheduleWorldSave();
 }
 
 function handlePrivateChat(clientId, message) {
@@ -2253,6 +2312,13 @@ function handlePrivateChat(clientId, message) {
 
     const chatMsg = { fromId: clientId, fromName: player.name, toId: targetId, toName: targetName, message: text, timestamp: Date.now() };
 
+    // Store in private chat history (keyed by sorted name pair)
+    const pmKey = [player.name, targetName].sort().join('|');
+    if (!gameState.privateChats.has(pmKey)) gameState.privateChats.set(pmKey, []);
+    const pmHistory = gameState.privateChats.get(pmKey);
+    pmHistory.push({ fromName: player.name, toName: targetName, message: text, timestamp: chatMsg.timestamp });
+    if (pmHistory.length > 50) pmHistory.splice(0, pmHistory.length - 50);
+
     // Send to target
     const targetWs = clients.get(targetId);
     if (targetWs && targetWs.readyState === 1) {
@@ -2263,6 +2329,7 @@ function handlePrivateChat(clientId, message) {
     if (senderWs && senderWs.readyState === 1) {
         senderWs.send(JSON.stringify({ type: 'private_chat', ...chatMsg }));
     }
+    scheduleWorldSave();
 }
 
 // Player update handler
