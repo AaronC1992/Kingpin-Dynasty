@@ -1,6 +1,14 @@
 // ==================== MAFIA BORN - MULTIPLAYER SERVER ====================
 const dns = require('dns');
 dns.setDefaultResultOrder('ipv4first');
+// Force all DNS lookups to use IPv4 (Render has no IPv6 outbound)
+const _origLookup = dns.lookup;
+dns.lookup = function (hostname, options, callback) {
+    if (typeof options === 'function') { callback = options; options = {}; }
+    if (typeof options === 'number') { options = { family: options }; }
+    options = Object.assign({}, options, { family: 4 });
+    return _origLookup.call(dns, hostname, options, callback);
+};
 const WebSocket = require('ws');
 const http = require('http');
 const fs = require('fs');
