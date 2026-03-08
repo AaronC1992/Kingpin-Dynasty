@@ -6138,7 +6138,15 @@ window.broadcastDeathNewspaper = broadcastDeathNewspaper;
 
 // Jail newspaper data from other players
 let lastReceivedJailNewspaper = null;
-window._showReceivedJailNewspaper = function() { if (typeof showJailNewspaper === 'function') showJailNewspaper(lastReceivedJailNewspaper); };
+window._showReceivedJailNewspaper = function() {
+    if (lastReceivedJailNewspaper && typeof showJailNewspaper === 'function') {
+        showJailNewspaper(lastReceivedJailNewspaper);
+    } else if (typeof window.showLastJailNewspaper === 'function') {
+        window.showLastJailNewspaper();
+    } else if (window.ui && window.ui.toast) {
+        window.ui.toast('Headlines are no longer available.', 'info');
+    }
+};
 
 function broadcastJailNewspaper(newspaperData) {
     if (!onlineWorldState.isConnected || !onlineWorldState.socket || onlineWorldState.socket.readyState !== WebSocket.OPEN) {
