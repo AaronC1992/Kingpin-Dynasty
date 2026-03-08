@@ -528,7 +528,7 @@ export function updateAuthStatusUI() {
             el.innerHTML = '';
             el.appendChild(span);
         } else {
-            el.innerHTML = `<span class="auth-status-offline" title="Not signed in — progress saved locally only"> Local Only</span>`;
+            el.innerHTML = '<span class="auth-status-offline" title="Not signed in \u2014 progress saved locally only"> Local Only</span>';
         }
     });
 

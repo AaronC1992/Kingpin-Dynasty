@@ -11,7 +11,7 @@
   },
   "ignorePatterns": ["node_modules/**"],
   "rules": {
-    "no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
+    "no-unused-vars": ["warn", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }],
     "no-console": "off",
     "semi": ["error", "always"],
     "quotes": ["warn", "single", { "avoidEscape": true }]
@@ -21,7 +21,25 @@
     "EventBus": "readonly",
     "GameBalance": "readonly",
     "GameMeta": "readonly",
-    "GameLogging": "readonly"
+    "GameLogging": "readonly",
+    "sendMP": "readonly",
+    "onlineWorldState": "readonly",
+    "_currentAllianceData": "readonly",
+    "initializeOnlineWorld": "readonly",
+    "connectMultiplayerAfterGame": "readonly",
+    "connectToOnlineWorld": "readonly",
+    "requestJailRoster": "readonly",
+    "syncJailStatus": "readonly",
+    "showOnlineWorld": "readonly",
+    "renderMarketplaceTab": "readonly",
+    "broadcastDeathNewspaper": "readonly",
+    "broadcastJailNewspaper": "readonly",
+    "closeScreen": "writable",
+    "calculateTotalTerritoryIncome": "readonly",
+    "currentEvents": "writable",
+    "eventHistory": "writable",
+    "weeklyChallenges": "writable",
+    "isConnected": "readonly"
   },
   "overrides": [
     {
