@@ -9088,6 +9088,30 @@ function refreshJobsButtons() {
   });
 }
 
+// Calculate heat-adjusted jail chance for display purposes (approximation including heat + stealth)
+function getDisplayJailChance(baseJailChance) {
+  const heatLevel = player.heat || 0;
+  // Apply stealth reduction
+  let stealthBonus = (player.skillTree?.stealth?.shadow_step || 0) * 2;
+  stealthBonus += (player.skillTree?.stealth?.escape_artist || 0) * 3;
+  stealthBonus += (player.skillTree?.stealth?.infiltration || 0) * 2;
+  let adjusted = Math.max(1, baseJailChance - stealthBonus);
+
+  // Apply heat modifier (must match doJob logic)
+  if (heatLevel <= 10) {
+    adjusted = Math.floor(adjusted * 0.60);
+  } else if (heatLevel <= 25) {
+    adjusted = Math.floor(adjusted * 0.80);
+  } else if (heatLevel <= 50) {
+    // Normal police attention -- no modifier
+  } else if (heatLevel <= 75) {
+    adjusted = Math.floor(adjusted * 1.30) + 5;
+  } else {
+    adjusted = Math.floor(adjusted * 1.60) + 15;
+  }
+  return Math.max(1, Math.min(95, adjusted));
+}
+
 // Full job-list rebuild -- called by showJobs() and cooldown timer tick.
 function refreshJobsList() {
   const jobListElement = document.getElementById("job-list");
@@ -9157,7 +9181,7 @@ function refreshJobsList() {
     if (detailParts.length > 0) {
       detailsHTML += `<br><small style="line-height:1.6;">${detailParts.join(' &nbsp; ')}</small>`;
     }
-    detailsHTML += `<br><small style="color:#8a7a5a;">Jail: ${job.jailChance}% | Damage: ${job.healthLoss} | Heat: +${job.heatGain} | Respect: <span style="color:#c0a062;">${JOB_REP_BY_RISK[job.risk] || 0.5}</span></small>`;
+    detailsHTML += `<br><small style="color:#8a7a5a;">Jail: ${getDisplayJailChance(job.jailChance)}% | Damage: ${job.healthLoss} | Heat: +${job.heatGain} | Respect: <span style="color:#c0a062;">${JOB_REP_BY_RISK[job.risk] || 0.5}</span></small>`;
 
     // Cooldown display
     const cooldownDisplay = cooldownLeft > 0
@@ -10919,7 +10943,7 @@ function showJobs() {
         if (detailParts.length > 0) {
           detailsHTML += `<br><small style="line-height:1.6;">${detailParts.join(' &nbsp; ')}</small>`;
         }
-        detailsHTML += `<br><small style="color:#8a7a5a;">Jail: ${job.jailChance}% | Damage: ${job.healthLoss} | Heat: +${job.heatGain} | Respect: <span style="color:#c0a062;">${JOB_REP_BY_RISK[job.risk] || 0.5}</span></small>`;
+        detailsHTML += `<br><small style="color:#8a7a5a;">Jail: ${getDisplayJailChance(job.jailChance)}% | Damage: ${job.healthLoss} | Heat: +${job.heatGain} | Respect: <span style="color:#c0a062;">${JOB_REP_BY_RISK[job.risk] || 0.5}</span></small>`;
 
         return `
           <li class="game-card game-card--accent-left" style="--card-accent: ${buttonColor};">
@@ -11563,17 +11587,20 @@ async function startJob(index) {
     adjustedJailChance = Math.max(1, Math.floor(adjustedJailChance * 0.85));
   }
 
-  // Heat-based arrest modifier: low heat = less arrests, high heat = more
+  // Heat-based arrest modifier: low heat = less arrests, high heat = cops actively hunting you
   const heatLevel = player.heat || 0;
-  if (heatLevel < 10) {
-    adjustedJailChance = Math.max(1, Math.floor(adjustedJailChance * 0.70));
-  } else if (heatLevel < 20) {
-    adjustedJailChance = Math.max(1, Math.floor(adjustedJailChance * 0.85));
-  } else if (heatLevel > 80) {
-    adjustedJailChance = Math.floor(adjustedJailChance * 1.30);
-  } else if (heatLevel > 60) {
-    adjustedJailChance = Math.floor(adjustedJailChance * 1.15);
+  if (heatLevel <= 10) {
+    adjustedJailChance = Math.max(1, Math.floor(adjustedJailChance * 0.60));
+  } else if (heatLevel <= 25) {
+    adjustedJailChance = Math.max(1, Math.floor(adjustedJailChance * 0.80));
+  } else if (heatLevel <= 50) {
+    // Normal police attention -- no modifier
+  } else if (heatLevel <= 75) {
+    adjustedJailChance = Math.floor(adjustedJailChance * 1.30) + 5;
+  } else {
+    adjustedJailChance = Math.floor(adjustedJailChance * 1.60) + 15;
   }
+  adjustedJailChance = Math.min(95, adjustedJailChance);
 
   let jailChance = Math.random() * 100;
 
@@ -11877,6 +11904,20 @@ function handleCarTheft(job) {
   if (hasPlayerPerk('quick_hands')) {
     adjustedJailChance = Math.max(5, Math.floor(adjustedJailChance * 0.9));
   }
+  // Heat-based arrest modifier
+  const heatLevel = player.heat || 0;
+  if (heatLevel <= 10) {
+    adjustedJailChance = Math.floor(adjustedJailChance * 0.60);
+  } else if (heatLevel <= 25) {
+    adjustedJailChance = Math.floor(adjustedJailChance * 0.80);
+  } else if (heatLevel <= 50) {
+    // Normal police attention
+  } else if (heatLevel <= 75) {
+    adjustedJailChance = Math.floor(adjustedJailChance * 1.30) + 5;
+  } else {
+    adjustedJailChance = Math.floor(adjustedJailChance * 1.60) + 15;
+  }
+  adjustedJailChance = Math.max(5, Math.min(95, adjustedJailChance));
   let jailChance = Math.random() * 100;
 
   if (jailChance <= adjustedJailChance) {
