@@ -17552,7 +17552,7 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = '1.33.2';
+const CURRENT_VERSION = '1.33.3';
 const VERSION_UPDATES = {
   '1.30.0': {
     title: 'Server-Only Saves',
@@ -21174,10 +21174,12 @@ function checkForUpdates() {
         btn.innerHTML = ` Update found! v${localVersion} -> v${serverVersion} -- Updating...`;
         btn.style.borderColor = '#8a9a6a';
         btn.style.color = '#8a9a6a';
+        sessionStorage.setItem('mb_update_attempt', serverVersion);
 
         // Short pause so player sees the message, then force reload
         setTimeout(() => forceHardReload(), 1800);
       } else {
+        sessionStorage.removeItem('mb_update_attempt');
         btn.innerHTML = `You're up to date! (v${localVersion})`;
         btn.style.borderColor = '#8a9a6a';
         btn.style.color = '#8a9a6a';
@@ -23828,14 +23830,32 @@ function startLoadingSequence() {
       .then(data => {
         // -- Version mismatch check ---
         if (data.version && data.version !== CURRENT_VERSION) {
+          // Check if we already tried a reload for this server version.
+          // If we did and still have old code, the cache/CDN hasn't updated yet --
+          // stop the loop and let the player through.
+          const reloadKey = 'mb_update_attempt';
+          const lastAttempt = sessionStorage.getItem(reloadKey);
+          if (lastAttempt === data.version) {
+            // Already reloaded once for this version -- don't loop
+            console.warn(`[loading] Version mismatch persists after reload (local: ${CURRENT_VERSION}, server: ${data.version}). Proceeding anyway.`);
+            sessionStorage.removeItem(reloadKey);
+            serverReady = true;
+            window._offlineMode = false;
+            if (stepsComplete) finishLoading();
+            return;
+          }
           console.warn(`[loading] Version mismatch! Local: ${CURRENT_VERSION} Server: ${data.version} -- auto-updating...`);
           loadingText.textContent = `Update found (v${CURRENT_VERSION} -> v${data.version}) -- refreshing...`;
           loadingProgress.style.width = '100%';
           loadingPercentage.textContent = '100%';
+          sessionStorage.setItem(reloadKey, data.version);
           // Give the player a moment to read the message, then force-reload
           setTimeout(() => forceHardReload(), 1500);
           return; // stop normal loading flow
         }
+
+        // Version matches -- clear any stale reload marker
+        sessionStorage.removeItem('mb_update_attempt');
 
         serverReady = true;
         window._offlineMode = false;
