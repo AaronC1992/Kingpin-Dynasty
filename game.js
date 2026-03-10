@@ -6420,7 +6420,7 @@ function renderTurfControlContent() {
       const fortLevel = (player.turf.fortifications || {})[zone.id] || 0;
       html += `<div style="background: rgba(20, 18, 10, 0.8); padding: 15px; border-radius: 10px; border-left: 4px solid ${getHeatColor(heatLevel)};">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
-          <div style="flex: 1; min-width: 200px;"><h4 style="color: #f5e6c8; margin: 0 0 5px 0;">${zone.icon} ${zone.name}</h4><p style="color: #d4c4a0; margin: 0; font-size: 0.9em;">${zone.description}</p><div style="font-size:0.8em; color:#8a7a5a; margin-top:4px;">Fort Lv ${fortLevel} | Heat: ${heatLevel}/100</div></div>
+          <div style="flex: 1; min-width: 200px;"><h4 style="color: #f5e6c8; margin: 0 0 5px 0;">${zone.icon} ${zone.name}</h4><p style="color: #d4c4a0; margin: 0; font-size: 0.9em;">${zone.description}</p><div style="font-size:0.8em; color:#8a7a5a; margin-top:4px;">Fort Lv ${fortLevel} | Heat: ${heatLevel}</div></div>
           <div style="text-align: right; min-width: 120px;"><div style="color: #8a9a6a; font-weight: bold;">$${income.toLocaleString()}/week</div></div>
         </div>
         <div style="margin-top: 10px; display: flex; gap: 10px; flex-wrap: wrap;">
@@ -7065,7 +7065,7 @@ function manageTurfDetails(zoneId) {
       </div>
       <div style="background:rgba(231,76,60,0.2);padding:12px;border-radius:10px;text-align:center;">
         <div style="font-size:0.85em;color:#d4c4a0;">Heat</div>
-        <div style="font-size:1.2em;font-weight:bold;color:${getHeatColor(heat)};">${heat}/100</div>
+        <div style="font-size:1.2em;font-weight:bold;color:${getHeatColor(heat)};">${heat}</div>
       </div>
       <div style="background:rgba(52,152,219,0.2);padding:12px;border-radius:10px;text-align:center;">
         <div style="font-size:0.85em;color:#d4c4a0;">Fortification</div>
@@ -7101,7 +7101,7 @@ function manageTurfDetails(zoneId) {
 
     <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-bottom:20px;">
       <button onclick="fortifyTurf('${zone.id}')" style="padding:10px 20px;background:linear-gradient(135deg,#e67e22,#d35400);border:none;border-radius:8px;color:white;cursor:pointer;font-weight:bold;">Fortify ($${((fort+1)*5000).toLocaleString()})</button>
-      <button onclick="reduceHeatTurf('${zone.id}')" style="padding:10px 20px;background:linear-gradient(135deg,#c0a062,#a08850);border:none;border-radius:8px;color:white;cursor:pointer;font-weight:bold;">Reduce Heat ($${Math.max(1000, Math.floor(heat*200)).toLocaleString()})</button>
+      <button onclick="reduceHeatTurf('${zone.id}')" style="padding:10px 20px;background:linear-gradient(135deg,#c0a062,#a08850);border:none;border-radius:8px;color:white;cursor:pointer;font-weight:bold;">Reduce Heat by 10 ($${Math.max(1000, Math.floor(heat*200)).toLocaleString()})</button>
       <button onclick="collectTurfTribute('${zone.id}')" style="padding:10px 20px;background:linear-gradient(135deg,#7a8a5a,#229954);border:none;border-radius:8px;color:white;cursor:pointer;font-weight:bold;">Collect Tribute</button>
     </div>
     <div style="text-align:center;">
