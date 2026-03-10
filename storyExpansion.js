@@ -582,13 +582,13 @@ export const STREET_STORIES = [
         }
       },
       {
-        text: "Return it for the $10M FBI reward (anonymously)",
+        text: "Return it for the $100K FBI reward (anonymously)",
         requirements: { intelligence: 8 },
         successChance: 0.6,
         outcomes: {
           success: {
-            money: 10000000, heat: -30, respect: -15, reputation: -10,
-            message: "Through cutouts and intermediaries, the painting finds its way back. The reward is laundered through shell companies. You're $10 million richer. But word gets out that you cooperated with the feds — it doesn't matter that it was just a painting."
+            money: 100000, heat: -30, respect: -15, reputation: -10,
+            message: "Through cutouts and intermediaries, the painting finds its way back. The reward is laundered through shell companies. You're $100K richer. But word gets out that you cooperated with the feds — it doesn't matter that it was just a painting."
           },
           failure: {
             heat: 80,
