@@ -20129,7 +20129,6 @@ function showDeathScreen(causeOfDeath) {
   else if ((player.reputation || 0) >= 25) legacyTitle = 'Hustler';
 
   // Flavor text categorized by how they died
-  const cause = causeOfDeath || 'Died on the streets';
   const causeLower = cause.toLowerCase();
 
   // Determine death category for flavor text
