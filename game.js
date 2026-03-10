@@ -7101,7 +7101,7 @@ function manageTurfDetails(zoneId) {
 
     <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-bottom:20px;">
       <button onclick="fortifyTurf('${zone.id}')" style="padding:10px 20px;background:linear-gradient(135deg,#e67e22,#d35400);border:none;border-radius:8px;color:white;cursor:pointer;font-weight:bold;">Fortify ($${((fort+1)*5000).toLocaleString()})</button>
-      <button onclick="reduceHeatTurf('${zone.id}')" style="padding:10px 20px;background:linear-gradient(135deg,#c0a062,#a08850);border:none;border-radius:8px;color:white;cursor:pointer;font-weight:bold;">Reduce Heat by 10 ($${Math.max(1000, Math.floor(heat*200)).toLocaleString()})</button>
+      <button onclick="reduceHeatTurf('${zone.id}')" style="padding:10px 20px;background:linear-gradient(135deg,#c0a062,#a08850);border:none;border-radius:8px;color:white;cursor:pointer;font-weight:bold;">Reduce Heat -10 ($20,000)</button>
       <button onclick="collectTurfTribute('${zone.id}')" style="padding:10px 20px;background:linear-gradient(135deg,#7a8a5a,#229954);border:none;border-radius:8px;color:white;cursor:pointer;font-weight:bold;">Collect Tribute</button>
     </div>
     <div style="text-align:center;">
@@ -7132,14 +7132,15 @@ window.fortifyTurf = fortifyTurf;
 // Reduce global heat from turf screen
 function reduceHeatTurf(_zoneId) {
   const heat = player.heat || 0;
-  const cost = Math.max(1000, Math.floor(heat * 200));
-  if (player.money < cost) { showBriefNotification(`Need $${cost.toLocaleString()}!`, 'danger'); return; }
+  const cost = 20000;
+  if (player.money < cost) { showBriefNotification('Need $20,000!', 'danger'); return; }
   if (heat <= 0) { showBriefNotification('Heat is already at 0!', 'info'); return; }
   player.money -= cost;
-  player.heat = Math.max(0, heat - 10);
+  const reduced = Math.min(10, heat);
+  player.heat = heat - reduced;
   recalcTurfIncome();
-  showBriefNotification('Heat reduced by 10!', 'success');
-  logAction(`Paid $${cost.toLocaleString()} to lay low and reduce heat.`);
+  showBriefNotification(`Heat reduced by ${reduced}!`, 'success');
+  logAction('Paid $20,000 to lay low and reduce heat.');
   updateUI();
 }
 window.reduceHeatTurf = reduceHeatTurf;
