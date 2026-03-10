@@ -4277,7 +4277,7 @@ function buildBusinessesHTML() {
     <div style="margin: 15px 0; padding: 12px; border: 1px solid #6a5a3a; border-radius: 8px; background: rgba(0,0,0,0.25); display: flex; gap: 12px; align-items: center;">
       <div style="flex:1; color:#f5e6c8;">
         <strong>Bookie Service</strong><br>
-        Automatically collects business income and gang tribute. Service fee applies hourly.
+        Automatically collects business income, gang tribute, and turf tribute. Service fee applies hourly.
       </div>
       <div>
         <button onclick="toggleBookieHire()" style="background:${player.services && player.services.bookieHired ? '#8b3a3a' : '#8a9a6a'}; color:white; padding:10px 14px; border:none; border-radius:6px; cursor:pointer;">
@@ -5243,8 +5243,19 @@ function showGang(activeTab) {
           <div style="font-size:0.8em; color:#8a7a5a; text-transform:uppercase; letter-spacing:1px;">In Training</div>
         </div>
       </div>
-      <div style="display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap;">
-        <button onclick="collectTribute()" class="store-buy-btn store-buy-btn--active" style="padding:10px 18px;">Collect Tribute</button>
+      <div style="display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap; align-items:center;">
+        ${(() => {
+          const tributeElapsed = Math.floor((Date.now() - (player.gang.lastTributeTime || 0)) / 1000);
+          const tributeReady = tributeElapsed >= 300;
+          if (tributeReady) {
+            return `<button onclick="collectTribute()" class="store-buy-btn store-buy-btn--active" style="padding:10px 18px; position:relative;">Collect Tribute<span style="position:absolute;top:-3px;right:-3px;width:10px;height:10px;background:#e74c3c;border-radius:50%;border:2px solid #14120a;"></span></button>`;
+          } else {
+            const remaining = 300 - tributeElapsed;
+            const m = Math.floor(remaining / 60);
+            const s = remaining % 60;
+            return `<button class="store-buy-btn" style="padding:10px 18px; opacity:0.5; cursor:default;" disabled>Tribute (${m}:${String(s).padStart(2, '0')})</button>`;
+          }
+        })()}
         <button onclick="showGang('recruitment')" class="store-buy-btn store-buy-btn--active" style="padding:10px 18px; background:linear-gradient(180deg,#8a9a6a,#6a7a4a);">Recruit Members</button>
       </div>
     `;
@@ -7102,7 +7113,16 @@ function manageTurfDetails(zoneId) {
     <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-bottom:20px;">
       <button onclick="fortifyTurf('${zone.id}')" style="padding:10px 20px;background:linear-gradient(135deg,#e67e22,#d35400);border:none;border-radius:8px;color:white;cursor:pointer;font-weight:bold;">Fortify ($${((fort+1)*5000).toLocaleString()})</button>
       <button onclick="reduceHeatTurf('${zone.id}')" style="padding:10px 20px;background:linear-gradient(135deg,#c0a062,#a08850);border:none;border-radius:8px;color:white;cursor:pointer;font-weight:bold;">Reduce Heat -10 ($20,000)</button>
-      <button onclick="collectTurfTribute('${zone.id}')" style="padding:10px 20px;background:linear-gradient(135deg,#7a8a5a,#229954);border:none;border-radius:8px;color:white;cursor:pointer;font-weight:bold;">Collect Tribute</button>
+      ${(() => {
+        const turfHoursSince = (Date.now() - (player.turf.lastTributeCollection || 0)) / 3600000;
+        const turfReady = turfHoursSince >= 1;
+        if (turfReady) {
+          return `<button onclick="collectTurfTribute('${zone.id}')" style="padding:10px 20px;background:linear-gradient(135deg,#7a8a5a,#229954);border:none;border-radius:8px;color:white;cursor:pointer;font-weight:bold;position:relative;">Collect Tribute<span style="position:absolute;top:-3px;right:-3px;width:10px;height:10px;background:#e74c3c;border-radius:50%;border:2px solid #14120a;"></span></button>`;
+        } else {
+          const minsLeft = Math.ceil(60 - turfHoursSince * 60);
+          return `<button style="padding:10px 20px;background:linear-gradient(135deg,#555,#444);border:none;border-radius:8px;color:#999;cursor:default;font-weight:bold;" disabled>Tribute (${minsLeft}m)</button>`;
+        }
+      })()}
     </div>
     <div style="text-align:center;">
       <button onclick="showTerritoryControl();" style="padding:12px 30px;background:linear-gradient(135deg,#8a7a5a,#6a5a3a);border:none;border-radius:10px;color:white;font-weight:bold;cursor:pointer;"><- Back to Turf</button>
@@ -21238,12 +21258,12 @@ function toggleBookieHire() {
   if (player.services.bookieHired) {
     player.services.bookieHired = false;
     logAction('You dismiss the bookie. You will need to collect income and tribute manually.');
-    if (typeof showBriefNotification === 'function') showBriefNotification('Bookie dismissed', 1200);
+    if (typeof showBriefNotification === 'function') showBriefNotification('Bookie dismissed', 'warning');
   } else {
     player.services.bookieHired = true;
     player.services.bookieLastPaid = Date.now();
     logAction('You hire a trusted bookie to keep the cash flowing. Income and tribute will be auto-collected.');
-    if (typeof showBriefNotification === 'function') showBriefNotification('Bookie hired', 1200);
+    if (typeof showBriefNotification === 'function') showBriefNotification('Bookie hired', 'success');
   }
   // Refresh fronts panel if open (now a tab in Properties screen)
   refreshFrontsPanel();
@@ -21330,8 +21350,31 @@ function autoCollectBusinessesAndTribute() {
       }
     }
   }
+  // Turf tribute: collect if at least 1 hour since last collection
+  if (player.turf && player.turf.owned && player.turf.owned.length > 0) {
+    const now = Date.now();
+    const turfLast = player.turf.lastTributeCollection || 0;
+    const turfHours = (now - turfLast) / 3600000;
+    if (turfHours >= 1) {
+      if (typeof initTurfZones === 'function') initTurfZones();
+      const zones = player.turf._zones || [];
+      let turfTotal = 0;
+      zones.forEach(z => {
+        if (player.turf.owned.includes(z.id)) {
+          const income = typeof calculateTurfZoneIncome === 'function' ? calculateTurfZoneIncome(z) : 0;
+          turfTotal += Math.floor(income * Math.min(turfHours / 168, 1));
+        }
+      });
+      if (turfTotal > 0) {
+        player.dirtyMoney = (player.dirtyMoney || 0) + turfTotal;
+        player.turf.lastTributeCollection = now;
+        player.heat = Math.min(100, (player.heat || 0) + 3);
+        collected += turfTotal;
+      }
+    }
+  }
   if (collected > 0 && typeof showBriefNotification === 'function') {
-    showBriefNotification(`Bookie collected $${collected.toLocaleString()}`, 1200);
+    showBriefNotification(`Bookie collected $${collected.toLocaleString()}`, 'success');
   }
 }
 
@@ -21349,7 +21392,7 @@ function chargeBookieFeeHourly() {
       // Can't pay fee -> dismiss
       player.services.bookieHired = false;
       logAction('Your bookie quits - no funds to cover fees.');
-      if (typeof showBriefNotification === 'function') showBriefNotification('Bookie dismissed (unpaid)', 1500);
+      if (typeof showBriefNotification === 'function') showBriefNotification('Bookie dismissed (unpaid)', 'danger');
     }
   }
 }
@@ -25049,6 +25092,22 @@ function getNotificationBadges() {
   // The Commission: badge if any pending friend/crew/alliance invites
   if (window._pendingCrewInvite || window._pendingAllianceInvite || (window._pendingFriendRequests && window._pendingFriendRequests.length > 0)) {
     badges.onlineworld = true;
+  }
+
+  // Gang tribute: badge if cooldown elapsed and player has gang members
+  if (player.gang && (player.gang.gangMembers && player.gang.gangMembers.length > 0)) {
+    const gangTributeElapsed = Math.floor((Date.now() - (player.gang.lastTributeTime || 0)) / 1000);
+    if (gangTributeElapsed >= 300) {
+      badges.gang = true;
+    }
+  }
+
+  // Turf tribute: badge if cooldown elapsed and player owns zones
+  if (player.turf && player.turf.owned && player.turf.owned.length > 0) {
+    const turfHoursSince = (Date.now() - (player.turf.lastTributeCollection || 0)) / 3600000;
+    if (turfHoursSince >= 1) {
+      badges.territories = true;
+    }
   }
 
   return badges;
