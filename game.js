@@ -17839,8 +17839,15 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = '1.33.5';
+const CURRENT_VERSION = '1.33.6';
 const VERSION_UPDATES = {
+  '1.33.6': {
+    title: 'Title Screen Layout Fix',
+    date: 'March 2026',
+    changes: [
+      'Fixed version number overlapping content on the mobile title screen',
+    ]
+  },
   '1.33.5': {
     title: 'Turf Defenders, Crew Jailbreaks & Mobile Fixes',
     date: 'March 2026',

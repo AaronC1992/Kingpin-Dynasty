@@ -5,6 +5,11 @@ All notable changes to From Dusk To Don (Mafia Born) will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.33.6] - 2026-03-10
+
+### Fixed
+- **Title screen version overlap on mobile** -- version number and Privacy/Terms links are no longer absolute-positioned; they now flow naturally at the bottom of the intro content so they don't overlap other elements on small screens
+
 ## [1.33.5] - 2026-03-10
 
 ### Added
