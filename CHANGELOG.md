@@ -5,6 +5,15 @@ All notable changes to From Dusk To Don (Mafia Born) will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.33.7] - 2026-03-10
+
+### Added
+- **Training prerequisite display** -- training programs now show stat requirements in the Training tab cards and the roster training prompt, with color-coded current/required values
+- **Enroll prerequisite check** -- enrolling from the Training tab now validates prerequisites and shows exactly which stats are too low
+
+### Fixed
+- **Stolen painting FBI reward** -- side ops event payout lowered from $10M to $100K
+
 ## [1.33.6] - 2026-03-10
 
 ### Fixed

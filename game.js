@@ -5886,7 +5886,7 @@ function generateTrainingProgramsHTML() {
           <strong>Duration:</strong> ${program.duration} hours<br>
           <strong>Benefits:</strong> ${Object.entries(program.skillImprovement).map(([skill, value]) =>
             `+${value} ${skill}`).join(', ')}<br>
-          <strong>Available for:</strong> ${program.availableFor.join(', ')}
+          <strong>Available for:</strong> ${program.availableFor.join(', ')}${program.prerequisite ? `<br><strong>Requires:</strong> ${Object.entries(program.prerequisite).map(([skill, level]) => `${skill} ${level}+`).join(', ')}` : ''}
         </div>
 
         <select id="training-member-${program.id}" style="width: 100%; padding: 5px; margin: 5px 0;">
@@ -6124,9 +6124,19 @@ async function startTraining(memberIndex) {
     return;
   }
 
-  let programList = availablePrograms.map((program, index) =>
-    `${index + 1}. ${program.name} - $${program.cost} (${program.duration}h)`
-  ).join('<br>');
+  let programList = availablePrograms.map((program, index) => {
+    let line = `${index + 1}. ${program.name} - $${program.cost} (${program.duration}h)`;
+    line += `<br>&nbsp;&nbsp;&nbsp;Gains: ${Object.entries(program.skillImprovement).map(([s, v]) => `+${v} ${s}`).join(', ')}`;
+    if (program.prerequisite) {
+      const prereqParts = Object.entries(program.prerequisite).map(([skill, level]) => {
+        const current = member[skill] || 0;
+        const met = current >= level;
+        return `<span style="color:${met ? '#1abc9c' : '#e74c3c'}">${skill} ${current}/${level}</span>`;
+      });
+      line += `<br>&nbsp;&nbsp;&nbsp;Requires: ${prereqParts.join(', ')}`;
+    }
+    return line;
+  }).join('<br><br>');
 
   const choice = await ui.prompt(`Select training program for ${member.name}:<br><br>${programList}<br><br>Enter program number:`);
   if (!choice) return;
@@ -6219,6 +6229,16 @@ function enrollInTraining(programId) {
   if (player.money < program.cost) {
     showBriefNotification(`Insufficient funds! Need $${program.cost} for this training program.`, 'danger');
     return;
+  }
+
+  // Check prerequisites
+  if (program.prerequisite) {
+    const unmet = Object.entries(program.prerequisite).filter(([skill, level]) => (member[skill] || 0) < level);
+    if (unmet.length > 0) {
+      const details = unmet.map(([skill, level]) => `${skill} ${member[skill] || 0}/${level}`).join(', ');
+      showBriefNotification(`${member.name} doesn't meet the prerequisites: ${details}`, 'warning');
+      return;
+    }
   }
 
   player.money -= program.cost;
@@ -17839,8 +17859,17 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = '1.33.6';
+const CURRENT_VERSION = '1.33.7';
 const VERSION_UPDATES = {
+  '1.33.7': {
+    title: 'Training Prerequisites',
+    date: 'March 2026',
+    changes: [
+      'Gang training programs now show stat prerequisites, gains, and requirements in both the Training tab and roster prompt',
+      'Enroll button now checks prerequisites before starting training and tells you exactly which stats are too low',
+      'Lowered stolen painting FBI reward event from $10M to $100K',
+    ]
+  },
   '1.33.6': {
     title: 'Title Screen Layout Fix',
     date: 'March 2026',
