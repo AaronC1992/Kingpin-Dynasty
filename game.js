@@ -18377,8 +18377,17 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = '1.35.3';
+const CURRENT_VERSION = '1.35.4';
 const VERSION_UPDATES = {
+  '1.35.4': {
+    title: 'Story Mission Fix & Quote Escaping',
+    date: 'March 2026',
+    changes: [
+      'Fixed story chapter reputation requirements -- now properly ascend from 10 to 1050 across all 25 chapters',
+      'All 4 family storylines (Torrino, Kozlov, Golden Dragon, Cartel del Sol) corrected',
+      'Fixed gang member nickname quotes breaking operation/training select menus',
+    ]
+  },
   '1.35.3': {
     title: 'Gang Operations UI & Turf Cleanup',
     date: 'March 2026',

@@ -5,6 +5,13 @@ All notable changes to From Dusk To Don (Mafia Born) will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.35.4] - 2026-03-11
+
+### Bug Fixes
+- Fixed story chapter reputation requirements -- now properly ascend from 10 to 1050 across all 25 chapters (was incorrectly descending from 475 to 5)
+- All 4 family storylines corrected: Torrino, Kozlov, Golden Dragon, Cartel del Sol
+- Fixed gang member nickname quotes breaking operation/training select menus
+
 ## [1.35.3] - 2026-03-11
 
 ### UI & Gang Operations
