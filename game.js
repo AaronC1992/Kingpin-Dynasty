@@ -5788,12 +5788,12 @@ function showGangManagementScreen() {
       if (member.onOperation) {
         const opData = player.gang.activeOperations.find(op => op.memberName === member.name);
         if (opData) {
-          const remaining = Math.max(0, (opData.startTime + opData.duration) - Date.now());
-          if (remaining > 0) {
-            statusText += ` (${formatCountdown(remaining)})`;
-          } else {
-            statusText += ' (Completing...)';
-          }
+          const opDef = gangOperations.find(o => o.id === opData.operationId);
+          const opName = opDef ? opDef.name : 'Unknown';
+          statusText = `On Op: ${opName}`;
+          const elapsed = Date.now() - opData.startTime;
+          const remaining = Math.max(0, opData.duration - elapsed);
+          statusText += remaining > 0 ? ` (${formatCountdown(remaining)})` : ' (Completing...)';
         }
       }
       if (member.inTraining) {
@@ -5814,12 +5814,28 @@ function showGangManagementScreen() {
       const tribute = Math.floor((member.tributeMultiplier || 1) * 100);
       const daysActive = Math.floor((Date.now() - (member.joinedDate || Date.now())) / (1000 * 60 * 60 * 24));
 
+      // Build operation progress bar for crew detail view
+      let crewOpProgressHTML = '';
+      if (member.onOperation) {
+        const opData = player.gang.activeOperations.find(op => op.memberName === member.name);
+        if (opData) {
+          const elapsed = Date.now() - opData.startTime;
+          const pct = Math.min(100, Math.floor((elapsed / opData.duration) * 100));
+          crewOpProgressHTML = `<div style="margin:6px 0 4px;">
+            <div style="background:#1a1610;border-radius:3px;height:6px;overflow:hidden;border:1px solid #3a3520;">
+              <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#c0a062,#d4af37);transition:width 0.3s;"></div>
+            </div>
+          </div>`;
+        }
+      }
+
       crewHTML += `
         <div style="background: rgba(20, 18, 10,0.8); padding: 15px; border-radius: 10px; border-left: 4px solid #c0a062;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
             <h4 style="margin:0; color:#f5e6c8;">${member.name}</h4>
             <span style="font-size:0.8em; color: ${statusColor};">${statusText}</span>
           </div>
+          ${crewOpProgressHTML}
 
           <div style="font-size:0.9em; color:#d4c4a0; margin-bottom:10px;">
             <div style="display:flex; justify-content:space-between;">
@@ -6039,15 +6055,25 @@ function generateGangMembersHTML() {
       const remaining = Math.max(0, member.arrestTime - Date.now());
       statusText += remaining > 0 ? ` (${formatCountdown(remaining)})` : ' (Releasing...)';
     }
+    let operationProgressHTML = '';
     if (member.onOperation) {
       const opData = player.gang.activeOperations.find(op => op.memberName === member.name);
       if (opData) {
-        const remaining = Math.max(0, (opData.startTime + opData.duration) - Date.now());
-        if (remaining > 0) {
-          statusText += ` (${formatCountdown(remaining)})`;
-        } else {
-          statusText += ' (Completing...)';
-        }
+        const opDef = gangOperations.find(o => o.id === opData.operationId);
+        const opName = opDef ? opDef.name : 'Unknown';
+        const elapsed = Date.now() - opData.startTime;
+        const remaining = Math.max(0, opData.duration - elapsed);
+        const pct = Math.min(100, Math.floor((elapsed / opData.duration) * 100));
+        statusText = `On Operation: ${opName}`;
+        operationProgressHTML = `<div style="margin:4px 0 2px;">
+          <div style="display:flex;justify-content:space-between;font-size:0.8em;color:#c0a040;margin-bottom:2px;">
+            <span>${remaining > 0 ? formatCountdown(remaining) + ' left' : 'Completing...'}</span>
+            <span>${pct}%</span>
+          </div>
+          <div style="background:#1a1610;border-radius:3px;height:6px;overflow:hidden;border:1px solid #3a3520;">
+            <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#c0a062,#d4af37);transition:width 0.3s;"></div>
+          </div>
+        </div>`;
       }
     }
     if (member.inTraining) {
@@ -6098,6 +6124,7 @@ function generateGangMembersHTML() {
           </div>
           <small style="color:#8a7a5a;">${memberLevel >= 10 ? 'Max Level' : `XP: ${memberXP}/${xpNeeded}`}</small><br>
           <strong>Status:</strong> ${statusText}<br>
+          ${operationProgressHTML}
           <strong>Tribute:</strong> $${Math.floor(member.tributeMultiplier * 100)}/collection
           <span style="color: ${memberPaysCleanCash(member) ? '#4CAF50' : '#e67e22'}; font-weight: bold;">(${memberPaysCleanCash(member) ? 'Clean' : 'Dirty'})</span>
         </div>
@@ -6686,7 +6713,6 @@ function renderTurfControlContent() {
     <div style="display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap;">
       <button onclick="showTurfMap()" style="flex: 1; min-width: 150px; padding: 12px 20px; background: linear-gradient(135deg, #7a8a5a, #8a9a6a); border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer;">Turf Map</button>
       <button onclick="showProtectionRackets()" style="flex: 1; min-width: 150px; padding: 12px 20px; background: linear-gradient(135deg, #e67e22, #c0a040); border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer;">Protection Rackets</button>
-      <button onclick="showCityPolicies()" style="flex: 1; min-width: 150px; padding: 12px 20px; background: linear-gradient(135deg, #c0a062, #ffd700); border: none; border-radius: 10px; color: #14120a; font-weight: bold; cursor: pointer;">City Policies</button>
     </div>`;
 
   if (ownedZones.length > 0) {
@@ -18349,8 +18375,19 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = '1.35.2';
+const CURRENT_VERSION = '1.35.3';
 const VERSION_UPDATES = {
+  '1.35.3': {
+    title: 'Gang Operations UI & Turf Cleanup',
+    date: 'March 2026',
+    changes: [
+      'Gang operations now show progress bars with countdown timers and completion percentage',
+      'Roster member cards display the active operation name instead of generic status',
+      'Crew detail view shows operation name and progress bar for members on ops',
+      'Moved Training Gym from Player Stats tabs to SafeHouse grid',
+      'Removed City Policies button from the Turf screen',
+    ]
+  },
   '1.35.2': {
     title: 'ESLint Cleanup',
     date: 'March 2026',

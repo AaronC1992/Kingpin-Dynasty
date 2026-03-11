@@ -5,6 +5,15 @@ All notable changes to From Dusk To Don (Mafia Born) will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.35.3] - 2026-03-11
+
+### UI & Gang Operations
+- Gang operations now show progress bars with countdown timers and completion percentage
+- Roster member cards display the active operation name instead of generic status
+- Crew detail view shows operation name and progress bar for members on ops
+- Moved Training Gym from Player Stats tabs to SafeHouse grid
+- Removed City Policies button from the Turf screen
+
 ## [1.35.2] - 2026-03-11
 
 ### Code Quality
