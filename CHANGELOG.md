@@ -5,6 +5,14 @@ All notable changes to From Dusk To Don (Mafia Born) will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.35.1] - 2025-07-11
+
+### Gang Operations
+- Expanded gang operations from 4 to 12 with strictly ascending reputation requirements (0-800)
+- New operations: Street Shakedown, Getaway Job, Money Skim, Convoy Hijack, Sting Reversal, Assassination Contract, Bank Vault Job, Empire Takeover
+- Operations now visually locked until player meets reputation threshold
+- Added server-side reputation guard to prevent bypassing operation locks via console
+
 ## [1.35.0] - 2025-07-11
 
 ### Bug Fixes

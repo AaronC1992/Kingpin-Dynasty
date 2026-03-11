@@ -3867,8 +3867,9 @@ const gangOperations = [
     name: 'Protection Racket',
     description: 'Collect protection money from local businesses',
     requiredRole: 'enforcer',
-    duration: 4, // hours
-    energy: 0, // Gang member energy, not player
+    requiredReputation: 0,
+    duration: 4,
+    energy: 0,
     rewards: {
       money: [500, 1200],
       experience: 50
@@ -3878,18 +3879,19 @@ const gangOperations = [
       betrayalRisk: 5,
       healthLoss: 10
     },
-    cooldown: 12 // hours
+    cooldown: 12
   },
   {
     id: 'car_theft_ring',
     name: 'Car Theft Ring',
     description: 'Organized vehicle theft operation',
     requiredRole: 'scout',
+    requiredReputation: 25,
     duration: 6,
     energy: 0,
     rewards: {
       money: [800, 1500],
-      vehicle: true, // Chance to get a stolen car
+      vehicle: true,
       experience: 75
     },
     risks: {
@@ -3900,15 +3902,54 @@ const gangOperations = [
     cooldown: 18
   },
   {
+    id: 'street_shakedown',
+    name: 'Street Shakedown',
+    description: 'Your bruiser leans on rival crews for tribute',
+    requiredRole: 'bruiser',
+    requiredReputation: 50,
+    duration: 3,
+    energy: 0,
+    rewards: {
+      money: [600, 1400],
+      experience: 60
+    },
+    risks: {
+      arrestChance: 10,
+      betrayalRisk: 4,
+      healthLoss: 20
+    },
+    cooldown: 10
+  },
+  {
+    id: 'getaway_job',
+    name: 'Getaway Job',
+    description: 'Your wheelman runs a high-speed extraction for a client',
+    requiredRole: 'driver',
+    requiredReputation: 75,
+    duration: 5,
+    energy: 0,
+    rewards: {
+      money: [1000, 2000],
+      experience: 80
+    },
+    risks: {
+      arrestChance: 20,
+      betrayalRisk: 3,
+      healthLoss: 15
+    },
+    cooldown: 14
+  },
+  {
     id: 'drug_lab_operation',
     name: 'Drug Lab Operation',
     description: 'Manage underground drug manufacturing',
     requiredRole: 'fixer',
+    requiredReputation: 100,
     duration: 8,
     energy: 0,
     rewards: {
       money: [1200, 2500],
-      dirtyMoney: [400, 800], // Generates dirty money
+      dirtyMoney: [400, 800],
       experience: 100
     },
     risks: {
@@ -3919,10 +3960,31 @@ const gangOperations = [
     cooldown: 24
   },
   {
+    id: 'money_skim',
+    name: 'Money Skim',
+    description: 'Your accountant skims from the competition\'s books',
+    requiredRole: 'accountant',
+    requiredReputation: 150,
+    duration: 6,
+    energy: 0,
+    rewards: {
+      money: [1500, 3000],
+      cleanMoney: true,
+      experience: 90
+    },
+    risks: {
+      arrestChance: 18,
+      betrayalRisk: 6,
+      healthLoss: 0
+    },
+    cooldown: 20
+  },
+  {
     id: 'tech_heist',
     name: 'Tech Heist',
     description: 'High-tech corporate espionage and theft',
     requiredRole: 'hacker',
+    requiredReputation: 200,
     duration: 12,
     energy: 0,
     rewards: {
@@ -3935,6 +3997,103 @@ const gangOperations = [
       healthLoss: 5
     },
     cooldown: 48
+  },
+  {
+    id: 'convoy_hijack',
+    name: 'Convoy Hijack',
+    description: 'Intercept and seize a rival\'s supply truck',
+    requiredRole: 'driver',
+    requiredReputation: 300,
+    duration: 8,
+    energy: 0,
+    rewards: {
+      money: [2500, 5000],
+      dirtyMoney: [600, 1200],
+      experience: 140
+    },
+    risks: {
+      arrestChance: 30,
+      betrayalRisk: 10,
+      healthLoss: 25
+    },
+    cooldown: 36
+  },
+  {
+    id: 'sting_reversal',
+    name: 'Sting Reversal',
+    description: 'Your fixer turns a police sting into a score for the crew',
+    requiredRole: 'fixer',
+    requiredReputation: 400,
+    duration: 10,
+    energy: 0,
+    rewards: {
+      money: [3000, 6000],
+      experience: 180
+    },
+    risks: {
+      arrestChance: 40,
+      betrayalRisk: 15,
+      healthLoss: 10
+    },
+    cooldown: 48
+  },
+  {
+    id: 'assassination_contract',
+    name: 'Assassination Contract',
+    description: 'A high-profile elimination that requires precision',
+    requiredRole: 'enforcer',
+    requiredReputation: 500,
+    duration: 14,
+    energy: 0,
+    rewards: {
+      money: [4000, 8000],
+      experience: 220
+    },
+    risks: {
+      arrestChance: 35,
+      betrayalRisk: 8,
+      healthLoss: 30
+    },
+    cooldown: 72
+  },
+  {
+    id: 'bank_vault_job',
+    name: 'Bank Vault Job',
+    description: 'Crack a commercial vault with your tech specialist',
+    requiredRole: 'hacker',
+    requiredReputation: 650,
+    duration: 16,
+    energy: 0,
+    rewards: {
+      money: [6000, 12000],
+      experience: 280
+    },
+    risks: {
+      arrestChance: 45,
+      betrayalRisk: 10,
+      healthLoss: 15
+    },
+    cooldown: 72
+  },
+  {
+    id: 'empire_takeover',
+    name: 'Empire Takeover',
+    description: 'Coordinate a full-scale raid on a rival operation',
+    requiredRole: 'bruiser',
+    requiredReputation: 800,
+    duration: 20,
+    energy: 0,
+    rewards: {
+      money: [8000, 15000],
+      dirtyMoney: [2000, 4000],
+      experience: 350
+    },
+    risks: {
+      arrestChance: 50,
+      betrayalRisk: 18,
+      healthLoss: 35
+    },
+    cooldown: 96
   }
 ];
 
@@ -5740,10 +5899,12 @@ function calculateGangPower() {
 // Generate gang operations HTML
 function generateGangOperationsHTML() {
   let html = '';
+  const playerRep = Math.floor(player.reputation || 0);
 
   gangOperations.forEach(operation => {
-    const availableMembers = getAvailableMembersForOperation(operation.requiredRole);
-    const isOnCooldown = isOperationOnCooldown(operation.id);
+    const meetsRep = playerRep >= (operation.requiredReputation || 0);
+    const availableMembers = meetsRep ? getAvailableMembersForOperation(operation.requiredRole) : [];
+    const isOnCooldown = meetsRep ? isOperationOnCooldown(operation.id) : false;
     // Check if this operation is currently running
     const activeOp = player.gang.activeOperations.find(op => op.operationId === operation.id);
     let activeOpStatus = '';
@@ -5760,14 +5921,18 @@ function generateGangOperationsHTML() {
       cooldownStatus = `<div style="margin:4px 0;"><small style="color:#8b3a3a;">Cooldown: ${formatCountdown(cdRemaining)}</small></div>`;
     }
 
+    const repReq = operation.requiredReputation || 0;
+    const lockedStyle = !meetsRep ? 'opacity:0.5;' : '';
+
     html += `
-      <div style="margin: 10px 0; padding: 10px; background: rgba(20, 18, 10, 0.4); border-radius: 5px;">
-        <h5>${operation.name}</h5>
+      <div style="margin: 10px 0; padding: 10px; background: rgba(20, 18, 10, 0.4); border-radius: 5px;${lockedStyle}">
+        <h5>${operation.name}${repReq > 0 ? ` <small style="color:${meetsRep ? '#8a9a6a' : '#8b3a3a'};font-weight:normal;">(${repReq} Rep)</small>` : ''}</h5>
         <p><small>${operation.description}</small></p>
+        ${!meetsRep ? `<div style="color:#8b3a3a;font-size:0.85em;margin:6px 0;padding:6px;background:rgba(139,58,58,0.15);border-radius:4px;">Requires ${repReq} Reputation (you have ${playerRep})</div>` : `
         <div style="margin: 5px 0;">
           <small><strong>Required:</strong> ${(() => { const eName = GANG_MEMBER_ROLES[operation.requiredRole] ? GANG_MEMBER_ROLES[operation.requiredRole].name : null; return eName || operation.requiredRole.charAt(0).toUpperCase() + operation.requiredRole.slice(1); })()}</small><br>
           <small><strong>Duration:</strong> ${operation.duration} hours</small><br>
-          <small><strong>Reward:</strong> $${operation.rewards.money[0]}-${operation.rewards.money[1]}</small>
+          <small><strong>Reward:</strong> $${operation.rewards.money[0].toLocaleString()}-$${operation.rewards.money[1].toLocaleString()}</small>
         </div>
         <div id="tier-info-${operation.id}" style="margin:4px 0;font-size:0.8em;color:#c0a062;"></div>
         ${activeOpStatus}
@@ -5788,6 +5953,7 @@ function generateGangOperationsHTML() {
             ${availableMembers.length === 0 || isOnCooldown || activeOp ? 'disabled' : ''}>
           ${activeOp ? 'In Progress' : (isOnCooldown ? 'On Cooldown' : (availableMembers.length === 0 ? 'No Available Members' : 'Start Operation'))}
         </button>
+        `}
       </div>
     `;
   });
@@ -6017,6 +6183,13 @@ function getAvailableMembersForTraining(availableFor) {
 function startGangOperation(operationId) {
   const operation = gangOperations.find(op => op.id === operationId);
   if (!operation) return;
+
+  // Enforce reputation requirement server-side
+  const playerRep = Math.floor(player.reputation || 0);
+  if (playerRep < (operation.requiredReputation || 0)) {
+    showBriefNotification('You don\'t have enough reputation for this operation.', 'warning');
+    return;
+  }
 
   // Read selected tier
   const tierSelect = document.getElementById(`tier-select-${operationId}`);
@@ -18204,8 +18377,18 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = '1.35.0';
+const CURRENT_VERSION = '1.35.1';
 const VERSION_UPDATES = {
+  '1.35.1': {
+    title: 'Gang Operations Expansion',
+    date: 'July 2025',
+    changes: [
+      'Expanded gang operations from 4 to 12 with ascending reputation requirements (0-800)',
+      'New operations: Street Shakedown, Getaway Job, Money Skim, Convoy Hijack, Sting Reversal, Assassination Contract, Bank Vault Job, Empire Takeover',
+      'Operations now locked until player meets reputation threshold',
+      'Added reputation guard to prevent bypassing operation locks',
+    ]
+  },
   '1.35.0': {
     title: 'Audit Overhaul: Bug Fixes, Balance & QoL',
     date: 'July 2025',
