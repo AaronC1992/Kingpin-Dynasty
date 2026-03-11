@@ -5960,7 +5960,8 @@ function generateGangOperationsHTML() {
           <option value="">Select a crew member</option>
           ${availableMembers.map(member => {
             const eName = member.role && GANG_MEMBER_ROLES[member.role] ? GANG_MEMBER_ROLES[member.role].name : member.specialization;
-            return `<option value="${member.name}">${member.name} (${eName}, Lvl ${member.experienceLevel || 1})</option>`;
+            const safeName = member.name.replace(/"/g, '&quot;');
+            return `<option value="${safeName}">${member.name} (${eName}, Lvl ${member.experienceLevel || 1})</option>`;
           }).join('')}
         </select>
         ${availableMembers.length === 0 ? `<div style="color:#8b3a3a;font-size:0.8em;margin:4px 0;">No crew members with the <strong>${(() => { const eName = GANG_MEMBER_ROLES[operation.requiredRole] ? GANG_MEMBER_ROLES[operation.requiredRole].name : null; return eName || operation.requiredRole; })()}</strong> role available.</div>` : ''}
@@ -6176,7 +6177,8 @@ function generateTrainingProgramsHTML() {
           <option value="">Select a crew member</option>
           ${availableMembers.map(member => {
             const eName = member.role && GANG_MEMBER_ROLES[member.role] ? GANG_MEMBER_ROLES[member.role].name : member.specialization;
-            return `<option value="${member.name}">${member.name} (${eName})</option>`;
+            const safeName = member.name.replace(/"/g, '&quot;');
+            return `<option value="${safeName}">${member.name} (${eName})</option>`;
           }).join('')}
         </select>
 
