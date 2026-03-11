@@ -18377,8 +18377,18 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = '1.35.1';
+const CURRENT_VERSION = '1.35.2';
 const VERSION_UPDATES = {
+  '1.35.2': {
+    title: 'ESLint Cleanup',
+    date: 'March 2026',
+    changes: [
+      'Resolved all ESLint errors across the codebase (quotes, unused vars, cross-file globals)',
+      'Fixed roleLabels/roleColors scope bug in heist result popup',
+      'Removed duplicate job_result case in multiplayer message handler',
+      'Updated ESLint config with proper multiplayer.js overrides and globals',
+    ]
+  },
   '1.35.1': {
     title: 'Gang Operations Expansion',
     date: 'July 2025',

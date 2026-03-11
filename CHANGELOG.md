@@ -5,6 +5,16 @@ All notable changes to From Dusk To Don (Mafia Born) will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.35.2] - 2026-03-11
+
+### Code Quality
+- Resolved all ESLint errors across the codebase (1123 -> 0)
+- Fixed roleLabels/roleColors out-of-scope bug in heist result popup
+- Removed duplicate job_result case in multiplayer message handler
+- Updated ESLint config with proper multiplayer.js overrides and globals
+- Auto-fixed quote style to single quotes across all JS files
+- Fixed unused variable warnings in casino.js, miniGames.js, mobile-responsive.js, server.js
+
 ## [1.35.1] - 2025-07-11
 
 ### Gang Operations
