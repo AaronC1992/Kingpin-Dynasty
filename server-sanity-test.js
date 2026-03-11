@@ -1,4 +1,4 @@
-tato
+tato;
 let passed = 0;
 let failed = 0;
 

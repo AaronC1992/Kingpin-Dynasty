@@ -4602,7 +4602,7 @@ function handlePoliticsSubmitAll(clientId, message) {
 
     // Build chat summary
     const chatLines = changes.map(c => {
-        const dir = c.newValue > c.oldValue ? 'raised' : 'lowered';
+        const _dir = c.newValue > c.oldValue ? 'raised' : 'lowered';
         return `${c.label}: ${c.oldValue}${c.unit} → ${c.newValue}${c.unit}`;
     });
     addGlobalChatMessage('System', ` Top Don ${player.name} issued new city policies: ${chatLines.join(' | ')}`, '#ffd700');

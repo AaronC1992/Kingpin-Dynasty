@@ -32,7 +32,7 @@ const onlineWorld = {
         PLAYER_RANKED: 'player_ranked',
         CITY_EVENT: 'city_event'
     }
-}
+};
 
 // Log resolved server URL for debugging so uploader can see what client will attempt to connect to
 try {
@@ -251,7 +251,7 @@ function showActiveHeists() {
     
     content.dataset.activeScreen = 'heists';
     if (typeof hideAllScreens === 'function') hideAllScreens();
-    const mpScreen = document.getElementById("multiplayer-screen");
+    const mpScreen = document.getElementById('multiplayer-screen');
     if (mpScreen) mpScreen.style.display = 'block';
     
     const heists = onlineWorldState.activeHeists || [];
@@ -589,7 +589,7 @@ function manageHeist(heistId) {
             if (eq.vehicle) eqParts.push(`<span style="color:#f39c12;" title="Vehicle: Power ${eq.vehicle.power}">${escapeHTML(eq.vehicle.name)}</span>`);
             const eqHTML = eqParts.length > 0
                 ? `<div style="font-size:0.78em;color:#888;margin-top:3px;">Gear: ${eqParts.join(' / ')}</div>`
-                : `<div style="font-size:0.78em;color:#555;margin-top:3px;">No equipment</div>`;
+                : '<div style="font-size:0.78em;color:#555;margin-top:3px;">No equipment</div>';
             
             return `
             <div style="padding: 10px; margin: 6px 0; background: rgba(${isOrganizer ? '192,160,98' : '139,0,0'},0.15); border-radius: 6px; border: 1px solid ${isOrganizer ? '#c0a062' : '#3a0000'};">
@@ -791,14 +791,14 @@ async function cancelHeist(heistId) {
 // Invite a specific player to your active heist
 function inviteToHeist(playerName) {
     if (!onlineWorldState.isConnected || !onlineWorldState.socket || onlineWorldState.socket.readyState !== WebSocket.OPEN) {
-        window.ui.toast("You need to be connected to the online world!", 'error');
+        window.ui.toast('You need to be connected to the online world!', 'error');
         return;
     }
 
     // Check if player has an active heist
     const myHeist = (onlineWorldState.activeHeists || []).find(h => h.organizerId === onlineWorldState.playerId);
     if (!myHeist) {
-        window.ui.toast(`You don't have an active heist! Go to Big Scores and plan one first.`, 'error');
+        window.ui.toast('You don\'t have an active heist! Go to Big Scores and plan one first.', 'error');
         return;
     }
 
@@ -947,14 +947,16 @@ function showHeistResult(result) {
             <div class="popup-section" style="margin-top:10px;">
                 <h3 style="color:#c0a062;font-size:0.95em;margin-bottom:8px;">Crew Loadout</h3>
                 ${result.roles.map(r => {
+                    const roleLabelsLocal = { driver: 'Driver', hacker: 'Hacker', muscle: 'Muscle', lookout: 'Lookout' };
+                    const roleColorsLocal = { driver: '#3498db', hacker: '#9b59b6', muscle: '#e74c3c', lookout: '#2ecc71' };
                     const eq = r.equipment || {};
                     let gear = [];
                     if (eq.weapon) gear.push(`<span style="color:#e74c3c;">${escapeHTML(eq.weapon.name)}</span>`);
                     if (eq.armor) gear.push(`<span style="color:#3498db;">${escapeHTML(eq.armor.name)}</span>`);
                     if (eq.vehicle) gear.push(`<span style="color:#f39c12;">${escapeHTML(eq.vehicle.name)}</span>`);
                     const gearStr = gear.length > 0 ? gear.join(' / ') : '<span style="color:#555;">No gear</span>';
-                    const rLabel = r.role ? (roleLabels[r.role] || r.role) : 'No Role';
-                    const rColor = r.role ? (roleColors[r.role] || '#888') : '#555';
+                    const rLabel = r.role ? (roleLabelsLocal[r.role] || r.role) : 'No Role';
+                    const rColor = r.role ? (roleColorsLocal[r.role] || '#888') : '#555';
                     return `<div style="font-size:0.82em;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
                         <span style="color:#ccc;">${escapeHTML(r.playerName || 'Unknown')}</span>
                         <span style="color:${rColor};margin-left:6px;">[${rLabel}]</span>
@@ -1009,7 +1011,7 @@ function showNearbyPlayers() {
     if (!content) return;
     
     if (typeof hideAllScreens === 'function') hideAllScreens();
-    const mpScreen = document.getElementById("multiplayer-screen");
+    const mpScreen = document.getElementById('multiplayer-screen');
     if (mpScreen) mpScreen.style.display = 'block';
     
     const players = onlineWorldState.nearbyPlayers || [];
@@ -1114,7 +1116,7 @@ function initializeOnlineWorld() {
     // The connection will be made when a game is loaded or started
     
     // Load saved player data
-    if (typeof(Storage) !== "undefined") {
+    if (typeof(Storage) !== 'undefined') {
         const savedWorldData = localStorage.getItem('onlineWorldData');
         if (savedWorldData) {
             const data = JSON.parse(savedWorldData);
@@ -1157,7 +1159,7 @@ function connectToOnlineWorld() {
     try {
         // Try to connect to real WebSocket server
         const serverUrl = onlineWorld.serverUrl;
-        _safeLogAction(" Connecting to online world...", 'chat');
+        _safeLogAction(' Connecting to online world...', 'chat');
         // Add a console log for clearer diagnostics
         console.log('[multiplayer] Connecting to WebSocket server at', serverUrl);
         
@@ -1215,7 +1217,7 @@ function connectToOnlineWorld() {
             if (onlineWorldState.connectionStatus === 'connected') {
                 onlineWorldState.connectionStatus = 'disconnected';
                 updateConnectionStatus();
-                _safeLogAction(" Disconnected from online world", 'chat');
+                _safeLogAction(' Disconnected from online world', 'chat');
                 // Attempt to reconnect
                 setTimeout(() => {
                     connectToOnlineWorld();
@@ -1227,7 +1229,7 @@ function connectToOnlineWorld() {
         onlineWorldState.socket.onerror = function(error) {
             onlineWorldState.connectionStatus = 'error';
             updateConnectionStatus();
-            _safeLogAction(" Failed to connect to online world. Retrying...", 'chat');
+            _safeLogAction(' Failed to connect to online world. Retrying...', 'chat');
             
             // Fallback to local demo mode
             setTimeout(() => {
@@ -1238,7 +1240,7 @@ function connectToOnlineWorld() {
     } catch (error) {
         onlineWorldState.connectionStatus = 'error';
         updateConnectionStatus();
-        _safeLogAction(" Failed to connect to online world. Retrying...", 'chat');
+        _safeLogAction(' Failed to connect to online world. Retrying...', 'chat');
         
         setTimeout(() => {
             connectToLocalDemo();
@@ -1716,24 +1718,6 @@ async function handleServerMessage(message) {
             }
             break;
 
-        // -- Server-authoritative job result (future: full job_intent wiring) --
-        case 'job_result':
-            if (message.success) {
-                // Server-authoritative values overwrite local computation
-                if (typeof message.money === 'number') player.money = message.money;
-                if (typeof message.reputation === 'number') player.reputation = message.reputation;
-                if (typeof message.heat === 'number') player.heat = message.heat;
-                if (message.jailed) {
-                    player.inJail = true;
-                    player.jailTime = message.jailTime || 30;
-                }
-                if (message.taxAmount > 0 && message.taxOwnerName) {
-                    _safeLogAction(`Territory tax: $${message.taxAmount.toLocaleString()} paid to ${message.taxOwnerName}`);
-                }
-                _safeUpdateUI();
-            }
-            break;
-
         case 'territory_ownership_changed':
             onlineWorldState.territories = message.territories || onlineWorldState.territories;
             if (message.method === 'assassination') {
@@ -1810,7 +1794,7 @@ async function handleServerMessage(message) {
                 if (typeof message.money === 'number') player.money = message.money;
                 if (typeof message.reputation === 'number') player.reputation = message.reputation;
                 if (typeof message.heat === 'number') player.heat = message.heat;
-                player.inJail = !!message.jailed ? true : player.inJail;
+                player.inJail = message.jailed ? true : player.inJail;
                 if (message.jailed) player.jailTime = message.jailTime || player.jailTime;
                 // Log outcome
                 const earningsStr = message.earnings ? `+$${message.earnings.toLocaleString()}` : '';
@@ -1995,7 +1979,7 @@ async function handleServerMessage(message) {
         case 'assassination_survived':
             handleAssassinationSurvived(message);
             playNotificationSound('alert');
-            showMPToast(`\uD83D\uDEE1\uFE0F You survived an assassination attempt!`, '#8a9a6a', 5000);
+            showMPToast('\uD83D\uDEE1\uFE0F You survived an assassination attempt!', '#8a9a6a', 5000);
             break;
 
         case 'combat_result':
@@ -2158,7 +2142,7 @@ async function handleServerMessage(message) {
 
         case 'bounty_expired':
             if (message.newMoney != null) player.money = message.newMoney;
-            showMPToast(message.message || `A bounty you posted has expired and been refunded.`, '#e67e22', 6000);
+            showMPToast(message.message || 'A bounty you posted has expired and been refunded.', '#e67e22', 6000);
             if (typeof updateUI === 'function') updateUI();
             break;
 
@@ -2673,7 +2657,7 @@ function updatePlayerJailStatus(playerId, playerName, jailStatus) {
 // Attempt to break out another player
 async function attemptPlayerJailbreak(targetPlayerId, targetPlayerName) {
     if (!onlineWorldState.isConnected) {
-        window.ui.toast("You need to be connected to the online world!", 'error');
+        window.ui.toast('You need to be connected to the online world!', 'error');
         return;
     }
     
@@ -2711,7 +2695,7 @@ function requestJailRoster() {
 // Attempt to break out a jail bot (server-authoritative)
 async function attemptBotJailbreak(botId, botName) {
     if (!onlineWorldState.isConnected) {
-        window.ui.toast("You need to be connected to the online world!", 'error');
+        window.ui.toast('You need to be connected to the online world!', 'error');
         return;
     }
 
@@ -3279,6 +3263,7 @@ async function ensurePlayerNameForChat() {
         // Sanitize: strip HTML tags, limit length, remove control characters
         userName = userName.trim()
             .replace(/<[^>]*>/g, '')
+            // eslint-disable-next-line no-control-regex
             .replace(/[\x00-\x1F\x7F]/g, '')
             .substring(0, 30);
         if (userName.length === 0) {
@@ -3494,7 +3479,7 @@ function renderChatChannelContent(channel) {
 function renderPrivateChatUI() {
     const onlinePlayers = (onlineWorldState.nearbyPlayers || []).filter(p => p.name && p.name !== (typeof player !== 'undefined' ? player.name : ''));
 
-    let html = `<h4 style="color:#e67e22;margin:0 0 10px 0;font-family:'Georgia',serif;">Private Messages</h4>`;
+    let html = '<h4 style="color:#e67e22;margin:0 0 10px 0;font-family:\'Georgia\',serif;">Private Messages</h4>';
 
     // New DM dropdown / target selector
     if (onlinePlayers.length > 0) {
@@ -3527,7 +3512,7 @@ function renderPrivateChatUI() {
             <button onclick="sendChannelMessage('private')" style="background:#e67e22;color:#000;padding:10px 18px;border:none;border-radius:5px;cursor:pointer;font-weight:bold;">Send</button>
         </div>`;
     } else {
-        html += `<p style="color:#8a7a5a;text-align:center;font-size:0.9em;">Select a player above to send a message.</p>`;
+        html += '<p style="color:#8a7a5a;text-align:center;font-size:0.9em;">Select a player above to send a message.</p>';
     }
     return html;
 }
@@ -3613,11 +3598,11 @@ function getConnectionStatusHTML() {
         const count = onlineWorldState.serverInfo.playerCount || 0;
         return `<span style="color: #8a9a6a; font-family: 'Georgia', serif;">Connected to World Chat ◆ ${count} player${count !== 1 ? 's' : ''} online</span>`;
     } else if (status === 'demo' || status === 'offline') {
-        return `<span style="color: #8b3a3a; font-family: 'Georgia', serif;">Server offline ◆ retrying automatically...</span>`;
+        return '<span style="color: #8b3a3a; font-family: \'Georgia\', serif;">Server offline ◆ retrying automatically...</span>';
     } else if (status === 'error') {
-        return `<span style="color: #8b3a3a; font-family: 'Georgia', serif;">Server unavailable ◆ retrying...</span>`;
+        return '<span style="color: #8b3a3a; font-family: \'Georgia\', serif;">Server unavailable ◆ retrying...</span>';
     } else {
-        return `<span style="color: #c0a040; font-family: 'Georgia', serif;">Connecting to World Chat...</span>`;
+        return '<span style="color: #c0a040; font-family: \'Georgia\', serif;">Connecting to World Chat...</span>';
     }
 }
 
@@ -3852,7 +3837,7 @@ function showOnlineWorld(activeTab) {
                                     </div>
                                 </div>
                                 <div style="display: flex; flex-direction: column; gap: 6px; min-width: 120px;">
-                                    ${!isHome ? `<button onclick="showTerritoryRelocation()" style="background: #c0a040; color: #000; padding: 8px 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 0.85em;">Relocate</button>` : ''}
+                                    ${!isHome ? '<button onclick="showTerritoryRelocation()" style="background: #c0a040; color: #000; padding: 8px 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 0.85em;">Relocate</button>' : ''}
                                     ${!isOwned ? `<button onclick="wageWar('${d.id}')" style="background: linear-gradient(180deg, #8b0000, #5a0000); color: #fff; padding: 8px 12px; border: 1px solid #ff0000; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 0.85em;">Wage War</button>` : ''}
                                 </div>
                             </div>
@@ -3926,12 +3911,12 @@ function showOnlineWorld(activeTab) {
 
     // -- CREW TAB --
     if (tab === 'crew') {
-        worldHTML += `<div id="crew-content"><p style="color:#8a7a5a;">Loading crew data...</p></div>`;
+        worldHTML += '<div id="crew-content"><p style="color:#8a7a5a;">Loading crew data...</p></div>';
     }
 
     // -- FRIENDS TAB --
     if (tab === 'friends') {
-        worldHTML += `<div id="friends-tab-content"><p style="color:#8a7a5a;">Loading friends...</p></div>`;
+        worldHTML += '<div id="friends-tab-content"><p style="color:#8a7a5a;">Loading friends...</p></div>';
     }
 
     // -- MARKETPLACE TAB --
@@ -3977,15 +3962,15 @@ function showOnlineWorld(activeTab) {
         </div>
     `;
     
-    const mpContent = document.getElementById("multiplayer-content");
+    const mpContent = document.getElementById('multiplayer-content');
     if (!mpContent) {
-        console.warn("multiplayer-content element not found — skipping showOnlineWorld render");
+        console.warn('multiplayer-content element not found — skipping showOnlineWorld render');
         return;
     }
     mpContent.innerHTML = worldHTML;
     hideAllScreens();
-    const mpScreen = document.getElementById("multiplayer-screen");
-    if (mpScreen) mpScreen.style.display = "block";
+    const mpScreen = document.getElementById('multiplayer-screen');
+    if (mpScreen) mpScreen.style.display = 'block';
     
     // Update dynamic content
     updateConnectionStatus();
@@ -4060,7 +4045,7 @@ function renderMarketplaceTab() {
 
     // --- Vehicles ---
     if (playerCars.length > 0) {
-        html += `<h5 style="color: #3498db; margin: 10px 0 6px;">Vehicles</h5><div style="display: grid; gap: 6px;">`;
+        html += '<h5 style="color: #3498db; margin: 10px 0 6px;">Vehicles</h5><div style="display: grid; gap: 6px;">';
         playerCars.forEach((car, idx) => {
             const cond = 100 - car.damagePercentage;
             const condColor = car.damagePercentage < 30 ? '#8a9a6a' : car.damagePercentage < 60 ? '#c0a040' : '#8b3a3a';
@@ -4074,7 +4059,7 @@ function renderMarketplaceTab() {
                 </div>
             </div>`;
         });
-        html += `</div>`;
+        html += '</div>';
     }
 
     // --- Inventory items (weapons, armor, utility, drugs) ---
@@ -4087,7 +4072,7 @@ function renderMarketplaceTab() {
     ];
     const sellableItems = playerInv.filter(i => sellableTypes.some(st => st.type === i.type));
     if (sellableItems.length > 0) {
-        html += `<h5 style="color: #e74c3c; margin: 12px 0 6px;">Inventory Items</h5><div style="display: grid; gap: 6px;">`;
+        html += '<h5 style="color: #e74c3c; margin: 12px 0 6px;">Inventory Items</h5><div style="display: grid; gap: 6px;">';
         playerInv.forEach((item, idx) => {
             const st = sellableTypes.find(s => s.type === item.type);
             if (!st) return;
@@ -4103,12 +4088,12 @@ function renderMarketplaceTab() {
                 </div>
             </div>`;
         });
-        html += `</div>`;
+        html += '</div>';
     }
 
     // --- Ammo & Gas ---
     if (playerAmmo > 0 || playerGas > 0) {
-        html += `<h5 style="color: #e67e22; margin: 12px 0 6px;">Supplies</h5>`;
+        html += '<h5 style="color: #e67e22; margin: 12px 0 6px;">Supplies</h5>';
         if (playerAmmo > 0) {
             html += `<div style="padding: 8px; background: rgba(0,0,0,0.4); border-radius: 8px; border: 1px solid #1a1610; margin-bottom: 6px;">
                 <div style="margin-bottom: 6px;"><strong style="color: #f5e6c8;">\ud83d\udd2b Bullets:</strong> <span style="color: #e67e22; font-weight: bold;">${playerAmmo}</span></div>
@@ -4132,9 +4117,9 @@ function renderMarketplaceTab() {
     }
 
     if (playerCars.length === 0 && sellableItems.length === 0 && playerAmmo === 0 && playerGas === 0) {
-        html += `<p style="color: #6a5a3a; text-align: center;">You don't have any items to list. Buy from the Black Market or steal some goods first!</p>`;
+        html += '<p style="color: #6a5a3a; text-align: center;">You don\'t have any items to list. Buy from the Black Market or steal some goods first!</p>';
     }
-    html += `</div>`;
+    html += '</div>';
 
     // ==================== YOUR ACTIVE LISTINGS ====================
     if (myListings.length > 0) {
@@ -4149,7 +4134,7 @@ function renderMarketplaceTab() {
                 <button onclick="cancelMarketListing('${listing.id}')" style="background: #7a2a2a; color: #fff; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold;">Cancel</button>
             </div>`;
         });
-        html += `</div></div>`;
+        html += '</div></div>';
     }
 
     // ==================== AVAILABLE LISTINGS FROM OTHER PLAYERS ====================
@@ -4157,7 +4142,7 @@ function renderMarketplaceTab() {
         <h4 style="color: #8a9a6a; margin: 0 0 10px 0;">Available Items (${otherListings.length})</h4>`;
 
     if (otherListings.length === 0) {
-        html += `<p style="color: #6a5a3a; text-align: center;">No items listed by other players right now. Check back later!</p>`;
+        html += '<p style="color: #6a5a3a; text-align: center;">No items listed by other players right now. Check back later!</p>';
     } else {
         // Group by category for cleaner display
         const grouped = {};
@@ -4201,10 +4186,10 @@ function renderMarketplaceTab() {
                     </button>
                 </div>`;
             });
-            html += `</div>`;
+            html += '</div>';
         });
     }
-    html += `</div>`;
+    html += '</div>';
 
     // Refresh button
     html += `<div style="text-align: center; margin-top: 10px;">
@@ -4229,7 +4214,7 @@ function showVehicleMarketplace() {
 
 // Update connection status display
 function updateConnectionStatus() {
-    const statusElement = document.getElementById("world-connection-status");
+    const statusElement = document.getElementById('world-connection-status');
     if (!statusElement) return;
     
     let statusHTML = '';
@@ -4350,11 +4335,11 @@ function updateWorldState() {
 // Show welcome message when connected
 function showWelcomeMessage() {
     const messages = [
-        "Welcome to the criminal underworld! The city awaits your influence.",
-        "Other players are active. Watch your back and seize opportunities.",
-        "Territory wars are brewing. Choose your alliances wisely.",
-        "The streets are dangerous. Keep your weapons loaded and your eyes open.",
-        "A new criminal empire rises. Will it be yours?"
+        'Welcome to the criminal underworld! The city awaits your influence.',
+        'Other players are active. Watch your back and seize opportunities.',
+        'Territory wars are brewing. Choose your alliances wisely.',
+        'The streets are dangerous. Keep your weapons loaded and your eyes open.',
+        'A new criminal empire rises. Will it be yours?'
     ];
     
     const welcomeMsg = messages[Math.floor(Math.random() * messages.length)];
@@ -4373,7 +4358,7 @@ function exploreDistrict(districtName) {
     const district = onlineWorldState.cityDistricts[districtName];
     
     if (!onlineWorldState.isConnected) {
-        window.ui.toast("You need to be connected to the online world to explore districts!", 'error');
+        window.ui.toast('You need to be connected to the online world to explore districts!', 'error');
         return;
     }
     
@@ -4411,7 +4396,7 @@ function exploreDistrict(districtName) {
         </div>
     `;
     
-    const mc1 = document.getElementById("multiplayer-content");
+    const mc1 = document.getElementById('multiplayer-content');
     if (mc1) mc1.innerHTML = districtHTML;
     
     _safeLogAction(` Exploring ${districtName} district...`);
@@ -4509,7 +4494,7 @@ function sendGlobalChatMessage() {
     if (!message) return;
     
     if (!onlineWorldState.isConnected) {
-        window.ui.toast("You need to be connected to the online world to chat!", 'error');
+        window.ui.toast('You need to be connected to the online world to chat!', 'error');
         return;
     }
     
@@ -4537,7 +4522,7 @@ function sendQuickChatMessage() {
     if (!message) return;
     
     if (!onlineWorldState.isConnected) {
-        window.ui.toast("You need to be connected to the online world to chat!", 'error');
+        window.ui.toast('You need to be connected to the online world to chat!', 'error');
         return;
     }
     
@@ -4597,7 +4582,7 @@ function simulateGlobalChatResponse() {
 // District actions
 function doDistrictJob(districtName) {
     if (!onlineWorldState.isConnected) {
-        window.ui.toast("You need to be connected to the online world!", 'error');
+        window.ui.toast('You need to be connected to the online world!', 'error');
         return;
     }
 
@@ -4729,7 +4714,7 @@ function doDistrictJob(districtName) {
 
 function findPlayersInDistrict(districtName) {
     if (!onlineWorldState.isConnected) {
-        window.ui.toast("You need to be connected to the online world!", 'error');
+        window.ui.toast('You need to be connected to the online world!', 'error');
         return;
     }
     
@@ -4771,7 +4756,7 @@ function findPlayersInDistrict(districtName) {
         </div>
     `;
     
-    const mc2 = document.getElementById("multiplayer-content");
+    const mc2 = document.getElementById('multiplayer-content');
     if (mc2) mc2.innerHTML = playersHTML;
 }
 
@@ -4957,13 +4942,13 @@ async function attemptAssassination(targetName) {
 
     const confirmHit = await window.ui.confirm(
         `ORDER HIT ON ${targetName}?\n\n` +
-        `This will cost:\n` +
-        `◆ 3-5 Bullets\n` +
-        `◆ You WILL take heavy health damage\n` +
-        `◆ Gang members may die in the firefight\n` +
-        `◆ 10 minute cooldown after attempt\n\n` +
-        `Success is NOT guaranteed. You could get arrested.\n` +
-        `Proceed?`
+        'This will cost:\n' +
+        '◆ 3-5 Bullets\n' +
+        '◆ You WILL take heavy health damage\n' +
+        '◆ Gang members may die in the firefight\n' +
+        '◆ 10 minute cooldown after attempt\n\n' +
+        'Success is NOT guaranteed. You could get arrested.\n' +
+        'Proceed?'
     );
     if (!confirmHit) return;
 
@@ -5267,17 +5252,17 @@ function executePvpChallenge(playerName) {
 // Setup online world UI
 function setupOnlineWorldUI() {
     // Create multiplayer screen if it doesn't exist (reusing existing structure)
-    if (!document.getElementById("multiplayer-screen")) {
+    if (!document.getElementById('multiplayer-screen')) {
         const multiplayerScreen = document.createElement('div');
-        multiplayerScreen.id = "multiplayer-screen";
-        multiplayerScreen.className = "game-screen";
-        multiplayerScreen.style.display = "none";
+        multiplayerScreen.id = 'multiplayer-screen';
+        multiplayerScreen.className = 'game-screen';
+        multiplayerScreen.style.display = 'none';
         
         const multiplayerContent = document.createElement('div');
-        multiplayerContent.id = "multiplayer-content";
+        multiplayerContent.id = 'multiplayer-content';
         
         multiplayerScreen.appendChild(multiplayerContent);
-        document.getElementById("game").appendChild(multiplayerScreen);
+        document.getElementById('game').appendChild(multiplayerScreen);
     }
 }
 
@@ -5294,7 +5279,7 @@ function logOnlineWorldAction(message) {
 
 // Save online world settings
 function saveOnlineWorldData() {
-    if (typeof(Storage) !== "undefined") {
+    if (typeof(Storage) !== 'undefined') {
         const data = {
             playerId: onlineWorldState.playerId,
             lastConnected: new Date().toISOString(),
@@ -5308,7 +5293,7 @@ function saveOnlineWorldData() {
 
 function participateInEvent(eventType, district) {
     if (!onlineWorldState.isConnected) {
-        window.ui.toast("You need to be connected to the online world!", 'error');
+        window.ui.toast('You need to be connected to the online world!', 'error');
         return;
     }
 
@@ -5528,9 +5513,9 @@ function handleAllianceInfoResult(message) {
                 ${myAlliance.members.map(m => `<div style="padding:5px;color:${m === myAlliance.leaderName ? '#ffd700' : '#ccc'};">${m === myAlliance.leaderName ? '' : ''} ${escapeHTML(m)}</div>`).join('')}
                 <div style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap;">
                     <button onclick="allianceDeposit()" style="background: #8a9a6a; color: #000; padding: 8px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">Deposit</button>
-                    ${isLeader ? `<button onclick="allianceInvitePrompt()" style="background: #c0a062; color: #fff; padding: 8px 15px; border: none; border-radius: 6px; cursor: pointer;">Invite</button>` : ''}
-                    ${isLeader ? `<button onclick="allianceKickPrompt()" style="background: #8b3a3a; color: #fff; padding: 8px 15px; border: none; border-radius: 6px; cursor: pointer;">Kick</button>` : ''}
-                    ${isLeader ? `<button onclick="showDisciplinePanel()" style="background: #8b0000; color: #fff; padding: 8px 15px; border: none; border-radius: 6px; cursor: pointer;">Discipline</button>` : ''}
+                    ${isLeader ? '<button onclick="allianceInvitePrompt()" style="background: #c0a062; color: #fff; padding: 8px 15px; border: none; border-radius: 6px; cursor: pointer;">Invite</button>' : ''}
+                    ${isLeader ? '<button onclick="allianceKickPrompt()" style="background: #8b3a3a; color: #fff; padding: 8px 15px; border: none; border-radius: 6px; cursor: pointer;">Kick</button>' : ''}
+                    ${isLeader ? '<button onclick="showDisciplinePanel()" style="background: #8b0000; color: #fff; padding: 8px 15px; border: none; border-radius: 6px; cursor: pointer;">Discipline</button>' : ''}
                     <button onclick="allianceLeave()" style="background: #666; color: #fff; padding: 8px 15px; border: none; border-radius: 6px; cursor: pointer;">Leave</button>
                 </div>
             </div>
@@ -6283,7 +6268,7 @@ function renderPoliticsTab() {
             `;
         }
     } else {
-        html += `<div style="color: #666; text-align: center; padding: 20px;">Policy data unavailable. Connect to the server to see current policies.</div>`;
+        html += '<div style="color: #666; text-align: center; padding: 20px;">Policy data unavailable. Connect to the server to see current policies.</div>';
     }
 
     html += `
@@ -6292,7 +6277,7 @@ function renderPoliticsTab() {
     `;
 
     // Top Don controls (only if player is the Top Don)
-    html += `<div id="politics-controls-container"></div>`;
+    html += '<div id="politics-controls-container"></div>';
 
     // Info box
     html += `
@@ -6572,8 +6557,8 @@ function buildPolicyNewspaperHTML(data) {
     const subheads = [
         `${changeCount} policy change${changeCount > 1 ? 's' : ''} announced from the top -- residents brace for impact`,
         `Sources close to ${donName} say the changes are "non-negotiable"`,
-        `City officials scramble to interpret the new directives from the Don&rsquo;s office`,
-        `Insiders warn: "This changes everything for the families"`,
+        'City officials scramble to interpret the new directives from the Don&rsquo;s office',
+        'Insiders warn: "This changes everything for the families"',
     ];
 
     // Opening lines
@@ -6581,7 +6566,7 @@ function buildPolicyNewspaperHTML(data) {
         `In a bold move that sent shockwaves through the underworld, Top Don ${donName} announced sweeping changes to the city&rsquo;s governing policies today.`,
         `${donName}, the undisputed ruler of the city&rsquo;s territories, has issued a series of new decrees that will reshape how business is conducted on every corner.`,
         `The word came down from the top this morning: ${donName} is changing the rules. Those who don&rsquo;t adapt may find themselves on the wrong side of the new order.`,
-        `Every family in the city received the same message today -- the Top Don has spoken, and the city&rsquo;s policies are shifting.`,
+        'Every family in the city received the same message today -- the Top Don has spoken, and the city&rsquo;s policies are shifting.',
     ];
 
     // Build change details
@@ -6753,7 +6738,7 @@ function renderFriendsTabContent() {
       html += '</div>';
     }
 
-    html += `<button onclick="requestFriendsList()" style="background:#3a3520;color:#d4c4a0;border:1px solid #5a4a30;padding:8px 16px;border-radius:6px;cursor:pointer;margin-top:8px;">Refresh</button>`;
+    html += '<button onclick="requestFriendsList()" style="background:#3a3520;color:#d4c4a0;border:1px solid #5a4a30;padding:8px 16px;border-radius:6px;cursor:pointer;margin-top:8px;">Refresh</button>';
     container.innerHTML = html;
 }
 
@@ -6969,7 +6954,7 @@ function renderCrewScreen(container, data) {
     let html = '';
     const style = 'style="background:rgba(20,18,10,0.4);border:1px solid #3a3520;border-radius:8px;padding:16px;margin:10px 0;"';
 
-    html += `<p style="color:#8a7a5a;font-style:italic;margin:0 0 10px;">Form a crew with other players to pull off multiplayer heists together. Bigger crews can hit harder targets for bigger payouts.</p>`;
+    html += '<p style="color:#8a7a5a;font-style:italic;margin:0 0 10px;">Form a crew with other players to pull off multiplayer heists together. Bigger crews can hit harder targets for bigger payouts.</p>';
 
     if (data.myCrew) {
         const c = data.myCrew;
@@ -7029,7 +7014,7 @@ function renderCrewScreen(container, data) {
         html += `<div ${style}>
             <h3 style="color:#c0a062;">Crews Looking for Members</h3>`;
         if (openCrews.length > 0) {
-            html += `<p style="color:#8a7a5a;font-size:0.9em;margin:0 0 8px;">These crews are open — join one to team up for heists and activities.</p>`;
+            html += '<p style="color:#8a7a5a;font-size:0.9em;margin:0 0 8px;">These crews are open — join one to team up for heists and activities.</p>';
             openCrews.forEach(c => {
                 html += `<div style="padding:8px;border-bottom:1px solid #2a2518;display:flex;justify-content:space-between;align-items:center;">
                     <div>
@@ -7041,7 +7026,7 @@ function renderCrewScreen(container, data) {
                 </div>`;
             });
         } else {
-            html += `<p style="color:#8a7a5a;font-size:0.9em;margin:4px 0;">No crews are currently recruiting. Create your own or wait for a crew leader to open recruitment.</p>`;
+            html += '<p style="color:#8a7a5a;font-size:0.9em;margin:4px 0;">No crews are currently recruiting. Create your own or wait for a crew leader to open recruitment.</p>';
         }
         html += '</div>';
     }
@@ -7147,7 +7132,7 @@ function renderPlayerGambling(container) {
     const typeIcons = { dice: '[Dice]', coinflip: '[Coin]', highcard: '[Card]' };
     const typeNames = { dice: 'Dice Roll', coinflip: 'Coin Flip', highcard: 'High Card' };
 
-    let html = `<p style="color:#8a7a5a;font-style:italic;">Gamble against other players. Create a table or join one. Winner takes all.</p>`;
+    let html = '<p style="color:#8a7a5a;font-style:italic;">Gamble against other players. Create a table or join one. Winner takes all.</p>';
 
     // Create table form
     html += `<div ${style}>
@@ -7165,7 +7150,7 @@ function renderPlayerGambling(container) {
 
     // Open tables
     if (_gamblingTablesCache.length > 0) {
-        html += `<h4 style="color:#c0a062;margin:12px 0 6px;">Open Tables</h4>`;
+        html += '<h4 style="color:#c0a062;margin:12px 0 6px;">Open Tables</h4>';
         _gamblingTablesCache.forEach(t => {
             html += `<div ${style}>
                 <div style="display:flex;justify-content:space-between;align-items:center;">
@@ -7179,10 +7164,10 @@ function renderPlayerGambling(container) {
             </div>`;
         });
     } else {
-        html += `<p style="color:#8a7a5a;text-align:center;margin:20px 0;">No open tables. Be the first to open one.</p>`;
+        html += '<p style="color:#8a7a5a;text-align:center;margin:20px 0;">No open tables. Be the first to open one.</p>';
     }
 
-    html += `<button onclick="sendMP({type:'gambling_list_tables'})" style="background:#3a3520;color:#d4c4a0;border:1px solid #5a4a30;padding:8px 16px;border-radius:6px;cursor:pointer;margin-top:8px;">Refresh Tables</button>`;
+    html += '<button onclick="sendMP({type:\'gambling_list_tables\'})" style="background:#3a3520;color:#d4c4a0;border:1px solid #5a4a30;padding:8px 16px;border-radius:6px;cursor:pointer;margin-top:8px;">Refresh Tables</button>';
     container.innerHTML = html;
 }
 
@@ -7367,7 +7352,7 @@ function renderSuperbossScreen() {
 
     // Boss list
     if (_superbossListCache) {
-        html += `<h3 style="color:#c0a062;margin:16px 0 8px;">Legendary Crime Lords</h3>`;
+        html += '<h3 style="color:#c0a062;margin:16px 0 8px;">Legendary Crime Lords</h3>';
         const cooldowns = _superbossListCache.cooldowns || {};
         const cooldownDuration = _superbossListCache.cooldownDuration || 3600000;
         _superbossListCache.bosses.forEach(b => {
@@ -7379,9 +7364,9 @@ function renderSuperbossScreen() {
             const cdMins = Math.ceil(cdRemaining / 60000);
             let actionBtn = '';
             if (!canFight) {
-                actionBtn = `<span style="color:#8a7a5a;">Locked</span>`;
+                actionBtn = '<span style="color:#8a7a5a;">Locked</span>';
             } else if (_activeSuperbossFight) {
-                actionBtn = `<span style="color:#8a7a5a;">In fight</span>`;
+                actionBtn = '<span style="color:#8a7a5a;">In fight</span>';
             } else if (onCooldown) {
                 actionBtn = `<span style="color:#e67e22;">Cooldown: ${cdMins}m</span>`;
             } else {
@@ -7401,7 +7386,7 @@ function renderSuperbossScreen() {
 
         // Active fights
         if (_superbossListCache.activeFights && _superbossListCache.activeFights.length > 0) {
-            html += `<h4 style="color:#c0a062;margin:12px 0 6px;">Active Superboss Fights</h4>`;
+            html += '<h4 style="color:#c0a062;margin:12px 0 6px;">Active Superboss Fights</h4>';
             _superbossListCache.activeFights.forEach(f => {
                 const hpPct = Math.round((f.bossHP / f.bossMaxHP) * 100);
                 html += `<div ${style}>
@@ -7411,7 +7396,7 @@ function renderSuperbossScreen() {
             });
         }
     } else {
-        html += `<p style="color:#8a7a5a;">Loading superboss data...</p>`;
+        html += '<p style="color:#8a7a5a;">Loading superboss data...</p>';
         sendMP({ type: 'superboss_list' });
     }
 

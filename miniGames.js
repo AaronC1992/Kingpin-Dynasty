@@ -38,7 +38,7 @@ const tttContexts = {
     statusId: 'game-status',
     opponentName: 'Cellmate',
     onStart: () => {
-      _logAction(`You challenge a cellmate to TikTakToe. Time to see who has the sharper mind in this concrete jungle!`);
+      _logAction('You challenge a cellmate to TikTakToe. Time to see who has the sharper mind in this concrete jungle!');
     },
     onWin: () => {
       const timeReduction = Math.min(10, Math.floor(player.jailTime * 0.2));
@@ -50,20 +50,20 @@ const tttContexts = {
       return msg;
     },
     onLose: () => {
-      const msg = `Defeat! Your cellmate outplayed you this time. Sometimes the student becomes the teacher.`;
-      _logAction(`TikTakToe defeat! Your cellmate's cunning exceeded your own this round. A humbling reminder that every criminal has something to learn.`);
+      const msg = 'Defeat! Your cellmate outplayed you this time. Sometimes the student becomes the teacher.';
+      _logAction('TikTakToe defeat! Your cellmate\'s cunning exceeded your own this round. A humbling reminder that every criminal has something to learn.');
       return msg;
     },
     onTie: () => {
       if (!player.gangRespect) player.gangRespect = 0;
       player.gangRespect = Math.min(100, player.gangRespect + 1);
-      const msg = `Stalemate! Neither you nor your cellmate could claim victory. Respect earned on both sides (+1 Gang Respect).`;
-      _logAction(`TikTakToe stalemate! Both players showed equal skill in this battle of wits. Gang Respect +1. Honor among thieves indeed.`);
+      const msg = 'Stalemate! Neither you nor your cellmate could claim victory. Respect earned on both sides (+1 Gang Respect).';
+      _logAction('TikTakToe stalemate! Both players showed equal skill in this battle of wits. Gang Respect +1. Honor among thieves indeed.');
       return msg;
     },
     onQuit: () => {
-      _alert(`You forfeit the game and walk away. Your cellmate chuckles at your strategic retreat.`);
-      _logAction(`You quit the TikTakToe game mid-match. Sometimes knowing when to fold is the mark of a true strategist.`);
+      _alert('You forfeit the game and walk away. Your cellmate chuckles at your strategic retreat.');
+      _logAction('You quit the TikTakToe game mid-match. Sometimes knowing when to fold is the mark of a true strategist.');
     }
   },
   minigame: {
@@ -83,19 +83,19 @@ const tttContexts = {
       _updateStatistic('totalMoneyEarned', 100);
       recordMiniGameResult('tiktaktoe', true, 100);
       _updateUI();
-      const msg = `Victory! You've proven your strategic superiority and earned $100! Your mind is as sharp as your criminal instincts!`;
-      _logAction(`TikTakToe victory! Your strategic thinking pays off with $100 earned.`);
+      const msg = 'Victory! You\'ve proven your strategic superiority and earned $100! Your mind is as sharp as your criminal instincts!';
+      _logAction('TikTakToe victory! Your strategic thinking pays off with $100 earned.');
       return msg;
     },
     onLose: () => {
       recordMiniGameResult('tiktaktoe', false, 0);
-      const msg = `Defeat! The AI outmaneuvered you this time. Even master criminals can learn from failure.`;
-      _logAction(`TikTakToe defeat! The AI proves its worth, but every loss is a lesson learned.`);
+      const msg = 'Defeat! The AI outmaneuvered you this time. Even master criminals can learn from failure.';
+      _logAction('TikTakToe defeat! The AI proves its worth, but every loss is a lesson learned.');
       return msg;
     },
     onTie: () => {
-      const msg = `Stalemate! Neither player could claim victory. A battle of equals!`;
-      _logAction(`TikTakToe stalemate! Sometimes the greatest victories are knowing when to call it even.`);
+      const msg = 'Stalemate! Neither player could claim victory. A battle of equals!';
+      _logAction('TikTakToe stalemate! Sometimes the greatest victories are knowing when to call it even.');
       return msg;
     },
     onQuit: () => {}
@@ -261,15 +261,15 @@ let quickDrawWaiting = false;
 let quickDrawPersonalBest = null;
 
 // Cooldown & daily limit tracking
-let miniGameCooldowns = {
+let _miniGameCooldowns = {
   memory: 0,
   quickDraw: 0,
   snake: 0,
   tiktaktoe: 0,
   tiktaktoeJail: 0
 };
-const MINIGAME_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
-const DAILY_GAME_LIMIT = 10;
+const _MINIGAME_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
+const _DAILY_GAME_LIMIT = 10;
 let miniGameDailyPlays = {
   memory: { count: 0, lastReset: Date.now() },
   quickDraw: { count: 0, lastReset: Date.now() },
@@ -287,11 +287,11 @@ export function checkDailyReset(gameType) {
   }
 }
 
-export function canPlayMiniGame(gameType) {
+export function canPlayMiniGame(_gameType) {
   return true;
 }
 
-export function trackMiniGamePlay(gameType) {
+export function trackMiniGamePlay(_gameType) {
   // No cooldowns or daily limits
 }
 
@@ -336,11 +336,11 @@ export function backToMiniGamesList() {
     resetCurrentMiniGame();
   }
 
-  document.getElementById("minigame-tiktaktoe").style.display = "none";
-  document.getElementById("other-minigames").style.display = "none";
+  document.getElementById('minigame-tiktaktoe').style.display = 'none';
+  document.getElementById('other-minigames').style.display = 'none';
 
   setTimeout(() => {
-    const target = document.getElementById("panel-minigames") || document.getElementById("casino-screen");
+    const target = document.getElementById('panel-minigames') || document.getElementById('casino-screen');
     if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, 100);
 
@@ -390,12 +390,12 @@ export function resetCurrentMiniGame() {
 
 export function startMiniGameTikTakToe() {
   currentMiniGame = 'tiktaktoe';
-  document.getElementById("minigame-tiktaktoe").style.display = "block";
+  document.getElementById('minigame-tiktaktoe').style.display = 'block';
   mgResetTikTakToe();
   setTimeout(() => {
-    document.getElementById("minigame-tiktaktoe").scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document.getElementById('minigame-tiktaktoe').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, 100);
-  _logAction("You sit down for a strategic game of TikTakToe. Time to prove your tactical superiority!");
+  _logAction('You sit down for a strategic game of TikTakToe. Time to prove your tactical superiority!');
 }
 
 export function mgStartTikTakToe()          { tttStart(tttContexts.minigame); }
@@ -408,12 +408,12 @@ export function mgResetTikTakToe()          { tttReset(tttContexts.minigame); }
 
 export function startNumberGuessing() {
   currentMiniGame = 'number-guessing';
-  document.getElementById("other-minigames").style.display = "block";
+  document.getElementById('other-minigames').style.display = 'block';
 
   numberGuessingTarget = Math.floor(Math.random() * 100) + 1;
   numberGuessingAttempts = 0;
 
-  document.getElementById("minigame-content").innerHTML = `
+  document.getElementById('minigame-content').innerHTML = `
     <h3 style="color: #8a9a6a; text-align: center; margin-bottom: 20px;">Number Hunter</h3>
     <div style="text-align: center;">
       <p style="font-size: 1.2em; margin-bottom: 20px;">I'm thinking of a number between 1 and 100!</p>
@@ -431,14 +431,14 @@ export function startNumberGuessing() {
   `;
 
   setTimeout(() => {
-    document.getElementById("other-minigames").scrollIntoView({
+    document.getElementById('other-minigames').scrollIntoView({
       behavior: 'smooth',
       block: 'start'
     });
-    document.getElementById("guess-input").focus();
+    document.getElementById('guess-input').focus();
   }, 100);
 
-  _logAction("You challenge yourself to a game of Number Hunter. Can your intuition guide you to victory?");
+  _logAction('You challenge yourself to a game of Number Hunter. Can your intuition guide you to victory?');
 }
 
 export function makeGuess() {
@@ -480,7 +480,7 @@ export function makeGuess() {
 
 export function startRockPaperScissors() {
   currentMiniGame = 'rps';
-  document.getElementById("other-minigames").style.display = "block";
+  document.getElementById('other-minigames').style.display = 'block';
 
   rpsPlayerScore = 0;
   rpsAIScore = 0;
@@ -489,17 +489,17 @@ export function startRockPaperScissors() {
   updateRPSDisplay();
 
   setTimeout(() => {
-    document.getElementById("other-minigames").scrollIntoView({
+    document.getElementById('other-minigames').scrollIntoView({
       behavior: 'smooth',
       block: 'start'
     });
   }, 100);
 
-  _logAction("You challenge the AI to Rock Paper Scissors. Best of 5 rounds - may the best strategist win!");
+  _logAction('You challenge the AI to Rock Paper Scissors. Best of 5 rounds - may the best strategist win!');
 }
 
 export function updateRPSDisplay() {
-  document.getElementById("minigame-content").innerHTML = `
+  document.getElementById('minigame-content').innerHTML = `
     <h3 style="color: #8b3a3a; text-align: center; margin-bottom: 20px;">Rock Paper Scissors</h3>
     <div style="text-align: center;">
       <p style="font-size: 1.2em; margin-bottom: 20px;">Best of 5 Rounds</p>
@@ -576,7 +576,7 @@ export function playRPS(playerChoice) {
       _logAction(`Rock Paper Scissors champion! Your tactical mind proves superior in this classic game of psychology and earned $${rpsReward.toLocaleString()}.`);
     } else if (rpsAIScore >= 3) {
       recordMiniGameResult('rps', false, 0);
-      _logAction("The AI outplays you in Rock Paper Scissors. Sometimes the algorithms know best.");
+      _logAction('The AI outplays you in Rock Paper Scissors. Sometimes the algorithms know best.');
     }
   }, 1500);
 }
@@ -587,7 +587,7 @@ export function startMemoryMatch() {
   if (!canPlayMiniGame('memory')) return;
 
   currentMiniGame = 'memory';
-  document.getElementById("other-minigames").style.display = "block";
+  document.getElementById('other-minigames').style.display = 'block';
 
   const symbols = ['[X]', '[$]', '[!]', '[V]', '[D]', '[G]', '[B]', '[Z]'];
   memoryCards = [...symbols, ...symbols].sort(() => Math.random() - 0.5);
@@ -616,7 +616,7 @@ export function startMemoryMatch() {
 
   cardHTML += '</div>';
 
-  document.getElementById("minigame-content").innerHTML = cardHTML;
+  document.getElementById('minigame-content').innerHTML = cardHTML;
 
   // Start timer
   const timerInterval = setInterval(() => {
@@ -627,7 +627,7 @@ export function startMemoryMatch() {
     if (remaining <= 0 && memoryMatchedPairs < 8) {
       clearInterval(timerInterval);
       _alert('Time\'s up! Try again for the bonuses.');
-      _logAction("Memory Match: Time ran out! Practice makes perfect in the criminal mind game.");
+      _logAction('Memory Match: Time ran out! Practice makes perfect in the criminal mind game.');
       setTimeout(() => startMemoryMatch(), 2000);
     }
   }, 1000);
@@ -635,13 +635,13 @@ export function startMemoryMatch() {
   window.memoryTimerInterval = timerInterval;
 
   setTimeout(() => {
-    document.getElementById("other-minigames").scrollIntoView({
+    document.getElementById('other-minigames').scrollIntoView({
       behavior: 'smooth',
       block: 'start'
     });
   }, 100);
 
-  _logAction("You test your memory with a challenging card matching game. Beat the clock and your records for maximum rewards!");
+  _logAction('You test your memory with a challenging card matching game. Beat the clock and your records for maximum rewards!');
 }
 
 export function flipMemoryCard(index) {
@@ -696,13 +696,13 @@ export function flipMemoryCard(index) {
           recordMiniGameResult('memory', true, totalEarned);
 
           if (earnedPersonalBest && earnedTimeBonus) {
-            bonusMessage = ` NEW PERSONAL BEST! You earned $600 total ($500 + $100)!`;
+            bonusMessage = ' NEW PERSONAL BEST! You earned $600 total ($500 + $100)!';
             _logAction(`Memory Match master! New personal best of ${totalTime}s under the time limit, earning you $600 total for exceptional memory skills!`);
           } else if (earnedPersonalBest) {
-            bonusMessage = ` NEW PERSONAL BEST! You earned $500!`;
+            bonusMessage = ' NEW PERSONAL BEST! You earned $500!';
             _logAction(`Memory Match: New personal best of ${totalTime}s! Your improving memory earned you $500!`);
           } else if (earnedTimeBonus) {
-            bonusMessage = ` You completed it in time and earned $100!`;
+            bonusMessage = ' You completed it in time and earned $100!';
             _logAction(`Memory Match completed in ${totalTime}s under the time limit, earning you $100 for your sharp criminal intellect!`);
           } else {
             _logAction(`Memory Match completed in ${totalTime}s. Good memory, but you needed to be faster for bonuses.`);
@@ -730,9 +730,9 @@ export function startSnakeGame() {
   if (!canPlayMiniGame('snake')) return;
 
   currentMiniGame = 'snake';
-  document.getElementById("other-minigames").style.display = "block";
+  document.getElementById('other-minigames').style.display = 'block';
 
-  document.getElementById("minigame-content").innerHTML = `
+  document.getElementById('minigame-content').innerHTML = `
     <h3 style="color: #8b6a4a; text-align: center; margin-bottom: 20px;">Snake</h3>
     <div style="text-align: center;">
       <p style="margin-bottom: 5px; color: #7a8a5a; font-weight: bold;">Rewards: Cash & Stamina boost</p>
@@ -750,14 +750,14 @@ export function startSnakeGame() {
   `;
 
   setTimeout(() => {
-    document.getElementById("other-minigames").scrollIntoView({
+    document.getElementById('other-minigames').scrollIntoView({
       behavior: 'smooth',
       block: 'start'
     });
   }, 100);
 
   initSnakeGame();
-  _logAction("You start a classic game of Snake. Precision and planning will keep you alive and growing!");
+  _logAction('You start a classic game of Snake. Precision and planning will keep you alive and growing!');
 }
 
 export function initSnakeGame() {
@@ -965,11 +965,11 @@ export function startQuickDraw() {
   if (!canPlayMiniGame('quickDraw')) return;
 
   currentMiniGame = 'quick-draw';
-  document.getElementById("other-minigames").style.display = "block";
+  document.getElementById('other-minigames').style.display = 'block';
 
   const bestTimeText = quickDrawPersonalBest ? `Personal Best: ${quickDrawPersonalBest}ms` : 'No personal best yet';
 
-  document.getElementById("minigame-content").innerHTML = `
+  document.getElementById('minigame-content').innerHTML = `
     <h3 style="color: #1abc9c; text-align: center; margin-bottom: 20px;">Quick Draw</h3>
     <div style="text-align: center;">
       <p style="margin-bottom: 10px;">React under 300ms for cash | Beat your best time for bonus!</p>
@@ -990,13 +990,13 @@ export function startQuickDraw() {
   `;
 
   setTimeout(() => {
-    document.getElementById("other-minigames").scrollIntoView({
+    document.getElementById('other-minigames').scrollIntoView({
       behavior: 'smooth',
       block: 'start'
     });
   }, 100);
 
-  _logAction("You prepare for a Quick Draw test. Lightning reflexes and personal records await the truly skilled!");
+  _logAction('You prepare for a Quick Draw test. Lightning reflexes and personal records await the truly skilled!');
 }
 
 export function startReactionTest() {
@@ -1087,9 +1087,9 @@ export function handleReactionClick() {
   if (personalBestBonus && earnedMoney) {
     bonusText = `<br><span style="color: #8a9a6a;">NEW PERSONAL BEST! +$500!</span><br><span style="color: #8a9a6a;">Sub-300ms reflexes! +$100!</span><br><span style="color: #c0a040;">Total earned: $${totalEarned}</span>`;
   } else if (personalBestBonus) {
-    bonusText = `<br><span style="color: #8a9a6a;">NEW PERSONAL BEST! +$500!</span>`;
+    bonusText = '<br><span style="color: #8a9a6a;">NEW PERSONAL BEST! +$500!</span>';
   } else if (earnedMoney) {
-    bonusText = `<br><span style="color: #8a9a6a;">Sub-300ms reflexes! +$100!</span>`;
+    bonusText = '<br><span style="color: #8a9a6a;">Sub-300ms reflexes! +$100!</span>';
   }
 
   document.getElementById('reaction-result').innerHTML =
@@ -1102,6 +1102,6 @@ export function handleReactionClick() {
   } else if (earnedMoney) {
     _logAction(`Quick Draw: ${reactionTime}ms - Sub-300ms reflexes earned you $100 + Combat Reflex boost!`);
   } else {
-    _logAction(`Quick Draw: ${reactionTime}ms - ${message.replace(/[]/g, '').trim()} Combat Reflex improved slightly.`);
+    _logAction(`Quick Draw: ${reactionTime}ms - ${message.trim()} Combat Reflex improved slightly.`);
   }
 }

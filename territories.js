@@ -167,11 +167,11 @@ export const DISTRICTS = [
 
 const NPC_TERRITORY_BOSSES = {
   residential_low:        { name: "Vinnie 'The Rat' Morello",    defenseRating: 80  },
-  residential_middle:     { name: "Fat Tony Deluca",             defenseRating: 120 },
-  residential_upscale:    { name: "Don Castellano",              defenseRating: 180 },
+  residential_middle:     { name: 'Fat Tony Deluca',             defenseRating: 120 },
+  residential_upscale:    { name: 'Don Castellano',              defenseRating: 180 },
   commercial_downtown:    { name: "Marco 'The Banker' Ricci",    defenseRating: 160 },
   commercial_shopping:    { name: "Luca 'Fingers' Bianchi",      defenseRating: 100 },
-  industrial_warehouse:   { name: "Big Sal Ferrara",             defenseRating: 140 },
+  industrial_warehouse:   { name: 'Big Sal Ferrara',             defenseRating: 140 },
   industrial_port:        { name: "Nikolai 'The Bear' Volkov",   defenseRating: 200 },
   entertainment_nightlife: { name: "Johnny 'Neon' Cavallo",      defenseRating: 150 }
 };

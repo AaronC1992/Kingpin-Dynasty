@@ -39,7 +39,8 @@
     "currentEvents": "writable",
     "eventHistory": "writable",
     "weeklyChallenges": "writable",
-    "isConnected": "readonly"
+    "isConnected": "readonly",
+    "getMiniGameStatsHTML": "readonly"
   },
   "overrides": [
     {
@@ -50,6 +51,46 @@
       "env": {
         "browser": false,
         "node": true
+      }
+    },
+    {
+      "files": ["multiplayer.js"],
+      "parserOptions": {
+        "sourceType": "script"
+      },
+      "rules": {
+        "no-unused-vars": "off",
+        "no-case-declarations": "off",
+        "no-empty": "off"
+      },
+      "globals": {
+        "updateUI": "readonly",
+        "logAction": "readonly",
+        "hideAllScreens": "readonly",
+        "showBriefNotification": "readonly",
+        "stopJailTimer": "readonly",
+        "showJailNewspaper": "readonly",
+        "showDeathNewspaper": "readonly",
+        "showDeathScreen": "readonly",
+        "renderTerritoriesScreen": "readonly",
+        "goBackToMainMenu": "readonly",
+        "updateJailTimer": "readonly",
+        "generateJailPrisoners": "readonly",
+        "showJailScreen": "readonly",
+        "updateMobileActionLog": "readonly",
+        "escapeHTML": "readonly",
+        "ui": "readonly",
+        "ModalSystem": "readonly",
+        "MobileSystem": "readonly",
+        "updatePrisonerList": "readonly",
+        "updateJailbreakPrisonerList": "readonly",
+        "gainExperience": "readonly",
+        "showToast": "readonly",
+        "refreshStoreAfterPurchase": "readonly",
+        "calculatePower": "readonly",
+        "saveGame": "readonly",
+        "showJobs": "readonly",
+        "DISTRICTS": "readonly"
       }
     }
   ]

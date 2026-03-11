@@ -5462,7 +5462,7 @@ function showGang(activeTab) {
           const tributeElapsed = Math.floor((Date.now() - (player.gang.lastTributeTime || 0)) / 1000);
           const tributeReady = tributeElapsed >= 300;
           if (tributeReady) {
-            return `<button onclick="collectTribute()" class="store-buy-btn store-buy-btn--active" style="padding:10px 18px; position:relative;">Collect Tribute<span style="position:absolute;top:-3px;right:-3px;width:10px;height:10px;background:#e74c3c;border-radius:50%;border:2px solid #14120a;"></span></button>`;
+            return '<button onclick="collectTribute()" class="store-buy-btn store-buy-btn--active" style="padding:10px 18px; position:relative;">Collect Tribute<span style="position:absolute;top:-3px;right:-3px;width:10px;height:10px;background:#e74c3c;border-radius:50%;border:2px solid #14120a;"></span></button>';
           } else {
             const remaining = 300 - tributeElapsed;
             const m = Math.floor(remaining / 60);
@@ -20992,42 +20992,42 @@ function buildNewspaperHTML(data) {
   const subheads = {
     combat: [
       `${data.legacyTitle} of the ${data.family} Family dies in violent clash`,
-      `Witnesses describe "absolute chaos" at the scene`,
-      `Police recover multiple shell casings near the body`,
+      'Witnesses describe "absolute chaos" at the scene',
+      'Police recover multiple shell casings near the body',
     ],
     job: [
       `${data.legacyTitle} of the ${data.family} Family killed mid-operation`,
-      `Associates say the score "went sideways fast"`,
-      `Police urge other criminals to reconsider their career choices`,
+      'Associates say the score "went sideways fast"',
+      'Police urge other criminals to reconsider their career choices',
     ],
     hit: [
-      `Failed assassination ends in death of the would-be killer`,
+      'Failed assassination ends in death of the would-be killer',
       `Target survived; ${nm} did not`,
-      `"They picked the wrong mark," says anonymous source`,
+      '"They picked the wrong mark," says anonymous source',
     ],
     turf: [
-      `Territory dispute between rival factions turns deadly`,
+      'Territory dispute between rival factions turns deadly',
       `${data.family} Family loses ground and a soldier`,
-      `Control of the block remains contested after the bloodshed`,
+      'Control of the block remains contested after the bloodshed',
     ],
     laundering: [
       `Financial crime turns fatal for ${data.legacyTitle}`,
-      `"Should have stuck to cash," says former associate`,
+      '"Should have stuck to cash," says former associate',
     ],
     cartheft: [
       `Car theft gone wrong leaves ${data.legacyTitle} dead`,
-      `"They didn't even get the keys in the ignition," reports witness`,
+      '"They didn\'t even get the keys in the ignition," reports witness',
     ],
     executed: [
       `Insiders whisper of betrayal within the ${data.family} Family`,
-      `No witnesses. No evidence. Just a body.`,
-      `"The family handles its own problems," says anonymous source`,
+      'No witnesses. No evidence. Just a body.',
+      '"The family handles its own problems," says anonymous source',
     ],
     generic: [
       `${data.legacyTitle} of the ${data.family} Family meets untimely end &mdash; "${cod}"`,
-      `Police close the case, citing "occupational hazard"`,
-      `"Honestly, we're surprised they lasted this long," says detective`,
-      `Funeral expected to be poorly attended`,
+      'Police close the case, citing "occupational hazard"',
+      '"Honestly, we\'re surprised they lasted this long," says detective',
+      'Funeral expected to be poorly attended',
     ]
   };
 
@@ -21298,7 +21298,7 @@ function buildJailNewspaperHTML(data) {
     'Onlookers give standing ovation to responding officers',
     'Fellow inmates pre-emptively ask for a different cell',
     'Booking officer had to pause for composure before processing',
-    `Defense attorney reportedly sighed upon reviewing the case file`,
+    'Defense attorney reportedly sighed upon reviewing the case file',
     'Security camera footage expected to go viral',
   ];
   const seriousSubheads = [
@@ -21306,7 +21306,7 @@ function buildJailNewspaperHTML(data) {
     'Investigators say operation was months in the making',
     `${data.family} family connections under scrutiny`,
     'Police urge remaining associates to cooperate',
-    `Arrest sends message to the city's organized crime networks`,
+    'Arrest sends message to the city\'s organized crime networks',
     'Sources say more arrests could follow',
     `${data.legacyTitle} expected to face multiple charges`,
     'Bail hearing set for tomorrow; prosecutors will oppose release',
@@ -23304,7 +23304,7 @@ function buildEmpireOverviewHTML() {
   } else if (gangSize >= 3) {
     empireNarrative = `You have a crew of ${gangSize} backing your play. It's not an empire yet, but every empire starts with a few loyal soldiers.`;
   } else {
-    empireNarrative = `Every kingpin started somewhere. The streets are waiting to see what you'll become.`;
+    empireNarrative = 'Every kingpin started somewhere. The streets are waiting to see what you\'ll become.';
   }
   if (familyName) {
     empireNarrative += ` The ${familyName} connection adds weight to every move you make.`;

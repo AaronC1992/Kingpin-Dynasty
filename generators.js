@@ -10,23 +10,23 @@ import { player } from './player.js';
 
 // Random prisoner names for jail system
 export const prisonerNames = [
-    "Tony \"The Snake\" Marconi", "Vincent \"Vinny\" Romano", "Marco \"The Bull\" Santangelo",
-    "Sal \"Scarface\" DeLuca", "Frank \"The Hammer\" Rossini", "Joey \"Two-Times\" Castellano",
-    "Nick \"The Knife\" Moretti", "Rocco \"Rocky\" Benedetto", "Anthony \"Big Tony\" Genovese",
-    "Michael \"Mikey\" Calabrese", "Dominic \"Dom\" Torrino", "Carlo \"The Cat\" Bianchi",
-    "Gino \"The Ghost\" Falcone", "Paulie \"The Wall\" Ricci", "Luca \"Lucky\" Fontana"
+    'Tony "The Snake" Marconi', 'Vincent "Vinny" Romano', 'Marco "The Bull" Santangelo',
+    'Sal "Scarface" DeLuca', 'Frank "The Hammer" Rossini', 'Joey "Two-Times" Castellano',
+    'Nick "The Knife" Moretti', 'Rocco "Rocky" Benedetto', 'Anthony "Big Tony" Genovese',
+    'Michael "Mikey" Calabrese', 'Dominic "Dom" Torrino', 'Carlo "The Cat" Bianchi',
+    'Gino "The Ghost" Falcone', 'Paulie "The Wall" Ricci', 'Luca "Lucky" Fontana'
 ];
 
 // Random recruit names for gang recruitment
 export const recruitNames = [
-    "Eddie \"Fast Hands\" Murphy", "Danny \"The Crow\" Sullivan", "Rico \"Smiles\" Martinez",
-    "Jimmy \"Knuckles\" O'Brien", "Carlos \"Snake Eyes\" Rivera", "Tommy \"The Kid\" Chen",
-    "Vinny \"Wheels\" Rossi", "Mickey \"Slim\" Johnson", "Angelo \"The Tank\" Moreno",
-    "Frankie \"Sharp\" Williams", "Bobby \"Ice\" Kowalski", "Sammy \"Brass\" Thompson",
-    "Lou \"The Fixer\" Garcia", "Pete \"Whispers\" Anderson", "Jake \"Lightning\" Davis",
-    "Nicky \"Smoke\" Rodriguez", "Tony \"Razors\" Bennett", "Max \"The Bull\" Jackson",
-    "Sal \"Quick Draw\" Fernandez", "Leo \"Ghost\" Walker", "Ricky \"Viper\" Cruz",
-    "Joey \"Phantom\" Stone", "Manny \"Torch\" Lopez", "Gio \"Shadow\" Milano"
+    'Eddie "Fast Hands" Murphy', 'Danny "The Crow" Sullivan', 'Rico "Smiles" Martinez',
+    "Jimmy \"Knuckles\" O'Brien", 'Carlos "Snake Eyes" Rivera', 'Tommy "The Kid" Chen',
+    'Vinny "Wheels" Rossi', 'Mickey "Slim" Johnson', 'Angelo "The Tank" Moreno',
+    'Frankie "Sharp" Williams', 'Bobby "Ice" Kowalski', 'Sammy "Brass" Thompson',
+    'Lou "The Fixer" Garcia', 'Pete "Whispers" Anderson', 'Jake "Lightning" Davis',
+    'Nicky "Smoke" Rodriguez', 'Tony "Razors" Bennett', 'Max "The Bull" Jackson',
+    'Sal "Quick Draw" Fernandez', 'Leo "Ghost" Walker', 'Ricky "Viper" Cruz',
+    'Joey "Phantom" Stone', 'Manny "Torch" Lopez', 'Gio "Shadow" Milano'
 ];
 
 // State variables
@@ -58,7 +58,7 @@ export function generateJailPrisoners() {
     // Add player to jail list if they're in jail
     if (player.inJail) {
         jailPrisoners.unshift({
-            name: player.name || "You",
+            name: player.name || 'You',
             sentence: player.jailTime,
             difficulty: 0,
             isPlayer: true
@@ -76,7 +76,7 @@ export function generateJailbreakPrisoners() {
         const name = prisonerNames[Math.floor(Math.random() * prisonerNames.length)];
         const sentence = Math.floor(Math.random() * 50) + 10; // 10-59 seconds
         const difficulty = Math.floor(Math.random() * 4) + 1; // 1-4 difficulty levels
-        const securityLevel = ["Minimum", "Medium", "Maximum", "Supermax"][difficulty - 1];
+        const securityLevel = ['Minimum', 'Medium', 'Maximum', 'Supermax'][difficulty - 1];
         
         jailbreakPrisoners.push({
             name: name,
@@ -123,7 +123,7 @@ export function generateAvailableRecruits() {
         // NOTE: When gangRolesEnabled, recruitment in game.js overrides this with
         // the expanded role system (bruiser/fixer/hacker/etc.) and derives the
         // correct specialization via EXPANDED_TO_SPECIALIZATION mapping.
-        const specializations = ["muscle", "thief", "dealer", "driver", "enforcer", "technician"];
+        const specializations = ['muscle', 'thief', 'dealer', 'driver', 'enforcer', 'technician'];
         const specialization = specializations[Math.floor(Math.random() * specializations.length)];
         
         const recruit = {

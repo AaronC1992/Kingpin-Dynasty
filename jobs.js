@@ -11,92 +11,92 @@
 // energyCost fields kept for data reference — cooldown timers use risk tiers instead
 export const jobs = [
     // Entry Level Job — tight early-game grind
-    { name: "Street Soldier", payout: [40, 180], risk: "low", jailChance: 20, heatGain: 1, healthLoss: 0, requiredItems: [], reputation: 0, energyCost: 1 },
+    { name: 'Street Soldier', payout: [40, 180], risk: 'low', jailChance: 20, heatGain: 1, healthLoss: 0, requiredItems: [], reputation: 0, energyCost: 1 },
     
     // Car Stealing Job (Special mechanic)
-    { name: "Boost a Ride", payout: [0, 0], risk: "medium", jailChance: 40, heatGain: 3, healthLoss: 5, requiredItems: [], reputation: 0, special: "car_theft", energyCost: 3 },
+    { name: 'Boost a Ride', payout: [0, 0], risk: 'medium', jailChance: 40, heatGain: 3, healthLoss: 5, requiredItems: [], reputation: 0, special: 'car_theft', energyCost: 3 },
     
     // Higher Risk Job
-    { name: "Store Heist", payout: [800, 2200], risk: "high", jailChance: 30, heatGain: 4, healthLoss: 10, requiredItems: [], reputation: 0, energyCost: 5 },
+    { name: 'Store Heist', payout: [800, 2200], risk: 'high', jailChance: 30, heatGain: 4, healthLoss: 10, requiredItems: [], reputation: 0, energyCost: 5 },
     
     // Drug dealing jobs
-    { name: "Bootleg Run", payout: [2500, 6000], risk: "high", jailChance: 25, heatGain: 3, healthLoss: 5, requiredItems: ["Crate Moonshine"], reputation: 0, energyCost: 7 },
-    { name: "Speakeasy Supply", payout: [5000, 11000], risk: "very high", jailChance: 35, heatGain: 5, healthLoss: 8, requiredItems: ["Bag of Mary Jane"], reputation: 0, energyCost: 9 },
-    { name: "White Powder Distribution", payout: [10000, 22000], risk: "extreme", jailChance: 45, heatGain: 8, healthLoss: 15, requiredItems: ["Pure Cocaine"], reputation: 0, energyCost: 12 },
+    { name: 'Bootleg Run', payout: [2500, 6000], risk: 'high', jailChance: 25, heatGain: 3, healthLoss: 5, requiredItems: ['Crate Moonshine'], reputation: 0, energyCost: 7 },
+    { name: 'Speakeasy Supply', payout: [5000, 11000], risk: 'very high', jailChance: 35, heatGain: 5, healthLoss: 8, requiredItems: ['Bag of Mary Jane'], reputation: 0, energyCost: 9 },
+    { name: 'White Powder Distribution', payout: [10000, 22000], risk: 'extreme', jailChance: 45, heatGain: 8, healthLoss: 15, requiredItems: ['Pure Cocaine'], reputation: 0, energyCost: 12 },
     
     // Weapon-based jobs
-    { name: "Protection Collection", payout: [500, 1400], risk: "medium", jailChance: 20, heatGain: 3, healthLoss: 8, requiredItems: ["Brass Knuckles"], reputation: 0, energyCost: 6 },
-    { name: "Bank Job", payout: [7000, 18000], risk: "extreme", jailChance: 50, heatGain: 10, healthLoss: 20, requiredItems: ["Tommy Gun", "Bullets"], reputation: 0, energyCost: 15, paysDirty: true },
-    { name: "Hit on a Rival", payout: [4000, 9000], risk: "very high", jailChance: 40, heatGain: 6, healthLoss: 25, requiredItems: ["Pistol", "Bullets"], reputation: 0, energyCost: 10 },
+    { name: 'Protection Collection', payout: [500, 1400], risk: 'medium', jailChance: 20, heatGain: 3, healthLoss: 8, requiredItems: ['Brass Knuckles'], reputation: 0, energyCost: 6 },
+    { name: 'Bank Job', payout: [7000, 18000], risk: 'extreme', jailChance: 50, heatGain: 10, healthLoss: 20, requiredItems: ['Tommy Gun', 'Bullets'], reputation: 0, energyCost: 15, paysDirty: true },
+    { name: 'Hit on a Rival', payout: [4000, 9000], risk: 'very high', jailChance: 40, heatGain: 6, healthLoss: 25, requiredItems: ['Pistol', 'Bullets'], reputation: 0, energyCost: 10 },
     
     // High-tech/Vehicle jobs
-    { name: "Luxury Car Ring", payout: [5000, 11000], risk: "high", jailChance: 30, heatGain: 4, healthLoss: 5, requiredItems: ["Luxury Automobile"], reputation: 0, energyCost: 9 },
-    { name: "Cross-Border Smuggling", payout: [7500, 18000], risk: "extreme", jailChance: 35, heatGain: 7, healthLoss: 10, requiredItems: ["Private Airplane", "Gasoline"], reputation: 0, energyCost: 16 },
+    { name: 'Luxury Car Ring', payout: [5000, 11000], risk: 'high', jailChance: 30, heatGain: 4, healthLoss: 5, requiredItems: ['Luxury Automobile'], reputation: 0, energyCost: 9 },
+    { name: 'Cross-Border Smuggling', payout: [7500, 18000], risk: 'extreme', jailChance: 35, heatGain: 7, healthLoss: 10, requiredItems: ['Private Airplane', 'Gasoline'], reputation: 0, energyCost: 16 },
     
     // Gang-based jobs
-    { name: "Turf War", payout: [2500, 7000], risk: "very high", jailChance: 45, heatGain: 5, healthLoss: 30, requiredItems: ["Gang Recruit"], reputation: 0, energyCost: 12 },
-    { name: "Underground Boxing", payout: [2000, 5000], risk: "high", jailChance: 25, heatGain: 2, healthLoss: 40, requiredItems: ["Brass Knuckles"], reputation: 0, energyCost: 8 },
+    { name: 'Turf War', payout: [2500, 7000], risk: 'very high', jailChance: 45, heatGain: 5, healthLoss: 30, requiredItems: ['Gang Recruit'], reputation: 0, energyCost: 12 },
+    { name: 'Underground Boxing', payout: [2000, 5000], risk: 'high', jailChance: 25, heatGain: 2, healthLoss: 40, requiredItems: ['Brass Knuckles'], reputation: 0, energyCost: 8 },
     
     // Property-based jobs
-    { name: "Illegal Gambling Den", payout: [5000, 11000], risk: "very high", jailChance: 30, heatGain: 4, healthLoss: 5, requiredItems: ["Criminal Safehouse"], reputation: 0, energyCost: 14 },
-    { name: "Money Laundering", payout: [6000, 15000], risk: "high", jailChance: 20, heatGain: 3, healthLoss: 0, requiredItems: ["Luxury Automobile"], reputation: 0, energyCost: 15, special: "launder_money", requiresBusiness: true },
+    { name: 'Illegal Gambling Den', payout: [5000, 11000], risk: 'very high', jailChance: 30, heatGain: 4, healthLoss: 5, requiredItems: ['Criminal Safehouse'], reputation: 0, energyCost: 14 },
+    { name: 'Money Laundering', payout: [6000, 15000], risk: 'high', jailChance: 20, heatGain: 3, healthLoss: 0, requiredItems: ['Luxury Automobile'], reputation: 0, energyCost: 15, special: 'launder_money', requiresBusiness: true },
     
     // Counterfeiting job (pays dirty money only)
-    { name: "Counterfeiting Money", payout: [6000, 18000], risk: "extreme", jailChance: 45, heatGain: 8, healthLoss: 0, requiredItems: ["Basement Hideout", "Fake ID Kit"], reputation: 0, energyCost: 13, paysDirty: true },
+    { name: 'Counterfeiting Money', payout: [6000, 18000], risk: 'extreme', jailChance: 45, heatGain: 8, healthLoss: 0, requiredItems: ['Basement Hideout', 'Fake ID Kit'], reputation: 0, energyCost: 13, paysDirty: true },
     
     // Elite endgame jobs
-    { name: "International Arms Trade", payout: [18000, 40000], risk: "legendary", jailChance: 60, heatGain: 12, healthLoss: 10, requiredItems: ["Private Airplane", "Tommy Gun", "Bulletproof Vest"], reputation: 0, energyCost: 20 },
-    { name: "Take Over the City", payout: [50000, 125000], risk: "legendary", jailChance: 70, heatGain: 15, healthLoss: 20, requiredItems: ["Gang Recruit", "Underground Bunker", "Tommy Gun", "Luxury Automobile"], reputation: 0, energyCost: 25 }
+    { name: 'International Arms Trade', payout: [18000, 40000], risk: 'legendary', jailChance: 60, heatGain: 12, healthLoss: 10, requiredItems: ['Private Airplane', 'Tommy Gun', 'Bulletproof Vest'], reputation: 0, energyCost: 20 },
+    { name: 'Take Over the City', payout: [50000, 125000], risk: 'legendary', jailChance: 70, heatGain: 15, healthLoss: 20, requiredItems: ['Gang Recruit', 'Underground Bunker', 'Tommy Gun', 'Luxury Automobile'], reputation: 0, energyCost: 25 }
 ];
 
 // Stolen car types with base values and damage probabilities
 export const stolenCarTypes = [
     // Broken vehicles (very common — bulk of stolen cars)
-    { name: "Broken Family Wagon", baseValue: 800, damageChance: 80, rarity: 70, image: "vehicles/Broken Family Wagon.png" },
-    { name: "Broken Delivery Van", baseValue: 1200, damageChance: 75, rarity: 65, image: "vehicles/Broken Delivery Van.png" },
-    { name: "Broken Street Racer Coupe", baseValue: 2000, damageChance: 70, rarity: 60, image: "vehicles/Broken Street Racer Coupe.png" },
-    { name: "Broken Luxury Town Car", baseValue: 3500, damageChance: 65, rarity: 55, image: "vehicles/Broken Luxury Town Car.png" },
-    { name: "Broken High-End Roadster", baseValue: 4000, damageChance: 68, rarity: 50, image: "vehicles/broken version of the High-End Roadster.png" },
-    { name: "Broken Armored Truck", baseValue: 5000, damageChance: 70, rarity: 48, image: "vehicles/broken version of the armored truck.png" },
+    { name: 'Broken Family Wagon', baseValue: 800, damageChance: 80, rarity: 70, image: 'vehicles/Broken Family Wagon.png' },
+    { name: 'Broken Delivery Van', baseValue: 1200, damageChance: 75, rarity: 65, image: 'vehicles/Broken Delivery Van.png' },
+    { name: 'Broken Street Racer Coupe', baseValue: 2000, damageChance: 70, rarity: 60, image: 'vehicles/Broken Street Racer Coupe.png' },
+    { name: 'Broken Luxury Town Car', baseValue: 3500, damageChance: 65, rarity: 55, image: 'vehicles/Broken Luxury Town Car.png' },
+    { name: 'Broken High-End Roadster', baseValue: 4000, damageChance: 68, rarity: 50, image: 'vehicles/broken version of the High-End Roadster.png' },
+    { name: 'Broken Armored Truck', baseValue: 5000, damageChance: 70, rarity: 48, image: 'vehicles/broken version of the armored truck.png' },
     
     // Rusty vehicles (uncommon, moderate value)
-    { name: "Rusty Jalopy", baseValue: 5000, damageChance: 60, rarity: 28, image: "vehicles/Rusty Jalopy.png" },
-    { name: "Rusty Delivery Van", baseValue: 8000, damageChance: 55, rarity: 24, image: "vehicles/rusty version of the Delivery Van.png" },
-    { name: "Rusted Family Wagon", baseValue: 12000, damageChance: 50, rarity: 22, image: "vehicles/Rusted Family Wagon.png" },
-    { name: "Rusty Street Racer Coupe", baseValue: 18000, damageChance: 48, rarity: 20, image: "vehicles/Rusty Street Racer Coupe.png" },
-    { name: "Rusty Luxury Town Car", baseValue: 25000, damageChance: 45, rarity: 18, image: "vehicles/Rusty Luxury Town Car.png" },
-    { name: "Rusty High-End Roadster", baseValue: 30000, damageChance: 42, rarity: 15, image: "vehicles/rusted High-End Roadster.png" },
-    { name: "Rusty Armored Truck", baseValue: 35000, damageChance: 40, rarity: 12, image: "vehicles/Rusty Armored Truck.png" },
+    { name: 'Rusty Jalopy', baseValue: 5000, damageChance: 60, rarity: 28, image: 'vehicles/Rusty Jalopy.png' },
+    { name: 'Rusty Delivery Van', baseValue: 8000, damageChance: 55, rarity: 24, image: 'vehicles/rusty version of the Delivery Van.png' },
+    { name: 'Rusted Family Wagon', baseValue: 12000, damageChance: 50, rarity: 22, image: 'vehicles/Rusted Family Wagon.png' },
+    { name: 'Rusty Street Racer Coupe', baseValue: 18000, damageChance: 48, rarity: 20, image: 'vehicles/Rusty Street Racer Coupe.png' },
+    { name: 'Rusty Luxury Town Car', baseValue: 25000, damageChance: 45, rarity: 18, image: 'vehicles/Rusty Luxury Town Car.png' },
+    { name: 'Rusty High-End Roadster', baseValue: 30000, damageChance: 42, rarity: 15, image: 'vehicles/rusted High-End Roadster.png' },
+    { name: 'Rusty Armored Truck', baseValue: 35000, damageChance: 40, rarity: 12, image: 'vehicles/Rusty Armored Truck.png' },
     
     // Normal vehicles (rare — hard to find anything decent on the street)
-    { name: "Old Sedan", baseValue: 15000, damageChance: 45, rarity: 8, image: "vehicles/Old Sedan.png" },
-    { name: "Old Ford", baseValue: 25000, damageChance: 40, rarity: 6, image: "vehicles/Old Ford.png" },
-    { name: "Taxi", baseValue: 28000, damageChance: 38, rarity: 5, image: "vehicles/Taxi.png" },
-    { name: "Delivery Van", baseValue: 32000, damageChance: 35, rarity: 5, image: "vehicles/Delivery Van.png" },
-    { name: "Family Wagon", baseValue: 30000, damageChance: 35, rarity: 4, image: "vehicles/Family Wagon.png" },
-    { name: "Hearse", baseValue: 35000, damageChance: 33, rarity: 4, image: "vehicles/Hearse.png" },
-    { name: "Motorcycle", baseValue: 45000, damageChance: 50, rarity: 3, image: "vehicles/Motorcycle.png" },
-    { name: "Pickup Truck", baseValue: 50000, damageChance: 30, rarity: 3, image: "vehicles/Pickup Truck.png" },
-    { name: "Sports Coupe", baseValue: 60000, damageChance: 25, rarity: 2, image: "vehicles/Sports Coupe.png" },
-    { name: "Street Racer Coupe", baseValue: 70000, damageChance: 28, rarity: 2, image: "vehicles/Street Racer Coupe.png" },
+    { name: 'Old Sedan', baseValue: 15000, damageChance: 45, rarity: 8, image: 'vehicles/Old Sedan.png' },
+    { name: 'Old Ford', baseValue: 25000, damageChance: 40, rarity: 6, image: 'vehicles/Old Ford.png' },
+    { name: 'Taxi', baseValue: 28000, damageChance: 38, rarity: 5, image: 'vehicles/Taxi.png' },
+    { name: 'Delivery Van', baseValue: 32000, damageChance: 35, rarity: 5, image: 'vehicles/Delivery Van.png' },
+    { name: 'Family Wagon', baseValue: 30000, damageChance: 35, rarity: 4, image: 'vehicles/Family Wagon.png' },
+    { name: 'Hearse', baseValue: 35000, damageChance: 33, rarity: 4, image: 'vehicles/Hearse.png' },
+    { name: 'Motorcycle', baseValue: 45000, damageChance: 50, rarity: 3, image: 'vehicles/Motorcycle.png' },
+    { name: 'Pickup Truck', baseValue: 50000, damageChance: 30, rarity: 3, image: 'vehicles/Pickup Truck.png' },
+    { name: 'Sports Coupe', baseValue: 60000, damageChance: 25, rarity: 2, image: 'vehicles/Sports Coupe.png' },
+    { name: 'Street Racer Coupe', baseValue: 70000, damageChance: 28, rarity: 2, image: 'vehicles/Street Racer Coupe.png' },
     
     // Rare vehicles (very hard to score)
-    { name: "Delivery Truck", baseValue: 75000, damageChance: 28, rarity: 1.5, image: "vehicles/Delivery Truck.png" },
-    { name: "Freight Truck", baseValue: 85000, damageChance: 32, rarity: 1.2, image: "vehicles/Freight Truck.png" },
-    { name: "Luxury Sedan", baseValue: 100000, damageChance: 20, rarity: 1, image: "vehicles/luxury sedan.png" },
-    { name: "Luxury Town Car", baseValue: 120000, damageChance: 18, rarity: 0.8, image: "vehicles/Luxury Town Car.png" },
+    { name: 'Delivery Truck', baseValue: 75000, damageChance: 28, rarity: 1.5, image: 'vehicles/Delivery Truck.png' },
+    { name: 'Freight Truck', baseValue: 85000, damageChance: 32, rarity: 1.2, image: 'vehicles/Freight Truck.png' },
+    { name: 'Luxury Sedan', baseValue: 100000, damageChance: 20, rarity: 1, image: 'vehicles/luxury sedan.png' },
+    { name: 'Luxury Town Car', baseValue: 120000, damageChance: 18, rarity: 0.8, image: 'vehicles/Luxury Town Car.png' },
     
     // Very rare vehicles (jackpot tier)
-    { name: "Speedboat", baseValue: 140000, damageChance: 22, rarity: 0.5, image: "vehicles/Speedboat.png" },
-    { name: "High-End Roadster", baseValue: 150000, damageChance: 15, rarity: 0.4, image: "vehicles/High-End Roadster.png" },
-    { name: "Limousine", baseValue: 180000, damageChance: 16, rarity: 0.3, image: "vehicles/Limousine.png" },
-    { name: "Party Bus", baseValue: 200000, damageChance: 25, rarity: 0.2, image: "vehicles/Party Bus.png" },
+    { name: 'Speedboat', baseValue: 140000, damageChance: 22, rarity: 0.5, image: 'vehicles/Speedboat.png' },
+    { name: 'High-End Roadster', baseValue: 150000, damageChance: 15, rarity: 0.4, image: 'vehicles/High-End Roadster.png' },
+    { name: 'Limousine', baseValue: 180000, damageChance: 16, rarity: 0.3, image: 'vehicles/Limousine.png' },
+    { name: 'Party Bus', baseValue: 200000, damageChance: 25, rarity: 0.2, image: 'vehicles/Party Bus.png' },
     
     // Super rare vehicles
-    { name: "Police Cruiser", baseValue: 250000, damageChance: 10, rarity: 0.1, image: "vehicles/Police Cruiser.png" },
+    { name: 'Police Cruiser', baseValue: 250000, damageChance: 10, rarity: 0.1, image: 'vehicles/Police Cruiser.png' },
 
     // Equipment-grade vehicles (extremely rare — steal to equip or sell on player market)
-    { name: "Armored Car", baseValue: 150000, damageChance: 15, rarity: 0.05, image: "vehicles/Armored Car.png" },
-    { name: "Luxury Automobile", baseValue: 500000, damageChance: 10, rarity: 0.02, image: "vehicles/Luxury Automobile.png" },
-    { name: "Private Airplane", baseValue: 1800000, damageChance: 5, rarity: 0.01, image: "vehicles/Private Airplane.png" }
+    { name: 'Armored Car', baseValue: 150000, damageChance: 15, rarity: 0.05, image: 'vehicles/Armored Car.png' },
+    { name: 'Luxury Automobile', baseValue: 500000, damageChance: 10, rarity: 0.02, image: 'vehicles/Luxury Automobile.png' },
+    { name: 'Private Airplane', baseValue: 1800000, damageChance: 5, rarity: 0.01, image: 'vehicles/Private Airplane.png' }
 ];

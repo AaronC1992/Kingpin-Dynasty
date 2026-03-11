@@ -124,10 +124,10 @@ export const CHARACTER_PERKS = [
 
 // Global player stats
 export const player = {
-  name: "", // Player's name
-  gender: "", // Player's gender: "male" or "female"
-  ethnicity: "", // Player's ethnicity: "white", "black", "asian", "mexican"
-  portrait: "", // Path to player's portrait image
+  name: '', // Player's name
+  gender: '', // Player's gender: "male" or "female"
+  ethnicity: '', // Player's ethnicity: "white", "black", "asian", "mexican"
+  portrait: '', // Path to player's portrait image
   background: null, // CHARACTER_BACKGROUNDS id chosen at creation
   perk: null,       // CHARACTER_PERKS id chosen at creation
   storyProgress: null, // Set when player begins a family story
@@ -365,87 +365,87 @@ export function gainExperience(amount) {
 // Tier 3: Masteries (max 5 ranks, require tier 2 node at rank 5 + 20 pts in tree)
 export const SKILL_TREE_DEFS = {
   stealth: {
-    name: "Shadow Arts",
-    icon: "🕵️",
-    color: "#8b6a4a",
-    desc: "Move unseen, strike unheard. The art of the invisible hand.",
+    name: 'Shadow Arts',
+    icon: '🕵️',
+    color: '#8b6a4a',
+    desc: 'Move unseen, strike unheard. The art of the invisible hand.',
     nodes: {
-      shadow_step:    { tier: 1, name: "Shadow Step",    icon: "🌑", maxRank: 10, desc: "Move unseen through the criminal underworld", effect: "-2% arrest chance per rank", prereqs: [] },
-      light_feet:     { tier: 1, name: "Light Feet",     icon: "👣", maxRank: 10, desc: "Move silently through enemy territory", effect: "-3% detection chance per rank", prereqs: [] },
-      infiltration:   { tier: 2, name: "Infiltration",   icon: "🔓", maxRank: 10, desc: "Break into secured locations with ease", effect: "+5% stealth job success per rank", prereqs: [{ node: "shadow_step", rank: 3 }] },
-      escape_artist:  { tier: 2, name: "Escape Artist",  icon: "💨", maxRank: 10, desc: "Slip out of the tightest situations", effect: "-2s jail time, +3% breakout per rank", prereqs: [{ node: "light_feet", rank: 3 }] },
-      ghost_protocol: { tier: 3, name: "Ghost Protocol", icon: "👻", maxRank: 5,  desc: "Become a phantom — practically invisible", effect: "-4% heat gain per rank", prereqs: [{ node: "infiltration", rank: 5 }] },
-      surveillance:   { tier: 3, name: "Surveillance",   icon: "👁️", maxRank: 5,  desc: "Gather intel and stay ahead of enemies", effect: "+4% job intel per rank", prereqs: [{ node: "escape_artist", rank: 5 }] }
+      shadow_step:    { tier: 1, name: 'Shadow Step',    icon: '🌑', maxRank: 10, desc: 'Move unseen through the criminal underworld', effect: '-2% arrest chance per rank', prereqs: [] },
+      light_feet:     { tier: 1, name: 'Light Feet',     icon: '👣', maxRank: 10, desc: 'Move silently through enemy territory', effect: '-3% detection chance per rank', prereqs: [] },
+      infiltration:   { tier: 2, name: 'Infiltration',   icon: '🔓', maxRank: 10, desc: 'Break into secured locations with ease', effect: '+5% stealth job success per rank', prereqs: [{ node: 'shadow_step', rank: 3 }] },
+      escape_artist:  { tier: 2, name: 'Escape Artist',  icon: '💨', maxRank: 10, desc: 'Slip out of the tightest situations', effect: '-2s jail time, +3% breakout per rank', prereqs: [{ node: 'light_feet', rank: 3 }] },
+      ghost_protocol: { tier: 3, name: 'Ghost Protocol', icon: '👻', maxRank: 5,  desc: 'Become a phantom — practically invisible', effect: '-4% heat gain per rank', prereqs: [{ node: 'infiltration', rank: 5 }] },
+      surveillance:   { tier: 3, name: 'Surveillance',   icon: '👁️', maxRank: 5,  desc: 'Gather intel and stay ahead of enemies', effect: '+4% job intel per rank', prereqs: [{ node: 'escape_artist', rank: 5 }] }
     }
   },
   combat: {
-    name: "Combat",
-    icon: "⚔️",
-    color: "#8b3a3a",
-    desc: "Raw power, deadly precision. Violence is a language you speak fluently.",
+    name: 'Combat',
+    icon: '⚔️',
+    color: '#8b3a3a',
+    desc: 'Raw power, deadly precision. Violence is a language you speak fluently.',
     nodes: {
-      brawler:       { tier: 1, name: "Brawler",       icon: "👊", maxRank: 10, desc: "Raw fighting power and combat instincts", effect: "+5% combat power per rank", prereqs: [] },
-      toughness:     { tier: 1, name: "Toughness",     icon: "🛡️", maxRank: 10, desc: "Shrug off hits that would drop lesser men", effect: "-2% hurt chance per rank", prereqs: [] },
-      firearms:      { tier: 2, name: "Firearms",      icon: "🔫", maxRank: 10, desc: "Master the art of the gun", effect: "+6% armed job success per rank", prereqs: [{ node: "brawler", rank: 3 }] },
-      melee_mastery: { tier: 2, name: "Melee Mastery", icon: "🗡️", maxRank: 10, desc: "Deadly in close quarters combat", effect: "+4% unarmed job success per rank", prereqs: [{ node: "brawler", rank: 3 }] },
-      intimidation:  { tier: 3, name: "Intimidation",  icon: "😈", maxRank: 5,  desc: "Your reputation alone strikes terror", effect: "-10% wanted gain per rank", prereqs: [{ node: "firearms", rank: 5 }] },
-      enforcer:      { tier: 3, name: "Enforcer",      icon: "💀", maxRank: 5,  desc: "The ultimate weapon of the underworld", effect: "+15% boss fight power per rank", prereqs: [{ node: "melee_mastery", rank: 5 }] }
+      brawler:       { tier: 1, name: 'Brawler',       icon: '👊', maxRank: 10, desc: 'Raw fighting power and combat instincts', effect: '+5% combat power per rank', prereqs: [] },
+      toughness:     { tier: 1, name: 'Toughness',     icon: '🛡️', maxRank: 10, desc: 'Shrug off hits that would drop lesser men', effect: '-2% hurt chance per rank', prereqs: [] },
+      firearms:      { tier: 2, name: 'Firearms',      icon: '🔫', maxRank: 10, desc: 'Master the art of the gun', effect: '+6% armed job success per rank', prereqs: [{ node: 'brawler', rank: 3 }] },
+      melee_mastery: { tier: 2, name: 'Melee Mastery', icon: '🗡️', maxRank: 10, desc: 'Deadly in close quarters combat', effect: '+4% unarmed job success per rank', prereqs: [{ node: 'brawler', rank: 3 }] },
+      intimidation:  { tier: 3, name: 'Intimidation',  icon: '😈', maxRank: 5,  desc: 'Your reputation alone strikes terror', effect: '-10% wanted gain per rank', prereqs: [{ node: 'firearms', rank: 5 }] },
+      enforcer:      { tier: 3, name: 'Enforcer',      icon: '💀', maxRank: 5,  desc: 'The ultimate weapon of the underworld', effect: '+15% boss fight power per rank', prereqs: [{ node: 'melee_mastery', rank: 5 }] }
     }
   },
   charisma: {
-    name: "Influence",
-    icon: "🗣️",
-    color: "#c0a040",
-    desc: "Words sharper than knives. Bend the world to your will without lifting a finger.",
+    name: 'Influence',
+    icon: '🗣️',
+    color: '#c0a040',
+    desc: 'Words sharper than knives. Bend the world to your will without lifting a finger.',
     nodes: {
-      smooth_talker: { tier: 1, name: "Smooth Talker",  icon: "💬", maxRank: 10, desc: "Words are your greatest weapon", effect: "+3% negotiation per rank", prereqs: [] },
-      street_cred:   { tier: 1, name: "Street Cred",    icon: "🏆", maxRank: 10, desc: "Build your name on the streets", effect: "+2% reputation gain per rank", prereqs: [] },
-      negotiation:   { tier: 2, name: "Negotiation",    icon: "🤝", maxRank: 10, desc: "Secure better deals and prices", effect: "+3% sell prices per rank", prereqs: [{ node: "smooth_talker", rank: 3 }] },
-      leadership:    { tier: 2, name: "Leadership",     icon: "👑", maxRank: 10, desc: "Command respect and loyalty from your crew", effect: "+5% gang loyalty per rank", prereqs: [{ node: "street_cred", rank: 3 }] },
-      manipulation:  { tier: 3, name: "Manipulation",   icon: "🎭", maxRank: 5,  desc: "Pull the strings from the shadows", effect: "+4% faction mission success per rank", prereqs: [{ node: "negotiation", rank: 5 }] },
-      kingpin_aura:  { tier: 3, name: "Kingpin Aura",   icon: "💎", maxRank: 5,  desc: "Your presence commands every room", effect: "+5% all income per rank", prereqs: [{ node: "leadership", rank: 5 }] }
+      smooth_talker: { tier: 1, name: 'Smooth Talker',  icon: '💬', maxRank: 10, desc: 'Words are your greatest weapon', effect: '+3% negotiation per rank', prereqs: [] },
+      street_cred:   { tier: 1, name: 'Street Cred',    icon: '🏆', maxRank: 10, desc: 'Build your name on the streets', effect: '+2% reputation gain per rank', prereqs: [] },
+      negotiation:   { tier: 2, name: 'Negotiation',    icon: '🤝', maxRank: 10, desc: 'Secure better deals and prices', effect: '+3% sell prices per rank', prereqs: [{ node: 'smooth_talker', rank: 3 }] },
+      leadership:    { tier: 2, name: 'Leadership',     icon: '👑', maxRank: 10, desc: 'Command respect and loyalty from your crew', effect: '+5% gang loyalty per rank', prereqs: [{ node: 'street_cred', rank: 3 }] },
+      manipulation:  { tier: 3, name: 'Manipulation',   icon: '🎭', maxRank: 5,  desc: 'Pull the strings from the shadows', effect: '+4% faction mission success per rank', prereqs: [{ node: 'negotiation', rank: 5 }] },
+      kingpin_aura:  { tier: 3, name: 'Kingpin Aura',   icon: '💎', maxRank: 5,  desc: 'Your presence commands every room', effect: '+5% all income per rank', prereqs: [{ node: 'leadership', rank: 5 }] }
     }
   },
   intelligence: {
-    name: "Intellect",
-    icon: "🧠",
-    color: "#c0a062",
-    desc: "Outsmart, outplan, outmaneuver. The mind is the deadliest weapon.",
+    name: 'Intellect',
+    icon: '🧠',
+    color: '#c0a062',
+    desc: 'Outsmart, outplan, outmaneuver. The mind is the deadliest weapon.',
     nodes: {
-      mastermind:  { tier: 1, name: "Mastermind",     icon: "🎯", maxRank: 5,  desc: "The brain behind every operation", effect: "+10% reputation gain per rank", prereqs: [] },
-      quick_study: { tier: 1, name: "Quick Study",   icon: "📚", maxRank: 10, desc: "A sharp mind that learns from every job", effect: "+4% job success per rank", prereqs: [] },
-      hacking:     { tier: 2, name: "Hacking",       icon: "💻", maxRank: 10, desc: "Master of digital infiltration", effect: "+7% cyber job success per rank", prereqs: [{ node: "quick_study", rank: 3 }] },
-      planning:    { tier: 2, name: "Planning",       icon: "📋", maxRank: 10, desc: "Every detail accounted for", effect: "-5% crime cooldown per rank", prereqs: [{ node: "quick_study", rank: 3 }] },
-      awareness:   { tier: 3, name: "Awareness",     icon: "🔍", maxRank: 5,  desc: "Nothing escapes your notice", effect: "+2% luck-based outcomes per rank", prereqs: [{ node: "hacking", rank: 5 }] },
-      forensics:   { tier: 3, name: "Forensics",     icon: "🔬", maxRank: 5,  desc: "Clean up evidence like a professional", effect: "8% chance per rank to reduce heat", prereqs: [{ node: "planning", rank: 5 }] }
+      mastermind:  { tier: 1, name: 'Mastermind',     icon: '🎯', maxRank: 5,  desc: 'The brain behind every operation', effect: '+10% reputation gain per rank', prereqs: [] },
+      quick_study: { tier: 1, name: 'Quick Study',   icon: '📚', maxRank: 10, desc: 'A sharp mind that learns from every job', effect: '+4% job success per rank', prereqs: [] },
+      hacking:     { tier: 2, name: 'Hacking',       icon: '💻', maxRank: 10, desc: 'Master of digital infiltration', effect: '+7% cyber job success per rank', prereqs: [{ node: 'quick_study', rank: 3 }] },
+      planning:    { tier: 2, name: 'Planning',       icon: '📋', maxRank: 10, desc: 'Every detail accounted for', effect: '-5% crime cooldown per rank', prereqs: [{ node: 'quick_study', rank: 3 }] },
+      awareness:   { tier: 3, name: 'Awareness',     icon: '🔍', maxRank: 5,  desc: 'Nothing escapes your notice', effect: '+2% luck-based outcomes per rank', prereqs: [{ node: 'hacking', rank: 5 }] },
+      forensics:   { tier: 3, name: 'Forensics',     icon: '🔬', maxRank: 5,  desc: 'Clean up evidence like a professional', effect: '8% chance per rank to reduce heat', prereqs: [{ node: 'planning', rank: 5 }] }
     }
   },
   luck: {
-    name: "Fortune",
-    icon: "🍀",
-    color: "#8a9a6a",
-    desc: "Fortune favors the bold — and sometimes, the downright reckless.",
+    name: 'Fortune',
+    icon: '🍀',
+    color: '#8a9a6a',
+    desc: 'Fortune favors the bold — and sometimes, the downright reckless.',
     nodes: {
-      fortune:     { tier: 1, name: "Fortune",       icon: "🌟", maxRank: 10, desc: "The universe favors the bold", effect: "+2% earnings per rank", prereqs: [] },
-      serendipity: { tier: 1, name: "Serendipity",   icon: "✨", maxRank: 10, desc: "Stumble into unexpected opportunities", effect: "+1% rare event chance per rank", prereqs: [] },
-      gambling:    { tier: 2, name: "Gambling",       icon: "🎰", maxRank: 10, desc: "Turn the odds in your favor", effect: "+1% casino win rate per rank", prereqs: [{ node: "fortune", rank: 3 }] },
-      scavenger:   { tier: 2, name: "Scavenger",      icon: "🔎", maxRank: 10, desc: "Find valuables others overlook", effect: "+3% bonus loot per rank", prereqs: [{ node: "serendipity", rank: 3 }] },
-      jackpot:     { tier: 3, name: "Jackpot",        icon: "💰", maxRank: 5,  desc: "When you win, you win BIG", effect: "+4% critical success chance per rank", prereqs: [{ node: "gambling", rank: 5 }] },
-      lucky_break: { tier: 3, name: "Lucky Break",    icon: "🍀", maxRank: 5,  desc: "Dodge bullets that fate aimed at your head", effect: "+5% avoid negative events per rank", prereqs: [{ node: "scavenger", rank: 5 }] }
+      fortune:     { tier: 1, name: 'Fortune',       icon: '🌟', maxRank: 10, desc: 'The universe favors the bold', effect: '+2% earnings per rank', prereqs: [] },
+      serendipity: { tier: 1, name: 'Serendipity',   icon: '✨', maxRank: 10, desc: 'Stumble into unexpected opportunities', effect: '+1% rare event chance per rank', prereqs: [] },
+      gambling:    { tier: 2, name: 'Gambling',       icon: '🎰', maxRank: 10, desc: 'Turn the odds in your favor', effect: '+1% casino win rate per rank', prereqs: [{ node: 'fortune', rank: 3 }] },
+      scavenger:   { tier: 2, name: 'Scavenger',      icon: '🔎', maxRank: 10, desc: 'Find valuables others overlook', effect: '+3% bonus loot per rank', prereqs: [{ node: 'serendipity', rank: 3 }] },
+      jackpot:     { tier: 3, name: 'Jackpot',        icon: '💰', maxRank: 5,  desc: 'When you win, you win BIG', effect: '+4% critical success chance per rank', prereqs: [{ node: 'gambling', rank: 5 }] },
+      lucky_break: { tier: 3, name: 'Lucky Break',    icon: '🍀', maxRank: 5,  desc: 'Dodge bullets that fate aimed at your head', effect: '+5% avoid negative events per rank', prereqs: [{ node: 'scavenger', rank: 5 }] }
     }
   },
   endurance: {
-    name: "Endurance",
-    icon: "💪",
-    color: "#1abc9c",
+    name: 'Endurance',
+    icon: '💪',
+    color: '#1abc9c',
     desc: "Outlast them all. When everyone else drops, you're still standing.",
     nodes: {
-      vitality:     { tier: 1, name: "Vitality",      icon: "❤️", maxRank: 10, desc: "Raw physical toughness and stamina", effect: "-2% damage taken per rank", prereqs: [] },
-      conditioning: { tier: 1, name: "Conditioning",  icon: "🏃", maxRank: 10, desc: "Push your body past its limits", effect: "+2 max health recovery per rank", prereqs: [] },
-      recovery:     { tier: 2, name: "Recovery",       icon: "❤️‍🩹", maxRank: 10, desc: "Bounce back from anything", effect: "-5% hospital treatment time per rank", prereqs: [{ node: "vitality", rank: 3 }] },
-      resilience:   { tier: 2, name: "Resilience",     icon: "🦾", maxRank: 10, desc: "Reduce the impact of injuries", effect: "-3% injury severity per rank", prereqs: [{ node: "conditioning", rank: 3 }] },
-      resistance:   { tier: 3, name: "Resistance",     icon: "🛡️", maxRank: 5,  desc: "Nearly immune to punishment", effect: "-5% all damage taken per rank", prereqs: [{ node: "resilience", rank: 5 }] },
-      unstoppable:  { tier: 3, name: "Unstoppable",    icon: "⚡", maxRank: 5,  desc: "An unstoppable force of nature", effect: "-8% all cooldowns per rank", prereqs: [{ node: "recovery", rank: 5 }] }
+      vitality:     { tier: 1, name: 'Vitality',      icon: '❤️', maxRank: 10, desc: 'Raw physical toughness and stamina', effect: '-2% damage taken per rank', prereqs: [] },
+      conditioning: { tier: 1, name: 'Conditioning',  icon: '🏃', maxRank: 10, desc: 'Push your body past its limits', effect: '+2 max health recovery per rank', prereqs: [] },
+      recovery:     { tier: 2, name: 'Recovery',       icon: '❤️‍🩹', maxRank: 10, desc: 'Bounce back from anything', effect: '-5% hospital treatment time per rank', prereqs: [{ node: 'vitality', rank: 3 }] },
+      resilience:   { tier: 2, name: 'Resilience',     icon: '🦾', maxRank: 10, desc: 'Reduce the impact of injuries', effect: '-3% injury severity per rank', prereqs: [{ node: 'conditioning', rank: 3 }] },
+      resistance:   { tier: 3, name: 'Resistance',     icon: '🛡️', maxRank: 5,  desc: 'Nearly immune to punishment', effect: '-5% all damage taken per rank', prereqs: [{ node: 'resilience', rank: 5 }] },
+      unstoppable:  { tier: 3, name: 'Unstoppable',    icon: '⚡', maxRank: 5,  desc: 'An unstoppable force of nature', effect: '-8% all cooldowns per rank', prereqs: [{ node: 'recovery', rank: 5 }] }
     }
   }
 };
@@ -495,54 +495,54 @@ export function isNodeAccessible(treeName, nodeId) {
 // Achievements system
 export const achievements = [
   // === Early Game ===
-  { id: "first_job", name: "First Day on the Job", description: "Complete your first job", unlocked: false, reward: { money: 500, xp: 25 }, title: "The Rookie" },
-  { id: "first_blood", name: "First Blood", description: "Win your first fight or heist", unlocked: false, reward: { money: 1000, xp: 50 }, title: "Blooded" },
-  { id: "wheels", name: "Hot Wheels", description: "Steal your first car", unlocked: false, reward: { money: 2000, xp: 50 }, title: "Wheelman" },
-  { id: "armed_dangerous", name: "Armed & Dangerous", description: "Buy your first weapon", unlocked: false, reward: { money: 1000, xp: 30 }, title: "Armed" },
-  { id: "property_owner", name: "Property Mogul", description: "Buy your first property", unlocked: false, reward: { money: 5000, xp: 100 }, title: "Landlord" },
+  { id: 'first_job', name: 'First Day on the Job', description: 'Complete your first job', unlocked: false, reward: { money: 500, xp: 25 }, title: 'The Rookie' },
+  { id: 'first_blood', name: 'First Blood', description: 'Win your first fight or heist', unlocked: false, reward: { money: 1000, xp: 50 }, title: 'Blooded' },
+  { id: 'wheels', name: 'Hot Wheels', description: 'Steal your first car', unlocked: false, reward: { money: 2000, xp: 50 }, title: 'Wheelman' },
+  { id: 'armed_dangerous', name: 'Armed & Dangerous', description: 'Buy your first weapon', unlocked: false, reward: { money: 1000, xp: 30 }, title: 'Armed' },
+  { id: 'property_owner', name: 'Property Mogul', description: 'Buy your first property', unlocked: false, reward: { money: 5000, xp: 100 }, title: 'Landlord' },
   // === Money Milestones ===
-  { id: "millionaire", name: "Big Shot", description: "Have $100,000", unlocked: false, reward: { money: 10000, xp: 100 }, title: "Big Shot" },
-  { id: "half_mil", name: "High Roller", description: "Have $500,000", unlocked: false, reward: { money: 25000, xp: 200 }, title: "High Roller" },
-  { id: "true_millionaire", name: "Millionaire", description: "Have $1,000,000", unlocked: false, reward: { money: 50000, xp: 500 }, title: "Millionaire" },
-  { id: "multi_millionaire", name: "Multi-Millionaire", description: "Have $10,000,000", unlocked: false, reward: { money: 500000, xp: 1000 }, title: "Tycoon" },
-  { id: "billionaire", name: "Criminal Tycoon", description: "Have $100,000,000", unlocked: false, reward: { money: 5000000, xp: 5000 }, title: "Criminal Tycoon" },
+  { id: 'millionaire', name: 'Big Shot', description: 'Have $100,000', unlocked: false, reward: { money: 10000, xp: 100 }, title: 'Big Shot' },
+  { id: 'half_mil', name: 'High Roller', description: 'Have $500,000', unlocked: false, reward: { money: 25000, xp: 200 }, title: 'High Roller' },
+  { id: 'true_millionaire', name: 'Millionaire', description: 'Have $1,000,000', unlocked: false, reward: { money: 50000, xp: 500 }, title: 'Millionaire' },
+  { id: 'multi_millionaire', name: 'Multi-Millionaire', description: 'Have $10,000,000', unlocked: false, reward: { money: 500000, xp: 1000 }, title: 'Tycoon' },
+  { id: 'billionaire', name: 'Criminal Tycoon', description: 'Have $100,000,000', unlocked: false, reward: { money: 5000000, xp: 5000 }, title: 'Criminal Tycoon' },
   // === Gang & Social ===
-  { id: "first_recruit", name: "Right Hand Man", description: "Recruit your first gang member", unlocked: false, reward: { money: 2000, xp: 75 }, title: "Recruiter" },
-  { id: "gang_leader", name: "Gang Leader", description: "Have 10 gang members", unlocked: false, reward: { money: 15000, xp: 200 }, title: "Gang Leader" },
-  { id: "crime_family", name: "Crime Family", description: "Have 25 gang members", unlocked: false, reward: { money: 50000, xp: 500 }, title: "Crime Boss" },
-  { id: "army", name: "Criminal Army", description: "Have 50 gang members", unlocked: false, reward: { money: 200000, xp: 1000 }, title: "Warlord" },
-  { id: "faction_friend", name: "Friend of the Family", description: "Reach 25 reputation with any faction", unlocked: false, reward: { money: 10000, xp: 150 }, title: "Connected" },
-  { id: "faction_ally", name: "Made Man", description: "Reach 50 reputation with any faction", unlocked: false, reward: { money: 50000, xp: 300 }, title: "Made Man" },
+  { id: 'first_recruit', name: 'Right Hand Man', description: 'Recruit your first gang member', unlocked: false, reward: { money: 2000, xp: 75 }, title: 'Recruiter' },
+  { id: 'gang_leader', name: 'Gang Leader', description: 'Have 10 gang members', unlocked: false, reward: { money: 15000, xp: 200 }, title: 'Gang Leader' },
+  { id: 'crime_family', name: 'Crime Family', description: 'Have 25 gang members', unlocked: false, reward: { money: 50000, xp: 500 }, title: 'Crime Boss' },
+  { id: 'army', name: 'Criminal Army', description: 'Have 50 gang members', unlocked: false, reward: { money: 200000, xp: 1000 }, title: 'Warlord' },
+  { id: 'faction_friend', name: 'Friend of the Family', description: 'Reach 25 reputation with any faction', unlocked: false, reward: { money: 10000, xp: 150 }, title: 'Connected' },
+  { id: 'faction_ally', name: 'Made Man', description: 'Reach 50 reputation with any faction', unlocked: false, reward: { money: 50000, xp: 300 }, title: 'Made Man' },
   // === Combat & Crime ===
-  { id: "jail_break", name: "Great Escape", description: "Successfully break out of jail", unlocked: false, reward: { money: 5000, xp: 100 }, title: "Escape Artist" },
-  { id: "most_wanted", name: "Most Wanted", description: "Reach heat level 50", unlocked: false, reward: { money: 25000, xp: 300 }, title: "Most Wanted" },
-  { id: "ghost", name: "Ghost", description: "Complete 10 jobs without getting arrested", unlocked: false, reward: { money: 20000, xp: 250 }, title: "The Ghost" },
-  { id: "boss_slayer", name: "Boss Slayer", description: "Defeat your first rival boss", unlocked: false, reward: { money: 100000, xp: 500 }, title: "Boss Slayer" },
+  { id: 'jail_break', name: 'Great Escape', description: 'Successfully break out of jail', unlocked: false, reward: { money: 5000, xp: 100 }, title: 'Escape Artist' },
+  { id: 'most_wanted', name: 'Most Wanted', description: 'Reach heat level 50', unlocked: false, reward: { money: 25000, xp: 300 }, title: 'Most Wanted' },
+  { id: 'ghost', name: 'Ghost', description: 'Complete 10 jobs without getting arrested', unlocked: false, reward: { money: 20000, xp: 250 }, title: 'The Ghost' },
+  { id: 'boss_slayer', name: 'Boss Slayer', description: 'Defeat your first rival boss', unlocked: false, reward: { money: 100000, xp: 500 }, title: 'Boss Slayer' },
   // === Progression ===
-  { id: "reputation_max", name: "Legendary Criminal", description: "Reach 100 reputation", unlocked: false, reward: { money: 100000, xp: 500 }, title: "Legendary" },
-  { id: "level_10", name: "Rising Star", description: "Reach 75 reputation (Enforcer)", unlocked: false, reward: { money: 15000, xp: 200 }, title: "Rising Star" },
-  { id: "level_25", name: "Veteran", description: "Reach 350 reputation (Underboss)", unlocked: false, reward: { money: 100000, xp: 500 }, title: "Veteran" },
-  { id: "level_50", name: "Kingpin", description: "Reach 1000 reputation (Legendary Kingpin)", unlocked: false, reward: { money: 500000, xp: 2000 }, title: "Kingpin" },
-  { id: "skill_master", name: "Skill Master", description: "Max out any base skill (20+)", unlocked: false, reward: { money: 25000, xp: 300 }, title: "Specialist" },
+  { id: 'reputation_max', name: 'Legendary Criminal', description: 'Reach 100 reputation', unlocked: false, reward: { money: 100000, xp: 500 }, title: 'Legendary' },
+  { id: 'level_10', name: 'Rising Star', description: 'Reach 75 reputation (Enforcer)', unlocked: false, reward: { money: 15000, xp: 200 }, title: 'Rising Star' },
+  { id: 'level_25', name: 'Veteran', description: 'Reach 350 reputation (Underboss)', unlocked: false, reward: { money: 100000, xp: 500 }, title: 'Veteran' },
+  { id: 'level_50', name: 'Kingpin', description: 'Reach 1000 reputation (Legendary Kingpin)', unlocked: false, reward: { money: 500000, xp: 2000 }, title: 'Kingpin' },
+  { id: 'skill_master', name: 'Skill Master', description: 'Max out any base skill (20+)', unlocked: false, reward: { money: 25000, xp: 300 }, title: 'Specialist' },
   // === Empire ===
-  { id: "territory_3", name: "Neighborhood Boss", description: "Control 3 territories", unlocked: false, reward: { money: 30000, xp: 200 }, title: "Block Captain" },
-  { id: "territory_10", name: "District King", description: "Control 10 territories", unlocked: false, reward: { money: 200000, xp: 500 }, title: "District King" },
-  { id: "business_owner", name: "Legitimate Businessman", description: "Own your first business front", unlocked: false, reward: { money: 50000, xp: 200 }, title: "Businessman" },
-  { id: "jobs_50", name: "Workhorse", description: "Complete 50 jobs", unlocked: false, reward: { money: 25000, xp: 300 }, title: "Workhorse" },
-  { id: "jobs_200", name: "Professional", description: "Complete 200 jobs", unlocked: false, reward: { money: 100000, xp: 500 }, title: "Professional" },
+  { id: 'territory_3', name: 'Neighborhood Boss', description: 'Control 3 territories', unlocked: false, reward: { money: 30000, xp: 200 }, title: 'Block Captain' },
+  { id: 'territory_10', name: 'District King', description: 'Control 10 territories', unlocked: false, reward: { money: 200000, xp: 500 }, title: 'District King' },
+  { id: 'business_owner', name: 'Legitimate Businessman', description: 'Own your first business front', unlocked: false, reward: { money: 50000, xp: 200 }, title: 'Businessman' },
+  { id: 'jobs_50', name: 'Workhorse', description: 'Complete 50 jobs', unlocked: false, reward: { money: 25000, xp: 300 }, title: 'Workhorse' },
+  { id: 'jobs_200', name: 'Professional', description: 'Complete 200 jobs', unlocked: false, reward: { money: 100000, xp: 500 }, title: 'Professional' },
   // === Mini-games ===
-  { id: "lucky_streak", name: "Lucky Streak", description: "Win at the casino 3 times", unlocked: false, reward: { money: 10000, xp: 100 }, title: "Lucky" },
-  { id: "gambler", name: "High Stakes Gambler", description: "Win at the casino 10 times", unlocked: false, reward: { money: 50000, xp: 250 }, title: "Gambler" },
-  { id: "snake_king", name: "Snake King", description: "Score 20+ in Snake mini-game", unlocked: false, reward: { money: 15000, xp: 150 }, title: "Snake King" },
-  { id: "quick_draw", name: "Fastest Gun", description: "React under 200ms in Quick Draw", unlocked: false, reward: { money: 20000, xp: 200 }, title: "Quickdraw" },
+  { id: 'lucky_streak', name: 'Lucky Streak', description: 'Win at the casino 3 times', unlocked: false, reward: { money: 10000, xp: 100 }, title: 'Lucky' },
+  { id: 'gambler', name: 'High Stakes Gambler', description: 'Win at the casino 10 times', unlocked: false, reward: { money: 50000, xp: 250 }, title: 'Gambler' },
+  { id: 'snake_king', name: 'Snake King', description: 'Score 20+ in Snake mini-game', unlocked: false, reward: { money: 15000, xp: 150 }, title: 'Snake King' },
+  { id: 'quick_draw', name: 'Fastest Gun', description: 'React under 200ms in Quick Draw', unlocked: false, reward: { money: 20000, xp: 200 }, title: 'Quickdraw' },
   // === Superboss ===
-  { id: "superboss_first", name: "Giant Slayer", description: "Defeat your first Superboss", unlocked: false, reward: { money: 500000, xp: 3000 }, title: "Giant Slayer" },
-  { id: "superboss_all", name: "Unstoppable", description: "Defeat all Superbosses", unlocked: false, reward: { money: 2000000, xp: 10000 }, title: "The Unstoppable" },
+  { id: 'superboss_first', name: 'Giant Slayer', description: 'Defeat your first Superboss', unlocked: false, reward: { money: 500000, xp: 3000 }, title: 'Giant Slayer' },
+  { id: 'superboss_all', name: 'Unstoppable', description: 'Defeat all Superbosses', unlocked: false, reward: { money: 2000000, xp: 10000 }, title: 'The Unstoppable' },
   // === Social/Multiplayer ===
-  { id: "first_friend", name: "Networking", description: "Add your first friend", unlocked: false, reward: { money: 1000, xp: 50 }, title: "Social" },
-  { id: "crew_founder", name: "Crew Founder", description: "Create a crew", unlocked: false, reward: { money: 10000, xp: 200 }, title: "Founder" },
-  { id: "daily_7", name: "Dedicated", description: "Login 7 days in a row", unlocked: false, reward: { money: 25000, xp: 500 }, title: "Dedicated" },
-  { id: "daily_30", name: "Loyal Soldier", description: "Login 30 days in a row", unlocked: false, reward: { money: 100000, xp: 2000 }, title: "Loyal Soldier" },
-  { id: "hit_man", name: "Contract Killer", description: "Complete 5 anonymous hit contracts", unlocked: false, reward: { money: 50000, xp: 500 }, title: "Contract Killer" },
-  { id: "poker_shark", name: "Card Shark", description: "Win 10 player poker hands", unlocked: false, reward: { money: 50000, xp: 300 }, title: "Card Shark" }
+  { id: 'first_friend', name: 'Networking', description: 'Add your first friend', unlocked: false, reward: { money: 1000, xp: 50 }, title: 'Social' },
+  { id: 'crew_founder', name: 'Crew Founder', description: 'Create a crew', unlocked: false, reward: { money: 10000, xp: 200 }, title: 'Founder' },
+  { id: 'daily_7', name: 'Dedicated', description: 'Login 7 days in a row', unlocked: false, reward: { money: 25000, xp: 500 }, title: 'Dedicated' },
+  { id: 'daily_30', name: 'Loyal Soldier', description: 'Login 30 days in a row', unlocked: false, reward: { money: 100000, xp: 2000 }, title: 'Loyal Soldier' },
+  { id: 'hit_man', name: 'Contract Killer', description: 'Complete 5 anonymous hit contracts', unlocked: false, reward: { money: 50000, xp: 500 }, title: 'Contract Killer' },
+  { id: 'poker_shark', name: 'Card Shark', description: 'Win 10 player poker hands', unlocked: false, reward: { money: 50000, xp: 300 }, title: 'Card Shark' }
 ];

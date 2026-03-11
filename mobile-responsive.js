@@ -160,7 +160,7 @@ export const MobileSystem = {
             endY = touch.clientY;
         }, { passive: true });
         
-        document.addEventListener('touchend', (e) => {
+        document.addEventListener('touchend', () => {
             if (!isSwipeZone) return;
             
             const deltaX = endX - startX;
@@ -403,7 +403,7 @@ export const MobileSystem = {
         
         // Determine if tutorial is still active
         const tutorialStep = localStorage.getItem('tutorialStep');
-        const tutorialDone = !tutorialStep || tutorialStep === 'skipped' || tutorialStep === 'complete';
+        const _tutorialDone = !tutorialStep || tutorialStep === 'skipped' || tutorialStep === 'complete';
         
         // Add quick actions and navigation
         mobileMenu.innerHTML = `

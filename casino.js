@@ -17,7 +17,7 @@ export function initCasino({ hideAllScreens, updateUI, alert, logAction, showBri
 // ── Casino-session state ─────────────────────────────────────────────
 let _casinoWins = 0;
 export function getCasinoWins() { return _casinoWins; }
-function resetCasinoWins() { _casinoWins = 0; }
+function _resetCasinoWins() { _casinoWins = 0; }
 
 // Game-specific transient state (replaces old window._bjState / window._rouletteState)
 let _bjState = null;
@@ -76,7 +76,7 @@ export function showCasino(initialTab) {
   }
 
   _hideAllScreens();
-  document.getElementById("casino-screen").style.display = "block";
+  document.getElementById('casino-screen').style.display = 'block';
   updateCasinoWallet();
 
   showCasinoTab(initialTab || 'gambling');
@@ -87,7 +87,7 @@ export function showCasinoTab(tab) {
   if (!cfg) return;
 
   // Hide all panels, deactivate all tab buttons
-  for (const [key, c] of Object.entries(CASINO_TAB_CONFIG)) {
+  for (const [, c] of Object.entries(CASINO_TAB_CONFIG)) {
     const panel = document.getElementById(c.panel);
     if (panel) panel.style.display = 'none';
     const btn = document.getElementById(c.btn);
@@ -163,7 +163,7 @@ function bjHandValue(hand) {
 }
 
 function bjCardHTML(card, hidden) {
-  if (hidden) return `<div style="display:inline-block;width:clamp(50px,15vw,70px);height:clamp(72px,21vw,100px);background:#14120a;border:2px solid #6a5a3a;border-radius:8px;margin:3px;text-align:center;line-height:clamp(72px,21vw,100px);font-size:1.5em;color:#8a7a5a;">?</div>`;
+  if (hidden) return '<div style="display:inline-block;width:clamp(50px,15vw,70px);height:clamp(72px,21vw,100px);background:#14120a;border:2px solid #6a5a3a;border-radius:8px;margin:3px;text-align:center;line-height:clamp(72px,21vw,100px);font-size:1.5em;color:#8a7a5a;">?</div>';
   const color = (card.suit === '\u2665' || card.suit === '\u2666') ? '#8b3a3a' : '#14120a';
   return `<div style="display:inline-block;width:clamp(50px,15vw,70px);height:clamp(72px,21vw,100px);background:linear-gradient(135deg,#fff,#f5f5f5);border:2px solid #444;border-radius:8px;margin:3px;padding:4px;text-align:center;position:relative;box-sizing:border-box;">
     <div style="position:absolute;top:4px;left:6px;font-size:0.9em;color:${color};font-weight:bold;line-height:1;">${card.name}<br>${card.suit}</div>
@@ -228,7 +228,7 @@ function bjRender() {
   const pVal = bjHandValue(s.pHand);
   const canDouble = !s.doubled && s.pHand.length === 2 && player.money >= s.bet;
 
-  let html = `<div style="background: rgba(30, 50, 20,0.5); padding: 25px; border-radius: 15px; border: 2px solid #7a8a5a;">`;
+  let html = '<div style="background: rgba(30, 50, 20,0.5); padding: 25px; border-radius: 15px; border: 2px solid #7a8a5a;">';
 
   // Dealer
   html += `<div style="text-align:center;margin-bottom:20px;">
@@ -237,7 +237,7 @@ function bjRender() {
   </div>`;
 
   // Divider
-  html += `<hr style="border-color:rgba(255,255,255,0.1);margin:15px 0;">`;
+  html += '<hr style="border-color:rgba(255,255,255,0.1);margin:15px 0;">';
 
   // Player
   html += `<div style="text-align:center;margin-bottom:15px;">
@@ -253,11 +253,11 @@ function bjRender() {
     html += `<div style="text-align:center;display:flex;justify-content:center;gap:10px;flex-wrap:wrap;">
       <button onclick="bjHit()" style="background:#e67e22;color:white;padding:10px 24px;border:none;border-radius:8px;cursor:pointer;font-weight:bold;font-size:1.1em;">🃏 Hit</button>
       <button onclick="bjStand()" style="background:#a08850;color:white;padding:10px 24px;border:none;border-radius:8px;cursor:pointer;font-weight:bold;font-size:1.1em;">Stand</button>
-      ${canDouble ? `<button onclick="bjDouble()" style="background:#7a5a3a;color:white;padding:10px 24px;border:none;border-radius:8px;cursor:pointer;font-weight:bold;font-size:1.1em;">Double Down</button>` : ''}
+      ${canDouble ? '<button onclick="bjDouble()" style="background:#7a5a3a;color:white;padding:10px 24px;border:none;border-radius:8px;cursor:pointer;font-weight:bold;font-size:1.1em;">Double Down</button>' : ''}
     </div>`;
   }
 
-  html += `</div>`;
+  html += '</div>';
   gameArea.innerHTML = html;
 }
 
@@ -308,14 +308,14 @@ function bjResolve() {
   const luckBonus = getGamblingLuckBonus();
 
   const gameArea = document.getElementById('casino-game-area');
-  let html = `<div style="background: rgba(30, 50, 20,0.5); padding: 25px; border-radius: 15px; border: 2px solid #7a8a5a;">`;
+  let html = '<div style="background: rgba(30, 50, 20,0.5); padding: 25px; border-radius: 15px; border: 2px solid #7a8a5a;">';
 
   // Dealer
   html += `<div style="text-align:center;margin-bottom:20px;">
     <h4 style="color:#8b3a3a;margin-bottom:8px;">Dealer (${dVal})${dVal > 21 ? ' <span style="color:#8b3a3a;">BUST!</span>' : ''}</h4>
     <div>${s.dHand.map(c => bjCardHTML(c, false)).join('')}</div>
   </div>`;
-  html += `<hr style="border-color:rgba(255,255,255,0.1);margin:15px 0;">`;
+  html += '<hr style="border-color:rgba(255,255,255,0.1);margin:15px 0;">';
   html += `<div style="text-align:center;margin-bottom:15px;">
     <h4 style="color:#8a9a6a;margin-bottom:8px;">Your Hand (${pVal})${pVal > 21 ? ' <span style="color:#8b3a3a;">BUST!</span>' : ''}</h4>
     <div>${s.pHand.map(c => bjCardHTML(c, false)).join('')}</div>
@@ -347,7 +347,7 @@ function bjResolve() {
     player.money += totalBet;
     _updateUI();
     updateCasinoWallet();
-    resultMsg = `Push! Bet returned.`;
+    resultMsg = 'Push! Bet returned.';
     resultColor = '#c0a040';
     _logAction(`🃏 Blackjack push. ${pVal} tied with dealer.`);
   } else {
@@ -361,7 +361,7 @@ function bjResolve() {
     <button onclick="startBlackjack()" style="background:#7a8a5a;color:white;padding:10px 24px;border:none;border-radius:8px;cursor:pointer;font-weight:bold;">Play Again</button>
     <button onclick="showCasino()" style="background:#6a5a3a;color:white;padding:10px 20px;border:none;border-radius:8px;cursor:pointer;">Back to Games</button>
   </div>`;
-  html += `</div>`;
+  html += '</div>';
   gameArea.innerHTML = html;
 }
 
@@ -561,7 +561,7 @@ export function rouletteAddBet(type) {
 
   const s = _rouletteState;
   if (s.totalBet + amount > player.money) {
-    _showBriefNotification("Not enough money for this bet!", 'danger');
+    _showBriefNotification('Not enough money for this bet!', 'danger');
     return;
   }
 
@@ -583,11 +583,11 @@ export function rouletteClear() {
 export function rouletteSpin() {
   const s = _rouletteState;
   if (s.bets.length === 0) {
-    _showBriefNotification("Place at least one bet first!", 'warning');
+    _showBriefNotification('Place at least one bet first!', 'warning');
     return;
   }
   if (player.money < s.totalBet) {
-    _showBriefNotification("Not enough money for your bets!", 'danger');
+    _showBriefNotification('Not enough money for your bets!', 'danger');
     return;
   }
 
@@ -643,25 +643,25 @@ export function rouletteSpin() {
   const resultLabel = result === 0 ? '0 GREEN' : `${result} ${isRed ? 'RED' : 'BLACK'}`;
 
   const gameArea = document.getElementById('casino-game-area');
-  let html = `<div style="background: linear-gradient(135deg, rgba(100,0,0,0.6), rgba(40,0,0,0.8)); padding: 25px; border-radius: 15px; border: 2px solid #8b3a3a; text-align:center;">`;
-  html += `<h3 style="color: #c0a040;">Roulette Result</h3>`;
+  let html = '<div style="background: linear-gradient(135deg, rgba(100,0,0,0.6), rgba(40,0,0,0.8)); padding: 25px; border-radius: 15px; border: 2px solid #8b3a3a; text-align:center;">';
+  html += '<h3 style="color: #c0a040;">Roulette Result</h3>';
   html += `<div style="font-size:3em;margin:20px 0;"><span style="background:${result === 0 ? '#7a8a5a' : isRed ? '#7a2a2a' : '#14120a'};padding:15px 30px;border-radius:50%;border:4px solid #d4af37;color:white;">${result}</span></div>`;
   html += `<p style="color:${resultColor};font-size:1.3em;font-weight:bold;">${resultLabel}</p>`;
 
   // Bet breakdown
-  html += `<div style="margin:15px 0;text-align:left;max-width:400px;margin:15px auto;">`;
+  html += '<div style="margin:15px 0;text-align:left;max-width:400px;margin:15px auto;">';
   for (const br of betResults) {
     const label = typeof br.type === 'number' ? `#${br.type}` : br.type;
     html += `<div style="padding:4px 0;color:${br.won ? '#8a9a6a' : '#8b3a3a'};">${br.won ? 'WIN' : 'LOSS'} ${label} ($${br.amount.toLocaleString()}) → ${br.won ? `+$${br.payout.toLocaleString()}` : 'Lost'}</div>`;
   }
-  html += `</div>`;
+  html += '</div>';
 
   const netResult = totalWinnings - s.totalBet;
   if (netResult > 0) {
     html += `<p style="color:#8a9a6a;font-size:1.4em;font-weight:bold;">Net Win: +$${netResult.toLocaleString()}</p>`;
     _logAction(`Roulette lands on ${result}! Net win of $${netResult.toLocaleString()}!`);
   } else if (netResult === 0) {
-    html += `<p style="color:#c0a040;font-size:1.3em;">Break even!</p>`;
+    html += '<p style="color:#c0a040;font-size:1.3em;">Break even!</p>';
   } else {
     html += `<p style="color:#8b3a3a;font-size:1.3em;">Net Loss: -$${Math.abs(netResult).toLocaleString()}</p>`;
     _logAction(`Roulette lands on ${result}. Lost $${Math.abs(netResult).toLocaleString()}.`);
@@ -671,7 +671,7 @@ export function rouletteSpin() {
     <button onclick="startRoulette()" style="background:#7a2a2a;color:white;padding:10px 24px;border:none;border-radius:8px;cursor:pointer;font-weight:bold;">Play Again</button>
     <button onclick="showCasino()" style="background:#6a5a3a;color:white;padding:10px 20px;border:none;border-radius:8px;cursor:pointer;">Back to Games</button>
   </div>`;
-  html += `</div>`;
+  html += '</div>';
   gameArea.innerHTML = html;
 
   // Reset state
@@ -791,20 +791,16 @@ function diceResolve(pDice, dDice, bet) {
   const pDoubles = pDice[0] === pDice[1];
   const dDoubles = dDice[0] === dDice[1];
 
-  let won = false;
-
   if (pDoubles && !dDoubles) {
     let winnings = Math.floor(bet * 3);
     winnings += Math.floor(winnings * luckBonus);
     casinoWin(winnings);
-    won = true;
     resultEl.innerHTML = `<span style="color:#c0a040;font-size:1.3em;">DOUBLES! (${pTotal} vs ${dTotal}) Won $${winnings.toLocaleString()}!</span>`;
     _logAction(`Rolled doubles (${pDice[0]}+${pDice[1]})! Won $${winnings.toLocaleString()}!`);
   } else if (pTotal > dTotal && !(dDoubles && !pDoubles)) {
     let winnings = Math.floor(bet * 2);
     winnings += Math.floor(winnings * luckBonus);
     casinoWin(winnings);
-    won = true;
     resultEl.innerHTML = `<span style="color:#8a9a6a;font-size:1.3em;">You win! (${pTotal} vs ${dTotal}) +$${winnings.toLocaleString()}</span>`;
     _logAction(`Your dice beat the dealer! ${pTotal} vs ${dTotal}. Won $${winnings.toLocaleString()}!`);
   } else if (pTotal === dTotal && pDoubles === dDoubles) {
@@ -812,7 +808,7 @@ function diceResolve(pDice, dDice, bet) {
     _updateUI();
     updateCasinoWallet();
     resultEl.innerHTML = `<span style="color:#c0a040;font-size:1.2em;">Tie! (${pTotal} vs ${dTotal}) Bet returned.</span>`;
-    _logAction("Dice tied. Bet returned.");
+    _logAction('Dice tied. Bet returned.');
   } else {
     resultEl.innerHTML = `<span style="color:#8b3a3a;font-size:1.2em;">Dealer wins! (${dTotal}${dDoubles ? ' DOUBLES' : ''} vs ${pTotal}) Lost $${bet.toLocaleString()}</span>`;
     _logAction("The dice betray you. Dealer's roll wins.");
@@ -901,7 +897,7 @@ export function selectHorse(index) {
     const row = document.getElementById(`horse-row-${i}`);
     if (row) {
       row.style.border = i === index ? `2px solid ${HORSES[i].color}` : `2px solid ${HORSES[i].color}40`;
-      row.style.background = i === index ? `rgba(192,160,98,0.2)` : `rgba(50,50,50,0.15)`;
+      row.style.background = i === index ? 'rgba(192,160,98,0.2)' : 'rgba(50,50,50,0.15)';
     }
   });
 
@@ -927,7 +923,7 @@ export function horseStartRace() {
 
   const bet = _horseRaceState.bet;
   if (player.money < bet) {
-    _showBriefNotification("Not enough cash!", "error");
+    _showBriefNotification('Not enough cash!', 'error');
     return;
   }
 
