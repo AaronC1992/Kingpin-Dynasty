@@ -5713,13 +5713,14 @@ function generateGangOperationsHTML() {
         </div>
         ${activeOpStatus}
         ${cooldownStatus}
-        <select id="member-select-${operation.id}" style="margin: 5px 0; padding: 5px; width: 100%;">
-          <option value="">Select a member</option>
+        <select id="member-select-${operation.id}" style="margin: 5px 0; padding: 10px; width: 100%; font-size: 16px; border-radius: 5px; background: #1a1610; color: #f5e6c8; border: 1px solid #c0a062; -webkit-appearance: menulist;">
+          <option value="">Select a crew member</option>
           ${availableMembers.map(member => {
             const eName = member.role && GANG_MEMBER_ROLES[member.role] ? GANG_MEMBER_ROLES[member.role].name : member.specialization;
             return `<option value="${member.name}">${member.name} (${eName}, Lvl ${member.experienceLevel || 1})</option>`;
           }).join('')}
         </select>
+        ${availableMembers.length === 0 ? `<div style="color:#8b3a3a;font-size:0.8em;margin:4px 0;">No crew members with the <strong>${(() => { const eKey = SPECIALIZATION_TO_EXPANDED[operation.requiredRole]; const eName = eKey && GANG_MEMBER_ROLES[eKey] ? GANG_MEMBER_ROLES[eKey].name : null; return eName || operation.requiredRole; })()}</strong> role available.</div>` : ''}
         <button onclick="startGangOperation('${operation.id}')"
             style="background: #8b3a3a; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; margin-top: 5px; width: 100%;"
             ${availableMembers.length === 0 || isOnCooldown || activeOp ? 'disabled' : ''}>
@@ -5900,8 +5901,8 @@ function generateTrainingProgramsHTML() {
           <strong>Available for:</strong> ${program.availableFor.join(', ')}${program.prerequisite ? `<br><strong>Requires:</strong> ${Object.entries(program.prerequisite).map(([skill, level]) => `${skill} ${level}+`).join(', ')}` : ''}
         </div>
 
-        <select id="training-member-${program.id}" style="width: 100%; padding: 5px; margin: 5px 0;">
-          <option value="">Select a member</option>
+        <select id="training-member-${program.id}" style="width: 100%; padding: 10px; margin: 5px 0; font-size: 16px; border-radius: 5px; background: #1a1610; color: #f5e6c8; border: 1px solid #1abc9c; -webkit-appearance: menulist;">
+          <option value="">Select a crew member</option>
           ${availableMembers.map(member => {
             const eName = member.role && GANG_MEMBER_ROLES[member.role] ? GANG_MEMBER_ROLES[member.role].name : member.specialization;
             return `<option value="${member.name}">${member.name} (${eName})</option>`;
@@ -8799,6 +8800,15 @@ function refreshGangTimers() {
   // Only re-render if the main gang content is showing (not crew details sub-screen)
   const gangContent = document.getElementById('gang-content');
   if (!gangContent) return;
+
+  // Don't refresh if the user is interacting with a form element or has made a selection
+  const activeEl = document.activeElement;
+  if (activeEl && gangContent.contains(activeEl) && (activeEl.tagName === 'SELECT' || activeEl.tagName === 'INPUT')) return;
+  const selects = gangContent.querySelectorAll('select');
+  for (const sel of selects) {
+    if (sel.value) return;
+  }
+
   // Refresh the gang screen preserving the currently active tab
   showGang(_currentGangTab);
 }
