@@ -5400,8 +5400,11 @@ function showGang(activeTab) {
   `;
 
   document.getElementById('gang-content').innerHTML = gangHTML;
-  hideAllScreens();
-  document.getElementById('gang-screen').style.display = 'block';
+  const gangScreenEl = document.getElementById('gang-screen');
+  if (gangScreenEl.style.display !== 'block') {
+    hideAllScreens();
+    gangScreenEl.style.display = 'block';
+  }
 
   if (tab === 'roster') {
     checkForBetrayals();
@@ -5650,8 +5653,11 @@ function showGangManagementScreen() {
   `;
 
   document.getElementById('gang-content').innerHTML = crewHTML;
-  hideAllScreens();
-  document.getElementById('gang-screen').style.display = 'block';
+  const gangScreenEl2 = document.getElementById('gang-screen');
+  if (gangScreenEl2.style.display !== 'block') {
+    hideAllScreens();
+    gangScreenEl2.style.display = 'block';
+  }
   /* eslint-enable no-unreachable */
 }
 
@@ -15624,8 +15630,11 @@ function showStore(activeTab) {
     renderStoreTab(_currentStoreTab);
   }
 
-  hideAllScreens();
-  document.getElementById('store-screen').style.display = 'block';
+  const storeScreenEl = document.getElementById('store-screen');
+  if (storeScreenEl.style.display !== 'block') {
+    hideAllScreens();
+    storeScreenEl.style.display = 'block';
+  }
 }
 
 function switchBlackMarketTab(tabId) {
