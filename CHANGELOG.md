@@ -5,6 +5,15 @@ All notable changes to From Dusk To Don (Mafia Born) will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.35.5] - 2026-03-12
+
+### Changes
+- Renamed gang "Operations" to "Tasks" in all UI to avoid confusion with story Operations
+- Rescaled story chapter reputation requirements: Ch1 starts at 100, increases by 205 per chapter (up to 5,020 at Ch25)
+- Added reputation requirement to Chapter 1 (previously had none)
+- Removed duplicate reputation objectives from Chapters 16-18
+- Removed turf tribute notification badge from Territories button (kept on Operations only)
+
 ## [1.35.4] - 2026-03-11
 
 ### Bug Fixes

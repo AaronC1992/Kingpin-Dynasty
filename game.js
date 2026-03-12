@@ -18386,8 +18386,19 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = '1.35.4';
+const CURRENT_VERSION = '1.35.5';
 const VERSION_UPDATES = {
+  '1.35.5': {
+    title: 'Gang Tasks Rename, Rep Rescale & Badge Fix',
+    date: 'March 2026',
+    changes: [
+      'Renamed gang "Operations" to "Tasks" in all UI to avoid confusion with story Operations',
+      'Rescaled story chapter reputation requirements: Ch1 starts at 100, increases by 205 per chapter (up to 5,020 at Ch25)',
+      'Added reputation requirement to Chapter 1 (previously had none)',
+      'Removed duplicate reputation objectives from Chapters 16-18',
+      'Removed turf tribute notification badge from Territories button (kept on Operations only)',
+    ]
+  },
   '1.35.4': {
     title: 'Story Mission Fix & Quote Escaping',
     date: 'March 2026',
