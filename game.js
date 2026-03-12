@@ -18370,8 +18370,22 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = '1.35.5';
+const CURRENT_VERSION = '1.35.6';
 const VERSION_UPDATES = {
+  '1.35.6': {
+    title: 'Mobile Newspaper Fix, Security Scrub & README Cleanup',
+    date: 'March 2026',
+    changes: [
+      'Fixed newspaper links (jail/death/policy) not working on mobile ledger and world chat',
+      'Newspaper overlays now reliably appear above all mobile UI elements',
+      'Touch-friendly tap targets for newspaper close buttons and chat links on mobile',
+      'World chat area now caps at 50vh on small screens to prevent overflow',
+      'Scrubbed personal file paths and stale ngrok URLs from documentation',
+      'Updated all embracedcreation.com references to mafiaborn.com',
+      'Removed export/import from Character Showcase',
+      'Cleaned up README -- standard game info with Play Now badge, no version log or server setup',
+    ]
+  },
   '1.35.5': {
     title: 'Gang Tasks Rename, Rep Rescale & Badge Fix',
     date: 'March 2026',

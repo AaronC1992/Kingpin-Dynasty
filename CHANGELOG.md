@@ -5,6 +5,18 @@ All notable changes to From Dusk To Don (Mafia Born) will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.35.6] - 2026-03-12
+
+### Changes
+- Fixed newspaper links (jail/death/policy) not working on mobile ledger and world chat
+- Newspaper overlays now reliably appear above all mobile UI elements
+- Touch-friendly tap targets for newspaper close buttons and chat links on mobile
+- World chat area caps at 50vh on small screens to prevent overflow
+- Scrubbed personal file paths and stale ngrok URLs from documentation
+- Updated all embracedcreation.com references to mafiaborn.com
+- Removed export/import from Character Showcase
+- Cleaned up README with Play Now badge, no version log or server setup
+
 ## [1.35.5] - 2026-03-12
 
 ### Changes
