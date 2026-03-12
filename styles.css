@@ -1326,6 +1326,12 @@ button:disabled::after {
 
 /* Responsive: single column on small screens */
 @media (max-width: 600px) {
+    /* Newspaper overlays must sit above all mobile UI (quick-actions bar, slide menu, etc.) */
+    #death-newspaper-overlay,
+    #jail-newspaper-overlay,
+    #policy-newspaper-overlay {
+        z-index: 10001;
+    }
     #death-newspaper,
     #jail-newspaper,
     #policy-newspaper {
@@ -1350,6 +1356,28 @@ button:disabled::after {
     .newspaper-portrait-wrap {
         float: none;
         margin: 0 auto 10px;
+    }
+    /* Touch-friendly close button on mobile */
+    #newspaper-close-btn,
+    #jail-newspaper .newspaper-close-btn,
+    #policy-newspaper .newspaper-close-btn {
+        font-size: 2.4em;
+        min-width: 44px;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0.8;
+    }
+    /* Touch-friendly newspaper links in chat/ledger */
+    .newspaper-chat-link {
+        display: block;
+        padding: 10px 8px;
+        font-size: 14px;
+        min-height: 44px;
+        line-height: 24px;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: rgba(192, 160, 98, 0.3);
     }
 }
 

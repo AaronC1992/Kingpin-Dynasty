@@ -1396,7 +1396,7 @@ async function handleServerMessage(message) {
 
             // Log chat message to The Ledger under 'chat' category
             if (typeof logAction === 'function') {
-                _safeLogAction(`[Chat] ${chatMessage.player}: ${chatMessage.message}`, 'chat');
+                _safeLogAction(`[Chat] ${escapeHTML(chatMessage.player)}: ${escapeHTML(chatMessage.message)}`, 'chat');
             }
             
             // Update chat if visible
@@ -3088,7 +3088,7 @@ function showGlobalChat() {
             
             <!-- World Tab (default) -->
             <div id="worldchat-world-tab" style="display:${activeWcTab === 'world' ? 'block' : 'none'};background: rgba(0, 0, 0, 0.9); padding: 20px; border-radius: 0 0 15px 15px; border: 2px solid #c0a062; border-top: none; margin-bottom: 20px; box-shadow: 0 0 15px rgba(192, 160, 98, 0.2);">
-                <div id="global-chat-area" style="height: 400px; overflow-y: auto; background: rgba(20, 20, 20, 0.8); padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #555;">
+                <div id="global-chat-area" style="height: 400px; max-height: 50vh; overflow-y: auto; background: rgba(20, 20, 20, 0.8); padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #555;">
                     ${generateChatHTML()}
                 </div>
                 

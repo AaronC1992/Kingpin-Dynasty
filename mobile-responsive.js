@@ -484,10 +484,11 @@ export const MobileSystem = {
                 if (recentActions.length > 0) {
                     mobileActionList.innerHTML = recentActions.map(item => {
                         const msgEl = item.querySelector('.log-msg');
-                        const text = msgEl ? msgEl.textContent : item.textContent;
+                        // Use innerHTML to preserve clickable newspaper links and other interactive elements
+                        const content = msgEl ? msgEl.innerHTML : item.textContent;
                         return `<div style="margin: 8px 0; padding: 8px; background: rgba(255,255,255,0.05); 
                                      border-radius: 4px; color: #f5e6c8; font-size: 13px; line-height: 1.4; 
-                                     border-left: 3px solid #c0a062; font-family: 'Georgia', serif;">${text}</div>`;
+                                     border-left: 3px solid #c0a062; font-family: 'Georgia', serif;">${content}</div>`;
                     }).join('');
                 } else {
                     mobileActionList.innerHTML = '<div style="color: #8a7a5a; font-style: italic; text-align: center; padding: 20px;">No recent activity</div>';
