@@ -1,6 +1,6 @@
-# 🚀 QUICK START: Deploying to embracedcreation.com
+# ðŸš€ QUICK START: Deploying to mafiaborn.com
 
-## ✅ YOUR CODE IS PRODUCTION READY!
+## âœ… YOUR CODE IS PRODUCTION READY!
 
 All security issues have been fixed. Follow these steps to deploy.
 
@@ -10,16 +10,16 @@ All security issues have been fixed. Follow these steps to deploy.
 
 ### Files to Upload (ALL files in your project folder):
 ```
-📁 Your Web Root (public_html or www)
-├── index.html
-├── *.js (all JavaScript files)
-├── *.css (all CSS files)
-├── config/
-├── items/
-├── profile_pics/
-├── vehicles/
-├── weapons&armor/
-└── ... (all other game assets)
+ðŸ“ Your Web Root (public_html or www)
+â”œâ”€â”€ index.html
+â”œâ”€â”€ *.js (all JavaScript files)
+â”œâ”€â”€ *.css (all CSS files)
+â”œâ”€â”€ config/
+â”œâ”€â”€ items/
+â”œâ”€â”€ profile_pics/
+â”œâ”€â”€ vehicles/
+â”œâ”€â”€ weapons&armor/
+â””â”€â”€ ... (all other game assets)
 ```
 
 ---
@@ -76,10 +76,10 @@ See `PRODUCTION_DEPLOYMENT.md` for full nginx/Apache configuration.
 
 ## Step 4: Verify SSL Certificate
 
-✅ **CRITICAL:** Your domain MUST have SSL (https://) for WebSocket Secure (wss://)
+âœ… **CRITICAL:** Your domain MUST have SSL (https://) for WebSocket Secure (wss://)
 
 ### Check SSL:
-1. Visit: https://www.embracedcreation.com
+1. Visit: https://www.mafiaborn.com
 2. Look for lock icon in browser address bar
 3. If missing, get free SSL from Let's Encrypt
 
@@ -88,9 +88,9 @@ See `PRODUCTION_DEPLOYMENT.md` for full nginx/Apache configuration.
 ## Step 5: Test the Deployment
 
 ### Browser Test:
-1. Go to: https://www.embracedcreation.com
-2. Click "🌐 The Commission" in main menu
-3. Look for: **"✅ Connected to The Commission"**
+1. Go to: https://www.mafiaborn.com
+2. Click "ðŸŒ The Commission" in main menu
+3. Look for: **"âœ… Connected to The Commission"**
 
 ### If Connection Fails:
 1. Press F12 to open browser console
@@ -123,7 +123,7 @@ pm2 restart mafia-born
 
 ---
 
-## 🎯 Quick Troubleshooting
+## ðŸŽ¯ Quick Troubleshooting
 
 | Problem | Solution |
 |---------|----------|
@@ -135,7 +135,7 @@ pm2 restart mafia-born
 
 ---
 
-## 📞 Emergency Commands
+## ðŸ“ž Emergency Commands
 
 **Server won't start:**
 ```bash
@@ -165,7 +165,7 @@ pm2 start server.js --name mafia-born
 
 ---
 
-## 📚 Full Documentation
+## ðŸ“š Full Documentation
 
 - **Production Deployment:** See `PRODUCTION_DEPLOYMENT.md`
 - **Security Audit:** See `SECURITY_AUDIT.md`
@@ -173,7 +173,7 @@ pm2 start server.js --name mafia-born
 
 ---
 
-## ✅ Pre-Flight Checklist
+## âœ… Pre-Flight Checklist
 
 Before announcing the game to players:
 
@@ -189,11 +189,11 @@ Before announcing the game to players:
 
 ---
 
-## 🎊 You're Ready!
+## ðŸŽŠ You're Ready!
 
-Once all checklist items are ✅, your multiplayer game is **LIVE** on https://www.embracedcreation.com!
+Once all checklist items are âœ…, your multiplayer game is **LIVE** on https://www.mafiaborn.com!
 
-Share the link with your players and watch your criminal empire grow! 🏴‍☠️
+Share the link with your players and watch your criminal empire grow! ðŸ´â€â˜ ï¸
 
 ---
 
@@ -202,4 +202,4 @@ Share the link with your players and watch your criminal empire grow! 🏴‍☠
 - Check browser console: Press F12
 - Review documentation: `PRODUCTION_DEPLOYMENT.md`
 
-**Good luck, Don!** 🎩
+**Good luck, Don!** ðŸŽ©

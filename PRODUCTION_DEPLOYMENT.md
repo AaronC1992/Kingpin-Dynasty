@@ -1,10 +1,10 @@
-# 🚀 Mafia Born - Production Deployment Checklist
+# ðŸš€ Mafia Born - Production Deployment Checklist
 
 ## Pre-Deployment Checklist
 
-### ✅ Code Verification
+### âœ… Code Verification
 - [x] Removed hardcoded ngrok URLs
-- [x] Updated to production domain (embracedcreation.com)
+- [x] Updated to production domain (mafiaborn.com)
 - [x] XSS protection enabled (escapeHTML function)
 - [x] Rate limiting configured (5 messages/5 seconds)
 - [x] Input sanitization active
@@ -12,7 +12,7 @@
 - [x] Path traversal protection enabled
 - [x] Graceful shutdown handlers configured
 
-### 🔐 Security Recommendations
+### ðŸ” Security Recommendations
 
 #### High Priority
 1. **SSL Certificate Required**
@@ -28,7 +28,7 @@
    - Currently allows all origins (`*`)
    - Consider restricting to your domain only:
    ```javascript
-   'Access-Control-Allow-Origin': 'https://www.embracedcreation.com'
+   'Access-Control-Allow-Origin': 'https://www.mafiaborn.com'
    ```
 
 4. **Rate Limiting Enhancement**
@@ -48,7 +48,7 @@
    - Monitor concurrent connections
    - Current max: 100 players per server
 
-### 🖥️ Server Setup
+### ðŸ–¥ï¸ Server Setup
 
 #### Required Software
 ```bash
@@ -96,23 +96,23 @@ pm2 startup
 pm2 save
 ```
 
-### 🌐 Web Server Configuration
+### ðŸŒ Web Server Configuration
 
 #### Nginx (Recommended)
 ```nginx
 server {
     listen 80;
-    server_name www.embracedcreation.com embracedcreation.com;
+    server_name www.mafiaborn.com mafiaborn.com;
     return 301 https://$server_name$request_uri;
 }
 
 server {
     listen 443 ssl http2;
-    server_name www.embracedcreation.com embracedcreation.com;
+    server_name www.mafiaborn.com mafiaborn.com;
     
     # SSL Configuration
-    ssl_certificate /etc/letsencrypt/live/embracedcreation.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/embracedcreation.com/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/mafiaborn.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/mafiaborn.com/privkey.pem;
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_ciphers HIGH:!aNULL:!MD5;
     
@@ -148,12 +148,12 @@ server {
 #### Apache (Alternative)
 ```apache
 <VirtualHost *:443>
-    ServerName www.embracedcreation.com
+    ServerName www.mafiaborn.com
     
     SSLEngine on
-    SSLCertificateFile /etc/letsencrypt/live/embracedcreation.com/cert.pem
-    SSLCertificateKeyFile /etc/letsencrypt/live/embracedcreation.com/privkey.pem
-    SSLCertificateChainFile /etc/letsencrypt/live/embracedcreation.com/chain.pem
+    SSLCertificateFile /etc/letsencrypt/live/mafiaborn.com/cert.pem
+    SSLCertificateKeyFile /etc/letsencrypt/live/mafiaborn.com/privkey.pem
+    SSLCertificateChainFile /etc/letsencrypt/live/mafiaborn.com/chain.pem
     
     DocumentRoot /var/www/mafia-born
     
@@ -169,7 +169,7 @@ server {
 </VirtualHost>
 ```
 
-### 🔍 Testing Checklist
+### ðŸ” Testing Checklist
 
 #### Before Going Live
 - [ ] Test WebSocket connection from browser console
@@ -196,7 +196,7 @@ sendChatMessage();  // Type a message and send
 console.log(onlineWorldState.serverInfo.playerCount);
 ```
 
-### 📊 Monitoring
+### ðŸ“Š Monitoring
 
 #### Server Health
 ```bash
@@ -215,7 +215,7 @@ pm2 monit
 - Error tracking: Monitor for JavaScript errors in browser console
 - Connection issues: Check WebSocket upgrade errors in server logs
 
-### 🐛 Troubleshooting
+### ðŸ› Troubleshooting
 
 #### Connection Failed
 1. Check if Node.js server is running: `pm2 status`
@@ -226,14 +226,14 @@ pm2 monit
 #### WebSocket Upgrade Failed
 1. Verify proxy headers are set correctly
 2. Check for conflicting proxy rules
-3. Test direct connection: `wss://www.embracedcreation.com:3000`
+3. Test direct connection: `wss://www.mafiaborn.com:3000`
 
 #### Players Can't See Each Other
 1. Check server logs for connection count
 2. Verify world state is broadcasting
 3. Test with browser dev tools network tab
 
-### 🔄 Updating the Game
+### ðŸ”„ Updating the Game
 
 ```bash
 # Stop the server
@@ -249,7 +249,7 @@ pm2 restart mafia-born
 # Users: Press Ctrl+F5 to hard refresh
 ```
 
-### 📈 Scalability Considerations
+### ðŸ“ˆ Scalability Considerations
 
 #### Current Limits
 - Max players: 100 per server instance
@@ -263,7 +263,7 @@ pm2 restart mafia-born
 3. **Redis Cache**: For high-frequency state updates
 4. **Load Balancer**: Distribute players across servers
 
-### 🎯 Post-Launch
+### ðŸŽ¯ Post-Launch
 
 #### Day 1
 - [ ] Monitor server resources (CPU, RAM)
@@ -279,7 +279,7 @@ pm2 restart mafia-born
 
 ---
 
-## 🆘 Emergency Contacts
+## ðŸ†˜ Emergency Contacts
 
 **Server Issues:**
 - Check server logs: `pm2 logs`
@@ -292,8 +292,8 @@ pm2 restart mafia-born
 
 ---
 
-**Production URL:** https://www.embracedcreation.com
+**Production URL:** https://www.mafiaborn.com
 **Server Port:** 3000 (proxied through nginx/Apache)
 **Protocol:** wss:// (WebSocket Secure)
 
-**Good luck, Don! 🎩**
+**Good luck, Don! ðŸŽ©**

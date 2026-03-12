@@ -1,6 +1,6 @@
 # Mafia Born - Multiplayer Setup Guide
 
-## 🌐 **PRODUCTION DEPLOYMENT (embracedcreation.com)**
+## ðŸŒ **PRODUCTION DEPLOYMENT (mafiaborn.com)**
 
 ### Server Requirements
 - **Node.js** (version 14 or higher)
@@ -21,7 +21,7 @@
    ```
 
 3. **Configure WebSocket endpoint:**
-   - The game is configured to connect to `wss://www.embracedcreation.com`
+   - The game is configured to connect to `wss://www.mafiaborn.com`
    - Ensure your server is listening on the correct port (default: 3000)
    - Configure reverse proxy (nginx/Apache) to forward WebSocket traffic
 
@@ -37,15 +37,15 @@
    - Ensure `multiplayer.js` is included
 
 6. **Test the connection:**
-   - Visit https://www.embracedcreation.com
+   - Visit https://www.mafiaborn.com
    - Check browser console for WebSocket connection status
-   - Look for "✅ Connected to Online World"
+   - Look for "âœ… Connected to Online World"
 
 ### Nginx Configuration Example
 ```nginx
 server {
     listen 443 ssl;
-    server_name www.embracedcreation.com;
+    server_name www.mafiaborn.com;
     
     # SSL configuration
     ssl_certificate /path/to/ssl/cert.pem;
@@ -67,7 +67,7 @@ server {
 
 ---
 
-## 🎮 Local Development Testing
+## ðŸŽ® Local Development Testing
 
 ### Prerequisites
 - **Node.js** (version 14 or higher) - [Download here](https://nodejs.org)
@@ -80,12 +80,12 @@ server {
 
 ### Step 2: Test Locally
 1. Open your game by visiting `http://localhost:3000` in your browser
-2. Click "🌐 The Commission" in the main menu
-3. You should see "✅ Connected to The Commission" 
+2. Click "ðŸŒ The Commission" in the main menu
+3. You should see "âœ… Connected to The Commission" 
 
-## 🌐 Development Testing (Cross-PC with Ngrok)
+## ðŸŒ Development Testing (Cross-PC with Ngrok)
 
-**Note:** Ngrok is only for development testing. Production uses embracedcreation.com
+**Note:** Ngrok is only for development testing. Production uses mafiaborn.com
 
 ### Step 1: Install Ngrok (Development Only)
 1. Go to [ngrok.com](https://ngrok.com) and create a free account
@@ -108,7 +108,7 @@ server {
 2. They can open that URL in their browser to play
 3. **Remember:** Ngrok URLs expire and are only for testing
 
-## 🔧 Troubleshooting
+## ðŸ”§ Troubleshooting
 
 ### "Connection Error" Message
 - Make sure the server is running (`start-server.bat`)
@@ -125,23 +125,23 @@ server {
 - Make sure the server shows multiple connections in its window
 - Check that everyone updated their `multiplayer.js` with the same serverUrl
 
-## 🎯 Multiplayer Features
+## ðŸŽ¯ Multiplayer Features
 
 ### What Works
-- ✅ **Global Chat** - Talk with all players worldwide
-- ✅ **City Districts** - Claim territory that others can see
-- ✅ **Active Heists** - Organize and join heists with other players
-- ✅ **Player Challenges** - Combat other players for reputation
-- ✅ **Live Leaderboard** - See who's the top criminal
-- ✅ **World Events** - Dynamic city events affect all players
-- ✅ **Real-time Updates** - See other players' actions instantly
+- âœ… **Global Chat** - Talk with all players worldwide
+- âœ… **City Districts** - Claim territory that others can see
+- âœ… **Active Heists** - Organize and join heists with other players
+- âœ… **Player Challenges** - Combat other players for reputation
+- âœ… **Live Leaderboard** - See who's the top criminal
+- âœ… **World Events** - Dynamic city events affect all players
+- âœ… **Real-time Updates** - See other players' actions instantly
 
 ### Commands for Testing
 - Open browser console (F12) and type:
   - `onlineWorldState` - See current connection status
   - `gameState.players` - See all connected players (server console)
 
-## 🚀 Deployment Options (Advanced)
+## ðŸš€ Deployment Options (Advanced)
 
 ### Option 1: Heroku (Free Tier)
 1. Create account at [heroku.com](https://heroku.com)
@@ -161,23 +161,23 @@ server {
 - Provides more control and reliability
 - Requires server management knowledge
 
-## 📊 Server Monitoring
+## ðŸ“Š Server Monitoring
 
 The server window shows:
-- 🎮 Player connections/disconnections
-- 💬 Global chat messages
-- 🏛️ Territory claims
-- 💰 Heist activities
-- ⚔️ Player combat results
+- ðŸŽ® Player connections/disconnections
+- ðŸ’¬ Global chat messages
+- ðŸ›ï¸ Territory claims
+- ðŸ’° Heist activities
+- âš”ï¸ Player combat results
 
-## ⚠️ Important Notes
+## âš ï¸ Important Notes
 
 1. **Keep server running** - If you close the server window, all players disconnect
 2. **Ngrok URLs change** - Free ngrok URLs expire when you restart ngrok
 3. **Update all clients** - When changing serverUrl, all players need the update
 4. **Firewall settings** - Make sure Windows Firewall allows Node.js connections
 
-## 🆘 Need Help?
+## ðŸ†˜ Need Help?
 
 If you encounter issues:
 1. Check the server console for error messages
@@ -187,4 +187,4 @@ If you encounter issues:
 
 ---
 
-**Happy criminal empire building! 🏴‍☠️**
+**Happy criminal empire building! ðŸ´â€â˜ ï¸**

@@ -1,4 +1,4 @@
-# 🎮 Mafia Born - Image Loading Fix Guide
+# ðŸŽ® Mafia Born - Image Loading Fix Guide
 
 ## The Problem
 Your game's images (logo and character portraits) aren't loading when accessed through ngrok because the server needs to be running to serve static files.
@@ -9,7 +9,7 @@ Your game's images (logo and character portraits) aren't loading when accessed t
 1. Open Command Prompt or PowerShell
 2. Navigate to your game folder:
    ```
-   cd "c:\Users\jenna\Desktop\Portfolio projects\Mafia-Born"
+   cd "/path/to/Mafia-Born"
    ```
 3. Start the server:
    ```
@@ -23,26 +23,26 @@ Your game's images (logo and character portraits) aren't loading when accessed t
 ### Step 2: Check Server is Running
 You should see output like:
 ```
-🚀 Mafia Born Multiplayer Server running on port 8080
-🌐 WebSocket server ready for connections
+ðŸš€ Mafia Born Multiplayer Server running on port 8080
+ðŸŒ WebSocket server ready for connections
 ```
 
 ### Step 3: Update Your URLs
 Your ngrok gives you TWO URLs:
-- **WebSocket**: `wss://a815bff97d8c.ngrok-free.app` (for multiplayer)
-- **HTTP**: `https://a815bff97d8c.ngrok-free.app` (for web browsing)
+- **WebSocket**: `wss://your-ngrok-id.ngrok-free.app` (for multiplayer)
+- **HTTP**: `https://your-ngrok-id.ngrok-free.app` (for web browsing)
 
 ## What Should Work Now
 
-### ✅ Image Files Available:
+### âœ… Image Files Available:
  `gamelogo.png` - Main game logo
 - All vehicle and item PNG files
 
-### ✅ Test URLs:
+### âœ… Test URLs:
 When your server is running, these should work:
-- Game: https://a815bff97d8c.ngrok-free.app
-- Logo: https://a815bff97d8c.ngrok-free.app/gamelogo.png
-- Portrait: https://a815bff97d8c.ngrok-free.app/White%20male.png
+- Game: https://your-ngrok-id.ngrok-free.app
+- Logo: https://your-ngrok-id.ngrok-free.app/gamelogo.png
+- Portrait: https://your-ngrok-id.ngrok-free.app/White%20male.png
 
 ## Troubleshooting
 
@@ -74,7 +74,7 @@ node simple-server.js
 - File names with spaces are automatically URL-encoded (%20 for spaces)
 
 ## Success Indicators
-✅ Server console shows: "🚀 Test server running on http://localhost:8080"
-✅ Browser shows game with logo and character portraits
-✅ Multiplayer connection status shows "Connected to Online World"
-✅ Other players can see your game through the ngrok URL
+âœ… Server console shows: "ðŸš€ Test server running on http://localhost:8080"
+âœ… Browser shows game with logo and character portraits
+âœ… Multiplayer connection status shows "Connected to Online World"
+âœ… Other players can see your game through the ngrok URL

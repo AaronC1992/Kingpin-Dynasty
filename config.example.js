@@ -19,7 +19,7 @@ const config = {
   environment: process.env.NODE_ENV || 'development',
   
   // Production domain (update this to match your domain)
-  productionDomain: 'www.embracedcreation.com',
+  productionDomain: 'www.mafiaborn.com',
   
   // Game limits
   maxPlayers: parseInt(process.env.MAX_PLAYERS) || 100,
@@ -43,7 +43,7 @@ const config = {
   enableInputSanitization: true,
   
   // CORS settings
-  corsOrigin: process.env.CORS_ORIGIN || '*', // In production, set to 'https://www.embracedcreation.com'
+  corsOrigin: process.env.CORS_ORIGIN || '*', // In production, set to 'https://www.mafiaborn.com'
   
   // MongoDB
   // Set MONGODB_URI env var to your Atlas connection string, e.g.:
