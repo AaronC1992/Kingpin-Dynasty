@@ -1164,7 +1164,6 @@ function startSignatureJob(familyKey) {
     const jailRoll = Math.random() * 100;
     if (jailRoll < 25) {
       sendToJail(3, { crimeName: sigJob.name, riskLevel: 'very high' });
-      logAction(`Signature job "${sigJob.name}" went sideways -- you got pinched!`);
       return;
     }
     logAction(`Signature job "${sigJob.name}" failed. ${family.name} is disappointed but willing to give you another shot.`);
@@ -11798,7 +11797,6 @@ async function startJob(index) {
       showBriefNotification('Raid warning! Your corrupt contact saved you from arrest.', 'warning');
     } else {
       sendToJail(job.heatGain, { crimeName: job.name, riskLevel: job.risk });
-      logAction(`Sirens wail behind you! Cold metal cuffs bite into your wrists as the cops drag you away. The ${job.name} was a setup all along...`);
       return;
     }
   }
@@ -12126,7 +12124,6 @@ function handleCarTheft(job) {
 
   if (jailChance <= adjustedJailChance) {
     sendToJail(job.heatGain, { crimeName: job.name, riskLevel: job.risk });
-    logAction('Busted! You barely get the door open before the cops swarm you. The owner was watching from their window the whole time.');
     return;
   }
 
@@ -12272,7 +12269,6 @@ function handleLaunderMoneyJob(job, approachLabel) {
     player.dirtyMoney = Math.max(0, player.dirtyMoney - seized);
     player.heat = Math.min(100, player.heat + 8);
     sendToJail(job.heatGain, { crimeName: job.name, riskLevel: job.risk });
-    logAction(`The feds bust your laundering operation! $${seized.toLocaleString()} in dirty money seized as evidence. You're dragged away in cuffs.`);
     return;
   }
 
@@ -12751,7 +12747,6 @@ function sendToJail(heatLoss, crimeContext) {
   updateUI(); // Update UI
   updateJailUI(); // Ensure jail-specific UI elements are synced
   updateJailTimer(); // Start the jail timer
-  logAction(getRandomNarration('jailSentences'));
 
   // Generate and show jail newspaper headline
   const jailNewspaperData = generateJailNewspaperData(crimeContext);

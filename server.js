@@ -2512,15 +2512,24 @@ function handlePlayerUpdate(clientId, message) {
     const wasInJail = playerState.previousInJail || false;
     if (playerState.inJail !== wasInJail) {
         if (playerState.inJail) {
-            // Player was arrested
+            // Player was arrested — exclude sender from broadcast
+            const arrestChat = {
+                playerId: 'system',
+                playerName: 'System',
+                message: ` ${player.name} was arrested and sent to jail!`,
+                timestamp: Date.now(),
+                color: '#e74c3c'
+            };
+            gameState.globalChat.push(arrestChat);
+            if (gameState.globalChat.length > 50) gameState.globalChat.shift();
+            broadcastToAll({ type: 'global_chat', ...arrestChat }, clientId);
+
             broadcastToAll({
                 type: 'player_arrested',
                 playerId: clientId,
                 playerName: player.name,
                 jailTime: playerState.jailTime
-            });
-            
-            addGlobalChatMessage('System', ` ${player.name} was arrested and sent to jail!`, '#e74c3c');
+            }, clientId);
         } else {
             // Player was released or escaped
             broadcastToAll({
@@ -2585,13 +2594,27 @@ function handleJailStatusSync(clientId, message) {
 
     if (!wasInJail) {
         console.log(` ${player.name} jail status synced: IN JAIL (${jailTime}s)`);
-        addGlobalChatMessage('System', ` ${player.name} was arrested and sent to jail!`, '#e74c3c');
+
+        // Add to global chat history (for late joiners) but exclude the
+        // arrested player from the broadcast — they already have a local
+        // newspaper headline in their ledger.
+        const arrestChat = {
+            playerId: 'system',
+            playerName: 'System',
+            message: ` ${player.name} was arrested and sent to jail!`,
+            timestamp: Date.now(),
+            color: '#e74c3c'
+        };
+        gameState.globalChat.push(arrestChat);
+        if (gameState.globalChat.length > 50) gameState.globalChat.shift();
+        broadcastToAll({ type: 'global_chat', ...arrestChat }, clientId);
+
         broadcastToAll({
             type: 'player_arrested',
             playerId: clientId,
             playerName: player.name,
             jailTime: jailTime
-        });
+        }, clientId);
 
         playerState.previousInJail = true;
         updateJailBots();
@@ -3106,7 +3129,17 @@ function handleJobIntent(clientId, message) {
             playerName: player.name,
             jailTime: ps.jailTime
         }, clientId);
-        addGlobalChatMessage('System', ` ${player.name} was arrested after a ${jobId} job!`, '#e74c3c');
+
+        const arrestChat = {
+            playerId: 'system',
+            playerName: 'System',
+            message: ` ${player.name} was arrested after a ${jobId} job!`,
+            timestamp: Date.now(),
+            color: '#e74c3c'
+        };
+        gameState.globalChat.push(arrestChat);
+        if (gameState.globalChat.length > 50) gameState.globalChat.shift();
+        broadcastToAll({ type: 'global_chat', ...arrestChat }, clientId);
     }
 
     broadcastPlayerStates();
@@ -3557,7 +3590,17 @@ function handlePlayerJailNewspaper(clientId, message) {
         timestamp: Date.now()
     };
 
-    addGlobalChatMessage('The Daily Racketeer', ` ARRESTED! ${sanitized.name} has been sent to jail for "${sanitized.crimeName}" — Click to read the headlines!`, '#8b0000');
+    // Add to global chat history but exclude the arrested player from broadcast
+    const newspaperChat = {
+        playerId: 'system',
+        playerName: 'The Daily Racketeer',
+        message: ` ARRESTED! ${sanitized.name} has been sent to jail for "${sanitized.crimeName}" — Click to read the headlines!`,
+        timestamp: Date.now(),
+        color: '#8b0000'
+    };
+    gameState.globalChat.push(newspaperChat);
+    if (gameState.globalChat.length > 50) gameState.globalChat.shift();
+    broadcastToAll({ type: 'global_chat', ...newspaperChat }, clientId);
 
     broadcastToAll({
         type: 'player_jail_newspaper',
