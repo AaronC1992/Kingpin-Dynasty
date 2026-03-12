@@ -9685,6 +9685,15 @@ function hasRequiredItems(requiredItems) {
 // Function to hide all screens
 // Pass skipScroll=true when called from timer-driven refreshes to preserve scroll position.
 function hideAllScreens(skipScroll) {
+  // Prevent navigating away from hospital during active treatment
+  if (player.activeHealing) {
+    const hospitalScreen = document.getElementById('hospital-screen');
+    if (hospitalScreen && hospitalScreen.style.display === 'block') {
+      showBriefNotification("You're on the table mid-treatment! Cancel the procedure first if you want to leave.", 'danger');
+      return;
+    }
+  }
+
   if (!skipScroll) {
     // Only scroll to top on user-initiated screen transitions
     window.scrollTo(0, 0);
@@ -15429,6 +15438,12 @@ function goBackToMainMenu() {
     return;
   }
 
+  // Prevent leaving hospital during active treatment
+  if (player.activeHealing) {
+    showBriefNotification("You're on the table mid-treatment! Cancel the procedure first if you want to leave.", 'danger');
+    return;
+  }
+
   hideAllScreens();
 
   // Explicitly hide these screens as backup (with null checks)
@@ -20545,6 +20560,7 @@ function renderHospitalContent() {
       <div class="hospital-progress-bar"><div class="hospital-progress-fill" style="width:${pct}%"></div></div>
       <div class="hospital-healing-time">${mins}:${secs.toString().padStart(2,'0')} remaining (+${h.healAmount} HP)</div>
       <button onclick="cancelHospitalHealing()" class="hospital-cancel-btn">Cancel Treatment (50% refund)</button>
+      <p style="color:#8b3a3a;text-align:center;font-size:0.85em;margin-top:8px;">You can't leave until treatment finishes or you cancel.</p>
     </div>`;
   } else if (player.health >= 100) {
     html += '<p style="color:#8a9a6a;text-align:center;font-size:1.1em;">You\'re in perfect health. No treatment needed.</p>';
@@ -20652,8 +20668,8 @@ function startHospitalHealing(healType) {
     startTime: Date.now(),
   };
 
-  logAction(`Treatment started: ${HEAL_TYPES[healType].label} (${duration}s). Come back when it's done.`);
-  showBriefNotification(`${HEAL_TYPES[healType].label} started. ${duration}s remaining.`, 'success');
+  logAction(`Treatment started: ${HEAL_TYPES[healType].label} (${duration}s). You're stuck on the table until it's done.`);
+  showBriefNotification(`${HEAL_TYPES[healType].label} started. ${duration}s remaining. You can't leave until it's done.`, 'success');
   updateUI();
   renderHospitalContent();
 }
