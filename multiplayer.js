@@ -1395,7 +1395,12 @@ async function handleServerMessage(message) {
             }
 
             // Log chat message to The Ledger under 'chat' category
-            if (typeof logAction === 'function') {
+            // Skip ledger logging for the local player's own arrest messages
+            // (they already have a clickable newspaper link from sendToJail)
+            const isOwnArrestMsg = typeof player !== 'undefined' && player.name &&
+                (chatMessage.message.includes('was arrested') || chatMessage.message.includes('ARRESTED!')) &&
+                chatMessage.message.includes(player.name);
+            if (typeof logAction === 'function' && !isOwnArrestMsg) {
                 _safeLogAction(`[Chat] ${escapeHTML(chatMessage.player)}: ${escapeHTML(chatMessage.message)}`, 'chat');
             }
             
