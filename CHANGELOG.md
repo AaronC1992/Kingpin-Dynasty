@@ -5,6 +5,25 @@ All notable changes to From Dusk To Don (Mafia Born) will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.35.9] - 2026-03-13
+
+### Dead Code Sweep
+- Removed stale TODO comment for future server-authoritative job system
+- Removed legacy territory redirect stubs (`manageTerritoryDetails`, `fortifyTerritory`) and their window exports
+- Removed `playNotificationSound` no-op stub and all 29 dead call sites across multiplayer.js
+- Removed unused `getCurrentDateString` function (was triggering ESLint warning)
+- Removed `flushDB` no-op and its export from userDB.js
+- Cleaned up stale "Removed" comments in game.js and multiplayer.js
+
+## [1.35.8] - 2026-03-13
+
+### Changes
+- Removed gang training system entirely -- recruit the members you want, fire the ones you don't
+- Gang UI now has 3 tabs: The Family, Tasks, Recruitment
+- Car Theft Ring gang operation now awards stolen vehicles (30% chance on success)
+- Gang-stolen vehicles use weighted condition tiers -- crews are pros so better odds than solo theft
+- Both player and gang car theft can now rarely land a perfect 0% damage vehicle
+
 ## [1.35.7] - 2026-03-12
 
 ### Changes

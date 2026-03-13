@@ -212,9 +212,6 @@ async function init() {
     console.log(` User DB ready — ${count} accounts`);
 }
 
-// flushDB is now a no-op (MongoDB persists immediately)
-function flushDB() {}
-
 module.exports = {
     init,
     createUser,
@@ -228,6 +225,5 @@ module.exports = {
     isPlayerNameTaken,
     createSession,
     validateToken,
-    destroySession,
-    flushDB
+    destroySession
 };

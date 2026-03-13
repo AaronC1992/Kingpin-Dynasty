@@ -7987,16 +7987,6 @@ async function dropProtection(racketId) {
   }
 }
 
-// Legacy territory stubs -- redirect to new Turf system
-function manageTerritoryDetails(territoryId) {
-  // Legacy stub -- redirect to new turf manage screen
-  manageTurfDetails(territoryId);
-}
-
-async function fortifyTerritory(territoryId) {
-  fortifyTurf(territoryId);
-}
-
 // -- Corruption Benefit Helper ---
 // Returns the best (highest) value for a given corruption benefit type
 // among all currently active (non-expired) corrupted officials.
@@ -11221,12 +11211,6 @@ async function startJob(index) {
     }
   }
 
-  // TODO: When server JOB_DEFS covers all jobs, send { type: 'job_intent', jobId }
-  // to the server and let handleJobIntent compute rewards authoritatively.
-  // The client handler for 'job_result' is already wired in multiplayer.js.
-  // For now, proceed with local simulation to support the full perk/skill system.
-
-  // OFFLINE / FALLBACK: proceed with legacy local simulation
   setJobCooldown(index, job); // Set crime cooldown timer
   startCooldownTick(); // Start the cooldown refresh tick
 
@@ -18139,8 +18123,20 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = '1.35.8';
+const CURRENT_VERSION = '1.35.9';
 const VERSION_UPDATES = {
+  '1.35.9': {
+    title: 'Dead Code Sweep',
+    date: 'March 2026',
+    changes: [
+      'Removed stale TODO comment for future server-authoritative job system',
+      'Removed legacy territory redirect stubs (manageTerritoryDetails, fortifyTerritory) and their window exports',
+      'Removed playNotificationSound no-op stub and all 29 dead call sites across multiplayer.js',
+      'Removed unused getCurrentDateString function (was triggering ESLint warning)',
+      'Removed flushDB no-op and its export from userDB.js',
+      'Cleaned up stale "Removed" comments in game.js and multiplayer.js',
+    ]
+  },
   '1.35.8': {
     title: 'Gang Training Removed, Car Theft Vehicle Reward',
     date: 'March 2026',
@@ -22382,10 +22378,6 @@ function deleteAllLocalSavesAndReset() {
 }
 window.deleteAllLocalSavesAndReset = deleteAllLocalSavesAndReset;
 
-// Removed duplicate initialization - now using window.onload initGame() function
-
-// Keyboard shortcuts removed
-
 // Initialize the game when the page loads
 function initGame() {
   // Wire up casino module with game.js dependencies
@@ -23766,10 +23758,6 @@ function getItemImage(itemName) {
 
   // Default fallback - inline SVG data URI (no external file needed)
   return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iODAiIGhlaWdodD0iODAiIGZpbGw9IiM0OTUwNTciIHJ4PSI4Ii8+PHRleHQgeD0iNDAiIHk9IjM1IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjQiIGZpbGw9IiNhYWIwYjUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPj88L3RleHQ+PHRleHQgeD0iNDAiIHk9IjU1IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iOCIgZmlsbD0iIzZjNzU3ZCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+Tm8gSW1hZ2U8L3RleHQ+PC9zdmc+';
-}
-
-function getCurrentDateString() {
-  return new Date().toLocaleDateString();
 }
 
 function calculatePlaytime() {
@@ -25543,7 +25531,6 @@ window.getRiskColor = getRiskColor;
 window.approachBusiness = approachBusiness;
 window.collectProtection = collectProtection;
 window.pressureBusiness = pressureBusiness;
-window.manageTerritoryDetails = manageTerritoryDetails;
 
 window.processTerritoryOperations = processTerritoryOperations;
 window.generateTerritoryEvent = generateTerritoryEvent;
@@ -25552,7 +25539,6 @@ window.expandTerritory = expandTerritory;
 window.gangWar = gangWar;
 window.corruptOfficial = corruptOfficial;
 window.dropProtection = dropProtection;
-window.fortifyTerritory = fortifyTerritory;
 window.acquireTerritory = function(zoneId) { attackTurfZone(zoneId); };
 window.fireGangMember = fireGangMember;
 window.breakoutGangMember = breakoutGangMember;

@@ -132,9 +132,6 @@ let onlineWorldState = {
 // Territory income tracking
 let territoryIncomeNextCollection = Date.now() + (7 * 24 * 60 * 60 * 1000); // Next weekly collection
 
-// Sound system removed — playNotificationSound kept as no-op stub so call sites don't error
-function playNotificationSound() {}
-
 // Safe wrappers — game.js module may not be loaded when early WebSocket messages arrive
 const _safeUpdateUI = () => { if (typeof updateUI === 'function') updateUI(); };
 const _safeLogAction = (...args) => { if (typeof logAction === 'function') logAction(...args); };
@@ -1669,7 +1666,6 @@ async function handleServerMessage(message) {
             if (message.playerId === onlineWorldState.playerId) {
                 if (typeof message.money === 'number') player.money = message.money;
                 if (typeof message.territory === 'number') player.territory = message.territory;
-                playNotificationSound('cash');
                 showMPToast(`\uD83D\uDC51 You claimed ${message.district}!`, '#7a8a5a');
                 _safeUpdateUI();
             } else {
@@ -1729,11 +1725,9 @@ async function handleServerMessage(message) {
             onlineWorldState.territories = message.territories || onlineWorldState.territories;
             if (message.method === 'assassination') {
                 addWorldEvent(`\uD83C\uDFAF ${message.attacker} seized ${message.seized.join(', ')} from ${message.defender} via assassination!`);
-                playNotificationSound('alert');
                 showMPToast(`\uD83C\uDFAF ${message.attacker} seized territory via assassination!`, '#8b0000', 6000);
             } else if (message.method === 'war') {
                 addWorldEvent(`\u2694\uFE0F ${message.attacker} conquered ${message.seized.join(', ')} from ${message.defender} in a gang war!`);
-                playNotificationSound('combat');
                 showMPToast(`\u2694\uFE0F ${message.attacker} conquered territory in a war!`, '#8b0000', 6000);
             } else {
                 addWorldEvent(`\uD83D\uDC51 ${message.attacker} claimed ${message.seized.join(', ')}!`);
@@ -1744,13 +1738,11 @@ async function handleServerMessage(message) {
             if (message.victory) {
                 onlineWorldState.territories = message.territories || onlineWorldState.territories;
                 _safeLogAction(`\u2694\uFE0F Victory! Conquered ${message.district} from ${message.oldOwner}. Rep +${message.repGain}, lost ${message.gangMembersLost} members, HP -${message.healthDamage}.`);
-                playNotificationSound('victory');
                 showMPToast(`\u2694\uFE0F Victory! You conquered ${message.district}!`, '#8a9a6a', 5000);
                 if (typeof message.heat === 'number') player.heat = message.heat;
                 if (typeof message.newHealth === 'number') player.health = message.newHealth;
             } else {
                 _safeLogAction(`\u2694\uFE0F Defeat! Failed to take ${message.district}. Lost ${message.gangMembersLost} members, HP -${message.healthDamage}.${message.jailed ? ' Arrested!' : ''}`);
-                playNotificationSound('defeat');
                 showMPToast(`\u2694\uFE0F Defeat! Failed to take ${message.district}.`, '#8b3a3a', 5000);
                 if (typeof message.heat === 'number') player.heat = message.heat;
                 if (typeof message.newHealth === 'number') player.health = message.newHealth;
@@ -1765,14 +1757,12 @@ async function handleServerMessage(message) {
         case 'territory_war_defense_lost':
             onlineWorldState.territories = message.territories || onlineWorldState.territories;
             _safeLogAction(`\u2694\uFE0F ${message.attackerName} conquered your territory ${message.district}!`);
-            playNotificationSound('defeat');
             showMPToast(`\u2694\uFE0F ${message.attackerName} seized your territory!`, '#8b3a3a', 6000);
             if (window.ui) window.ui.toast(`${message.attackerName} seized ${message.district.replace(/_/g, ' ')} from you! \u2694\uFE0F`, 'error');
             break;
 
         case 'territory_war_defense_held':
             _safeLogAction(`\u2694\uFE0F ${message.attackerName} attacked your territory ${message.district} but your defenses held!`);
-            playNotificationSound('victory');
             showMPToast(`\uD83D\uDEE1\uFE0F Defended ${message.district} from ${message.attackerName}!`, '#8a9a6a', 5000);
             if (window.ui) window.ui.toast(`You repelled ${message.attackerName}'s attack on ${message.district.replace(/_/g, ' ')}! \uD83D\uDEE1\uFE0F`, 'success');
             break;
@@ -1782,7 +1772,6 @@ async function handleServerMessage(message) {
                 if (typeof message.newMoney === 'number') player.money = message.newMoney;
                 const taxSource = message.source === 'business' ? 'business income' : 'job';
                 _safeLogAction(`\uD83D\uDCB0 Tax income: $${message.amount.toLocaleString()} from ${message.from}'s ${taxSource} (${message.district.replace(/_/g, ' ')}).`);
-                playNotificationSound('cash');
                 showMPToast(`\uD83D\uDCB0 +$${message.amount.toLocaleString()} tax from ${message.from}`, '#7a8a5a', 3000);
                 _safeUpdateUI();
             }
@@ -1911,7 +1900,6 @@ async function handleServerMessage(message) {
             // Show result popup if player was involved
             if (message.involved) {
                 showHeistResult(message);
-                playNotificationSound(message.success ? 'cash' : 'defeat');
             } else {
                 showMPToast(message.worldMessage || 'A heist just went down!', message.success ? '#8a9a6a' : '#8b3a3a');
             }
@@ -1924,7 +1912,6 @@ async function handleServerMessage(message) {
         case 'heist_invite':
             // Someone invited you to a heist
             if (message.heistId && message.inviterName) {
-                playNotificationSound('heist');
                 showMPToast(`\uD83D\uDCB0 ${message.inviterName} invited you to a heist!`, '#c0a040', 8000);
                 const acceptInvite = await window.ui.confirm(`${message.inviterName} invited you to a heist: ${message.target || 'Unknown'}!\n\nReward: $${(message.reward || 0).toLocaleString()}\nDifficulty: ${message.difficulty || 'Unknown'}\n\nJoin their crew?`);
                 if (acceptInvite && onlineWorldState.socket && onlineWorldState.socket.readyState === WebSocket.OPEN) {
@@ -1974,18 +1961,15 @@ async function handleServerMessage(message) {
             
         case 'assassination_result':
             handleAssassinationResult(message);
-            playNotificationSound(message.success ? 'victory' : 'defeat');
             break;
 
         case 'assassination_victim':
             handleAssassinationVictim(message);
-            playNotificationSound('alert');
             showMPToast(`\uD83C\uDFAF ${message.attackerName} ordered a hit on you!`, '#8b3a3a', 6000);
             break;
 
         case 'assassination_survived':
             handleAssassinationSurvived(message);
-            playNotificationSound('alert');
             showMPToast('\uD83D\uDEE1\uFE0F You survived an assassination attempt!', '#8a9a6a', 5000);
             break;
 
@@ -1999,7 +1983,6 @@ async function handleServerMessage(message) {
             const isLoser = message.loser === (player.name || '');
             if (isWinner || isLoser) {
                 showPvpResultModal(message, isWinner);
-                playNotificationSound(isWinner ? 'victory' : 'defeat');
                 // Sync health damage from server
                 if (message.healthDamage) {
                     const myDmg = isWinner ? message.healthDamage.winner : message.healthDamage.loser;
@@ -2015,7 +1998,6 @@ async function handleServerMessage(message) {
                 if (isWinner && message.bountyClaimed) {
                     showMPToast(`Bounty collected! +$${message.bountyClaimed.reward.toLocaleString()}`, '#ff6600', 5000);
                     player.money = (player.money || 0) + message.bountyClaimed.reward;
-                    playNotificationSound('cash');
                 }
                 // Show ELO change
                 if (message.eloChange && isWinner) {
@@ -2163,7 +2145,6 @@ async function handleServerMessage(message) {
 
         case 'season_reset':
             showMPToast(`Season ${message.seasonNumber} has begun!${message.champion ? ` Last champion: ${message.champion.name}` : ''}`, '#ffd700', 8000);
-            playNotificationSound('victory');
             break;
 
         case 'player_released':
@@ -2359,7 +2340,6 @@ function handlePlayerMarketMessage(message) {
             player.money += message.amount;
             if (typeof showBriefNotification === 'function') showBriefNotification(`${message.buyerName} bought your ${message.itemName} for $${message.amount.toLocaleString()}!`, 'success');
             if (typeof logAction === 'function') logAction(`${message.buyerName} purchased your ${message.itemName} from the Player Market for $${message.amount.toLocaleString()}!`);
-            if (typeof playNotificationSound === 'function') playNotificationSound('cash');
             playerMarketListings = message.listings || playerMarketListings;
             if (typeof updateUI === 'function') updateUI();
             break;
@@ -2395,7 +2375,6 @@ function handlePlayerMarketMessage(message) {
 
             if (typeof showBriefNotification === 'function') showBriefNotification(`Bought ${message.itemName} from ${message.sellerName} for $${message.price.toLocaleString()}!`, 'success');
             if (typeof logAction === 'function') logAction(`Purchased ${message.itemName} from ${message.sellerName} on the Player Market for $${message.price.toLocaleString()}.`);
-            if (typeof playNotificationSound === 'function') playNotificationSound('cash');
             playerMarketListings = message.listings || playerMarketListings;
             if (typeof updateUI === 'function') updateUI();
             showOnlineWorld('market');
@@ -5273,8 +5252,6 @@ function setupOnlineWorldUI() {
     }
 }
 
-// Removed addOnlineWorldButton function - Global Chat button is now in HTML main menu
-
 // Log online world actions
 function logOnlineWorldAction(message) {
     if (typeof logAction === 'function') {
@@ -5709,7 +5686,6 @@ function handleAllianceResult(message) {
     switch (message.action) {
         case 'created':
             showMPToast(`Alliance [${message.alliance.tag}] ${message.alliance.name} founded!`, '#c0a062', 5000);
-            playNotificationSound('victory');
             if (typeof updateUI === 'function') updateUI();
             showAlliancePanel(); // Refresh
             break;
@@ -5718,7 +5694,6 @@ function handleAllianceResult(message) {
             break;
         case 'member_joined':
             showMPToast(`${message.newMember} joined the alliance!`, '#8a9a6a');
-            playNotificationSound('alert');
             showAlliancePanel();
             break;
         case 'left':
@@ -5727,7 +5702,6 @@ function handleAllianceResult(message) {
             break;
         case 'kicked':
             showMPToast(`You were kicked from ${message.allianceName}!`, '#8b3a3a');
-            playNotificationSound('defeat');
             showAlliancePanel();
             break;
         case 'member_left':
@@ -5865,12 +5839,10 @@ function handleAllianceDisciplineResult(message) {
         case 'issued':
             // Leader confirmation
             showMPToast(`${message.icon} ${message.disciplineName} issued to ${message.targetPlayer}.`, color, 5000);
-            playNotificationSound('alert');
             break;
 
         case 'received': {
             // The victim sees a dramatic full-screen popup
-            playNotificationSound('defeat');
             const popup = document.createElement('div');
             popup.id = 'discipline-received-modal';
             popup.className = 'popup-overlay';
@@ -5896,13 +5868,11 @@ function handleAllianceDisciplineResult(message) {
         case 'witnessed':
             // Other alliance members see a toast
             showMPToast(`${message.icon} ${message.leaderName} disciplined ${message.targetPlayer} — ${message.disciplineName}`, color, 6000);
-            playNotificationSound('alert');
             break;
     }
 }
 
 function handleAllianceInviteReceived(message) {
-    playNotificationSound('alert');
     showMPToast(`${message.inviterName} invited you to [${message.allianceTag}] ${message.allianceName}!`, '#c0a062', 10000);
     // Show accept/decline popup
     const modal = document.createElement('div');
@@ -5978,7 +5948,6 @@ function handleBountyResult(message) {
     }
     if (message.action === 'posted') {
         showMPToast(`Bounty posted on ${message.bounty.targetName}!`, '#ff6600', 4000);
-        playNotificationSound('combat');
         player.money = message.newMoney || player.money;
         if (typeof updateUI === 'function') updateUI();
         sendMP({ type: 'bounty_list' }); // Refresh list
@@ -5991,7 +5960,6 @@ function handleBountyResult(message) {
 }
 
 function handleBountyAlert(message) {
-    playNotificationSound('alert');
     showMPToast(`${message.message}`, '#ff0000', 8000);
 }
 
