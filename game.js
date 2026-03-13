@@ -18139,8 +18139,19 @@ function startGameAfterIntro() {
 
 // ==================== VERSION UPDATE SYSTEM ====================
 
-const CURRENT_VERSION = '1.35.7';
+const CURRENT_VERSION = '1.35.8';
 const VERSION_UPDATES = {
+  '1.35.8': {
+    title: 'Gang Training Removed, Car Theft Vehicle Reward',
+    date: 'March 2026',
+    changes: [
+      'Removed gang training system entirely -- recruit the members you want, fire the ones you don\'t',
+      'Gang UI now has 3 tabs: The Family, Tasks, Recruitment',
+      'Car Theft Ring gang operation now awards stolen vehicles (30% chance on success)',
+      'Gang-stolen vehicles use weighted condition tiers -- crews are pros so better odds than solo theft',
+      'Both player and gang car theft can now rarely land a perfect 0% damage vehicle',
+    ]
+  },
   '1.35.7': {
     title: 'Doctor Lockdown, Rank Flavor Text & Chat Fixes',
     date: 'March 2026',
